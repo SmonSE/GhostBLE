@@ -40,7 +40,7 @@ void setup() {
     while (1); // Halt the program if BLE fails to initialize
   }
   Serial.println("BLE initialized successfully.");
-  delay(2000);
+  delay(3000);
 }
 
 void loop() {
@@ -53,16 +53,18 @@ void loop() {
   // Update the face every second
   if (currentTime - lastFaceUpdate > 1000) {
     if (isIdle) {
-      avatar.setExpression(Expression::Happy);
+      avatar.setExpression(Expression::Sleepy);  // Display sleepy face when idle
+      Serial.println("🛏️ Face is Sleepy (Idle)");
     } else {
-      avatar.setExpression(Expression::Angry);
-      BLE.stopScan();
+      avatar.setExpression(Expression::Angry);  // Display angry face when scanning
+      Serial.println("😡 Face is Angry (Device found)");
+      BLE.stopScan();  // Stop scanning when face is angry
     }
     lastFaceUpdate = currentTime;
   }
 
   // Check if it's time to scan
-  if (currentTime - lastScanTime > SCAN_INTERVAL_MS && (isIdle)) {
+  if (currentTime - lastScanTime > SCAN_INTERVAL_MS && isIdle) {
     scanForDevices();
     lastScanTime = currentTime;  // Update last scan timestamp
   }
@@ -71,8 +73,7 @@ void loop() {
 void scanForDevices() {
   deviceFound = false;
   
-  BLE.scan(); // <-- Start scanning before trying to get devices
-  
+  BLE.scan();  // Start scanning
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
@@ -85,11 +86,23 @@ void scanForDevices() {
     Serial.print("🔎 Adresse: ");
     Serial.println(address);
 
-    Serial.print("🧾 Name: ");
-    if (localName.length() > 0) {
-      Serial.println(localName);
+    // Check for advertised service UUIDs
+    int advServiceCount = peripheral.advertisedServiceUuidCount();
+    if (advServiceCount > 0) {
+      for (int i = 0; i < advServiceCount; i++) {
+        String serviceUuid = peripheral.advertisedServiceUuid(i);
+        Serial.print("📦 Service UUID: ");
+        Serial.println(serviceUuid);
+
+        // Check for the 1812 service UUID
+        if (serviceUuid == "1812") {
+          Serial.println("🎯 Found target service UUID (1812)!");
+          deviceFound = true;  // Set device found flag
+          break;  // Exit loop if target UUID is found
+        }
+      }
     } else {
-      Serial.println("(Unnamed)");
+      Serial.println("⚠ No Service UUIDs found!");
     }
 
     Serial.print("📶 RSSI: ");
@@ -102,30 +115,43 @@ void scanForDevices() {
     Serial.println(" m");
 
     // Print number of advertised service UUIDs
-    int advDataLen = peripheral.advertisedServiceUuidCount();
     Serial.print("📦 Service UUIDs Found: ");
-    Serial.println(advDataLen);
-
-    Serial.println("------------------------");
+    Serial.println(advServiceCount);
 
     // Check if it’s a target device
     if (isTargetDevice(localName, address)) {
       deviceFound = true;
       Serial.println("🎯 !!! Target device detected !!!");
-      isIdle = false;
-      return;
+      isIdle = false;  // Device found, so not idle
+      
+      return;  // Exit loop when target device is found
     }
+
     peripheral = BLE.available();
   }
   Serial.println("\n\n");
 
-  isIdle = true;
+  isIdle = true;  // Set back to idle if no target device is found
 }
 
 
 bool isTargetDevice(String name, String address) {
+  // Check if the address starts with Espressif's known MAC address prefixes
+  String esp32Prefixes[] = {"30:AE:A4", "24:0A:C4", "F4:CE:46"};
+  
+  for (int i = 0; i < sizeof(esp32Prefixes) / sizeof(esp32Prefixes[0]); i++) {
+    if (address.startsWith(esp32Prefixes[i])) {
+      return true;
+    }
+  }
+
+  // If the name is empty, use the address to identify the device
+  if (name.isEmpty()) {
+    return address.startsWith("B0:81:84");
+  }
+
   // Check based on device name
-  String targetNames[] = {"bruder", "nemo", "marauder", "cathack"};
+  String targetNames[] = {"bruder", "nemo", "marauder", "cathack", "<no name>", "ESP32"};
   name.toLowerCase();
   for (int i = 0; i < sizeof(targetNames) / sizeof(targetNames[0]); i++) {
     if (name.indexOf(targetNames[i]) >= 0) {
@@ -138,7 +164,7 @@ bool isTargetDevice(String name, String address) {
     "E7:6F:8C", "F4:CE:46", "D0:39:72",  // Nordic
     "24:0A:C4", "30:AE:A4", "84:0D:8E"   // Espressif
   };
-
+  
   address.toUpperCase(); // Just to be safe
   for (int i = 0; i < sizeof(ouiPrefixes) / sizeof(ouiPrefixes[0]); i++) {
     if (address.startsWith(ouiPrefixes[i])) {
@@ -148,4 +174,3 @@ bool isTargetDevice(String name, String address) {
 
   return false;
 }
-
