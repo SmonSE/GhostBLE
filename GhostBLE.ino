@@ -52,11 +52,14 @@ void loop() {
   // Update the face every second
   if (currentTime - lastFaceUpdate > 1000) {
     if (isIdle) {
-      int top = -40;
-      int left = -30;
+      int top = -50;
+      int left = -40;
       avatar.setPosition(top, left);
       avatar.setFace(&idleFace);  // Set the face to Idle when idle
     } else {
+      int top = -50;
+      int left = -40;
+      avatar.setPosition(top, left);
       avatar.setFace(&scanningFace);  // Set the face to Scanning when searching for devices
     }
     lastFaceUpdate = currentTime;
