@@ -1,7 +1,7 @@
 #pragma once
 
 // Scan every X milliseconds (z.B. alle 5 Sekunden)
-#define SCAN_INTERVAL_MS 5000
+#define SCAN_INTERVAL_MS 10000
 
 // Display settings (optional anpassen, falls auf Atom S3 gewechselt)
 #define SCREEN_WIDTH  135

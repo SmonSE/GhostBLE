@@ -47,49 +47,105 @@ void loop() {
   M5.update();
 
   unsigned long currentTime = millis();
-  avatar.setPosition(top, left);
   
+  avatar.setPosition(top, left);
+
   // Update the face every second
   if (currentTime - lastFaceUpdate > 1000) {
     if (isIdle) {
       avatar.setExpression(Expression::Happy);
     } else {
       avatar.setExpression(Expression::Angry);
+      BLE.stopScan();
     }
     lastFaceUpdate = currentTime;
   }
 
-  // Call scanForDevices to check for BLE devices
-  scanForDevices();
+  // Check if it's time to scan
+  if (currentTime - lastScanTime > SCAN_INTERVAL_MS && (isIdle)) {
+    scanForDevices();
+    lastScanTime = currentTime;  // Update last scan timestamp
+  }
 }
 
 void scanForDevices() {
   deviceFound = false;
+  
+  BLE.scan(); // <-- Start scanning before trying to get devices
+  
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
+    Serial.println("🔍 Scanning device...");
+    
     String localName = peripheral.localName();
-    Serial.print("Found device: ");
-    Serial.println(localName);
+    String address = peripheral.address();
+    int rssi = peripheral.rssi();
+    
+    Serial.print("🔎 Adresse: ");
+    Serial.println(address);
 
-    if (isTargetDevice(localName)) {
+    Serial.print("🧾 Name: ");
+    if (localName.length() > 0) {
+      Serial.println(localName);
+    } else {
+      Serial.println("(Unnamed)");
+    }
+
+    Serial.print("📶 RSSI: ");
+    Serial.println(rssi);
+
+    // Optional: estimate distance from RSSI
+    float distance = pow(10, (-69 - rssi) / 20.0); 
+    Serial.print("📏 Distanz: ");
+    Serial.print(distance, 2);
+    Serial.println(" m");
+
+    // Print number of advertised service UUIDs
+    int advDataLen = peripheral.advertisedServiceUuidCount();
+    Serial.print("📦 Service UUIDs Found: ");
+    Serial.println(advDataLen);
+
+    Serial.println("------------------------");
+
+    // Check if it’s a target device
+    if (isTargetDevice(localName, address)) {
       deviceFound = true;
-      Serial.println("!!! Target device detected !!!");
-      isIdle = false;  // Switch to scanning face if target device is found
+      Serial.println("🎯 !!! Target device detected !!!");
+      isIdle = false;
       return;
     }
     peripheral = BLE.available();
   }
-  isIdle = true; // If no target devices were found, return to idle state
+  Serial.println("\n\n");
+
+  isIdle = true;
 }
 
-bool isTargetDevice(String name) {
+
+bool isTargetDevice(String name, String address) {
+  // Check based on device name
   String targetNames[] = {"bruder", "nemo", "marauder", "cathack"};
   name.toLowerCase();
   for (int i = 0; i < sizeof(targetNames) / sizeof(targetNames[0]); i++) {
-      if (name.indexOf(targetNames[i]) >= 0) {
-          return true;
-      }
+    if (name.indexOf(targetNames[i]) >= 0) {
+      return true;
+    }
   }
+
+  // Check based on known OUIs (MAC prefixes)
+  String ouiPrefixes[] = {
+    "E7:6F:8C", "F4:CE:46", "D0:39:72",  // Nordic
+    "24:0A:C4", "30:AE:A4", "84:0D:8E"   // Espressif
+  };
+
+  address.toUpperCase(); // Just to be safe
+  for (int i = 0; i < sizeof(ouiPrefixes) / sizeof(ouiPrefixes[0]); i++) {
+    if (address.startsWith(ouiPrefixes[i])) {
+      return true;
+    }
+  }
+
   return false;
 }
+
