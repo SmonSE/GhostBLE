@@ -1,0 +1,29 @@
+./src/Avatar.cpp:void Avatar::setFace(Face *face) { this->face = face; }
+./src/Avatar.cpp:void Avatar::addTask(TaskFunction_t f, const char *name,
+./src/Avatar.cpp:void Avatar::init(int colorDepth) {
+./src/Avatar.cpp:void Avatar::stop() { _isDrawing = false; }
+./src/Avatar.cpp:void Avatar::suspend() {
+./src/Avatar.cpp:void Avatar::resume() {
+./src/Avatar.cpp:void Avatar::start(int colorDepth) {
+./src/Avatar.cpp:void Avatar::draw() {
+./src/Avatar.cpp:void Avatar::setExpression(Expression expression) {
+./src/Avatar.cpp:void Avatar::setBreath(float breath) { this->breath = breath; }
+./src/Avatar.cpp:void Avatar::setRotation(float radian) { this->rotation = radian; }
+./src/Avatar.cpp:void Avatar::setScale(float scale) { this->scale = scale; }
+./src/Avatar.cpp:void Avatar::setPosition(int top, int left) {
+./src/Avatar.cpp:void Avatar::setColorPalette(ColorPalette cp) { palette = cp; }
+./src/Avatar.cpp:void Avatar::setMouthOpenRatio(float ratio) { this->mouthOpenRatio = ratio; }
+./src/Avatar.cpp:void Avatar::setEyeOpenRatio(float ratio) {
+./src/Avatar.cpp:void Avatar::setLeftEyeOpenRatio(float ratio) {
+./src/Avatar.cpp:void Avatar::setRightEyeOpenRatio(float ratio) {
+./src/Avatar.cpp:void Avatar::setIsAutoBlink(bool b) { this->isAutoBlink_ = b; }
+./src/Avatar.cpp:void Avatar::setRightGaze(float vertical, float horizontal) {
+./src/Avatar.cpp:void Avatar::getRightGaze(float *vertical, float *horizontal) {
+./src/Avatar.cpp:void Avatar::setLeftGaze(float vertical, float horizontal) {
+./src/Avatar.cpp:void Avatar::getLeftGaze(float *vertical, float *horizontal) {
+./src/Avatar.cpp:void Avatar::getGaze(float *vertical, float *horizontal){
+./src/Avatar.cpp:void Avatar::setSpeechText(const char *speechText) {
+./src/Avatar.cpp:void Avatar::setSpeechFont(const lgfx::IFont *speechFont) {
+./src/Avatar.cpp:void Avatar::setBatteryIcon(bool batteryIcon) {
+./src/Avatar.cpp:void Avatar::setBatteryStatus(bool isCharging, int32_t batteryLevel) {
+

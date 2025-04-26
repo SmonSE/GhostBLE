@@ -28,6 +28,11 @@ void setup() {
   M5.Lcd.setRotation(3);
   M5.Lcd.fillScreen(BLACK);
 
+  int top = -10;
+  int left = -10;
+  avatar.setPosition(top, left);
+  avatar.setScale(0.8f);  // Set smaller avatar size for the correct display size
+
   // Set the face to Idle at the start
   avatar.setFace(&idleFace);  // Set the face to Idle
 
@@ -47,6 +52,9 @@ void loop() {
   // Update the face every second
   if (currentTime - lastFaceUpdate > 1000) {
     if (isIdle) {
+      int top = -40;
+      int left = -30;
+      avatar.setPosition(top, left);
       avatar.setFace(&idleFace);  // Set the face to Idle when idle
     } else {
       avatar.setFace(&scanningFace);  // Set the face to Scanning when searching for devices
