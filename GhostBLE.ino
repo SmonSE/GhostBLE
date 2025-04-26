@@ -11,6 +11,9 @@ bool isIdle = false;
 int top = -40;
 int left = -40;
 
+int targetFoundCount = 0; // <- Zähler für gefundene Geräte
+
+
 using namespace m5avatar;
 
 Avatar avatar;
@@ -55,7 +58,6 @@ void loop() {
   if (currentTime - lastFaceUpdate > 1000) {
     if (isIdle) {
       avatar.setExpression(Expression::Sleepy);  // Display sleepy face when idle
-      //Serial.println("🛏️ Face is Sleepy (Idle)");
     } 
     lastFaceUpdate = currentTime;
   }
@@ -69,7 +71,6 @@ void loop() {
   }
   else {
       avatar.setExpression(Expression::Angry);  // Display angry face when scanning
-      //Serial.println("😡 Face is Angry (Device found)");
       BLE.stopScan();  // Stop scanning when face is angry
 
       delay(20000);
@@ -105,6 +106,7 @@ void scanForDevices() {
         // Check for the 1812 service UUID
         if (serviceUuid == "1812") {
           Serial.println("🎯 Found target service UUID (1812)!");
+          targetFoundCount++; // <-- Zähler erhöhen!
           deviceFound = true;  // Set device found flag
           break;  // Exit loop if target UUID is found
         }
@@ -137,6 +139,8 @@ void scanForDevices() {
 
     peripheral = BLE.available();
   }
+  Serial.print("# Hits: ");
+  Serial.println(targetFoundCount);
   Serial.println("\n\n");
 
   isIdle = true;  // Set back to idle if no target device is found
