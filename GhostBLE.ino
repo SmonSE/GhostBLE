@@ -7,8 +7,8 @@
 unsigned long lastScanTime = 0;
 bool deviceFound = false;
 unsigned long lastFaceUpdate = 0;
-bool isIdle = true;
-int top = -50;
+bool isIdle = false;
+int top = -40;
 int left = -40;
 
 using namespace m5avatar;
@@ -33,6 +33,7 @@ void setup() {
   avatar.setPosition(top, left);
   avatar.setScale(0.8f);  // Set smaller avatar size for the correct display size
   avatar.setExpression(Expression::Neutral);
+  isIdle = true;
 
   if (!BLE.begin()) {
     M5.Lcd.println("Starting BLE failed!");
@@ -54,19 +55,26 @@ void loop() {
   if (currentTime - lastFaceUpdate > 1000) {
     if (isIdle) {
       avatar.setExpression(Expression::Sleepy);  // Display sleepy face when idle
-      Serial.println("🛏️ Face is Sleepy (Idle)");
-    } else {
-      avatar.setExpression(Expression::Angry);  // Display angry face when scanning
-      Serial.println("😡 Face is Angry (Device found)");
-      BLE.stopScan();  // Stop scanning when face is angry
-    }
+      //Serial.println("🛏️ Face is Sleepy (Idle)");
+    } 
     lastFaceUpdate = currentTime;
   }
 
   // Check if it's time to scan
-  if (currentTime - lastScanTime > SCAN_INTERVAL_MS && isIdle) {
-    scanForDevices();
-    lastScanTime = currentTime;  // Update last scan timestamp
+  if (isIdle && !deviceFound) {
+    if (currentTime - lastScanTime > SCAN_INTERVAL_MS) {
+      scanForDevices();
+      lastScanTime = currentTime;  // Update last scan timestamp
+    }
+  }
+  else {
+      avatar.setExpression(Expression::Angry);  // Display angry face when scanning
+      //Serial.println("😡 Face is Angry (Device found)");
+      BLE.stopScan();  // Stop scanning when face is angry
+
+      delay(20000);
+      isIdle = true;
+      deviceFound = false;
   }
 }
 
@@ -123,7 +131,7 @@ void scanForDevices() {
       deviceFound = true;
       Serial.println("🎯 !!! Target device detected !!!");
       isIdle = false;  // Device found, so not idle
-      
+
       return;  // Exit loop when target device is found
     }
 
