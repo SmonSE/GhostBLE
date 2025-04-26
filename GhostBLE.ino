@@ -18,8 +18,6 @@ using namespace m5avatar;
 
 Avatar avatar;
 
-//m5avatar::Face face ;     // Default constructor
-
 
 void setup() {
   M5.begin();
@@ -86,7 +84,7 @@ void scanForDevices() {
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
-    Serial.println("🔍 Scanning device...");
+    //Serial.println("🔍 Scanning device...");
     
     String localName = peripheral.localName();
     String address = peripheral.address();
@@ -94,6 +92,9 @@ void scanForDevices() {
     
     Serial.print("🔎 Adresse: ");
     Serial.println(address);
+
+    Serial.print("📛 Local Name: ");
+    Serial.println(localName);
 
     // Check for advertised service UUIDs
     int advServiceCount = peripheral.advertisedServiceUuidCount();
@@ -109,6 +110,15 @@ void scanForDevices() {
           targetFoundCount++; // <-- Zähler erhöhen!
           deviceFound = true;  // Set device found flag
           break;  // Exit loop if target UUID is found
+        }
+
+        // Check for specific MAC address of Nemo device
+        String targetMacAddress = "b0:81:84:96:a0:c9"; 
+        if (address == targetMacAddress) {
+          Serial.println("🎯 Found NEMO device via MAC address!");
+          targetFoundCount++;
+          deviceFound = true;
+          break; // Exit loop if target UUID is found
         }
       }
     } else {
@@ -127,11 +137,13 @@ void scanForDevices() {
     // Print number of advertised service UUIDs
     Serial.print("📦 Service UUIDs Found: ");
     Serial.println(advServiceCount);
+    Serial.println("-------------------------------");
 
     // Check if it’s a target device
     if (isTargetDevice(localName, address)) {
       deviceFound = true;
       Serial.println("🎯 !!! Target device detected !!!");
+      Serial.println("-------------------------------");
       isIdle = false;  // Device found, so not idle
 
       return;  // Exit loop when target device is found
@@ -139,6 +151,7 @@ void scanForDevices() {
 
     peripheral = BLE.available();
   }
+
   Serial.print("# Hits: ");
   Serial.println(targetFoundCount);
   Serial.println("\n\n");
@@ -148,41 +161,27 @@ void scanForDevices() {
 
 
 bool isTargetDevice(String name, String address) {
-  // Check if the address starts with Espressif's known MAC address prefixes
-  String esp32Prefixes[] = {"30:AE:A4", "24:0A:C4", "F4:CE:46"};
-  
-  for (int i = 0; i < sizeof(esp32Prefixes) / sizeof(esp32Prefixes[0]); i++) {
-    if (address.startsWith(esp32Prefixes[i])) {
-      return true;
-    }
-  }
-
-  // If the name is empty, use the address to identify the device
-  if (name.isEmpty()) {
-    return address.startsWith("B0:81:84");
-  }
-
-  // Check based on device name
-  String targetNames[] = {"bruder", "nemo", "marauder", "cathack", "<no name>", "ESP32"};
-  name.toLowerCase();
-  for (int i = 0; i < sizeof(targetNames) / sizeof(targetNames[0]); i++) {
-    if (name.indexOf(targetNames[i]) >= 0) {
-      return true;
-    }
-  }
-
-  // Check based on known OUIs (MAC prefixes)
-  String ouiPrefixes[] = {
-    "E7:6F:8C", "F4:CE:46", "D0:39:72",  // Nordic
-    "24:0A:C4", "30:AE:A4", "84:0D:8E"   // Espressif
+  // Target MAC addresses (you can add more if needed)
+  String targetMacAddresses[] = {
+    "b0:81:84:96:a0:c9", // Your Nemo MAC address
+    // Add more known addresses here if you want
   };
-  
-  address.toUpperCase(); // Just to be safe
-  for (int i = 0; i < sizeof(ouiPrefixes) / sizeof(ouiPrefixes[0]); i++) {
-    if (address.startsWith(ouiPrefixes[i])) {
+
+  // Check by MAC address
+  for (int i = 0; i < sizeof(targetMacAddresses) / sizeof(targetMacAddresses[0]); i++) {
+    if (address.equalsIgnoreCase(targetMacAddresses[i])) {
       return true;
     }
   }
+
+  // Optionally: check for generic/empty names
+  // Some Nemos might show no name or very generic names like "ESP32" or "N/A"
+  //name.toLowerCase();
+  //if (name == "" || name == "esp32" || name == "n/a" || name == "<no name>") {
+  //  Serial.println("⚠ Detected device with generic or no name. Possible Nemo?");
+  //  return true;
+  //}
 
   return false;
 }
+
