@@ -27,3 +27,9 @@
 ./src/Avatar.cpp:void Avatar::setBatteryIcon(bool batteryIcon) {
 ./src/Avatar.cpp:void Avatar::setBatteryStatus(bool isCharging, int32_t batteryLevel) {
 
+./src/Effect.h:    Expression exp = ctx->getExpression();
+./src/Effect.h:      case Expression::Doubt:
+./src/Effect.h:      case Expression::Angry:
+./src/Effect.h:      case Expression::Happy:
+./src/Effect.h:      case Expression::Sad:
+./src/Effect.h:      case Expression::Sleepy:

@@ -8,33 +8,31 @@ unsigned long lastScanTime = 0;
 bool deviceFound = false;
 unsigned long lastFaceUpdate = 0;
 bool isIdle = true;
+int top = -50;
+int left = -40;
 
 using namespace m5avatar;
 
 Avatar avatar;
 
-m5avatar::Face idleFace;     // Default constructor
-m5avatar::Face scanningFace; // Default constructor
+//m5avatar::Face face ;     // Default constructor
+
 
 void setup() {
   M5.begin();
   Serial.begin(115200); // <--- ADD THIS to open Serial Monitor
   delay(500);           // <--- Give Serial Monitor time to open
+  
   Serial.println("GhostBLE starting...");
-
-  M5.begin();
-  avatar.init(); // Initialize the avatar
 
   M5.Lcd.setRotation(3);
   M5.Lcd.fillScreen(BLACK);
 
-  int top = -10;
-  int left = -10;
+  // Set the face to Neutral at the start
+  avatar.init(); // Initialize the avatar
   avatar.setPosition(top, left);
   avatar.setScale(0.8f);  // Set smaller avatar size for the correct display size
-
-  // Set the face to Idle at the start
-  avatar.setFace(&idleFace);  // Set the face to Idle
+  avatar.setExpression(Expression::Neutral);
 
   if (!BLE.begin()) {
     M5.Lcd.println("Starting BLE failed!");
@@ -42,25 +40,21 @@ void setup() {
     while (1); // Halt the program if BLE fails to initialize
   }
   Serial.println("BLE initialized successfully.");
+  delay(2000);
 }
 
 void loop() {
   M5.update();
 
   unsigned long currentTime = millis();
+  avatar.setPosition(top, left);
   
   // Update the face every second
   if (currentTime - lastFaceUpdate > 1000) {
     if (isIdle) {
-      int top = -50;
-      int left = -40;
-      avatar.setPosition(top, left);
-      avatar.setFace(&idleFace);  // Set the face to Idle when idle
+      avatar.setExpression(Expression::Happy);
     } else {
-      int top = -50;
-      int left = -40;
-      avatar.setPosition(top, left);
-      avatar.setFace(&scanningFace);  // Set the face to Scanning when searching for devices
+      avatar.setExpression(Expression::Angry);
     }
     lastFaceUpdate = currentTime;
   }
@@ -90,9 +84,12 @@ void scanForDevices() {
 }
 
 bool isTargetDevice(String name) {
+  String targetNames[] = {"bruder", "nemo", "marauder", "cathack"};
   name.toLowerCase();
-  return (name.indexOf("bruder") >= 0 ||
-          name.indexOf("nemo") >= 0 ||
-          name.indexOf("marauder") >= 0 ||
-          name.indexOf("cathack") >= 0);
+  for (int i = 0; i < sizeof(targetNames) / sizeof(targetNames[0]); i++) {
+      if (name.indexOf(targetNames[i]) >= 0) {
+          return true;
+      }
+  }
+  return false;
 }
