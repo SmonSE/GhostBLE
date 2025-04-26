@@ -103,23 +103,6 @@ void scanForDevices() {
         String serviceUuid = peripheral.advertisedServiceUuid(i);
         Serial.print("📦 Service UUID: ");
         Serial.println(serviceUuid);
-
-        // Check for the 1812 service UUID
-        if (serviceUuid == "1812") {
-          Serial.println("🎯 Found target service UUID (1812)!");
-          targetFoundCount++; // <-- Zähler erhöhen!
-          deviceFound = true;  // Set device found flag
-          break;  // Exit loop if target UUID is found
-        }
-
-        // Check for specific MAC address of Nemo device
-        String targetMacAddress = "b0:81:84:96:a0:c9"; 
-        if (address == targetMacAddress) {
-          Serial.println("🎯 Found NEMO device via MAC address!");
-          targetFoundCount++;
-          deviceFound = true;
-          break; // Exit loop if target UUID is found
-        }
       }
     } else {
       Serial.println("⚠ No Service UUIDs found!");
@@ -140,7 +123,8 @@ void scanForDevices() {
     Serial.println("-------------------------------");
 
     // Check if it’s a target device
-    if (isTargetDevice(localName, address)) {
+    //if (isTargetDevice(localName, address)) {
+    if (isTargetDevice(localName, address, peripheral)) {
       deviceFound = true;
       Serial.println("🎯 !!! Target device detected !!!");
       Serial.println("-------------------------------");
@@ -159,29 +143,39 @@ void scanForDevices() {
   isIdle = true;  // Set back to idle if no target device is found
 }
 
+bool isTargetDevice(String name, String address, BLEDevice peripheral) {
+  // Prüfe auf spezielle bekannte MAC-Adresse
+  if (address == "b0:81:84:96:a0:c9") {
+    Serial.println("🎯 Target erkannt über MAC!");
+    return true;
+  }
 
-bool isTargetDevice(String name, String address) {
-  // Target MAC addresses (you can add more if needed)
-  String targetMacAddresses[] = {
-    "b0:81:84:96:a0:c9", // Your Nemo MAC address
-    // Add more known addresses here if you want
-  };
+   Optionally: check for generic/empty names
+   Some Nemos might show no name or very generic names like "ESP32" or "N/A"
+  name.toLowerCase();
+  if (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") {
+    Serial.print("Detected Name: ");
+    Serial.println(name);
+    Serial.println("⚠ Detected device with generic or no name. Possible M5 HW?");
+    return true;
+  }
 
-  // Check by MAC address
-  for (int i = 0; i < sizeof(targetMacAddresses) / sizeof(targetMacAddresses[0]); i++) {
-    if (address.equalsIgnoreCase(targetMacAddresses[i])) {
-      return true;
+  // Prüfe auf die spezielle Service UUID 128-bit
+  int advServiceCount = peripheral.advertisedServiceUuidCount();
+  if (advServiceCount > 0) {
+    for (int i = 0; i < advServiceCount; i++) {
+      String serviceUuid = peripheral.advertisedServiceUuid(i);
+      serviceUuid.toLowerCase();
+      if (serviceUuid == "c198185c3489d1a79eddbeab2fdeb783") {
+        Serial.println("🎯 Target erkannt über spezielle 128-bit Service UUID!");
+        return true;
+      }
+      if (serviceUuid == "1812") {
+        Serial.println("🎯 Target erkannt über spezielle 16-bit Service UUID!");
+        return true;
+      }
     }
   }
 
-  // Optionally: check for generic/empty names
-  // Some Nemos might show no name or very generic names like "ESP32" or "N/A"
-  //name.toLowerCase();
-  //if (name == "" || name == "esp32" || name == "n/a" || name == "<no name>") {
-  //  Serial.println("⚠ Detected device with generic or no name. Possible Nemo?");
-  //  return true;
-  //}
-
   return false;
 }
-
