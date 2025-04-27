@@ -79,58 +79,69 @@ void loop() {
 
 void scanForDevices() {
   deviceFound = false;
-  
+
   BLE.scan();  // Start scanning
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
-    //Serial.println("🔍 Scanning device...");
-    
     String localName = peripheral.localName();
     String address = peripheral.address();
     int rssi = peripheral.rssi();
-    
+
     Serial.print("🔎 Adresse: ");
     Serial.println(address);
-
     Serial.print("📛 Local Name: ");
     Serial.println(localName);
 
-    // Check for advertised service UUIDs
+    // Check advertised Service UUIDs
     int advServiceCount = peripheral.advertisedServiceUuidCount();
     if (advServiceCount > 0) {
       for (int i = 0; i < advServiceCount; i++) {
         String serviceUuid = peripheral.advertisedServiceUuid(i);
-        Serial.print("📦 Service UUID: ");
+        Serial.print("📦 Advertised Service UUID: ");
         Serial.println(serviceUuid);
       }
     } else {
-      Serial.println("⚠ No Service UUIDs found!");
+      Serial.println("⚠ No Service UUIDs found in advertisement!");
+
+      // Try connecting to discover services
+      Serial.println("🔗 Trying to connect for service discovery...");
+      if (peripheral.connect()) {
+        if (peripheral.discoverAttributes()) {
+          Serial.println("✅ Connected and discovered attributes!");
+
+          for (int i = 0; i < peripheral.serviceCount(); i++) {
+            BLEService service = peripheral.service(i);
+            Serial.print("📦 Discovered Service UUID: ");
+            Serial.println(service.uuid());
+          }
+        } else {
+          Serial.println("❌ Attribute discovery failed.");
+        }
+        peripheral.disconnect();
+      } else {
+        Serial.println("❌ Connection failed.");
+      }
     }
 
     Serial.print("📶 RSSI: ");
     Serial.println(rssi);
 
-    // Optional: estimate distance from RSSI
-    float distance = pow(10, (-69 - rssi) / 20.0); 
+    float distance = pow(10, (-69 - rssi) / 20.0);
     Serial.print("📏 Distanz: ");
     Serial.print(distance, 2);
     Serial.println(" m");
 
-    // Print number of advertised service UUIDs
-    Serial.print("📦 Service UUIDs Found: ");
-    Serial.println(advServiceCount);
     Serial.println("-------------------------------");
 
     // Check if it’s a target device
-    //if (isTargetDevice(localName, address)) {
     if (isTargetDevice(localName, address, peripheral)) {
       deviceFound = true;
       Serial.println("🎯 !!! Target device detected !!!");
       Serial.println("-------------------------------");
-      isIdle = false;  // Device found, so not idle
+      isIdle = false;
 
-      return;  // Exit loop when target device is found
+      return;
     }
 
     peripheral = BLE.available();
@@ -140,8 +151,10 @@ void scanForDevices() {
   Serial.println(targetFoundCount);
   Serial.println("\n\n");
 
-  isIdle = true;  // Set back to idle if no target device is found
+  isIdle = true;
 }
+
+
 
 bool isTargetDevice(String name, String address, BLEDevice peripheral) {
   // Prüfe auf spezielle bekannte MAC-Adresse
@@ -150,8 +163,8 @@ bool isTargetDevice(String name, String address, BLEDevice peripheral) {
     return true;
   }
 
-   Optionally: check for generic/empty names
-   Some Nemos might show no name or very generic names like "ESP32" or "N/A"
+  //Optionally: check for generic/empty names
+  //Some Nemos might show no name or very generic names like "ESP32" or "N/A"
   name.toLowerCase();
   if (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") {
     Serial.print("Detected Name: ");
@@ -166,7 +179,9 @@ bool isTargetDevice(String name, String address, BLEDevice peripheral) {
     for (int i = 0; i < advServiceCount; i++) {
       String serviceUuid = peripheral.advertisedServiceUuid(i);
       serviceUuid.toLowerCase();
-      if (serviceUuid == "c198185c3489d1a79eddbeab2fdeb783") {
+      //c198185c-3489-d1a7-9edd-beab2fdeb783  // NEMO
+      //00000020-5749-5448-0037-0024e4e9e46d  // WITHINGS Uhr HR 60
+      if (serviceUuid == "c198185c-3489-d1a7-9edd-beab2fdeb783") {
         Serial.println("🎯 Target erkannt über spezielle 128-bit Service UUID!");
         return true;
       }
