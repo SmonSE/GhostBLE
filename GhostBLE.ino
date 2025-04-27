@@ -283,6 +283,7 @@ String getManufacturerName(uint16_t manufacturerId) {
   if (manufacturerId == 0x017C) return "Huawei Technologies Co., Ltd.";
   if (manufacturerId == 0x018B) return "vivo Mobile Communication Co., Ltd.";
   if (manufacturerId == 0x0195) return "OnePlus Electronics Corp.";
+  if (manufacturerId == 0x0065) return "Garmin International, Inc.";
   
   return "Unknown Manufacturer";
 }
