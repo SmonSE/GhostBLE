@@ -306,7 +306,6 @@ String getServiceName(const String& uuid) {
   if (uuid == "1809") return "Health Thermometer";
   if (uuid == "1811") return "Alert Notification Service";
   if (uuid == "1810") return "Blood Pressure";
-  // Weitere UUIDs kannst du einfach ergänzen
   if (uuid == "1813") return "Glucose";
   if (uuid == "1823") return "Running Speed and Cadence";
   if (uuid == "1824") return "Cycling Speed and Cadence";
