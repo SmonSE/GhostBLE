@@ -7,6 +7,9 @@
 #include <SPI.h>  // SPI for SD card
 #include <vector>  // Include the vector header for dynamic arrays
 
+#include "src/helper/ManufacturerHelper.h"
+#include "src/helper/ServiceHelper.h"
+
 
 std::vector<String> serviceUuids;  // Dynamic array to store service UUIDs
 
@@ -247,83 +250,6 @@ void scanForDevices() {
   Serial.println("\n\n");
 
   isIdle = true;
-}
-
-
-String getManufacturerName(uint16_t manufacturerId) {
-  if (manufacturerId == 0x02E5) return "Espressif Systems (M5Stack)";
-  if (manufacturerId == 0x004C) return "Apple, Inc.";
-  if (manufacturerId == 0x0006) return "Microsoft Corporation";
-  if (manufacturerId == 0x000F) return "Broadcom Corporation";
-  if (manufacturerId == 0x0131) return "Google";
-  if (manufacturerId == 0x0075) return "Samsung Electronics Co.";
-  if (manufacturerId == 0x00E0) return "Nintendo Co., Ltd.";
-  if (manufacturerId == 0x0001) return "Ericsson Technology Licensing";
-  if (manufacturerId == 0x0002) return "Intel Corp.";
-  if (manufacturerId == 0x0003) return "IBM Corp.";
-  if (manufacturerId == 0x0004) return "Toshiba Corp.";
-  if (manufacturerId == 0x0005) return "3Com";
-  if (manufacturerId == 0x0012) return "Matsushita Electric Industrial Co.";
-  if (manufacturerId == 0x001D) return "Motorola";
-  if (manufacturerId == 0x0025) return "Nokia Mobile Phones";
-  if (manufacturerId == 0x003D) return "Hitachi, Ltd";
-  if (manufacturerId == 0x0065) return "Sony Ericsson Mobile Communications";
-  if (manufacturerId == 0x0079) return "LG Electronics";
-  if (manufacturerId == 0x00A0) return "Qualcomm Inc.";
-  if (manufacturerId == 0x00C7) return "Garmin International, Inc.";
-  if (manufacturerId == 0x00D2) return "GoPro, Inc.";
-  if (manufacturerId == 0x00E1) return "Bosch Sensortec GmbH";
-  if (manufacturerId == 0x00EC) return "Sony Corporation";
-  if (manufacturerId == 0x0106) return "Tile, Inc.";
-  if (manufacturerId == 0x0110) return "Fitbit, Inc.";
-  if (manufacturerId == 0x012D) return "Signify (Philips Lighting B.V.)";
-  if (manufacturerId == 0x0133) return "Facebook Technologies, LLC";
-  if (manufacturerId == 0x0165) return "Xiaomi Inc.";
-  if (manufacturerId == 0x0171) return "OPPO Mobile Telecommunications Corp.";
-  if (manufacturerId == 0x017C) return "Huawei Technologies Co., Ltd.";
-  if (manufacturerId == 0x018B) return "vivo Mobile Communication Co., Ltd.";
-  if (manufacturerId == 0x0195) return "OnePlus Electronics Corp.";
-  if (manufacturerId == 0x0065) return "Garmin International, Inc.";
-  
-  return "Unknown Manufacturer";
-}
-
-
-
-// MOVE DO SEPARAT CLASS FROM HERE TO
-
-// Hilfsfunktion: UUID zu Service Name übersetzen
-String getServiceName(const String& uuid) {
-  if (uuid == "1800") return "Generic Access Service";
-  if (uuid == "1801") return "Generic Attribute Service";
-  if (uuid == "180f") return "Battery Service";
-  if (uuid == "180d") return "Heart Rate Service";
-  if (uuid == "180a") return "Device Information Service";
-  if (uuid == "1802") return "Immediate Alert";
-  if (uuid == "1803") return "Link Loss";
-  if (uuid == "1804") return "Tx Power";
-  if (uuid == "1805") return "Current Time Service";
-  if (uuid == "1812") return "Human Interface Device (HID)";
-  if (uuid == "1809") return "Health Thermometer";
-  if (uuid == "1811") return "Alert Notification Service";
-  if (uuid == "1810") return "Blood Pressure";
-  if (uuid == "1813") return "Glucose";
-  if (uuid == "1823") return "Running Speed and Cadence";
-  if (uuid == "1824") return "Cycling Speed and Cadence";
-  if (uuid == "1806") return "Scan Parameters";
-  if (uuid == "1815") return "Temperature Measurement";
-  if (uuid == "1816") return "Temperature Type";
-  if (uuid == "1825") return "Cycling Power";
-  if (uuid == "1826") return "Cycling Torque Measurement";
-  if (uuid == "1827") return "Cycling Torque Vector";
-  if (uuid == "1832") return "Barometric Pressure";
-  if (uuid == "1833") return "Air Quality";
-  if (uuid == "1834") return "Oxygen Saturation";
-  if (uuid == "1835") return "Pollen Data";
-  if (uuid == "1836") return "Personal Activity Monitoring";
-  if (uuid == "1837") return "Fitness Machine";
-  if (uuid == "1838") return "Health and Fitness Measurement";
-  return "Unknown Service";
 }
 
 void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral) {
