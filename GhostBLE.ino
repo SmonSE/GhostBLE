@@ -184,17 +184,27 @@ void scanForDevices() {
             Serial.print("📛 Local Name: ");
             Serial.println(localName);
 
-            // Manufacturer Data auslesen
             if (peripheral.hasManufacturerData()) {
-              uint8_t mfgData[64];  // Buffer für Manufacturer Data (max 64 Bytes sollten reichen)
+              uint8_t mfgData[64];
               int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
-              if (mfgDataLen > 0) {
-                Serial.print("🏭 Manufacturer Data: ");
-                for (int i = 0; i < mfgDataLen; i++) {
-                  if (mfgData[i] < 16) Serial.print("0");  // führende Null für schönere Darstellung
-                  Serial.print(mfgData[i], HEX);
-                }
-                Serial.println();
+              if (mfgDataLen >= 2) {  // Must have at least 2 bytes for ID
+                // Extract manufacturer ID (Little Endian format!)
+                uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
+                String manufacturerName = getManufacturerName(manufacturerId);
+            
+                Serial.print("🏭 Manufacturer ID: 0x");
+                Serial.print(manufacturerId, HEX);
+                Serial.print(" (");
+                Serial.print(manufacturerName);
+                Serial.println(")");
+            
+                // If you want to also print full manufacturer data:
+                //Serial.print("🏭 Full Manufacturer Data: ");
+                //for (int i = 0; i < mfgDataLen; i++) {
+                //  if (mfgData[i] < 16) Serial.print("0");
+                //  Serial.print(mfgData[i], HEX);
+                //}
+                //Serial.println();
               }
             }
 
@@ -245,6 +255,18 @@ void scanForDevices() {
   Serial.println("\n\n");
 
   isIdle = true;
+}
+
+
+String getManufacturerName(uint16_t manufacturerId) {
+  if (manufacturerId == 0x004C) return "Apple, Inc.";
+  if (manufacturerId == 0x0006) return "Microsoft Corporation";
+  if (manufacturerId == 0x000F) return "Broadcom Corporation";
+  if (manufacturerId == 0x0131) return "Google";
+  if (manufacturerId == 0x0075) return "Samsung Electronics Co.";
+  if (manufacturerId == 0x00E0) return "Nintendo Co., Ltd.";
+  // Add more manufacturer IDs here
+  return "Unknown Manufacturer";
 }
 
 
@@ -323,7 +345,7 @@ void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevi
       for (int i = 0; i < advServiceCount; i++) {
         String serviceUuid = peripheral.advertisedServiceUuid(i);
         String serviceName = getServiceName(serviceUuid);
-        dataFile.print("- UUID: ");
+        dataFile.print("UUID: ");
         dataFile.print(serviceUuid);
         dataFile.print(" (");
         dataFile.print(serviceName);
@@ -336,6 +358,40 @@ void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevi
         for (size_t i = 0; i < serviceUuids.size(); i++) {
           dataFile.print("Service UUID: ");
           dataFile.println(serviceUuids[i]);
+
+          dataFile.print("Device Address: ");
+          dataFile.println(address);
+      
+          if (localName.length() > 0) {
+            dataFile.print("Local Name: ");
+            dataFile.println(localName);
+          } else {
+            dataFile.println("Local Name: (no name)");
+          }
+      
+          // Manufacturer Data auslesen
+          if (peripheral.hasManufacturerData()) {
+            uint8_t mfgData[64];  // Buffer für Manufacturer Data (max 64 Bytes sollten reichen)
+            int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
+            if (mfgDataLen > 0) {
+              dataFile.print("Manufacturer Data: ");
+              for (int i = 0; i < mfgDataLen; i++) {
+                if (mfgData[i] < 16) dataFile.print("0");  // führende Null für schönere Darstellung
+                dataFile.print(mfgData[i], HEX);
+              }
+              dataFile.println();
+            }
+          }
+          
+          // RSSI hinzufügen
+          int rssi = peripheral.rssi();
+          dataFile.print("RSSI: ");
+          dataFile.println(rssi);
+                
+          float distance = pow(10, (-69 - rssi) / 20.0);
+          dataFile.print("📏 Distanz: ");
+          dataFile.print(distance, 2);
+          dataFile.println(" m");
         }
         dataFile.println("-------------------------------");
         dataFile.flush();  // Ensure data is written to the SD card
