@@ -121,14 +121,10 @@ void scanForDevices() {
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
-    String localName = peripheral.localName();
-    String address = peripheral.address();
-    int rssi = peripheral.rssi();
 
-    Serial.print("🔎 Adresse: ");
-    Serial.println(address);
-    Serial.print("📛 Local Name: ");
-    Serial.println(localName);
+    String localName = "";
+    String address = "";
+    int rssi = 0;
 
     // Check advertised Service UUIDs
     int advServiceCount = peripheral.advertisedServiceUuidCount();
@@ -137,6 +133,23 @@ void scanForDevices() {
         String serviceUuid = peripheral.advertisedServiceUuid(i);
         Serial.print("📦 Advertised Service UUID: ");
         Serial.println(serviceUuid);
+
+        localName = peripheral.localName();
+        address = peripheral.address();
+        rssi = peripheral.rssi();
+
+        Serial.print("🔎 Adresse: ");
+        Serial.println(address);
+        Serial.print("📛 Local Name: ");
+        Serial.println(localName);
+
+        Serial.print("📶 RSSI: ");
+        Serial.println(rssi);
+    
+        float distance = pow(10, (-69 - rssi) / 20.0);
+        Serial.print("📏 Distanz: ");
+        Serial.print(distance, 2);
+        Serial.println(" m");
       }
     } else {
       Serial.println("⚠ No Service UUIDs found in advertisement!");
@@ -152,16 +165,50 @@ void scanForDevices() {
 
           // Discovery and storage of UUIDs
           for (int i = 0; i < peripheral.serviceCount(); i++) {
+            localName = peripheral.localName();
+            address = peripheral.address();
+            rssi = peripheral.rssi();
+
             BLEService service = peripheral.service(i);
             String serviceUuid = service.uuid();  // Get the service UUID as a String
             serviceUuids.push_back(serviceUuid);  // Add UUID to vector
+            String serviceNames = getServiceName(serviceUuid);
             Serial.print("📦 Discovered Service UUID: ");
-            Serial.println(serviceUuid);
-          }
+            Serial.print(serviceUuid);
+            Serial.print(" (");
+            Serial.print(serviceNames);
+            Serial.println(")");
 
+            Serial.print("🔎 Adresse: ");
+            Serial.println(address);
+            Serial.print("📛 Local Name: ");
+            Serial.println(localName);
+
+            // Manufacturer Data auslesen
+            if (peripheral.hasManufacturerData()) {
+              uint8_t mfgData[64];  // Buffer für Manufacturer Data (max 64 Bytes sollten reichen)
+              int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
+              if (mfgDataLen > 0) {
+                Serial.print("🏭 Manufacturer Data: ");
+                for (int i = 0; i < mfgDataLen; i++) {
+                  if (mfgData[i] < 16) Serial.print("0");  // führende Null für schönere Darstellung
+                  Serial.print(mfgData[i], HEX);
+                }
+                Serial.println();
+              }
+            }
+
+            Serial.print("📶 RSSI: ");
+            Serial.println(rssi);
+        
+            float distance = pow(10, (-69 - rssi) / 20.0);
+            Serial.print("📏 Distanz: ");
+            Serial.print(distance, 2);
+            Serial.println(" m");
+            Serial.println("-------------------------------");
+          }
           // Write UUID and info to SD card if connected
           writeDeviceInfoToSD(address, localName, peripheral);
-          dataFile.println("-------------------------------");
 
         } else {
           Serial.println("❌ Attribute discovery failed.");
@@ -178,15 +225,7 @@ void scanForDevices() {
       }
     }
 
-    Serial.print("📶 RSSI: ");
-    Serial.println(rssi);
-
-    float distance = pow(10, (-69 - rssi) / 20.0);
-    Serial.print("📏 Distanz: ");
-    Serial.print(distance, 2);
-    Serial.println(" m");
-
-    Serial.println("-------------------------------");
+    Serial.println("###############################");
 
     // Check if it’s a target device
     if (isTargetDevice(localName, address, peripheral)) {
