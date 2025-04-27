@@ -26,7 +26,14 @@ void setup() {
   
   Serial.println("GhostBLE starting...");
 
-  M5.Lcd.setRotation(3);
+  #if defined(STICK_C_PLUS2)
+    M5.Lcd.setRotation(3);
+  #endif // STICK_C_PLUS2
+
+  #if defined(CARDPUTER)
+  M5.Lcd.setRotation(1);
+  #endif // STICK_C_PLUS2
+
   M5.Lcd.fillScreen(BLACK);
 
   // Set the face to Neutral at the start

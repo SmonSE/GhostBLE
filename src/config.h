@@ -1,5 +1,9 @@
 #pragma once
 
+
+//#define STICK_C_PLUS2
+#define CARDPUTER
+
 // Scan every X milliseconds (z.B. alle 5 Sekunden)
 #define SCAN_INTERVAL_MS 5000
 
