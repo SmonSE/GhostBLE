@@ -5,6 +5,8 @@
 #include "src/config.h"
 #include <SD.h>  // SD card library
 #include <SPI.h>  // SPI for SD card
+#include <TimeLib.h>  // Füge die TimeLib-Bibliothek hinzu
+
 
 unsigned long lastScanTime = 0;
 bool deviceFound = false;
@@ -21,7 +23,17 @@ Avatar avatar;
 
 File dataFile;  // Create a file object to store information on the SD card
 
+// Normaly at .h File C Style at the moment
 void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral);
+
+
+String getTimestamp() {
+  time_t currentTime = now();  // Holt den aktuellen Zeitpunkt
+  char timestamp[20];
+  // Formatierung des Zeitstempels
+  sprintf(timestamp, "%04d-%02d-%02d_%02d-%02d-%02d", year(currentTime), month(currentTime), day(currentTime), hour(currentTime), minute(currentTime), second(currentTime));
+  return String(timestamp);
+}
 
 
 void setup() {
@@ -66,7 +78,8 @@ void setup() {
   //dataFile = SD.open("/device_info.txt", FILE_APPEND);  // File wird fortlaufend geschrieben
 
   // Hier legt er ein neues File mit Zeitstempel an nach jedem Neustart!
-  String fileName = "/device_info_" + String(millis()) + ".txt";
+  String timestamp = getTimestamp();
+  String fileName = "/device_info_" + timestamp + ".txt";  // Beispiel: device_info_2025-04-27_14-35-10.txt
   dataFile = SD.open(fileName, FILE_WRITE);
 
   if (!dataFile) {
