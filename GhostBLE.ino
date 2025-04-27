@@ -5,8 +5,10 @@
 #include "src/config.h"
 #include <SD.h>  // SD card library
 #include <SPI.h>  // SPI for SD card
-#include <TimeLib.h>  // Füge die TimeLib-Bibliothek hinzu
+#include <vector>  // Include the vector header for dynamic arrays
 
+
+std::vector<String> serviceUuids;  // Dynamic array to store service UUIDs
 
 unsigned long lastScanTime = 0;
 bool deviceFound = false;
@@ -22,6 +24,7 @@ using namespace m5avatar;
 Avatar avatar;
 
 File dataFile;  // Create a file object to store information on the SD card
+
 
 // Normaly at .h File C Style at the moment
 void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral);
@@ -147,10 +150,13 @@ void scanForDevices() {
           avatar.setExpression(Expression::Happy);  // Display Doubt face when scanning
           delay(2000);
 
+          // Discovery and storage of UUIDs
           for (int i = 0; i < peripheral.serviceCount(); i++) {
             BLEService service = peripheral.service(i);
+            String serviceUuid = service.uuid();  // Get the service UUID as a String
+            serviceUuids.push_back(serviceUuid);  // Add UUID to vector
             Serial.print("📦 Discovered Service UUID: ");
-            Serial.println(service.uuid());
+            Serial.println(serviceUuid);
           }
 
           // Write UUID and info to SD card if connected
@@ -285,12 +291,26 @@ void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevi
         dataFile.println(")");
       }
     } else {
-      dataFile.println("Advertised Services: None");
+      // Write the discovered service UUIDs to the SD card
+      if (dataFile) {
+        dataFile.println("Discovered Services:");
+        for (size_t i = 0; i < serviceUuids.size(); i++) {
+          dataFile.print("Service UUID: ");
+          dataFile.println(serviceUuids[i]);
+        }
+        dataFile.println("-------------------------------");
+        dataFile.flush();  // Ensure data is written to the SD card
+        Serial.println("✅ Service UUIDs written to SD card.");
+        serviceUuids.clear();  // Löscht alle Elemente im Vektor
+      } else {
+        Serial.println("❌ Failed to write to SD card.");
+      }
     }
 
     dataFile.println("-------------------------------");
     dataFile.flush();  // 💾 WICHTIG: Sofort auf die SD Karte schreiben
     Serial.println("✅ Data written to SD card.");
+    serviceUuids.clear();  // Löscht alle Elemente im Vektor
   } else {
     Serial.println("❌ Failed to write to SD card.");
   }
