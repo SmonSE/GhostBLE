@@ -27,15 +27,6 @@ File dataFile;  // Create a file object to store information on the SD card
 void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral);
 
 
-String getTimestamp() {
-  time_t currentTime = now();  // Holt den aktuellen Zeitpunkt
-  char timestamp[20];
-  // Formatierung des Zeitstempels
-  sprintf(timestamp, "%04d-%02d-%02d_%02d-%02d-%02d", year(currentTime), month(currentTime), day(currentTime), hour(currentTime), minute(currentTime), second(currentTime));
-  return String(timestamp);
-}
-
-
 void setup() {
   M5.begin();
   Serial.begin(115200);  // <--- ADD THIS to open Serial Monitor
@@ -75,12 +66,7 @@ void setup() {
   Serial.println("SD card initialized.");
   
   // Open or create a file to store device info
-  //dataFile = SD.open("/device_info.txt", FILE_APPEND);  // File wird fortlaufend geschrieben
-
-  // Hier legt er ein neues File mit Zeitstempel an nach jedem Neustart!
-  String timestamp = getTimestamp();
-  String fileName = "/device_info_" + timestamp + ".txt";  // Beispiel: device_info_2025-04-27_14-35-10.txt
-  dataFile = SD.open(fileName, FILE_WRITE);
+  dataFile = SD.open("/device_info.txt", FILE_APPEND);  // File wird fortlaufend geschrieben
 
   if (!dataFile) {
     Serial.println("Error opening device_info.txt for writing.");
