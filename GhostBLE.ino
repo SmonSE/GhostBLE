@@ -21,6 +21,9 @@ Avatar avatar;
 
 File dataFile;  // Create a file object to store information on the SD card
 
+void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral);
+
+
 void setup() {
   M5.begin();
   Serial.begin(115200);  // <--- ADD THIS to open Serial Monitor
@@ -34,7 +37,7 @@ void setup() {
 
   #if defined(CARDPUTER)
   M5.Lcd.setRotation(1);
-  #endif // STICK_C_PLUS2
+  #endif // CARDPUTER
 
   M5.Lcd.fillScreen(BLACK);
 
@@ -50,11 +53,10 @@ void setup() {
     Serial.println("BLE initialization failed!");
     while (1);  // Halt the program if BLE fails to initialize
   }
-  Serial.println("BLE initialized successfully.");
-  delay(3000);
 
+  #if defined(CARDPUTER)
   // Initialize the SD card
-  if (!SD.begin()) {
+  if (!SD.begin(SD_CS_PIN)) {  // Replace SD_CS_PIN with the correct pin number
     Serial.println("SD card initialization failed!");
     while (1);  // Halt the program if SD initialization fails
   }
@@ -66,6 +68,11 @@ void setup() {
     Serial.println("Error opening device_info.txt for writing.");
     while (1);  // Halt the program if file opening fails
   }
+  Serial.println("device_info.txt opened successfully.");
+  #endif // CARDPUTER
+
+  Serial.println("BLE initialized successfully.");
+  delay(5000);
 }
 
 void loop() {
@@ -143,30 +150,21 @@ void scanForDevices() {
           }
 
           // Write UUID and info to SD card if connected
-          if (dataFile) {
-            dataFile.print("Device Address: ");
-            dataFile.println(address);
-            dataFile.print("Local Name: ");
-            dataFile.println(localName);
-            for (int i = 0; i < advServiceCount; i++) {
-              String serviceUuid = peripheral.advertisedServiceUuid(i);
-              dataFile.print("Advertised Service UUID: ");
-              dataFile.println(serviceUuid);
-            }
-            dataFile.println("-------------------------------");
-          }
+          writeDeviceInfoToSD(address, localName, peripheral);
+          dataFile.println("-------------------------------");
+
         } else {
           Serial.println("❌ Attribute discovery failed.");
           avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
-          delay(500);
+          delay(100);
         }
         peripheral.disconnect();
         avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
-        delay(500);
+        delay(100);
       } else {
         Serial.println("❌ Connection failed.");
         avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
-        delay(500);
+        delay(100);
       }
     }
 
@@ -199,6 +197,29 @@ void scanForDevices() {
 
   isIdle = true;
 }
+
+void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral) {
+  if (dataFile) {
+    dataFile.print("Device Address: ");
+    dataFile.println(address);
+    dataFile.print("Local Name: ");
+    dataFile.println(localName);
+
+    int advServiceCount = peripheral.advertisedServiceUuidCount();
+    for (int i = 0; i < advServiceCount; i++) {
+      String serviceUuid = peripheral.advertisedServiceUuid(i);
+      dataFile.print("Advertised Service UUID: ");
+      dataFile.println(serviceUuid);
+    }
+
+    dataFile.println("-------------------------------");
+    dataFile.flush();  // 💾 WICHTIG: Sofort auf die SD Karte schreiben
+    Serial.println("✅ Data written to SD card.");
+  } else {
+    Serial.println("❌ Failed to write to SD card.");
+  }
+}
+
 
 bool isTargetDevice(String name, String address, BLEDevice peripheral) {
   // Prüfe auf spezielle bekannte MAC-Adresse

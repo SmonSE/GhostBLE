@@ -1,6 +1,8 @@
 #pragma once
 
 
+#define SD_CS_PIN
+
 //#define STICK_C_PLUS2
 #define CARDPUTER
 
