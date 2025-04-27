@@ -63,7 +63,12 @@ void setup() {
   Serial.println("SD card initialized.");
   
   // Open or create a file to store device info
-  dataFile = SD.open("/device_info.txt", FILE_WRITE);
+  //dataFile = SD.open("/device_info.txt", FILE_APPEND);  // File wird fortlaufend geschrieben
+
+  // Hier legt er ein neues File mit Zeitstempel an nach jedem Neustart!
+  String fileName = "/device_info_" + String(millis()) + ".txt";
+  dataFile = SD.open(fileName, FILE_WRITE);
+
   if (!dataFile) {
     Serial.println("Error opening device_info.txt for writing.");
     while (1);  // Halt the program if file opening fails
@@ -203,6 +208,8 @@ void scanForDevices() {
 
 // Hilfsfunktion: UUID zu Service Name übersetzen
 String getServiceName(const String& uuid) {
+  if (uuid == "1800") return "Generic Access Service";
+  if (uuid == "1801") return "Generic Attribute Service";
   if (uuid == "180F") return "Battery Service";
   if (uuid == "180D") return "Heart Rate Service";
   if (uuid == "180A") return "Device Information Service";
