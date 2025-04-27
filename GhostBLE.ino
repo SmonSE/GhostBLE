@@ -1,8 +1,10 @@
-#include <M5StickCPlus2.h> // Important for the Plus 2!
+#include <M5StickCPlus2.h>  // Important for the Plus 2!
 #include <ArduinoBLE.h>
 #include <M5Unified.h>
 #include <Avatar.h>  // Ensure this is the correct path to your Avatar library
 #include "src/config.h"
+#include <SD.h>  // SD card library
+#include <SPI.h>  // SPI for SD card
 
 unsigned long lastScanTime = 0;
 bool deviceFound = false;
@@ -13,16 +15,16 @@ int left = -40;
 
 int targetFoundCount = 0; // <- Zähler für gefundene Geräte
 
-
 using namespace m5avatar;
 
 Avatar avatar;
 
+File dataFile;  // Create a file object to store information on the SD card
 
 void setup() {
   M5.begin();
-  Serial.begin(115200); // <--- ADD THIS to open Serial Monitor
-  delay(500);           // <--- Give Serial Monitor time to open
+  Serial.begin(115200);  // <--- ADD THIS to open Serial Monitor
+  delay(500);            // <--- Give Serial Monitor time to open
   
   Serial.println("GhostBLE starting...");
 
@@ -46,10 +48,24 @@ void setup() {
   if (!BLE.begin()) {
     M5.Lcd.println("Starting BLE failed!");
     Serial.println("BLE initialization failed!");
-    while (1); // Halt the program if BLE fails to initialize
+    while (1);  // Halt the program if BLE fails to initialize
   }
   Serial.println("BLE initialized successfully.");
   delay(3000);
+
+  // Initialize the SD card
+  if (!SD.begin()) {
+    Serial.println("SD card initialization failed!");
+    while (1);  // Halt the program if SD initialization fails
+  }
+  Serial.println("SD card initialized.");
+  
+  // Open or create a file to store device info
+  dataFile = SD.open("/device_info.txt", FILE_WRITE);
+  if (!dataFile) {
+    Serial.println("Error opening device_info.txt for writing.");
+    while (1);  // Halt the program if file opening fails
+  }
 }
 
 void loop() {
@@ -117,17 +133,40 @@ void scanForDevices() {
         if (peripheral.discoverAttributes()) {
           Serial.println("✅ Connected and discovered attributes!");
 
+          avatar.setExpression(Expression::Happy);  // Display Doubt face when scanning
+          delay(2000);
+
           for (int i = 0; i < peripheral.serviceCount(); i++) {
             BLEService service = peripheral.service(i);
             Serial.print("📦 Discovered Service UUID: ");
             Serial.println(service.uuid());
           }
+
+          // Write UUID and info to SD card if connected
+          if (dataFile) {
+            dataFile.print("Device Address: ");
+            dataFile.println(address);
+            dataFile.print("Local Name: ");
+            dataFile.println(localName);
+            for (int i = 0; i < advServiceCount; i++) {
+              String serviceUuid = peripheral.advertisedServiceUuid(i);
+              dataFile.print("Advertised Service UUID: ");
+              dataFile.println(serviceUuid);
+            }
+            dataFile.println("-------------------------------");
+          }
         } else {
           Serial.println("❌ Attribute discovery failed.");
+          avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+          delay(500);
         }
         peripheral.disconnect();
+        avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+        delay(500);
       } else {
         Serial.println("❌ Connection failed.");
+        avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+        delay(500);
       }
     }
 
@@ -160,8 +199,6 @@ void scanForDevices() {
 
   isIdle = true;
 }
-
-
 
 bool isTargetDevice(String name, String address, BLEDevice peripheral) {
   // Prüfe auf spezielle bekannte MAC-Adresse
