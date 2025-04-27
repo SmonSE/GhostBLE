@@ -198,18 +198,88 @@ void scanForDevices() {
   isIdle = true;
 }
 
+
+// MOVE DO SEPARAT CLASS FROM HERE TO
+
+// Hilfsfunktion: UUID zu Service Name übersetzen
+String getServiceName(const String& uuid) {
+  if (uuid == "180F") return "Battery Service";
+  if (uuid == "180D") return "Heart Rate Service";
+  if (uuid == "180A") return "Device Information Service";
+  if (uuid == "1802") return "Immediate Alert";
+  if (uuid == "1803") return "Link Loss";
+  if (uuid == "1804") return "Tx Power";
+  if (uuid == "1805") return "Current Time Service";
+  if (uuid == "1812") return "Human Interface Device (HID)";
+  if (uuid == "1809") return "Health Thermometer";
+  if (uuid == "1811") return "Alert Notification Service";
+  if (uuid == "1810") return "Blood Pressure";
+  // Weitere UUIDs kannst du einfach ergänzen
+  if (uuid == "1813") return "Glucose";
+  if (uuid == "1823") return "Running Speed and Cadence";
+  if (uuid == "1824") return "Cycling Speed and Cadence";
+  if (uuid == "1806") return "Scan Parameters";
+  if (uuid == "1815") return "Temperature Measurement";
+  if (uuid == "1816") return "Temperature Type";
+  if (uuid == "1825") return "Cycling Power";
+  if (uuid == "1826") return "Cycling Torque Measurement";
+  if (uuid == "1827") return "Cycling Torque Vector";
+  if (uuid == "1832") return "Barometric Pressure";
+  if (uuid == "1833") return "Air Quality";
+  if (uuid == "1834") return "Oxygen Saturation";
+  if (uuid == "1835") return "Pollen Data";
+  if (uuid == "1836") return "Personal Activity Monitoring";
+  if (uuid == "1837") return "Fitness Machine";
+  if (uuid == "1838") return "Health and Fitness Measurement";
+  return "Unknown Service";
+}
+
 void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral) {
   if (dataFile) {
     dataFile.print("Device Address: ");
     dataFile.println(address);
-    dataFile.print("Local Name: ");
-    dataFile.println(localName);
 
+    if (localName.length() > 0) {
+      dataFile.print("Local Name: ");
+      dataFile.println(localName);
+    } else {
+      dataFile.println("Local Name: (no name)");
+    }
+
+    // RSSI hinzufügen
+    int rssi = peripheral.rssi();
+    dataFile.print("RSSI: ");
+    dataFile.println(rssi);
+
+    // Manufacturer Data auslesen
+    if (peripheral.hasManufacturerData()) {
+      uint8_t mfgData[64];  // Buffer für Manufacturer Data (max 64 Bytes sollten reichen)
+      int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
+      if (mfgDataLen > 0) {
+        dataFile.print("Manufacturer Data: ");
+        for (int i = 0; i < mfgDataLen; i++) {
+          if (mfgData[i] < 16) dataFile.print("0");  // führende Null für schönere Darstellung
+          dataFile.print(mfgData[i], HEX);
+        }
+        dataFile.println();
+      }
+    }
+
+    // Advertised Services auflisten
     int advServiceCount = peripheral.advertisedServiceUuidCount();
-    for (int i = 0; i < advServiceCount; i++) {
-      String serviceUuid = peripheral.advertisedServiceUuid(i);
-      dataFile.print("Advertised Service UUID: ");
-      dataFile.println(serviceUuid);
+    if (advServiceCount > 0) {
+      dataFile.println("Advertised Services:");
+      for (int i = 0; i < advServiceCount; i++) {
+        String serviceUuid = peripheral.advertisedServiceUuid(i);
+        String serviceName = getServiceName(serviceUuid);
+        dataFile.print("- UUID: ");
+        dataFile.print(serviceUuid);
+        dataFile.print(" (");
+        dataFile.print(serviceName);
+        dataFile.println(")");
+      }
+    } else {
+      dataFile.println("Advertised Services: None");
     }
 
     dataFile.println("-------------------------------");
@@ -220,6 +290,7 @@ void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevi
   }
 }
 
+// TO HERE 
 
 bool isTargetDevice(String name, String address, BLEDevice peripheral) {
   // Prüfe auf spezielle bekannte MAC-Adresse
