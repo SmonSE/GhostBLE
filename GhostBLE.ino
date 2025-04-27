@@ -227,7 +227,7 @@ void scanForDevices() {
       }
     }
 
-    Serial.println("###############################");
+    Serial.println("###############################\n");
 
     // Check if it’s a target device
     if (isTargetDevice(localName, address, peripheral)) {
@@ -296,9 +296,9 @@ String getManufacturerName(uint16_t manufacturerId) {
 String getServiceName(const String& uuid) {
   if (uuid == "1800") return "Generic Access Service";
   if (uuid == "1801") return "Generic Attribute Service";
-  if (uuid == "180F") return "Battery Service";
-  if (uuid == "180D") return "Heart Rate Service";
-  if (uuid == "180A") return "Device Information Service";
+  if (uuid == "180f") return "Battery Service";
+  if (uuid == "180d") return "Heart Rate Service";
+  if (uuid == "180a") return "Device Information Service";
   if (uuid == "1802") return "Immediate Alert";
   if (uuid == "1803") return "Link Loss";
   if (uuid == "1804") return "Tx Power";
