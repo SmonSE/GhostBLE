@@ -158,20 +158,21 @@ void scanForDevices() {
 
 bool isTargetDevice(String name, String address, BLEDevice peripheral) {
   // Prüfe auf spezielle bekannte MAC-Adresse
-  if (address == "b0:81:84:96:a0:c9") {
-    Serial.println("🎯 Target erkannt über MAC!");
-    return true;
-  }
+  // Vielleicht wenn er eine auffällige MAC erkennt kann er sie zu der BAD Liste hinzufügen 
+  //if (address == "b0:81:84:96:a0:c9") {
+  //  Serial.println("🎯 Target erkannt über MAC!");
+  //  return true;
+  //}
 
   //Optionally: check for generic/empty names
   //Some Nemos might show no name or very generic names like "ESP32" or "N/A"
-  name.toLowerCase();
-  if (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") {
-    Serial.print("Detected Name: ");
-    Serial.println(name);
-    Serial.println("⚠ Detected device with generic or no name. Possible M5 HW?");
-    return true;
-  }
+  //name.toLowerCase();
+  //if (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") {
+  //  Serial.print("Detected Name: ");
+  //  Serial.println(name);
+  //  Serial.println("⚠ Detected device with generic or no name. Possible M5 HW?");
+  //  return true;
+  //}
 
   // Prüfe auf die spezielle Service UUID 128-bit
   int advServiceCount = peripheral.advertisedServiceUuidCount();
@@ -185,6 +186,7 @@ bool isTargetDevice(String name, String address, BLEDevice peripheral) {
         Serial.println("🎯 Target erkannt über spezielle 128-bit Service UUID!");
         return true;
       }
+      // Bruce Keyboard Hack
       if (serviceUuid == "1812") {
         Serial.println("🎯 Target erkannt über spezielle 16-bit Service UUID!");
         return true;
