@@ -10,27 +10,26 @@
 #include "src/helper/ManufacturerHelper.h"
 #include "src/helper/ServiceHelper.h"
 #include "src/helper/AvatarHelper.h"
+#include "src/sdCard/SDLogger.h"
 
 
+using namespace m5avatar;
+
+
+AvatarHelper avatarHelper;
+SDLogger sdLogger;
+
+
+File dataFile;  // Create a file object to store information on the SD card
 std::vector<String> serviceUuids;  // Dynamic array to store service UUIDs
 
 unsigned long lastScanTime = 0;
 bool deviceFound = false;
 unsigned long lastFaceUpdate = 0;
-bool isIdle = false;
+//bool isIdle = false;
 int top = -40;
 int left = -40;
 int targetFoundCount = 0; // <- Zähler für gefundene Geräte
-
-using namespace m5avatar;
-
-AvatarHelper avatarHelper;
-
-File dataFile;  // Create a file object to store information on the SD card
-
-
-// Normaly at .h File C Style at the moment
-void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral);
 
 
 void setup() {
@@ -53,7 +52,7 @@ void setup() {
   // Set the face to Neutral at the start
   avatarHelper.init(); // Initialize the avatar
   avatarHelper.setExpression(Expression::Neutral);
-  isIdle = true;
+  avatarHelper.setIdle(true);
 
   if (!BLE.begin()) {
     M5.Lcd.println("Starting BLE failed!");
@@ -62,22 +61,10 @@ void setup() {
   }
 
   #if defined(CARDPUTER)
-  // Initialize the SD card
-  if (!SD.begin(SD_CS_PIN)) {  // Replace SD_CS_PIN with the correct pin number
-    Serial.println("SD card initialization failed!");
-    while (1);  // Halt the program if SD initialization fails
+  if (!sdLogger.begin(SD_CS_PIN)) {
+    while (1);  // Halt if SD card init fails
   }
-  Serial.println("SD card initialized.");
-  
-  // Open or create a file to store device info
-  dataFile = SD.open("/device_info.txt", FILE_APPEND);  // File wird fortlaufend geschrieben
-
-  if (!dataFile) {
-    Serial.println("Error opening device_info.txt for writing.");
-    while (1);  // Halt the program if file opening fails
-  }
-  Serial.println("device_info.txt opened successfully.");
-  #endif // CARDPUTER
+  #endif  // CARDPUTER
 
   Serial.println("BLE initialized successfully.");
   delay(5000);
@@ -109,7 +96,7 @@ void loop() {
       BLE.stopScan();  // Stop scanning when face is angry
 
       delay(20000);
-      isIdle = true;
+      avatarHelper.setIdle(true);
       deviceFound = false;
   }
 }
@@ -210,7 +197,7 @@ void scanForDevices() {
             Serial.println("-------------------------------");
           }
           // Write UUID and info to SD card if connected
-          writeDeviceInfoToSD(address, localName, peripheral);
+          sdLogger.writeDeviceInfo(address, localName, peripheral, serviceUuids);
 
         } else {
           Serial.println("❌ Attribute discovery failed.");
@@ -234,7 +221,7 @@ void scanForDevices() {
       deviceFound = true;
       Serial.println("🎯 !!! Target device detected !!!");
       Serial.println("-------------------------------");
-      isIdle = false;
+      avatarHelper.setIdle(false);
 
       return;
     }
@@ -246,7 +233,7 @@ void scanForDevices() {
   Serial.println(targetFoundCount);
   Serial.println("\n\n");
 
-  isIdle = true;
+  avatarHelper.setIdle(true);
 }
 
 void writeDeviceInfoToSD(const String& address, const String& localName, BLEDevice& peripheral) {

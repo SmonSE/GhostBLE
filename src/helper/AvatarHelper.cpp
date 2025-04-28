@@ -10,6 +10,10 @@ bool AvatarHelper::isAvatarIdle() const {
     return isIdle;
 }
 
+void AvatarHelper::setIdle(bool idle) {
+    isIdle = idle;
+}
+
 void AvatarHelper::setExpression(Expression expression) {
     avatar.setExpression(expression);
 }
