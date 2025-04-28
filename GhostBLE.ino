@@ -143,6 +143,9 @@ void scanForDevices() {
               String manufacturerName = getManufacturerName(manufacturerId);
               manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
               Serial.println(manuInfo);
+            } else {
+              manuInfo = "Manufacturer ID: ";
+              Serial.println(manuInfo);
             }
           }
           
