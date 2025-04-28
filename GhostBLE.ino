@@ -149,18 +149,6 @@ void scanForDevices() {
             serviceUuids.push_back(serviceUuid);
             String serviceNames = getServiceName(serviceUuid);
 
-            // CHECK FOR TARGET
-            if (isTargetDevice(localName, address, serviceUuid)) {
-              deviceFound = true;
-              Serial.print("🎯 !!! Target ");
-              Serial.print(serviceUuid);
-              Serial.println(" detected !!!");
-              avatarHelper.setIdle(false);
-              return;
-            } else {
-              Serial.println("🙏 No Target device detected");
-            }
-
             Serial.print("📦 Discovered Service UUID: ");
             Serial.print(serviceUuid);
             Serial.print(" (");
@@ -194,8 +182,20 @@ void scanForDevices() {
             Serial.print("📏 Distanz: ");
             Serial.print(distance, 2);
             Serial.println(" m");
-          }
 
+
+            // CHECK FOR TARGET
+            if (isTargetDevice(localName, address, serviceUuid)) {
+              deviceFound = true;
+              Serial.print("🎯 !!! Target ");
+              Serial.print(serviceUuid);
+              Serial.println(" detected !!!");
+              avatarHelper.setIdle(false);
+              return;
+            } else {
+              Serial.println("🙏 No Target device detected");
+            }
+          }
           Serial.println("-------------------------------");
 
           sdLogger.writeDeviceInfo(address, localName, peripheral, serviceUuids);
