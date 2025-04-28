@@ -25,6 +25,8 @@ void AvatarHelper::init(int topOffset, int leftOffset, float scale) {
     avatar.setPosition(top, left);
     avatar.setScale(scale);
     avatar.setExpression(Expression::Neutral);
+    avatar.setMouthOpenRatio(0.1f); // mouth open
+
     lastFaceUpdate = millis();
 }
 

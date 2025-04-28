@@ -1,3 +1,5 @@
+https://github.com/stack-chan/m5stack-avatar/blob/master/docs/FaceCustomizationGuideline.md
+
 ./src/Avatar.cpp:void Avatar::setFace(Face *face) { this->face = face; }
 ./src/Avatar.cpp:void Avatar::addTask(TaskFunction_t f, const char *name,
 ./src/Avatar.cpp:void Avatar::init(int colorDepth) {
