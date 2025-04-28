@@ -141,11 +141,11 @@ void scanForDevices() {
             if (mfgDataLen >= 2) {
               uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
               String manufacturerName = getManufacturerName(manufacturerId);
-            
               manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
               Serial.println(manuInfo);
             }
           }
+          
           Serial.print("RSSI: ");
           Serial.println(rssi);
         
