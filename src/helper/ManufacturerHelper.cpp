@@ -35,7 +35,18 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x0195) return "OnePlus Electronics Corp.";
     if (manufacturerId == 0x0065) return "Garmin International, Inc.";   // 16-bit balue
     if (manufacturerId == 0xECB) return "JBL by Harman International";   // 12-bit value
+    // NEW
+    if (manufacturerId == 0x007F) return "Lenovo";
+    if (manufacturerId == 0x01A6) return "Realme Mobile Telecommunications";
+    if (manufacturerId == 0x01D6) return "Anker Innovations Limited";
+    if (manufacturerId == 0x01E3) return "Amazfit (Huami)";
+    if (manufacturerId == 0x01DC) return "Wyze Labs, Inc.";
+    if (manufacturerId == 0x00E7) return "Polar Electro Oy (Heart rate devices!)";
+    if (manufacturerId == 0x00C3) return "Bose Corporation"; // 0x00C3 is Bose, not Plantronics
+    if (manufacturerId == 0x00AF) return "Plantronics (now Poly)";
+    if (manufacturerId == 0x0030) return "Symbol Technologies (barcode scanners)";
     
     return "Unknown Manufacturer";
 }
+
   
