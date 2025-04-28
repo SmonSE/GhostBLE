@@ -33,7 +33,8 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x017C) return "Huawei Technologies Co., Ltd.";
     if (manufacturerId == 0x018B) return "vivo Mobile Communication Co., Ltd.";
     if (manufacturerId == 0x0195) return "OnePlus Electronics Corp.";
-    if (manufacturerId == 0x0065) return "Garmin International, Inc.";
+    if (manufacturerId == 0x0065) return "Garmin International, Inc.";   // 16-bit balue
+    if (manufacturerId == 0xECB) return "JBL by Harman International";   // 12-bit value
     
     return "Unknown Manufacturer";
 }
