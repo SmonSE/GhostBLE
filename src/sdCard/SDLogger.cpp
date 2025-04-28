@@ -31,7 +31,7 @@ bool SDLogger::begin(int csPin) {
     return true;
 }
 
-void SDLogger::writeDeviceInfo(const String& address, const String& localName, BLEDevice& peripheral, const std::vector<String>& serviceUuids) {
+void SDLogger::writeDeviceInfo(const String& address, const String& localName, const String& manuInfo, const String& targetMessage, const String& serviceInfo) {
     if (!initialized) {
         Serial.println("#SDLogger# SDLogger not initialized.");
         return;
@@ -39,7 +39,10 @@ void SDLogger::writeDeviceInfo(const String& address, const String& localName, B
 
     // Check if the file is open before writing
     if (dataFile) {
-        dataFile.print("Device Address: ");
+        // Discovered Service UUID: 
+        dataFile.println(serviceInfo);
+
+        dataFile.print("Address: ");
         dataFile.println(address);
 
         if (localName.length() > 0) {
@@ -49,38 +52,11 @@ void SDLogger::writeDeviceInfo(const String& address, const String& localName, B
             dataFile.println("Local Name: (no name)");
         }
 
-        int rssi = peripheral.rssi();
-        dataFile.print("RSSI: ");
-        dataFile.println(rssi);
+        //Manufacturer ID: 
+        dataFile.println(manuInfo);
 
-        if (peripheral.hasManufacturerData()) {
-            uint8_t mfgData[64];
-            int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
-            if (mfgDataLen > 0) {
-                dataFile.print("Manufacturer Data: ");
-                for (int i = 0; i < mfgDataLen; i++) {
-                    if (mfgData[i] < 16) dataFile.print("0");  // leading zero for better display
-                    dataFile.print(mfgData[i], HEX);
-                }
-                dataFile.println();
-            }
-        }
-
-        int advServiceCount = peripheral.advertisedServiceUuidCount();
-        if (advServiceCount > 0) {
-            dataFile.println("Advertised Services:");
-            for (int i = 0; i < advServiceCount; i++) {
-                String serviceUuid = peripheral.advertisedServiceUuid(i);
-                String serviceName = getServiceName(serviceUuid);
-                dataFile.print("UUID: ");
-                dataFile.print(serviceUuid);
-                dataFile.print(" (");
-                dataFile.print(serviceName);
-                dataFile.println(")");
-            }
-        } else {
-            dataFile.println("⚠ No advertised services found!");
-        }
+        // Target Message:
+        dataFile.println(targetMessage);
 
         dataFile.println("-------------------------------");
         dataFile.flush();  // Make sure the data is written to the card

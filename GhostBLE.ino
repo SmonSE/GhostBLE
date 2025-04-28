@@ -2,10 +2,10 @@
 #include <ArduinoBLE.h>
 #include <M5Unified.h>
 #include <Avatar.h>  // Ensure this is the correct path to your Avatar library
-#include "src/config.h"
 #include <SD.h>
 #include <SPI.h>
 #include <vector>
+#include "src/config/config.h"
 #include "src/helper/ManufacturerHelper.h"
 #include "src/helper/ServiceHelper.h"
 #include "src/helper/AvatarHelper.h"
@@ -94,13 +94,17 @@ void loop() {
 
 void scanForDevices() {
   deviceFound = false;
+  String manuInfo = "";
+  String targetMessage = "";
+  String serviceInfo = "";
+  String localName = "";
+  String address = "";
 
   BLE.scan();
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
-    String localName = "";
-    String address = "";
+
     int rssi = 0;
 
     Serial.println("🔗 Trying to connect for service discovery...");
@@ -122,15 +126,13 @@ void scanForDevices() {
           serviceUuids.push_back(serviceUuid);
           String serviceNames = getServiceName(serviceUuid);
 
-          Serial.print("📦 Discovered Service UUID: ");
-          Serial.print(serviceUuid);
-          Serial.print(" (");
-          Serial.print(serviceNames);
-          Serial.println(")");
+          serviceInfo = "Discovered Service UUID: " + serviceUuid + " (" + serviceNames + ")";
+          Serial.println(serviceInfo);
 
-          Serial.print("🔎 Adresse: ");
+          Serial.print("Adresse: ");
           Serial.println(address);
-          Serial.print("📛 Local Name: ");
+
+          Serial.print("Local Name: ");
           Serial.println(localName);
 
           if (peripheral.hasManufacturerData()) {
@@ -140,37 +142,33 @@ void scanForDevices() {
               uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
               String manufacturerName = getManufacturerName(manufacturerId);
             
-              Serial.print("🏭 Manufacturer ID: 0x");
-              Serial.print(manufacturerId, HEX);
-              Serial.print(" (");
-              Serial.print(manufacturerName);
-              Serial.println(")");
+              manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
+              Serial.println(manuInfo);
             }
           }
-          Serial.print("📶 RSSI: ");
+          Serial.print("RSSI: ");
           Serial.println(rssi);
         
           float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-          Serial.print("📏 Distanz: ");
+          Serial.print("Distanz: ");
           Serial.print(distance, 2);
           Serial.println(" m");
 
           // CHECK FOR TARGET
           if (isTargetDevice(localName, address, serviceUuid)) {
             deviceFound = true;
-            Serial.print("🎯 !!! Target ");
-            Serial.print(serviceUuid);
-            Serial.println(" detected !!!");
+            targetMessage = "Target Message: !!! Target detected !!!";
+            Serial.println(targetMessage);
             avatarHelper.setIdle(false);
             return;
           } else {
-            Serial.println("🙏 No Target device detected");
+            targetMessage = "Target Message: No Target detected";
+            Serial.println(targetMessage);
           }
+          Serial.println("-------------------------------");
+
+          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo);
         }
-        Serial.println("-------------------------------");
-
-        sdLogger.writeDeviceInfo(address, localName, peripheral, serviceUuids);
-
       } else {
         Serial.println("❌ Attribute discovery failed.");
         avatarHelper.setExpression(Expression::Sleepy);
