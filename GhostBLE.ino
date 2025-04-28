@@ -9,6 +9,7 @@
 
 #include "src/helper/ManufacturerHelper.h"
 #include "src/helper/ServiceHelper.h"
+#include "src/helper/AvatarHelper.h"
 
 
 std::vector<String> serviceUuids;  // Dynamic array to store service UUIDs
@@ -19,12 +20,11 @@ unsigned long lastFaceUpdate = 0;
 bool isIdle = false;
 int top = -40;
 int left = -40;
-
 int targetFoundCount = 0; // <- Zähler für gefundene Geräte
 
 using namespace m5avatar;
 
-Avatar avatar;
+AvatarHelper avatarHelper;
 
 File dataFile;  // Create a file object to store information on the SD card
 
@@ -51,10 +51,8 @@ void setup() {
   M5.Lcd.fillScreen(BLACK);
 
   // Set the face to Neutral at the start
-  avatar.init(); // Initialize the avatar
-  avatar.setPosition(top, left);
-  avatar.setScale(0.8f);  // Set smaller avatar size for the correct display size
-  avatar.setExpression(Expression::Neutral);
+  avatarHelper.init(); // Initialize the avatar
+  avatarHelper.setExpression(Expression::Neutral);
   isIdle = true;
 
   if (!BLE.begin()) {
@@ -87,28 +85,27 @@ void setup() {
 
 void loop() {
   M5.update();
+  avatarHelper.update();
 
   unsigned long currentTime = millis();
   
-  avatar.setPosition(top, left);
-
   // Update the face every second
   if (currentTime - lastFaceUpdate > 1000) {
-    if (isIdle) {
-      avatar.setExpression(Expression::Sleepy);  // Display sleepy face when idle
+    if (avatarHelper.isAvatarIdle()) {
+      avatarHelper.setExpression(Expression::Sleepy);  // Display sleepy face when idle
     } 
     lastFaceUpdate = currentTime;
   }
 
   // Check if it's time to scan
-  if (isIdle && !deviceFound) {
+  if (avatarHelper.isAvatarIdle() && !deviceFound) {
     if (currentTime - lastScanTime > SCAN_INTERVAL_MS) {
       scanForDevices();
       lastScanTime = currentTime;  // Update last scan timestamp
     }
   }
   else {
-      avatar.setExpression(Expression::Angry);  // Display angry face when scanning
+      avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
       BLE.stopScan();  // Stop scanning when face is angry
 
       delay(20000);
@@ -163,7 +160,7 @@ void scanForDevices() {
         if (peripheral.discoverAttributes()) {
           Serial.println("✅ Connected and discovered attributes!");
 
-          avatar.setExpression(Expression::Happy);  // Display Doubt face when scanning
+          avatarHelper.setExpression(Expression::Happy);  // Display Doubt face when scanning
           delay(2000);
 
           // Discovery and storage of UUIDs
@@ -217,15 +214,15 @@ void scanForDevices() {
 
         } else {
           Serial.println("❌ Attribute discovery failed.");
-          avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+          avatarHelper.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
           delay(100);
         }
         peripheral.disconnect();
-        avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+        avatarHelper.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
         delay(100);
       } else {
         Serial.println("❌ Connection failed.");
-        avatar.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+        avatarHelper.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
         delay(100);
       }
     }
