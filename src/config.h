@@ -1,6 +1,6 @@
 #pragma once
 
-
+// SD Card Pin
 #define SD_CS_PIN
 
 //#define STICK_C_PLUS2
