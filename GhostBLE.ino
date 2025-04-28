@@ -1,70 +1,63 @@
-#include <M5StickCPlus2.h>  // Important for the Plus 2!
+#include <M5StickCPlus2.h>
 #include <ArduinoBLE.h>
 #include <M5Unified.h>
 #include <Avatar.h>  // Ensure this is the correct path to your Avatar library
 #include "src/config.h"
-#include <SD.h>  // SD card library
-#include <SPI.h>  // SPI for SD card
-#include <vector>  // Include the vector header for dynamic arrays
-
+#include <SD.h>
+#include <SPI.h>
+#include <vector>
 #include "src/helper/ManufacturerHelper.h"
 #include "src/helper/ServiceHelper.h"
 #include "src/helper/AvatarHelper.h"
 #include "src/sdCard/SDLogger.h"
 
-
 using namespace m5avatar;
-
 
 AvatarHelper avatarHelper;
 SDLogger sdLogger;
 
-
-File dataFile;  // Create a file object to store information on the SD card
-std::vector<String> serviceUuids;  // Dynamic array to store service UUIDs
+File dataFile;
+std::vector<String> serviceUuids;
 
 unsigned long lastScanTime = 0;
 bool deviceFound = false;
 unsigned long lastFaceUpdate = 0;
-//bool isIdle = false;
 int top = -40;
 int left = -40;
-int targetFoundCount = 0; // <- Zähler für gefundene Geräte
-
+int targetFoundCount = 0;
 
 void setup() {
   M5.begin();
-  Serial.begin(115200);  // <--- ADD THIS to open Serial Monitor
-  delay(500);            // <--- Give Serial Monitor time to open
-  
+  Serial.begin(115200);
+  delay(500);
+
   Serial.println("GhostBLE starting...");
 
   #if defined(STICK_C_PLUS2)
     M5.Lcd.setRotation(3);
-  #endif // STICK_C_PLUS2
+  #endif
 
   #if defined(CARDPUTER)
   M5.Lcd.setRotation(1);
-  #endif // CARDPUTER
+  #endif
 
   M5.Lcd.fillScreen(BLACK);
 
-  // Set the face to Neutral at the start
-  avatarHelper.init(); // Initialize the avatar
+  avatarHelper.init();
   avatarHelper.setExpression(Expression::Neutral);
   avatarHelper.setIdle(true);
 
   if (!BLE.begin()) {
     M5.Lcd.println("Starting BLE failed!");
     Serial.println("BLE initialization failed!");
-    while (1);  // Halt the program if BLE fails to initialize
+    while (1);  // Halt the program if BLE fails
   }
 
   #if defined(CARDPUTER)
   if (!sdLogger.begin(SD_CS_PIN)) {
     while (1);  // Halt if SD card init fails
   }
-  #endif  // CARDPUTER
+  #endif
 
   Serial.println("BLE initialized successfully.");
   delay(5000);
@@ -75,51 +68,47 @@ void loop() {
   avatarHelper.update();
 
   unsigned long currentTime = millis();
-  
+
   // Update the face every second
-  if (currentTime - lastFaceUpdate > 1000) {
+  if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
     if (avatarHelper.isAvatarIdle()) {
       avatarHelper.setExpression(Expression::Sleepy);  // Display sleepy face when idle
     } 
     lastFaceUpdate = currentTime;
   }
 
-  // Check if it's time to scan
   if (avatarHelper.isAvatarIdle() && !deviceFound) {
     if (currentTime - lastScanTime > SCAN_INTERVAL_MS) {
       scanForDevices();
-      lastScanTime = currentTime;  // Update last scan timestamp
+      lastScanTime = currentTime;
     }
-  }
-  else {
-      avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
-      BLE.stopScan();  // Stop scanning when face is angry
+  } else {
+    avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
+    BLE.stopScan();
 
-      delay(20000);
-      avatarHelper.setIdle(true);
-      deviceFound = false;
+    delay(DEVICE_SCAN_TIMEOUT);
+    avatarHelper.setIdle(true);
+    deviceFound = false;
   }
 }
 
 void scanForDevices() {
   deviceFound = false;
 
-  BLE.scan();  // Start scanning
+  BLE.scan();
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
-
     String localName = "";
     String address = "";
     int rssi = 0;
 
-    // Check advertised Service UUIDs
     int advServiceCount = peripheral.advertisedServiceUuidCount();
     if (advServiceCount > 0) {
       for (int i = 0; i < advServiceCount; i++) {
-        String serviceUuid = peripheral.advertisedServiceUuid(i);
+        String advertisedUuid = peripheral.advertisedServiceUuid(i);
         Serial.print("📦 Advertised Service UUID: ");
-        Serial.println(serviceUuid);
+        Serial.println(advertisedUuid);
 
         localName = peripheral.localName();
         address = peripheral.address();
@@ -133,33 +122,45 @@ void scanForDevices() {
         Serial.print("📶 RSSI: ");
         Serial.println(rssi);
     
-        float distance = pow(10, (-69 - rssi) / 20.0);
+        float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
         Serial.print("📏 Distanz: ");
         Serial.print(distance, 2);
         Serial.println(" m");
+        Serial.println("-------------------------------");
       }
     } else {
       Serial.println("⚠ No Service UUIDs found in advertisement!");
 
-      // Try connecting to discover services
       Serial.println("🔗 Trying to connect for service discovery...");
       if (peripheral.connect()) {
         if (peripheral.discoverAttributes()) {
           Serial.println("✅ Connected and discovered attributes!");
 
-          avatarHelper.setExpression(Expression::Happy);  // Display Doubt face when scanning
+          avatarHelper.setExpression(Expression::Happy);
           delay(2000);
 
-          // Discovery and storage of UUIDs
           for (int i = 0; i < peripheral.serviceCount(); i++) {
             localName = peripheral.localName();
             address = peripheral.address();
             rssi = peripheral.rssi();
 
             BLEService service = peripheral.service(i);
-            String serviceUuid = service.uuid();  // Get the service UUID as a String
-            serviceUuids.push_back(serviceUuid);  // Add UUID to vector
+            String serviceUuid = service.uuid();
+            serviceUuids.push_back(serviceUuid);
             String serviceNames = getServiceName(serviceUuid);
+
+            // CHECK FOR TARGET
+            if (isTargetDevice(localName, address, serviceUuid)) {
+              deviceFound = true;
+              Serial.print("🎯 !!! Target ");
+              Serial.print(serviceUuid);
+              Serial.println(" detected !!!");
+              avatarHelper.setIdle(false);
+              return;
+            } else {
+              Serial.println("🙏 No Target device detected");
+            }
+
             Serial.print("📦 Discovered Service UUID: ");
             Serial.print(serviceUuid);
             Serial.print(" (");
@@ -174,8 +175,7 @@ void scanForDevices() {
             if (peripheral.hasManufacturerData()) {
               uint8_t mfgData[64];
               int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
-              if (mfgDataLen >= 2) {  // Must have at least 2 bytes for ID
-                // Extract manufacturer ID (Little Endian format!)
+              if (mfgDataLen >= 2) {
                 uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
                 String manufacturerName = getManufacturerName(manufacturerId);
             
@@ -190,41 +190,32 @@ void scanForDevices() {
             Serial.print("📶 RSSI: ");
             Serial.println(rssi);
         
-            float distance = pow(10, (-69 - rssi) / 20.0);
+            float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
             Serial.print("📏 Distanz: ");
             Serial.print(distance, 2);
             Serial.println(" m");
-            Serial.println("-------------------------------");
           }
-          // Write UUID and info to SD card if connected
+
+          Serial.println("-------------------------------");
+
           sdLogger.writeDeviceInfo(address, localName, peripheral, serviceUuids);
 
         } else {
           Serial.println("❌ Attribute discovery failed.");
-          avatarHelper.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+          avatarHelper.setExpression(Expression::Sleepy);
           delay(100);
         }
         peripheral.disconnect();
-        avatarHelper.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+        avatarHelper.setExpression(Expression::Sleepy);
         delay(100);
       } else {
         Serial.println("❌ Connection failed.");
-        avatarHelper.setExpression(Expression::Sleepy);  // Display Doubt face when scanning
+        avatarHelper.setExpression(Expression::Sleepy);
         delay(100);
       }
     }
 
     Serial.println("###############################\n");
-
-    // Check if it’s a target device
-    if (isTargetDevice(localName, address, peripheral)) {
-      deviceFound = true;
-      Serial.println("🎯 !!! Target device detected !!!");
-      Serial.println("-------------------------------");
-      avatarHelper.setIdle(false);
-
-      return;
-    }
 
     peripheral = BLE.available();
   }
@@ -236,17 +227,15 @@ void scanForDevices() {
   avatarHelper.setIdle(true);
 }
 
-bool isTargetDevice(String name, String address, BLEDevice peripheral) {
-  // Prüfe auf spezielle bekannte MAC-Adresse
-  // Vielleicht wenn er eine auffällige MAC erkennt kann er sie zu der BAD Liste hinzufügen 
+bool isTargetDevice(String name, String address, String serviceUuid) {
+
+  // Target detected via mac
   //if (address == "b0:81:84:96:a0:c9") {
   //  Serial.println("🎯 Target erkannt über MAC!");
   //  return true;
   //}
 
-  //Optionally: check for generic/empty names
-  //Some Nemos might show no name or very generic names like "ESP32" or "N/A"
-  //name.toLowerCase();
+  // Target detected via name
   //if (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") {
   //  Serial.print("Detected Name: ");
   //  Serial.println(name);
@@ -254,24 +243,16 @@ bool isTargetDevice(String name, String address, BLEDevice peripheral) {
   //  return true;
   //}
 
-  // Prüfe auf die spezielle Service UUID 128-bit
-  int advServiceCount = peripheral.advertisedServiceUuidCount();
-  if (advServiceCount > 0) {
-    for (int i = 0; i < advServiceCount; i++) {
-      String serviceUuid = peripheral.advertisedServiceUuid(i);
-      serviceUuid.toLowerCase();
-      //c198185c-3489-d1a7-9edd-beab2fdeb783  // NEMO
-      //00000020-5749-5448-0037-0024e4e9e46d  // WITHINGS Uhr HR 60
-      if (serviceUuid == "c198185c-3489-d1a7-9edd-beab2fdeb783") {
-        Serial.println("🎯 Target erkannt über spezielle 128-bit Service UUID!");
-        return true;
-      }
-      // Bruce Keyboard Hack
-      if (serviceUuid == "1812") {
-        Serial.println("🎯 Target erkannt über spezielle 16-bit Service UUID!");
-        return true;
-      }
-    }
+  // Target detected via service uuid 128-big
+  if (serviceUuid == TARGET_SERVICE_UUID) {
+    Serial.println("🎯 Target erkannt über spezielle 128-bit Service UUID!");
+    return true;
+  }
+
+  // Target detected via keyboard uuid 16-bit
+  if (serviceUuid == BRUCE_KEYBOARD_UUID) {
+    Serial.println("🎯 Target erkannt über spezielle 16-bit Service UUID!");
+    return true;
   }
 
   return false;

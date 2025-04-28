@@ -10,7 +10,7 @@ String getServiceName(const String& uuid) {
     if (uuid == "1803") return "Link Loss";
     if (uuid == "1804") return "Tx Power";
     if (uuid == "1805") return "Current Time Service";
-    if (uuid == "1812") return "Human Interface Device (HID)";
+    if (uuid == "1812") return "Human Interface Device (HID)";  // BRUCE KEYBOARD
     if (uuid == "1809") return "Health Thermometer";
     if (uuid == "1811") return "Alert Notification Service";
     if (uuid == "1810") return "Blood Pressure";
