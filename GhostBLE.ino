@@ -103,118 +103,87 @@ void scanForDevices() {
     String address = "";
     int rssi = 0;
 
-    int advServiceCount = peripheral.advertisedServiceUuidCount();
-    if (advServiceCount > 0) {
-      for (int i = 0; i < advServiceCount; i++) {
-        String advertisedUuid = peripheral.advertisedServiceUuid(i);
-        Serial.print("📦 Advertised Service UUID: ");
-        Serial.println(advertisedUuid);
+    Serial.println("🔗 Trying to connect for service discovery...");
+    if (peripheral.connect()) {
+      if (peripheral.discoverAttributes()) {
+        Serial.println("✅ Connected and discovered attributes!");
 
-        localName = peripheral.localName();
-        address = peripheral.address();
-        rssi = peripheral.rssi();
+        avatarHelper.setExpression(Expression::Happy);
+        delay(2000);
 
-        Serial.print("🔎 Adresse: ");
-        Serial.println(address);
-        Serial.print("📛 Local Name: ");
-        Serial.println(localName);
+        for (int i = 0; i < peripheral.serviceCount(); i++) {
+          targetFoundCount ++;
+          localName = peripheral.localName();
+          address = peripheral.address();
+          rssi = peripheral.rssi();
 
-        Serial.print("📶 RSSI: ");
-        Serial.println(rssi);
-    
-        float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-        Serial.print("📏 Distanz: ");
-        Serial.print(distance, 2);
-        Serial.println(" m");
-        Serial.println("-------------------------------");
-      }
-    } else {
-      Serial.println("⚠ No Service UUIDs found in advertisement!");
+          BLEService service = peripheral.service(i);
+          String serviceUuid = service.uuid();
+          serviceUuids.push_back(serviceUuid);
+          String serviceNames = getServiceName(serviceUuid);
 
-      Serial.println("🔗 Trying to connect for service discovery...");
-      if (peripheral.connect()) {
-        if (peripheral.discoverAttributes()) {
-          Serial.println("✅ Connected and discovered attributes!");
+          Serial.print("📦 Discovered Service UUID: ");
+          Serial.print(serviceUuid);
+          Serial.print(" (");
+          Serial.print(serviceNames);
+          Serial.println(")");
 
-          avatarHelper.setExpression(Expression::Happy);
-          delay(2000);
+          Serial.print("🔎 Adresse: ");
+          Serial.println(address);
+          Serial.print("📛 Local Name: ");
+          Serial.println(localName);
 
-          for (int i = 0; i < peripheral.serviceCount(); i++) {
-            localName = peripheral.localName();
-            address = peripheral.address();
-            rssi = peripheral.rssi();
-
-            BLEService service = peripheral.service(i);
-            String serviceUuid = service.uuid();
-            serviceUuids.push_back(serviceUuid);
-            String serviceNames = getServiceName(serviceUuid);
-
-            Serial.print("📦 Discovered Service UUID: ");
-            Serial.print(serviceUuid);
-            Serial.print(" (");
-            Serial.print(serviceNames);
-            Serial.println(")");
-
-            Serial.print("🔎 Adresse: ");
-            Serial.println(address);
-            Serial.print("📛 Local Name: ");
-            Serial.println(localName);
-
-            if (peripheral.hasManufacturerData()) {
-              uint8_t mfgData[64];
-              int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
-              if (mfgDataLen >= 2) {
-                uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
-                String manufacturerName = getManufacturerName(manufacturerId);
+          if (peripheral.hasManufacturerData()) {
+            uint8_t mfgData[64];
+            int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
+            if (mfgDataLen >= 2) {
+              uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
+              String manufacturerName = getManufacturerName(manufacturerId);
             
-                Serial.print("🏭 Manufacturer ID: 0x");
-                Serial.print(manufacturerId, HEX);
-                Serial.print(" (");
-                Serial.print(manufacturerName);
-                Serial.println(")");
-              }
-            }
-
-            Serial.print("📶 RSSI: ");
-            Serial.println(rssi);
-        
-            float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-            Serial.print("📏 Distanz: ");
-            Serial.print(distance, 2);
-            Serial.println(" m");
-
-
-            // CHECK FOR TARGET
-            if (isTargetDevice(localName, address, serviceUuid)) {
-              deviceFound = true;
-              Serial.print("🎯 !!! Target ");
-              Serial.print(serviceUuid);
-              Serial.println(" detected !!!");
-              avatarHelper.setIdle(false);
-              return;
-            } else {
-              Serial.println("🙏 No Target device detected");
+              Serial.print("🏭 Manufacturer ID: 0x");
+              Serial.print(manufacturerId, HEX);
+              Serial.print(" (");
+              Serial.print(manufacturerName);
+              Serial.println(")");
             }
           }
-          Serial.println("-------------------------------");
+          Serial.print("📶 RSSI: ");
+          Serial.println(rssi);
+        
+          float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
+          Serial.print("📏 Distanz: ");
+          Serial.print(distance, 2);
+          Serial.println(" m");
 
-          sdLogger.writeDeviceInfo(address, localName, peripheral, serviceUuids);
-
-        } else {
-          Serial.println("❌ Attribute discovery failed.");
-          avatarHelper.setExpression(Expression::Sleepy);
-          delay(100);
+          // CHECK FOR TARGET
+          if (isTargetDevice(localName, address, serviceUuid)) {
+            deviceFound = true;
+            Serial.print("🎯 !!! Target ");
+            Serial.print(serviceUuid);
+            Serial.println(" detected !!!");
+            avatarHelper.setIdle(false);
+            return;
+          } else {
+            Serial.println("🙏 No Target device detected");
+          }
         }
-        peripheral.disconnect();
-        avatarHelper.setExpression(Expression::Sleepy);
-        delay(100);
+        Serial.println("-------------------------------");
+
+        sdLogger.writeDeviceInfo(address, localName, peripheral, serviceUuids);
+
       } else {
-        Serial.println("❌ Connection failed.");
+        Serial.println("❌ Attribute discovery failed.");
         avatarHelper.setExpression(Expression::Sleepy);
         delay(100);
       }
+      peripheral.disconnect();
+      avatarHelper.setExpression(Expression::Sleepy);
+      delay(100);
+    } else {
+      Serial.println("❌ Connection failed.");
+      avatarHelper.setExpression(Expression::Sleepy);
+      delay(100);
     }
-
     Serial.println("###############################\n");
 
     peripheral = BLE.available();
