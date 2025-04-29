@@ -280,9 +280,17 @@ bool isTargetDevice(String name, String address, String serviceUuid, bool hasMan
     return true;
   }
 
-  // 4. Bruce via bekannte Keyboard-UUID
-  if (serviceUuid == BRUCE_KEYBOARD_UUID) {
-    Serial.println("🎯 Bruce erkannt über spezielle Keyboard UUID");
+  // 5. Flipper Zero UUIDs
+  if (serviceUuid == FLIPPER_BLACK_UUID) {
+    Serial.println("🐬 Flipper Zero detected (Black)");
+    return true;
+  }
+  if (serviceUuid == FLIPPER_WHITE_UUID) {
+    Serial.println("🐬 Flipper Zero detected (White)");
+    return true;
+  }
+  if (serviceUuid == FLIPPER_TRANSPARENT_UUID) {
+    Serial.println("🐬 Flipper Zero detected (Transparent)");
     return true;
   }
 
