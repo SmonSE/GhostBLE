@@ -204,58 +204,57 @@ void scanForDevices() {
   avatarHelper.setIdle(true);
 }
 
-bool isTargetDevice(String name, String address, String serviceUuid, bool hasManuData) {
 
+bool isTargetDevice(String name, String address, String serviceUuid, bool hasManuData) {
   // Target detected via mac
   //if (address == "b0:81:84:96:a0:c9") {
   //  Serial.println("🎯 Target erkannt über MAC!");
   //  return true;
   //}
 
-  // Target detected via name
-  //if (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") {
-  //  Serial.print("Detected Name: ");
-  //  Serial.println(name);
-  //  Serial.println("⚠ Detected device with generic or no name. Possible M5 HW?");
-  //  return true;
-  //}
+  // Beispiel: Konstante Services die typisch für Spam sind
+  const std::vector<String> suspiciousServiceUuids = {
+    "", 
+    "1bc68b2a-f3e3-11e9-81b4-2a2ae2dbcce4"   // From Bruce Common.cpp
+    "0000ffff-0000-1000-8000-00805f9b34fb",  // dummy UUID
+    "00001800-0000-1000-8000-00805f9b34fb",  // Generic Access
+    "00001801-0000-1000-8000-00805f9b34fb"   // Generic Attribute
+  };
 
-  // Bruce-Spam erkennen durch leere oder verdächtige Namen ohne echte Services
+  // 1. Bruce-Spam durch leeren/generischen Namen + generische Services
   if ((name == "n/a" || name == "<no name>" || name == "?" || name == "ESP32") &&
-    (serviceUuid == "" || serviceUuid == "0000ffff-0000-1000-8000-00805f9b34fb")) {
-
-    Serial.println("🎯 Target Bruce Spam erkannt (generisch + keine Services)");
+      std::find(suspiciousServiceUuids.begin(), suspiciousServiceUuids.end(), serviceUuid) != suspiciousServiceUuids.end()) {
+    Serial.println("🎯 Bruce Spam erkannt: leerer Name + generische UUID");
     return true;
   }
 
-  // BRUCE SPAM detected via suspicious name patterns
+  // 2. Bruce über verdächtige Namensmuster
   if (name.startsWith("Bruce") || 
-    name.indexOf("spam") != -1 || 
-    name.startsWith("Android_") || 
-    name.startsWith("Apple_")) {
-
-    Serial.print("🎯 Target BRUCE erkannt über Name: ");
+      name.indexOf("spam") != -1 || 
+      name.startsWith("Android_") || 
+      name.startsWith("Apple_")) {
+    Serial.print("🎯 Bruce erkannt über Namensmuster: ");
     Serial.println(name);
     return true;
   }
 
-  // CATHACK detected via service uuid 128-big
+  // 3. CATHACK-Signatur
   if ((serviceUuid == CATHACK_SERVICE_UUID_5 ||
-      serviceUuid == CATHACK_SERVICE_UUID_6) && 
-      (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") ) {
-
-      Serial.println("🎯 Target CATHACK erkannt über spezielle 16-bit Service UUID + NAME!");
+       serviceUuid == CATHACK_SERVICE_UUID_6) && 
+       (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
+    Serial.println("🎯 CATHACK erkannt (UUID + generischer Name)");
     return true;
   }
-  
-  // Target detected via keyboard uuid 16-bit
+
+  // 4. Bruce via bekannte Keyboard-UUID
   if (serviceUuid == BRUCE_KEYBOARD_UUID) {
-    Serial.println("🎯 Target erkannt über spezielle 16-bit Service UUID!");
+    Serial.println("🎯 Bruce erkannt über spezielle Keyboard UUID");
     return true;
   }
 
   return false;
 }
+
 
 void showHappyExpressionTask(void* parameter) {
   isHappyTaskRunning = true;
