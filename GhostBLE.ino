@@ -22,9 +22,8 @@ std::vector<String> serviceUuids;
 unsigned long lastScanTime = 0;
 bool deviceFound = false;
 unsigned long lastFaceUpdate = 0;
-int top = -40;
-int left = -40;
 int targetFoundCount = 0;
+bool isHappyTaskRunning = false;
 
 void setup() {
   M5.begin();
@@ -94,6 +93,7 @@ void loop() {
 
 void scanForDevices() {
   deviceFound = false;
+  bool hasManuData = false;
   String manuInfo = "";
   String targetMessage = "";
   String serviceInfo = "";
@@ -104,19 +104,28 @@ void scanForDevices() {
   BLEDevice peripheral = BLE.available();
 
   while (peripheral) {
-
     int rssi = 0;
 
     Serial.println("🔗 Trying to connect for service discovery...");
+
     if (peripheral.connect()) {
       if (peripheral.discoverAttributes()) {
         Serial.println("✅ Connected and discovered attributes!");
 
-        avatarHelper.setExpression(Expression::Happy);
-        delay(2000);
+        // Task for Happy Face
+        if (!isHappyTaskRunning) {
+          xTaskCreate(
+            showHappyExpressionTask,
+            "HappyFace",
+            2048,
+            NULL,
+            1,
+            NULL
+          );
+        }
+        targetFoundCount ++;
 
         for (int i = 0; i < peripheral.serviceCount(); i++) {
-          targetFoundCount ++;
           localName = peripheral.localName();
           address = peripheral.address();
           rssi = peripheral.rssi();
@@ -136,6 +145,7 @@ void scanForDevices() {
           Serial.println(localName);
 
           if (peripheral.hasManufacturerData()) {
+            hasManuData = true;
             uint8_t mfgData[64];
             int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
             if (mfgDataLen >= 2) {
@@ -144,6 +154,7 @@ void scanForDevices() {
               manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
               Serial.println(manuInfo);
             } else {
+              hasManuData = false;
               manuInfo = "Manufacturer ID: ";
               Serial.println(manuInfo);
             }
@@ -158,7 +169,7 @@ void scanForDevices() {
           Serial.println(" m");
 
           // CHECK FOR TARGET
-          if (isTargetDevice(localName, address, serviceUuid)) {
+          if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
             deviceFound = true;
             targetMessage = "Target Message: !!! Target detected !!!";
             Serial.println(targetMessage);
@@ -174,21 +185,17 @@ void scanForDevices() {
         }
       } else {
         Serial.println("❌ Attribute discovery failed.");
-        avatarHelper.setExpression(Expression::Sleepy);
-        delay(100);
       }
       peripheral.disconnect();
-      avatarHelper.setExpression(Expression::Sleepy);
-      delay(100);
     } else {
       Serial.println("❌ Connection failed.");
-      avatarHelper.setExpression(Expression::Sleepy);
-      delay(100);
     }
     Serial.println("###############################\n");
 
     peripheral = BLE.available();
   }
+
+  avatarHelper.setExpression(Expression::Sleepy);
 
   Serial.print("# Hits: ");
   Serial.println(targetFoundCount);
@@ -197,7 +204,7 @@ void scanForDevices() {
   avatarHelper.setIdle(true);
 }
 
-bool isTargetDevice(String name, String address, String serviceUuid) {
+bool isTargetDevice(String name, String address, String serviceUuid, bool hasManuData) {
 
   // Target detected via mac
   //if (address == "b0:81:84:96:a0:c9") {
@@ -213,12 +220,15 @@ bool isTargetDevice(String name, String address, String serviceUuid) {
   //  return true;
   //}
 
-  // Target detected via service uuid 128-big
-  if (serviceUuid == TARGET_SERVICE_UUID) {
-    Serial.println("🎯 Target erkannt über spezielle 128-bit Service UUID!");
+  // CATHACK detected via service uuid 128-big
+  if ((serviceUuid == CATHACK_SERVICE_UUID_5 ||
+      serviceUuid == CATHACK_SERVICE_UUID_6) && 
+      (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0") ) {
+
+      Serial.println("🎯 Target CATHACK erkannt über spezielle 16-bit Service UUID + NAME!");
     return true;
   }
-
+  
   // Target detected via keyboard uuid 16-bit
   if (serviceUuid == BRUCE_KEYBOARD_UUID) {
     Serial.println("🎯 Target erkannt über spezielle 16-bit Service UUID!");
@@ -226,4 +236,13 @@ bool isTargetDevice(String name, String address, String serviceUuid) {
   }
 
   return false;
+}
+
+void showHappyExpressionTask(void* parameter) {
+  isHappyTaskRunning = true;
+  avatarHelper.setExpression(Expression::Happy);
+  vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+  avatarHelper.setExpression(Expression::Sleepy);
+  isHappyTaskRunning = false;
+  vTaskDelete(NULL);  // Task selbst beenden
 }
