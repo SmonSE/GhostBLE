@@ -246,51 +246,31 @@ bool isTargetDevice(String name, String address, String serviceUuid, bool hasMan
   //  return true;
   //}
 
-  // Beispiel: Konstante Services die typisch für Spam sind
-  const std::vector<String> suspiciousServiceUuids = {
-    "", 
-    "1bc68b2a-f3e3-11e9-81b4-2a2ae2dbcce4"   // From Bruce Common.cpp
-    "0000ffff-0000-1000-8000-00805f9b34fb",  // dummy UUID
-    "00001800-0000-1000-8000-00805f9b34fb",  // Generic Access
-    "00001801-0000-1000-8000-00805f9b34fb"   // Generic Attribute
-  };
-
-  // 1. Bruce-Spam durch leeren/generischen Namen + generische Services
-  if ((name == "n/a" || name == "<no name>" || name == "?" || name == "ESP32") &&
-      std::find(suspiciousServiceUuids.begin(), suspiciousServiceUuids.end(), serviceUuid) != suspiciousServiceUuids.end()) {
-    Serial.println("🎯 Bruce Spam erkannt: leerer Name + generische UUID");
+  // 1. BRUCE FIRMWARE UUIDs
+  if (serviceUuid == BRUCE_SERVICE_UUID_0) {
+    Serial.println("🎯 Device with BRUCE Firmware detected");
     return true;
   }
 
-  // 2. Bruce über verdächtige Namensmuster
-  if (name.startsWith("Bruce") || 
-      name.indexOf("spam") != -1 || 
-      name.startsWith("Android_") || 
-      name.startsWith("Apple_")) {
-    Serial.print("🎯 Bruce erkannt über Namensmuster: ");
-    Serial.println(name);
-    return true;
-  }
-
-  // 3. CATHACK-Signatur
+  // 2. CATHACK-Signatur
   if ((serviceUuid == CATHACK_SERVICE_UUID_5 ||
        serviceUuid == CATHACK_SERVICE_UUID_6) && 
        (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
-    Serial.println("🎯 CATHACK erkannt (UUID + generischer Name)");
+    Serial.println("🎯 Device with CATHACK Firmware detected");
     return true;
   }
 
-  // 5. Flipper Zero UUIDs
+  // 3. FLIPPER ZERO UUIDs
   if (serviceUuid == FLIPPER_BLACK_UUID) {
-    Serial.println("🐬 Flipper Zero detected (Black)");
+    Serial.println("🐬 FLIPPER ZERO detected (Black)");
     return true;
   }
   if (serviceUuid == FLIPPER_WHITE_UUID) {
-    Serial.println("🐬 Flipper Zero detected (White)");
+    Serial.println("🐬 FLIPPER ZERO detected (White)");
     return true;
   }
   if (serviceUuid == FLIPPER_TRANSPARENT_UUID) {
-    Serial.println("🐬 Flipper Zero detected (Transparent)");
+    Serial.println("🐬 FLIPPER ZERO detected (Transparent)");
     return true;
   }
 
