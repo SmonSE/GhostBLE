@@ -220,6 +220,25 @@ bool isTargetDevice(String name, String address, String serviceUuid, bool hasMan
   //  return true;
   //}
 
+  // Bruce-Spam erkennen durch leere oder verdächtige Namen ohne echte Services
+  if ((name == "n/a" || name == "<no name>" || name == "?" || name == "ESP32") &&
+    (serviceUuid == "" || serviceUuid == "0000ffff-0000-1000-8000-00805f9b34fb")) {
+
+    Serial.println("🎯 Target Bruce Spam erkannt (generisch + keine Services)");
+    return true;
+  }
+
+  // BRUCE SPAM detected via suspicious name patterns
+  if (name.startsWith("Bruce") || 
+    name.indexOf("spam") != -1 || 
+    name.startsWith("Android_") || 
+    name.startsWith("Apple_")) {
+
+    Serial.print("🎯 Target BRUCE erkannt über Name: ");
+    Serial.println(name);
+    return true;
+  }
+
   // CATHACK detected via service uuid 128-big
   if ((serviceUuid == CATHACK_SERVICE_UUID_5 ||
       serviceUuid == CATHACK_SERVICE_UUID_6) && 

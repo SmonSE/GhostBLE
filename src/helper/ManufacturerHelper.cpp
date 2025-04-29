@@ -40,6 +40,7 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x1E3) return "Amazfit (Huami)";
     if (manufacturerId == 0x1DC) return "Wyze Labs, Inc.";
     if (manufacturerId == 0xE7) return "Polar Electro Oy (Heart rate devices!)";
+    if (manufacturerId == 0x6b) return "Polar Electro Oy";
     if (manufacturerId == 0xC3) return "Bose Corporation"; 
     if (manufacturerId == 0xAF) return "Plantronics (now Poly)";
     if (manufacturerId == 0x30) return "Symbol Technologies (barcode scanners)";
