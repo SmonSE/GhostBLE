@@ -125,6 +125,40 @@ void scanForDevices() {
         }
         targetFoundCount ++;
 
+        // Extract Device Information Service (0x180A) if available
+        BLEService deviceInfoService = peripheral.service("180A");
+        if (deviceInfoService) {
+          Serial.println("📦 Device Information Service found (0x180A)");
+
+          // Common characteristics in 0x180A
+          const char* deviceChars[] = {
+            "2A29", // Manufacturer Name String
+            "2A24", // Model Number String
+            "2A25", // Serial Number String
+            "2A27", // Hardware Revision String
+            "2A26", // Firmware Revision String
+            "2A28", // Software Revision String
+          };
+
+          for (int i = 0; i < 6; i++) {
+            BLECharacteristic c = deviceInfoService.characteristic(deviceChars[i]);
+            if (c && c.canRead()) {
+              int len = c.valueLength();
+              if (len > 0) {
+                uint8_t buffer[len];
+                c.readValue(buffer, len);
+                String val = "";
+                for (int k = 0; k < len; k++) {
+                  val += String((char)buffer[k]);
+                }
+                Serial.print("    Value: ");
+                Serial.println(val);
+              }
+            }
+          }
+        }
+
+        // Service UUIDs
         for (int i = 0; i < peripheral.serviceCount(); i++) {
           localName = peripheral.localName();
           address = peripheral.address();
