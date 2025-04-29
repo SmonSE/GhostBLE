@@ -128,7 +128,7 @@ void scanForDevices() {
         // Extract Device Information Service (0x180A) if available
         BLEService deviceInfoService = peripheral.service("180A");
         if (deviceInfoService) {
-          Serial.println("📦 Device Information Service found (0x180A)");
+          Serial.println("Device Information Service found (0x180A)");
 
           // Common characteristics in 0x180A
           const char* deviceChars[] = {
