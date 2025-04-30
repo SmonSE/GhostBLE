@@ -9,7 +9,7 @@ class SDLogger {
 public:
     SDLogger();
     bool begin(int csPin = -1); // Optional: provide CS pin
-    void writeDeviceInfo(const String& address, const String& localName, const String& manuInfo, const String& targetMessage, const String& serviceInfo);
+    void writeDeviceInfo(const String& address, const String& localName, const String& manuInfo, const String& targetMessage, const String& serviceInfo, const String& deviceInfoString);
 
 private:
     File dataFile;

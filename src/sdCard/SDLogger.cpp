@@ -31,7 +31,7 @@ bool SDLogger::begin(int csPin) {
     return true;
 }
 
-void SDLogger::writeDeviceInfo(const String& address, const String& localName, const String& manuInfo, const String& targetMessage, const String& serviceInfo) {
+void SDLogger::writeDeviceInfo(const String& address, const String& localName, const String& manuInfo, const String& targetMessage, const String& serviceInfo, const String& deviceInfoString) {
     if (!initialized) {
         Serial.println("#SDLogger# SDLogger not initialized.");
         return;
@@ -51,6 +51,9 @@ void SDLogger::writeDeviceInfo(const String& address, const String& localName, c
         } else {
             dataFile.println("Local Name: (no name)");
         }
+
+        //Device Info String: 
+        dataFile.println(deviceInfoString);
 
         //Manufacturer ID: 
         dataFile.println(manuInfo);

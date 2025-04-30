@@ -99,7 +99,8 @@ void scanForDevices() {
   String serviceInfo = "";
   String localName = "";
   String address = "";
-  String serviceUuid = "";
+  String deviceInfoString = "";
+
 
   BLE.scan();
   BLEDevice peripheral = BLE.available();
@@ -126,16 +127,19 @@ void scanForDevices() {
         if (deviceInfoService) {
           Serial.println("Device Information Service found (0x180A)");
           const char* deviceChars[] = {"2A29", "2A24", "2A25", "2A27", "2A26", "2A28"};
+          const char* charNames[]   = {"Manufacturer Name", "Model Number", "Serial Number", "Hardware Revision", "Firmware Revision", "Software Revision"};
+
           for (int i = 0; i < 6; i++) {
             BLECharacteristic c = deviceInfoService.characteristic(deviceChars[i]);
             if (c && c.canRead()) {
-              uint8_t buffer[32];  // ausreichend groß
+              uint8_t buffer[32];
               int len = c.readValue(buffer, sizeof(buffer));
               if (len > 0) {
                 String val = "";
                 for (int k = 0; k < len; k++) {
                   val += (char)buffer[k];
                 }
+                deviceInfoString += String(charNames[i]) + ": " + val + "\n";
                 Serial.print("  Value: ");
                 Serial.println(val);
               } 
@@ -203,7 +207,8 @@ void scanForDevices() {
 
         // Only write if not skipped 
         if (!skipLogging) {
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo);
+          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo, deviceInfoString);
+          deviceInfoString = ""; // delete for next scan
         } else {
           Serial.println("Skip logging.");
         }
