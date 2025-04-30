@@ -34,3 +34,26 @@
 // Other Constants (e.g., for calculations)
 #define RSSI_CONSTANT 20
 #define DISTANCE_CONSTANT -69
+
+
+const bool ENABLE_MANUFACTURER_FILTER = true;
+
+// Ignore Manufacurer-ID's to store to SD Card
+const uint16_t IGNORED_MANUFACTURERS[] = {
+    0x004C, // Apple
+    //0x0006, // Microsoft
+    //0x0075  // Samsung
+};
+  
+const size_t IGNORED_MANUFACTURER_COUNT = sizeof(IGNORED_MANUFACTURERS) / sizeof(IGNORED_MANUFACTURERS[0]);
+
+inline bool isIgnoredManufacturer(uint16_t id) {
+    if (!ENABLE_MANUFACTURER_FILTER) return false;
+  
+    for (size_t i = 0; i < IGNORED_MANUFACTURER_COUNT; ++i) {
+      if (IGNORED_MANUFACTURERS[i] == id) {
+        return true;
+      }
+    }
+    return false;
+}

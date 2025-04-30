@@ -112,53 +112,32 @@ void scanForDevices() {
       if (peripheral.discoverAttributes()) {
         Serial.println("✅ Connected and discovered attributes!");
 
-        // Task for Happy Face
         if (!isHappyTaskRunning) {
-          xTaskCreate(
-            showHappyExpressionTask,
-            "HappyFace",
-            2048,
-            NULL,
-            1,
-            NULL
-          );
+          xTaskCreate(showHappyExpressionTask, "HappyFace", 2048, NULL, 1, NULL);
         }
-        targetFoundCount ++;
+        targetFoundCount++;
 
-        // Extract Device Information Service (0x180A) if available
         BLEService deviceInfoService = peripheral.service("180A");
         if (deviceInfoService) {
           Serial.println("Device Information Service found (0x180A)");
-
-          // Common characteristics in 0x180A
-          const char* deviceChars[] = {
-            "2A29", // Manufacturer Name String
-            "2A24", // Model Number String
-            "2A25", // Serial Number String
-            "2A27", // Hardware Revision String
-            "2A26", // Firmware Revision String
-            "2A28", // Software Revision String
-          };
-
+          const char* deviceChars[] = {"2A29", "2A24", "2A25", "2A27", "2A26", "2A28"};
           for (int i = 0; i < 6; i++) {
             BLECharacteristic c = deviceInfoService.characteristic(deviceChars[i]);
             if (c && c.canRead()) {
-              int len = c.valueLength();
+              uint8_t buffer[64];  // ausreichend groß
+              int len = c.readValue(buffer, sizeof(buffer));
               if (len > 0) {
-                uint8_t buffer[len];
-                c.readValue(buffer, len);
                 String val = "";
                 for (int k = 0; k < len; k++) {
-                  val += String((char)buffer[k]);
+                  val += (char)buffer[k];
                 }
                 Serial.print("    Value: ");
                 Serial.println(val);
-              }
-            }
+              } 
+            } 
           }
         }
 
-        // Service UUIDs
         for (int i = 0; i < peripheral.serviceCount(); i++) {
           localName = peripheral.localName();
           address = peripheral.address();
@@ -178,6 +157,8 @@ void scanForDevices() {
           Serial.print("Local Name: ");
           Serial.println(localName);
 
+          // Filterlogik: Herstellerdaten prüfen
+          bool skipLogging = false;
           if (peripheral.hasManufacturerData()) {
             hasManuData = true;
             uint8_t mfgData[64];
@@ -187,16 +168,20 @@ void scanForDevices() {
               String manufacturerName = getManufacturerName(manufacturerId);
               manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
               Serial.println(manuInfo);
+
+              if (isIgnoredManufacturer(manufacturerId)) {
+                Serial.println("🔕 Bekannter Hersteller – Gerät wird ignoriert.");
+                skipLogging = true;
+              }
             } else {
               hasManuData = false;
               manuInfo = "Manufacturer ID: ";
               Serial.println(manuInfo);
             }
           }
-          
+
           Serial.print("RSSI: ");
           Serial.println(rssi);
-        
           float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
           Serial.print("Distanz: ");
           Serial.print(distance, 2);
@@ -215,7 +200,12 @@ void scanForDevices() {
           }
           Serial.println("-------------------------------");
 
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo);
+          // Only write if not skipped 
+          if (!skipLogging) {
+            sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo);
+          } else {
+            Serial.println("Skip logging.");
+          }
         }
       } else {
         Serial.println("❌ Attribute discovery failed.");
