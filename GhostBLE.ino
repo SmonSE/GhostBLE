@@ -108,7 +108,7 @@ void scanForDevices() {
     int rssi = 0;
 
     Serial.println("🔗 Trying to connect for service discovery...");
-
+    delay(500);
     if (peripheral.connect()) {
       if (peripheral.discoverAttributes()) {
         Serial.println("✅ Connected and discovered attributes!");
@@ -207,12 +207,13 @@ void scanForDevices() {
         } else {
           Serial.println("Skip logging.");
         }
+
       } else {
-        Serial.println("❌ Attribute discovery failed.");
+        Serial.println("Attribute discovery failed.");
       }
       peripheral.disconnect();
     } else {
-      Serial.println("❌ Connection failed.");
+      Serial.println("Connection failed.");
     }
     Serial.println("###############################\n");
 
