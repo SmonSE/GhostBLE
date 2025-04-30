@@ -237,9 +237,9 @@ bool isTargetDevice(String name, String address, String serviceUuid, bool hasMan
   //  return true;
   //}
 
-  // 1. BRUCE FIRMWARE UUIDs
-  if (serviceUuid == BRUCE_SERVICE_UUID_0) {
-    Serial.println("🎯 Device with BRUCE Firmware detected");
+  // 1. LIGHTBLUE APP UUIDs
+  if (serviceUuid == LIGHTBLUE_APP_SERVICE_UUID) {
+    Serial.println("🎯 Device with LIGHT BLUE APP detected");
     return true;
   }
 
