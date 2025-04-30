@@ -148,7 +148,7 @@ void scanForDevices() {
           serviceUuids.push_back(serviceUuid);
           String serviceNames = getServiceName(serviceUuid);
 
-          serviceInfo = "Discovered Service UUID: " + serviceUuid + " (" + serviceNames + ")";
+          serviceInfo = "Service UUID: " + serviceUuid + " (" + serviceNames + ")";
           Serial.println(serviceInfo);
 
           Serial.print("Adresse: ");
