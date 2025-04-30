@@ -175,7 +175,7 @@ void scanForDevices() {
           BLEService service = peripheral.service(i);
           strncpy(serviceUuid, service.uuid(), sizeof(serviceUuid));
           serviceUuid[sizeof(serviceUuid) - 1] = '\0';
-          serviceInfo = "Service UUID: " + serviceUuid + " (" + serviceNames + ")";
+          //serviceInfo = "Service UUID: " + serviceUuid + " (" + serviceNames + ")";
           //Serial.println(serviceInfo);
         }
 
