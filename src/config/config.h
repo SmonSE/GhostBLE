@@ -36,7 +36,7 @@
 #define DISTANCE_CONSTANT -69
 
 
-const bool ENABLE_MANUFACTURER_FILTER = true;
+const bool ENABLE_MANUFACTURER_FILTER = false;
 
 // Ignore Manufacurer-ID's to store to SD Card
 const uint16_t IGNORED_MANUFACTURERS[] = {

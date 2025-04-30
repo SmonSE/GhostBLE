@@ -99,6 +99,7 @@ void scanForDevices() {
   String serviceInfo = "";
   String localName = "";
   String address = "";
+  String serviceUuid = "";
 
   BLE.scan();
   BLEDevice peripheral = BLE.available();
@@ -117,6 +118,10 @@ void scanForDevices() {
         }
         targetFoundCount++;
 
+        address = peripheral.address();
+        Serial.print("Adresse: ");
+        Serial.println(address);
+
         BLEService deviceInfoService = peripheral.service("180A");
         if (deviceInfoService) {
           Serial.println("Device Information Service found (0x180A)");
@@ -124,88 +129,83 @@ void scanForDevices() {
           for (int i = 0; i < 6; i++) {
             BLECharacteristic c = deviceInfoService.characteristic(deviceChars[i]);
             if (c && c.canRead()) {
-              uint8_t buffer[64];  // ausreichend groß
+              uint8_t buffer[32];  // ausreichend groß
               int len = c.readValue(buffer, sizeof(buffer));
               if (len > 0) {
                 String val = "";
                 for (int k = 0; k < len; k++) {
                   val += (char)buffer[k];
                 }
-                Serial.print("    Value: ");
+                Serial.print("  Value: ");
                 Serial.println(val);
               } 
             } 
           }
         }
 
-        for (int i = 0; i < peripheral.serviceCount(); i++) {
-          localName = peripheral.localName();
-          address = peripheral.address();
-          rssi = peripheral.rssi();
+        // Filterlogik: Herstellerdaten prüfen
+        bool skipLogging = false;
+        if (peripheral.hasManufacturerData()) {
+          hasManuData = true;
+          uint8_t mfgData[64];
+          int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
+          if (mfgDataLen >= 2) {
+            uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
+            String manufacturerName = getManufacturerName(manufacturerId);
+            manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
+            Serial.println(manuInfo);
 
-          BLEService service = peripheral.service(i);
-          String serviceUuid = service.uuid();
-          serviceUuids.push_back(serviceUuid);
-          String serviceNames = getServiceName(serviceUuid);
-
-          serviceInfo = "Service UUID: " + serviceUuid + " (" + serviceNames + ")";
-          Serial.println(serviceInfo);
-
-          Serial.print("Adresse: ");
-          Serial.println(address);
-
-          Serial.print("Local Name: ");
-          Serial.println(localName);
-
-          // Filterlogik: Herstellerdaten prüfen
-          bool skipLogging = false;
-          if (peripheral.hasManufacturerData()) {
-            hasManuData = true;
-            uint8_t mfgData[64];
-            int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
-            if (mfgDataLen >= 2) {
-              uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
-              String manufacturerName = getManufacturerName(manufacturerId);
-              manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
-              Serial.println(manuInfo);
-
-              if (isIgnoredManufacturer(manufacturerId)) {
-                Serial.println("🔕 Bekannter Hersteller – Gerät wird ignoriert.");
-                skipLogging = true;
-              }
-            } else {
-              hasManuData = false;
-              manuInfo = "Manufacturer ID: ";
-              Serial.println(manuInfo);
+            if (isIgnoredManufacturer(manufacturerId)) {
+              Serial.println("Ignore Manufacturer.");
+              skipLogging = true;
             }
-          }
-
-          Serial.print("RSSI: ");
-          Serial.println(rssi);
-          float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-          Serial.print("Distanz: ");
-          Serial.print(distance, 2);
-          Serial.println(" m");
-
-          // CHECK FOR TARGET
-          if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
-            deviceFound = true;
-            targetMessage = "Target Message: !!! Target detected !!!";
-            Serial.println(targetMessage);
-            avatarHelper.setIdle(false);
-            return;
           } else {
-            targetMessage = "Target Message: No Target detected";
-            Serial.println(targetMessage);
+            hasManuData = false;
+            manuInfo = "Manufacturer ID: ";
+            Serial.println(manuInfo);
           }
-          Serial.println("-------------------------------");
+        }
 
-          // Only write if not skipped 
-          if (!skipLogging) {
-            sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo);
-          } else {
-            Serial.println("Skip logging.");
-          }
+        char serviceUuid[64];
+        for (int i = 0; i < peripheral.serviceCount(); i++) {
+          BLEService service = peripheral.service(i);
+          strncpy(serviceUuid, service.uuid(), sizeof(serviceUuid));
+          serviceUuid[sizeof(serviceUuid) - 1] = '\0';
+          //serviceInfo = "Service UUID: " + serviceUuid + " (" + serviceNames + ")";
+          //Serial.println(serviceInfo);
+        }
+
+        localName = peripheral.localName();
+        Serial.print("Local Name: ");
+        Serial.println(localName);
+
+        rssi = peripheral.rssi();
+        Serial.print("RSSI: ");
+        Serial.println(rssi);
+
+        float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
+        Serial.print("Distanz: ");
+        Serial.print(distance, 2);
+        Serial.println(" m");
+
+
+        // CHECK FOR TARGET
+        if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
+          deviceFound = true;
+          targetMessage = "Target Message: !!! Target detected !!!";
+          Serial.println(targetMessage);
+          avatarHelper.setIdle(false);
+          return;
+        } else {
+          targetMessage = "Target Message: No Target detected";
+          Serial.println(targetMessage);
+        }
+
+        // Only write if not skipped 
+        if (!skipLogging) {
+          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo);
+        } else {
+          Serial.println("Skip logging.");
         }
       } else {
         Serial.println("❌ Attribute discovery failed.");
