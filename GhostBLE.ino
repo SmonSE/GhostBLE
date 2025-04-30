@@ -96,7 +96,7 @@ void scanForDevices() {
   bool hasManuData = false;
   String manuInfo = "";
   String targetMessage = "";
-  String serviceInfo = "";
+  String mainUuidStr = "";
   String localName = "";
   String address = "";
   String deviceInfoString = "";
@@ -170,13 +170,23 @@ void scanForDevices() {
           }
         }
 
+        // MAIN UUID
+        if (peripheral.serviceCount() > 0) {
+          BLEService mainService = peripheral.service(0);
+          const char* mainUuid = mainService.uuid();
+          mainUuidStr = String(mainUuid);
+
+          Serial.print("Primary UUID: ");
+          Serial.println(mainUuidStr);
+        }
+
         char serviceUuid[64];
         for (int i = 0; i < peripheral.serviceCount(); i++) {
           BLEService service = peripheral.service(i);
           strncpy(serviceUuid, service.uuid(), sizeof(serviceUuid));
           serviceUuid[sizeof(serviceUuid) - 1] = '\0';
 
-          serviceInfo = String("Service UUID: ") + serviceUuid;
+          String serviceInfo = String("Service UUID: ") + serviceUuid;
           Serial.println(serviceInfo);
         }
 
@@ -195,7 +205,7 @@ void scanForDevices() {
 
 
         // CHECK FOR TARGET
-        if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
+        if (isTargetDevice(localName, address, mainUuidStr, hasManuData)) {
           deviceFound = true;
           targetMessage = "Target Message: !!! Target detected !!!";
           Serial.println(targetMessage);
@@ -208,7 +218,7 @@ void scanForDevices() {
 
         // Only write if not skipped 
         if (!skipLogging) {
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, serviceInfo, deviceInfoString);
+          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoString);
           deviceInfoString = ""; // delete for next scan
         } else {
           Serial.println("Skip logging.");

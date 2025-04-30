@@ -31,7 +31,7 @@ bool SDLogger::begin(int csPin) {
     return true;
 }
 
-void SDLogger::writeDeviceInfo(const String& address, const String& localName, const String& manuInfo, const String& targetMessage, const String& serviceInfo, const String& deviceInfoString) {
+void SDLogger::writeDeviceInfo(const String& address, const String& localName, const String& manuInfo, const String& targetMessage, const String& mainUuidStr, const String& deviceInfoString) {
     if (!initialized) {
         Serial.println("#SDLogger# SDLogger not initialized.");
         return;
@@ -40,7 +40,7 @@ void SDLogger::writeDeviceInfo(const String& address, const String& localName, c
     // Check if the file is open before writing
     if (dataFile) {
         // Discovered Service UUID: 
-        dataFile.println(serviceInfo);
+        dataFile.println(mainUuidStr);
 
         dataFile.print("Address: ");
         dataFile.println(address);
