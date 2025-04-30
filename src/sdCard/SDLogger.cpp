@@ -39,11 +39,13 @@ void SDLogger::writeDeviceInfo(const String& address, const String& localName, c
 
     // Check if the file is open before writing
     if (dataFile) {
-        // Discovered Service UUID: 
-        dataFile.println(mainUuidStr);
 
         dataFile.print("Address: ");
         dataFile.println(address);
+
+        // Discovered Primary UUID: 
+        dataFile.print("Primary UUID: ");
+        dataFile.println(mainUuidStr);
 
         if (localName.length() > 0) {
             dataFile.print("Local Name: ");
