@@ -1,0 +1,40 @@
+#include "config.h"
+
+// ===== Flipper Zero UUIDs =====
+const char* FLIPPER_BLACK_UUID       = "00003081-0000-1000-8000-00805f9b34fb";
+const char* FLIPPER_WHITE_UUID       = "00003082-0000-1000-8000-00805f9b34fb";
+const char* FLIPPER_TRANSPARENT_UUID = "00003083-0000-1000-8000-00805f9b34fb";
+
+// ===== LightBlue App UUID =====
+const char* LIGHTBLUE_APP_SERVICE_UUID = "deadf154-0000-0000-0000-0000deadf154"; // DEADFISH
+
+// ===== CATHACK UUIDs =====
+const char* CATHACK_SERVICE_UUID_0 = "d0611e78-bbb4-4591-a5f8-487910ae4366";
+const char* CATHACK_SERVICE_UUID_1 = "9fa480e0-4967-4542-9390-d343dc5d04ae";
+const char* CATHACK_SERVICE_UUID_2 = "7905f431-b5ce-4e99-a40f-4b1e122d00d0";
+const char* CATHACK_SERVICE_UUID_3 = "89d3502b-0f36-433a-8ef4-c502ad55f8dc";
+const char* CATHACK_SERVICE_UUID_4 = "deadf154-0000-0000-0000-0000deadf154";
+const char* CATHACK_SERVICE_UUID_5 = "1800";
+const char* CATHACK_SERVICE_UUID_6 = "1801";
+
+// ===== Manufacturer Filtering =====
+const bool ENABLE_MANUFACTURER_FILTER = false;
+
+const uint16_t IGNORED_MANUFACTURERS[] = {
+    0x004C, // Apple
+    //0x0006, // Microsoft
+    //0x0075  // Samsung
+};
+
+const size_t IGNORED_MANUFACTURER_COUNT = sizeof(IGNORED_MANUFACTURERS) / sizeof(IGNORED_MANUFACTURERS[0]);
+
+bool isIgnoredManufacturer(uint16_t id) {
+    if (!ENABLE_MANUFACTURER_FILTER) return false;
+
+    for (size_t i = 0; i < IGNORED_MANUFACTURER_COUNT; ++i) {
+        if (IGNORED_MANUFACTURERS[i] == id) {
+            return true;
+        }
+    }
+    return false;
+}
