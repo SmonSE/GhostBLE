@@ -18,21 +18,22 @@
 #include "src/bleServices/batteryLevelService.h"
 #include "src/bleServices/currentTimeService.h"
 #include "src/target/TargetDevice.h"
+#include "src/scanner/ScanDevices.h"
 
 
 using namespace m5avatar;
 
-AvatarHelper avatarHelper;
-SDLogger sdLogger;
+// Forward declarations of required services/classes
+class AvatarHelper;
+class SDLogger;
+
+// External global instances
+extern AvatarHelper avatarHelper;
+extern SDLogger sdLogger;
 
 File dataFile;
 std::vector<String> serviceUuids;
 
-unsigned long lastScanTime = 0;
-unsigned long lastFaceUpdate = 0;
-int targetFoundCount = 0;
-bool isHappyTaskRunning = false;
-bool isAngryTaskRunning = false;
 
 void setup() {
   M5.begin();
@@ -94,149 +95,4 @@ void loop() {
 
     lastFaceUpdate = currentTime;
   }
-}
-
-void scanForDevices() {
-
-  BLE.scan();
-  BLEDevice peripheral = BLE.available();
-
-  while (peripheral) {
-    int rssi = 0;
-
-    Serial.println("🔗 Trying to connect for service discovery...");
-    delay(500);
-    if (peripheral.connect()) {
-      if (peripheral.discoverAttributes()) {
-        Serial.println("✅ Connected and discovered attributes!");
-
-        if (!isHappyTaskRunning) {
-          xTaskCreate(showHappyExpressionTask, "HappyFace", 2048, NULL, 1, NULL);
-        }
-        targetFoundCount++;
-
-        address = peripheral.address();
-        Serial.print("Adresse: ");
-        Serial.println(address);
-
-        // Call deviceInfoService
-        deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
-
-        // Call heartRateService
-        heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
-
-        // Call batteryLevelService
-        batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
-
-        // Call timeInfo
-        timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
-
-
-        if (peripheral.hasManufacturerData()) {
-          hasManuData = true;
-          uint8_t mfgData[64];
-          int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
-          if (mfgDataLen >= 2) {
-            uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
-            String manufacturerName = getManufacturerName(manufacturerId);
-            manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
-            Serial.println(manuInfo);
-
-            if (isIgnoredManufacturer(manufacturerId)) {
-              Serial.println("Ignore Manufacturer.");
-              skipLogging = true;
-            }
-          } else {
-            hasManuData = false;
-            manuInfo = "Manufacturer ID: ";
-            Serial.println(manuInfo);
-          }
-        }
-
-        // MAIN UUID
-        if (peripheral.serviceCount() > 0) {
-          BLEService mainService = peripheral.service(0);
-          const char* mainUuid = mainService.uuid();
-          mainUuidStr = String(mainUuid);
-
-          Serial.print("Primary UUID: ");
-          Serial.println(mainUuidStr);
-        }
-
-        char serviceUuid[64];
-        for (int i = 0; i < peripheral.serviceCount(); i++) {
-          BLEService service = peripheral.service(i);
-          strncpy(serviceUuid, service.uuid(), sizeof(serviceUuid));
-          serviceUuid[sizeof(serviceUuid) - 1] = '\0';
-
-          serviceInfo = String("Service UUID: ") + serviceUuid;
-          Serial.println(serviceInfo);
-
-          // CHECK FOR TARGET
-          if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
-            deviceFound = true;
-            targetMessage = "Target Message: !!! Target detected !!!";
-            Serial.println(targetMessage);
-            avatarHelper.setIdle(false);
-            return;
-          } else {
-            //targetMessage = "Target Message: No Target detected";
-            //Serial.println(targetMessage);
-          }
-        }
-
-        localName = peripheral.localName();
-        Serial.print("Local Name: ");
-        Serial.println(localName);
-
-        rssi = peripheral.rssi();
-        Serial.print("RSSI: ");
-        Serial.println(rssi);
-
-        float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-        Serial.print("Distanz: ");
-        Serial.print(distance, 2);
-        Serial.println(" m");
-
-
-        // Only write if not skipped 
-        if (!skipLogging) {
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService);
-        } else {
-          Serial.println("Skip logging.");
-        }
-      } else {
-        Serial.println("Attribute discovery failed.");
-      }
-      deviceInfoService = ""; // delete for next scan
-      peripheral.disconnect();
-      if (!isAngryTaskRunning) {
-        avatarHelper.setExpression(Expression::Sleepy);
-      }
-    } else {
-      avatarHelper.setExpression(Expression::Sleepy);
-      Serial.println("Connection failed.");
-    }
-    Serial.println("###############################\n");
-
-    peripheral = BLE.available();
-  }
-
-  Serial.print("# Hits: ");
-  Serial.println(targetFoundCount);
-  Serial.println("\n\n");
-
-  avatarHelper.setIdle(true);
-}
-
-
-void showHappyExpressionTask(void* parameter) {
-  isHappyTaskRunning = true;
-  isAngryTaskRunning = true;
-  avatarHelper.setExpression(Expression::Happy);
-  vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
-  //avatarHelper.setExpression(Expression::Sleepy);
-  isHappyTaskRunning = false;
-  isAngryTaskRunning = false;
-  vTaskDelete(NULL);  // Task selbst beenden
 }

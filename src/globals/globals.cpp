@@ -2,8 +2,14 @@
 
 bool deviceFound = false;
 bool hasManuData = false;
-
 bool skipLogging = false;
+bool isHappyTaskRunning = false;
+bool isAngryTaskRunning = false;
+
+int targetFoundCount = 0;
+
+unsigned long lastScanTime = 0;
+unsigned long lastFaceUpdate = 0;
 
 String manuInfo = "";
 String targetMessage = "";
