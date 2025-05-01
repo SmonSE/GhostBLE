@@ -77,26 +77,20 @@ void loop() {
 
   // Update the face every second
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-    if (avatarHelper.isAvatarIdle()) {
+    if (avatarHelper.isAvatarIdle() && !deviceFound) {
       avatarHelper.setExpression(Expression::Sleepy);  // Display sleepy face when idle
-    } 
-    lastFaceUpdate = currentTime;
-  }
-
-  if (avatarHelper.isAvatarIdle() && !deviceFound) {
-    if (currentTime - lastScanTime > SCAN_INTERVAL_MS) {
       scanForDevices();
-      lastScanTime = currentTime;
+    } else {
+      BLE.stopScan();
+      avatarHelper.setIdle(false);
+      avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
+  
+      delay(DEVICE_SCAN_TIMEOUT);
+      avatarHelper.setIdle(true);
+      deviceFound = false;
     }
-  } else {
-    BLE.stopScan();
-    Serial.println("! STOP SCAN !");
-    avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
 
-    delay(DEVICE_SCAN_TIMEOUT);
-    Serial.println("SET IDLE TRUE");
-    avatarHelper.setIdle(true);
-    deviceFound = false;
+    lastFaceUpdate = currentTime;
   }
 }
 
@@ -174,7 +168,7 @@ void scanForDevices() {
           serviceUuid[sizeof(serviceUuid) - 1] = '\0';
 
           serviceInfo = String("Service UUID: ") + serviceUuid;
-          //Serial.println(serviceInfo);
+          Serial.println(serviceInfo);
 
           // CHECK FOR TARGET
           if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
