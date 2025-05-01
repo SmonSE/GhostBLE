@@ -9,15 +9,8 @@
 #include "src/globals/globals.h"
 
 #include "src/config/config.h"
-#include "src/helper/ManufacturerHelper.h"
-#include "src/helper/ServiceHelper.h"
 #include "src/helper/AvatarHelper.h"
 #include "src/sdCard/SDLogger.h"
-#include "src/bleServices/deviceInfoService.h"
-#include "src/bleServices/heartRateService.h"
-#include "src/bleServices/batteryLevelService.h"
-#include "src/bleServices/currentTimeService.h"
-#include "src/target/TargetDevice.h"
 #include "src/scanner/ScanDevices.h"
 
 
