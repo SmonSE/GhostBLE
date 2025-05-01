@@ -71,9 +71,9 @@ void setup() {
 
 void loop() {
   M5.update();
-  avatarHelper.update();
-
   unsigned long currentTime = millis();
+
+  avatarHelper.update();
 
   // Update the face every second
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
@@ -89,10 +89,12 @@ void loop() {
       lastScanTime = currentTime;
     }
   } else {
-    avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
     BLE.stopScan();
+    Serial.println("! STOP SCAN !");
+    avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
 
     delay(DEVICE_SCAN_TIMEOUT);
+    Serial.println("SET IDLE TRUE");
     avatarHelper.setIdle(true);
     deviceFound = false;
   }
@@ -171,8 +173,20 @@ void scanForDevices() {
           strncpy(serviceUuid, service.uuid(), sizeof(serviceUuid));
           serviceUuid[sizeof(serviceUuid) - 1] = '\0';
 
-          String serviceInfo = String("Service UUID: ") + serviceUuid;
+          serviceInfo = String("Service UUID: ") + serviceUuid;
           //Serial.println(serviceInfo);
+
+          // CHECK FOR TARGET
+          if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
+            deviceFound = true;
+            targetMessage = "Target Message: !!! Target detected !!!";
+            Serial.println(targetMessage);
+            avatarHelper.setIdle(false);
+            return;
+          } else {
+            //targetMessage = "Target Message: No Target detected";
+            //Serial.println(targetMessage);
+          }
         }
 
         localName = peripheral.localName();
@@ -188,18 +202,6 @@ void scanForDevices() {
         Serial.print(distance, 2);
         Serial.println(" m");
 
-
-        // CHECK FOR TARGET
-        if (isTargetDevice(localName, address, mainUuidStr, hasManuData)) {
-          deviceFound = true;
-          targetMessage = "Target Message: !!! Target detected !!!";
-          Serial.println(targetMessage);
-          avatarHelper.setIdle(false);
-          return;
-        } else {
-          targetMessage = "Target Message: No Target detected";
-          Serial.println(targetMessage);
-        }
 
         // Only write if not skipped 
         if (!skipLogging) {
@@ -220,7 +222,7 @@ void scanForDevices() {
     peripheral = BLE.available();
   }
 
-  avatarHelper.setExpression(Expression::Sleepy);
+  //avatarHelper.setExpression(Expression::Sleepy);
 
   Serial.print("# Hits: ");
   Serial.println(targetFoundCount);
@@ -236,6 +238,13 @@ bool isTargetDevice(String name, String address, String serviceUuid, bool hasMan
   //  Serial.println("🎯 Target erkannt über MAC!");
   //  return true;
   //}
+
+  // 0. CATHACK-Signatur
+  if ((name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0 "|| name == "Keyboard_a9")) {
+    Serial.println("🎯 Device with ESP32 Hardware detected");
+    return true;
+  }
+
 
   // 1. LIGHTBLUE APP UUIDs
   if (serviceUuid == LIGHTBLUE_APP_SERVICE_UUID) {

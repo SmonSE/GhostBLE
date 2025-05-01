@@ -10,6 +10,7 @@ String targetMessage = "";
 String mainUuidStr = "";
 String localName = "";
 String address = "";
+String serviceInfo = "";
 
 String deviceInfoService = "";
 String heartRateService = "";

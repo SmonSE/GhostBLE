@@ -15,7 +15,7 @@ extern String targetMessage;
 extern String mainUuidStr;
 extern String localName;
 extern String address;
-
+extern String serviceInfo;
 extern String deviceInfoService;
 extern String heartRateService;
 extern String batteryLevelService;
