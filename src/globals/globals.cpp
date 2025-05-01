@@ -14,3 +14,4 @@ String address = "";
 String deviceInfoService = "";
 String heartRateService = "";
 String batteryLevelService = "";
+String timeInfoService = "";

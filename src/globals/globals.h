@@ -19,5 +19,6 @@ extern String address;
 extern String deviceInfoService;
 extern String heartRateService;
 extern String batteryLevelService;
+extern String timeInfoService;
 
 #endif // GLOBALS_H

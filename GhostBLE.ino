@@ -16,6 +16,7 @@
 #include "src/bleServices/deviceInfoService.h"
 #include "src/bleServices/heartRateService.h"
 #include "src/bleServices/batteryLevelService.h"
+#include "src/bleServices/currentTimeService.h"
 
 
 using namespace m5avatar;
@@ -126,7 +127,11 @@ void scanForDevices() {
         // Call heartRateService
         heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
 
+        // Call batteryLevelService
         batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
+
+        // Call timeInfo
+        String timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
 
 
         if (peripheral.hasManufacturerData()) {
