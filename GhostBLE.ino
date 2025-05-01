@@ -5,11 +5,18 @@
 #include <SD.h>
 #include <SPI.h>
 #include <vector>
+
+#include "src/globals/globals.h"
+
 #include "src/config/config.h"
 #include "src/helper/ManufacturerHelper.h"
 #include "src/helper/ServiceHelper.h"
 #include "src/helper/AvatarHelper.h"
 #include "src/sdCard/SDLogger.h"
+#include "src/bleServices/deviceInfoService.h"
+#include "src/bleServices/heartRateService.h"
+#include "src/bleServices/batteryLevelService.h"
+
 
 using namespace m5avatar;
 
@@ -20,7 +27,6 @@ File dataFile;
 std::vector<String> serviceUuids;
 
 unsigned long lastScanTime = 0;
-bool deviceFound = false;
 unsigned long lastFaceUpdate = 0;
 int targetFoundCount = 0;
 bool isHappyTaskRunning = false;
@@ -92,15 +98,6 @@ void loop() {
 }
 
 void scanForDevices() {
-  deviceFound = false;
-  bool hasManuData = false;
-  String manuInfo = "";
-  String targetMessage = "";
-  String mainUuidStr = "";
-  String localName = "";
-  String address = "";
-  String deviceInfoString = "";
-
 
   BLE.scan();
   BLEDevice peripheral = BLE.available();
@@ -123,32 +120,15 @@ void scanForDevices() {
         Serial.print("Adresse: ");
         Serial.println(address);
 
-        BLEService deviceInfoService = peripheral.service("180A");
-        if (deviceInfoService) {
-          Serial.println("Device Information Service found (0x180A)");
-          const char* deviceChars[] = {"2A29", "2A24", "2A25", "2A27", "2A26", "2A28"};
-          const char* charNames[]   = {"Manufacturer Name", "Model Number", "Serial Number", "Hardware Revision", "Firmware Revision", "Software Revision"};
+        // Call deviceInfoService
+        deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
 
-          for (int i = 0; i < 6; i++) {
-            BLECharacteristic c = deviceInfoService.characteristic(deviceChars[i]);
-            if (c && c.canRead()) {
-              uint8_t buffer[32];
-              int len = c.readValue(buffer, sizeof(buffer));
-              if (len > 0) {
-                String val = "";
-                for (int k = 0; k < len; k++) {
-                  val += (char)buffer[k];
-                }
-                deviceInfoString += String(charNames[i]) + ": " + val + "\n";
-                Serial.print("  Value: ");
-                Serial.println(val);
-              } 
-            } 
-          }
-        }
+        // Call heartRateService
+        heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
 
-        // Filterlogik: Herstellerdaten prüfen
-        bool skipLogging = false;
+        batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
+
+
         if (peripheral.hasManufacturerData()) {
           hasManuData = true;
           uint8_t mfgData[64];
@@ -187,7 +167,7 @@ void scanForDevices() {
           serviceUuid[sizeof(serviceUuid) - 1] = '\0';
 
           String serviceInfo = String("Service UUID: ") + serviceUuid;
-          Serial.println(serviceInfo);
+          //Serial.println(serviceInfo);
         }
 
         localName = peripheral.localName();
@@ -218,15 +198,14 @@ void scanForDevices() {
 
         // Only write if not skipped 
         if (!skipLogging) {
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoString);
-          deviceInfoString = ""; // delete for next scan
+          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService);
         } else {
           Serial.println("Skip logging.");
         }
-
       } else {
         Serial.println("Attribute discovery failed.");
       }
+      deviceInfoService = ""; // delete for next scan
       peripheral.disconnect();
     } else {
       Serial.println("Connection failed.");
