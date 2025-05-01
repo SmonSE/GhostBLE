@@ -31,6 +31,7 @@ unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
 int targetFoundCount = 0;
 bool isHappyTaskRunning = false;
+bool isAngryTaskRunning = false;
 
 void setup() {
   M5.begin();
@@ -208,15 +209,17 @@ void scanForDevices() {
       }
       deviceInfoService = ""; // delete for next scan
       peripheral.disconnect();
+      if (!isAngryTaskRunning) {
+        avatarHelper.setExpression(Expression::Sleepy);
+      }
     } else {
+      avatarHelper.setExpression(Expression::Sleepy);
       Serial.println("Connection failed.");
     }
     Serial.println("###############################\n");
 
     peripheral = BLE.available();
   }
-
-  //avatarHelper.setExpression(Expression::Sleepy);
 
   Serial.print("# Hits: ");
   Serial.println(targetFoundCount);
@@ -274,9 +277,11 @@ bool isTargetDevice(String name, String address, String serviceUuid, bool hasMan
 
 void showHappyExpressionTask(void* parameter) {
   isHappyTaskRunning = true;
+  isAngryTaskRunning = true;
   avatarHelper.setExpression(Expression::Happy);
-  vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
-  avatarHelper.setExpression(Expression::Sleepy);
+  vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+  //avatarHelper.setExpression(Expression::Sleepy);
   isHappyTaskRunning = false;
+  isAngryTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
 }

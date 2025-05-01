@@ -24,9 +24,8 @@
 #define CATHACK_SERVICE_UUID_6 "1801"
 
 // Time Intervals
-#define SCAN_INTERVAL_MS 5000
 #define FACE_UPDATE_INTERVAL_MS 1000
-#define DEVICE_SCAN_TIMEOUT 10000
+#define DEVICE_SCAN_TIMEOUT 5000
 
 // MAC Address of Known Device (example)
 #define TARGET_MAC_ADDRESS "b0:81:84:96:a0:c9"
