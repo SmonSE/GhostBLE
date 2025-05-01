@@ -131,7 +131,7 @@ void scanForDevices() {
         batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
 
         // Call timeInfo
-        String timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
+        timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
 
 
         if (peripheral.hasManufacturerData()) {
