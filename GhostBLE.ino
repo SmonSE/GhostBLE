@@ -2,7 +2,6 @@
 #include <M5Cardputer.h>
 #include <ArduinoBLE.h>
 #include <M5Unified.h>
-#include <Avatar.h>  // Ensure this is the correct path to your Avatar library
 #include <SD.h>
 #include <SPI.h>
 #include <vector>
@@ -14,15 +13,16 @@
 #include "src/sdCard/SDLogger.h"
 #include "src/scanner/ScanDevices.h"
 
+#include "src/images/nibblesPcHappyBubble.h"
+#include "src/images/nibblesPcSleepingBubble.h"
+#include "src/images/nibblesFrontAngry.h"
 
-using namespace m5avatar;
 
 // Forward declarations of required services/classes
 class AvatarHelper;
 class SDLogger;
 
 // External global instances
-extern AvatarHelper avatarHelper;
 extern SDLogger sdLogger;
 
 File dataFile;
@@ -48,14 +48,10 @@ void setup() {
   M5.Lcd.setRotation(1);
   #endif
 
-  M5.Lcd.fillScreen(BLACK);
-
-  avatarHelper.init();
-  avatarHelper.setExpression(Expression::Neutral);
-  avatarHelper.setIdle(true);
+  M5.Lcd.fillScreen(BLACK);    // Optional
+  M5.Lcd.drawBmp(nibblesPcHappyBubble, sizeof(nibblesPcHappyBubble));  // or BITMAP;
 
   if (!BLE.begin()) {
-    M5.Lcd.println("Starting BLE failed!");
     Serial.println("BLE initialization failed!");
     while (1);  // Halt the program if BLE fails
   }
@@ -75,35 +71,15 @@ void loop() {
 
   unsigned long currentTime = millis();  // ✅ Make sure this line is present
 
-  // Debugging: Print whether the button press is detected
-  if (M5Cardputer.BtnA.wasPressed()) {
-    BLE.stopScan();
-    Serial.println("Button A was pressed!");
-    btn0pressed = true;
-    showLastConnectedDevice();  // Call your function here
-  }
-
-  // Manage button release state with extra debugging
-  if (btn0pressed) {
-    Serial.println("Button A released!");
-    btn0pressed = false;
-  }
-
-  // Update other tasks (e.g., avatar, background tasks)
-  avatarHelper.update();
-
-  // Handle avatar state update (sleepy/angry) and scanning logic
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-    if (avatarHelper.isAvatarIdle() && !deviceFound) {
-      avatarHelper.setExpression(Expression::Sleepy);  // Display sleepy face when idle
+    if (!deviceFound) {
+      M5.Lcd.drawBmp(nibblesPcSleepingBubble, sizeof(nibblesPcSleepingBubble));  // or BITMAP;
       scanForDevices();
     } else {
       BLE.stopScan();
-      avatarHelper.setIdle(false);
-      avatarHelper.setExpression(Expression::Angry);  // Display angry face when scanning
+      M5.Lcd.drawBmp(nibblesFrontAngry, sizeof(nibblesFrontAngry));  // or BITMAP;
   
       delay(DEVICE_SCAN_TIMEOUT);
-      avatarHelper.setIdle(true);
       deviceFound = false;
     }
 
