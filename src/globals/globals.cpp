@@ -22,3 +22,6 @@ String deviceInfoService = "";
 String heartRateService = "";
 String batteryLevelService = "";
 String timeInfoService = "";
+
+String lastConnectedDeviceInfo = "Noch kein Gerät verbunden.";
+

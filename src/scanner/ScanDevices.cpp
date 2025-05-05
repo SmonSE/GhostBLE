@@ -49,9 +49,9 @@ void scanForDevices() {
 
         // Service calls
         deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
-        heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
-        batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
-        timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
+        //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
+        //batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
+        //timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
 
         // Manufacturer handling
         if (peripheral.hasManufacturerData()) {
@@ -123,6 +123,15 @@ void scanForDevices() {
         // Log to SD
         if (!skipLogging) {
           sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService);
+
+            // Speichern für Anzeige auf Button G0
+          lastConnectedDeviceInfo =
+          "Adresse: " + address + "\n" +
+          "Name: " + localName + "\n" +
+          manuInfo + "\n" +
+          targetMessage + "\n" +
+          "UUID: " + mainUuidStr + "\n" +
+          deviceInfoService;
         } else {
           Serial.println("Skip logging.");
         }
@@ -152,6 +161,20 @@ void scanForDevices() {
   Serial.println("\n\n");
 
   avatarHelper.setIdle(true);
+}
+
+void showLastConnectedDevice() {
+  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.setCursor(10, 10);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.setTextColor(WHITE);
+  
+  M5.Lcd.println("Letztes verbundenes Gerät:");
+  M5.Lcd.println("----------------------------");
+  M5.Lcd.println(lastConnectedDeviceInfo);
+
+  delay(5000);  // Zeige 5 Sekunden lang an
+  M5.Lcd.fillScreen(BLACK);
 }
 
 void showHappyExpressionTask(void* parameter) {

@@ -1,4 +1,5 @@
 #include <M5StickCPlus2.h>
+#include <M5Cardputer.h>
 #include <ArduinoBLE.h>
 #include <M5Unified.h>
 #include <Avatar.h>  // Ensure this is the correct path to your Avatar library
@@ -27,9 +28,13 @@ extern SDLogger sdLogger;
 File dataFile;
 std::vector<String> serviceUuids;
 
+bool btn0pressed = false;
+unsigned long btn0pressTime = 0;
+const unsigned long displayDuration = 5000; // 5 seconds
 
 void setup() {
-  M5.begin();
+  M5Cardputer.begin();   // for Cardputer
+  //M5.begin();          // for M5Stick
   Serial.begin(115200);
   delay(500);
 
@@ -66,12 +71,28 @@ void setup() {
 }
 
 void loop() {
-  M5.update();
-  unsigned long currentTime = millis();
+  M5Cardputer.update();   // for Cardputer
 
+  unsigned long currentTime = millis();  // ✅ Make sure this line is present
+
+  // Debugging: Print whether the button press is detected
+  if (M5Cardputer.BtnA.wasPressed()) {
+    BLE.stopScan();
+    Serial.println("Button A was pressed!");
+    btn0pressed = true;
+    showLastConnectedDevice();  // Call your function here
+  }
+
+  // Manage button release state with extra debugging
+  if (btn0pressed) {
+    Serial.println("Button A released!");
+    btn0pressed = false;
+  }
+
+  // Update other tasks (e.g., avatar, background tasks)
   avatarHelper.update();
 
-  // Update the face every second
+  // Handle avatar state update (sleepy/angry) and scanning logic
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
     if (avatarHelper.isAvatarIdle() && !deviceFound) {
       avatarHelper.setExpression(Expression::Sleepy);  // Display sleepy face when idle

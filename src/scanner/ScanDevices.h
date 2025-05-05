@@ -14,5 +14,6 @@
 
 void scanForDevices();
 void showHappyExpressionTask(void* parameter);
+void showLastConnectedDevice();
 
 #endif // SCANDEVICES_H
