@@ -8,7 +8,6 @@
 #include "../bleServices/heartRateService.h"
 #include "../bleServices/currentTimeService.h"
 #include "../bleServices/deviceInfoService.h"
-#include "../helper/AvatarHelper.h"
 #include "../sdCard/SDLogger.h"
 #include "../target/TargetDevice.h"
 

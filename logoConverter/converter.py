@@ -1,7 +1,7 @@
 from PIL import Image
 import os
 
-def convert_png_for_m5stickcplus2(png_path, output_name="nibblesFrontGlasses", bmp_temp="temp.bmp"):
+def convert_png_for_m5stickcplus2(png_path, output_name="nibblesStartWorking", bmp_temp="temp.bmp"):
     # Resize to M5StickC Plus 2 resolution
     img = Image.open(png_path).convert("RGB")
     img = img.resize((240, 135))  # portrait mode
@@ -27,4 +27,4 @@ def convert_png_for_m5stickcplus2(png_path, output_name="nibblesFrontGlasses", b
     os.remove(bmp_temp)
 
 # Usage
-convert_png_for_m5stickcplus2("nibbles_front_ble_glasses.png")
+convert_png_for_m5stickcplus2("nibbles_working_happy_bubble.png")

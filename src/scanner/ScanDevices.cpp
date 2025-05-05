@@ -1,17 +1,14 @@
+#include <M5Cardputer.h>
+
 #include "ScanDevices.h"
 #include "../globals/globals.h"
 #include "../helper/ManufacturerHelper.h"
-#include "../helper/AvatarHelper.h"
 #include "../helper/ServiceHelper.h"
 
 
-using namespace m5avatar;
 
 // Forward declarations of required services/classes
-class AvatarHelper;
 class SDLogger;
-
-AvatarHelper avatarHelper;
 SDLogger sdLogger;
 
 
@@ -101,7 +98,6 @@ void scanForDevices() {
             deviceFound = true;
             targetMessage = "Target Message: !!! Target detected !!!";
             Serial.println(targetMessage);
-            avatarHelper.setIdle(false);
             return;
           }
         }
@@ -144,11 +140,10 @@ void scanForDevices() {
       peripheral.disconnect();
 
       if (!isAngryTaskRunning) {
-        avatarHelper.setExpression(Expression::Sleepy);
+        //M5.Lcd.drawBmp(nibblesFrontAngry, sizeof(nibblesFrontAngry));  // or BITMAP;
       }
 
     } else {
-      avatarHelper.setExpression(Expression::Sleepy);
       Serial.println("Connection failed.");
     }
 
@@ -159,8 +154,6 @@ void scanForDevices() {
   Serial.print("# Hits: ");
   Serial.println(targetFoundCount);
   Serial.println("\n\n");
-
-  avatarHelper.setIdle(true);
 }
 
 void showLastConnectedDevice() {
@@ -180,9 +173,8 @@ void showLastConnectedDevice() {
 void showHappyExpressionTask(void* parameter) {
     isHappyTaskRunning = true;
     isAngryTaskRunning = true;
-    avatarHelper.setExpression(Expression::Happy);
+    //M5.Lcd.drawBmp(nibblesFrontLove, sizeof(nibblesFrontLove));  // or BITMAP;
     vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
-    //avatarHelper.setExpression(Expression::Sleepy);
     isHappyTaskRunning = false;
     isAngryTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden

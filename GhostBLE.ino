@@ -9,17 +9,19 @@
 #include "src/globals/globals.h"
 
 #include "src/config/config.h"
-#include "src/helper/AvatarHelper.h"
 #include "src/sdCard/SDLogger.h"
 #include "src/scanner/ScanDevices.h"
 
-#include "src/images/nibblesPcHappyBubble.h"
-#include "src/images/nibblesPcSleepingBubble.h"
-#include "src/images/nibblesFrontAngry.h"
-
+#include "src/images/nibblesStartWorking.h"
+#include "src/images/nibblesFrontHappy.h"
+#include "src/images/nibblesGlasses.h"
+#include "src/images/nibblesAngry.h"
+#include "src/images/nibblesSad.h"
+#include "src/images/nibblesHeartLeft.h"
+#include "src/images/nibblesHeartRight.h"
+#include "src/images/nibblesPawnd.h"
 
 // Forward declarations of required services/classes
-class AvatarHelper;
 class SDLogger;
 
 // External global instances
@@ -49,7 +51,9 @@ void setup() {
   #endif
 
   M5.Lcd.fillScreen(BLACK);    // Optional
-  M5.Lcd.drawBmp(nibblesPcHappyBubble, sizeof(nibblesPcHappyBubble));  // or BITMAP;
+
+  M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));  
+  delay(5000);
 
   if (!BLE.begin()) {
     Serial.println("BLE initialization failed!");
@@ -63,7 +67,22 @@ void setup() {
   #endif
 
   Serial.println("BLE initialized successfully.");
+
+  M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
   delay(5000);
+
+
+  // 80 = 80 Pixel von links
+  // 40 = 40 Pixel von oben
+  //drawOverlay(nibblesHeartLeft, NIBBLESHEARTLEFT_WIDTH, NIBBLESHEARTLEFT_HEIGHT, 10, 10);
+  //delay(1000);
+  //drawOverlay(nibblesHeartRight, NIBBLESHEARTRIGHT_WIDTH, NIBBLESHEARTRIGHT_HEIGHT, 160, 12);
+  //drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
+  //drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 77, 42);
+  //M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
+  //drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
+  //drawOverlay(nibblesPawnd, NIBBLESPAWND_WIDTH, NIBBLESPAWND_HEIGHT, 77, 49);
+
 }
 
 void loop() {
@@ -73,16 +92,27 @@ void loop() {
 
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
     if (!deviceFound) {
-      M5.Lcd.drawBmp(nibblesPcSleepingBubble, sizeof(nibblesPcSleepingBubble));  // or BITMAP;
+      //M5.Lcd.drawBmp(nibblesPcSleepingBubble, sizeof(nibblesPcSleepingBubble));  // or BITMAP;
       scanForDevices();
     } else {
       BLE.stopScan();
-      M5.Lcd.drawBmp(nibblesFrontAngry, sizeof(nibblesFrontAngry));  // or BITMAP;
+      //M5.Lcd.drawBmp(nibblesFrontAngry, sizeof(nibblesFrontAngry));  // or BITMAP;
   
       delay(DEVICE_SCAN_TIMEOUT);
       deviceFound = false;
     }
 
     lastFaceUpdate = currentTime;
+  }
+}
+
+void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0) {
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      uint16_t color = img[y * w + x];
+      if (color != 0xFFFF) {  // 0xFFFF = transparent
+        M5.Lcd.drawPixel(x0 + x, y0 + y, color);
+      }
+    }
   }
 }
