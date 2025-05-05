@@ -3,7 +3,7 @@
 bool deviceFound = false;
 bool hasManuData = false;
 bool skipLogging = false;
-bool isHappyTaskRunning = false;
+bool isGlassesTaskRunning = false;
 bool isAngryTaskRunning = false;
 
 int targetFoundCount = 0;

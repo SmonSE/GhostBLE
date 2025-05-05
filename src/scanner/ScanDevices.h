@@ -12,7 +12,8 @@
 #include "../target/TargetDevice.h"
 
 void scanForDevices();
-void showHappyExpressionTask(void* parameter);
+void showGlassesExpressionTask(void* parameter);
+void showAngryExpressionTask(void* parameter);
 void showLastConnectedDevice();
 
 #endif // SCANDEVICES_H

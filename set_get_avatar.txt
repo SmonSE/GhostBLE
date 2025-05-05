@@ -38,11 +38,11 @@ https://github.com/stack-chan/m5stack-avatar/blob/master/docs/FaceCustomizationG
 
 
 
-Bruce Tastatur erkannt 
-15:03:06.311 -> Adresse: f6:47:f2:b9:d4:49
-15:03:06.311 -> Device Information Service found (0x180A)
-15:03:06.411 ->   Value: BruceNet
-15:03:06.411 -> Battery Service found (0x180F)
-15:03:06.543 ->   Battery Level: 98%
-
-
+xTaskCreate(
+  showGlassesExpressionTask,  // Task function
+  "AngryFace",                // Task name (for debugging)
+  2048,                       // Stack size (in bytes)
+  NULL,                       // Task parameter (no parameter)
+  1,                          // Task priority (low priority)
+  NULL                        // Task handle (not used here)
+);

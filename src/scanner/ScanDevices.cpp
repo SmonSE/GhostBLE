@@ -4,8 +4,15 @@
 #include "../globals/globals.h"
 #include "../helper/ManufacturerHelper.h"
 #include "../helper/ServiceHelper.h"
+#include "../helper/drawOverlay.h"
 
-
+#include "../images/nibblesFrontHappy.h"
+#include "../images/nibblesGlasses.h"
+#include "../images/nibblesAngry.h"
+#include "../images/nibblesSad.h"
+#include "../images/nibblesHeartLeft.h"
+#include "../images/nibblesHeartRight.h"
+#include "../images/nibblesPawnd.h"
 
 // Forward declarations of required services/classes
 class SDLogger;
@@ -35,8 +42,8 @@ void scanForDevices() {
       if (peripheral.discoverAttributes()) {
         Serial.println("✅ Connected and discovered attributes!");
 
-        if (!isHappyTaskRunning) {
-          xTaskCreate(showHappyExpressionTask, "HappyFace", 2048, NULL, 1, NULL);
+        if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+          xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
         }
 
         targetFoundCount++;
@@ -170,12 +177,18 @@ void showLastConnectedDevice() {
   M5.Lcd.fillScreen(BLACK);
 }
 
-void showHappyExpressionTask(void* parameter) {
-    isHappyTaskRunning = true;
-    isAngryTaskRunning = true;
-    //M5.Lcd.drawBmp(nibblesFrontLove, sizeof(nibblesFrontLove));  // or BITMAP;
-    vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
-    isHappyTaskRunning = false;
-    isAngryTaskRunning = false;
+void showGlassesExpressionTask(void* parameter) {
+    isGlassesTaskRunning = true;
+    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
+    vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
+    isGlassesTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
-  }
+}
+
+void showAngryExpressionTask(void* parameter) {
+  isAngryTaskRunning = true;
+  drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
+  vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
+  isAngryTaskRunning = false;
+  vTaskDelete(NULL);  // Task selbst beenden
+}

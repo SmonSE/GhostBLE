@@ -6,7 +6,7 @@
 // Global flags and strings
 extern bool deviceFound;
 extern bool hasManuData;
-extern bool isHappyTaskRunning;
+extern bool isGlassesTaskRunning;
 extern bool isAngryTaskRunning;
 
 extern int targetFoundCount;

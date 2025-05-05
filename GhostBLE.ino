@@ -11,6 +11,7 @@
 #include "src/config/config.h"
 #include "src/sdCard/SDLogger.h"
 #include "src/scanner/ScanDevices.h"
+#include "src/helper/drawOverlay.h"
 
 #include "src/images/nibblesStartWorking.h"
 #include "src/images/nibblesFrontHappy.h"
@@ -69,8 +70,6 @@ void setup() {
   Serial.println("BLE initialized successfully.");
 
   M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
-  delay(5000);
-
 
   // 80 = 80 Pixel von links
   // 40 = 40 Pixel von oben
@@ -92,27 +91,18 @@ void loop() {
 
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
     if (!deviceFound) {
-      //M5.Lcd.drawBmp(nibblesPcSleepingBubble, sizeof(nibblesPcSleepingBubble));  // or BITMAP;
+      delay(500);
+      M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
       scanForDevices();
     } else {
+      if (!isAngryTaskRunning) {
+        xTaskCreate(showGlassesExpressionTask, "AngryFace", 2048, NULL, 0, NULL);
+      }
       BLE.stopScan();
-      //M5.Lcd.drawBmp(nibblesFrontAngry, sizeof(nibblesFrontAngry));  // or BITMAP;
-  
       delay(DEVICE_SCAN_TIMEOUT);
       deviceFound = false;
     }
 
     lastFaceUpdate = currentTime;
-  }
-}
-
-void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0) {
-  for (int y = 0; y < h; y++) {
-    for (int x = 0; x < w; x++) {
-      uint16_t color = img[y * w + x];
-      if (color != 0xFFFF) {  // 0xFFFF = transparent
-        M5.Lcd.drawPixel(x0 + x, y0 + y, color);
-      }
-    }
   }
 }
