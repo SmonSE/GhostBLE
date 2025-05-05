@@ -1,6 +1,6 @@
 #include "globals.h"
 
-bool deviceFound = false;
+bool targetFound = false;
 bool hasManuData = false;
 bool skipLogging = false;
 bool isGlassesTaskRunning = false;

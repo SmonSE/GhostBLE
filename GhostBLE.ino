@@ -31,9 +31,6 @@ extern SDLogger sdLogger;
 File dataFile;
 std::vector<String> serviceUuids;
 
-bool btn0pressed = false;
-unsigned long btn0pressTime = 0;
-const unsigned long displayDuration = 5000; // 5 seconds
 
 void setup() {
   M5Cardputer.begin();   // for Cardputer
@@ -70,17 +67,8 @@ void setup() {
   Serial.println("BLE initialized successfully.");
 
   M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
-
-  // 80 = 80 Pixel von links
-  // 40 = 40 Pixel von oben
-  //drawOverlay(nibblesHeartLeft, NIBBLESHEARTLEFT_WIDTH, NIBBLESHEARTLEFT_HEIGHT, 10, 10);
-  //delay(1000);
-  //drawOverlay(nibblesHeartRight, NIBBLESHEARTRIGHT_WIDTH, NIBBLESHEARTRIGHT_HEIGHT, 160, 12);
-  //drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
-  //drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 77, 42);
-  //M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
-  //drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
-  //drawOverlay(nibblesPawnd, NIBBLESPAWND_WIDTH, NIBBLESPAWND_HEIGHT, 77, 49);
+  delay(2000);
+  // OVERLAY WITH LETS WORK BUBBLE
 
 }
 
@@ -89,20 +77,22 @@ void loop() {
 
   unsigned long currentTime = millis();  // ✅ Make sure this line is present
 
+  delay(500);
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-    if (!deviceFound) {
+    if (!targetFound) {
       delay(500);
-      M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
       scanForDevices();
     } else {
-      if (!isAngryTaskRunning) {
-        xTaskCreate(showGlassesExpressionTask, "AngryFace", 2048, NULL, 0, NULL);
-      }
       BLE.stopScan();
+      if (!isAngryTaskRunning) {
+        Serial.println("showAngryExpressionTask");
+        xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 1, NULL);
+      }
       delay(DEVICE_SCAN_TIMEOUT);
-      deviceFound = false;
+      targetFound = false;
     }
 
     lastFaceUpdate = currentTime;
   }
 }
+

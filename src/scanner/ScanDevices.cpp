@@ -7,6 +7,7 @@
 #include "../helper/drawOverlay.h"
 
 #include "../images/nibblesFrontHappy.h"
+#include "../images/nibblesFront.h"
 #include "../images/nibblesGlasses.h"
 #include "../images/nibblesAngry.h"
 #include "../images/nibblesSad.h"
@@ -32,8 +33,8 @@ void scanForDevices() {
     String mainUuidStr = "";
  
     bool skipLogging = false;
-    bool deviceFound = false;
-    bool hasManuData = false;
+    targetFound = false;
+    hasManuData = false;
 
     Serial.println("🔗 Trying to connect for service discovery...");
     delay(500);
@@ -102,11 +103,16 @@ void scanForDevices() {
           localName = peripheral.localName();
 
           if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
-            deviceFound = true;
+            targetFound = true;
             targetMessage = "Target Message: !!! Target detected !!!";
             Serial.println(targetMessage);
-            return;
+            break;  // break for loop
           }
+        }
+        // Break WHILE LOOP
+        if (targetFound) {
+          Serial.println("ScanDevices: Found Device -> break");
+          break;
         }
 
         // Print device info
@@ -146,10 +152,6 @@ void scanForDevices() {
       deviceInfoService = "";
       peripheral.disconnect();
 
-      if (!isAngryTaskRunning) {
-        //M5.Lcd.drawBmp(nibblesFrontAngry, sizeof(nibblesFrontAngry));  // or BITMAP;
-      }
-
     } else {
       Serial.println("Connection failed.");
     }
@@ -181,6 +183,7 @@ void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
     vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     isGlassesTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
@@ -188,7 +191,8 @@ void showGlassesExpressionTask(void* parameter) {
 void showAngryExpressionTask(void* parameter) {
   isAngryTaskRunning = true;
   drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
-  vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
+  vTaskDelay(pdMS_TO_TICKS(4000));  // 3 Sekunden
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   isAngryTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
 }

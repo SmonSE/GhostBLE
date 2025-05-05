@@ -4,8 +4,9 @@
 #include <Arduino.h>
 
 // Global flags and strings
-extern bool deviceFound;
+extern bool targetFound;
 extern bool hasManuData;
+extern bool skipLogging;
 extern bool isGlassesTaskRunning;
 extern bool isAngryTaskRunning;
 

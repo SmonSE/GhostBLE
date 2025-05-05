@@ -46,3 +46,15 @@ xTaskCreate(
   1,                          // Task priority (low priority)
   NULL                        // Task handle (not used here)
 );
+
+
+  // 80 = 80 Pixel von links
+  // 40 = 40 Pixel von oben
+  //drawOverlay(nibblesHeartLeft, NIBBLESHEARTLEFT_WIDTH, NIBBLESHEARTLEFT_HEIGHT, 10, 10);
+  //delay(1000);
+  //drawOverlay(nibblesHeartRight, NIBBLESHEARTRIGHT_WIDTH, NIBBLESHEARTRIGHT_HEIGHT, 160, 12);
+  //drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
+  //drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 77, 42);
+  //M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
+  //drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
+  //drawOverlay(nibblesPawnd, NIBBLESPAWND_WIDTH, NIBBLESPAWND_HEIGHT, 77, 49);
