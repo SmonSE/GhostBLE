@@ -17,7 +17,7 @@
 #include "../images/nibblesPawnd.h"
 
 
-#define MAX_SEEN_DEVICES 1500 // max is 2000 devices
+#define MAX_SEEN_DEVICES 1000 // max is 2000 devices
 
 // Forward declarations of required services/classes
 class SDLogger;
@@ -78,6 +78,7 @@ void scanForDevices() {
         // Service calls
         deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
         genericAccessInfo = DeviceInfoServiceHandler::readGenericAccessInfo(peripheral);
+        //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
 
         // Manufacturer handling
         if (peripheral.hasManufacturerData()) {
@@ -164,6 +165,7 @@ void scanForDevices() {
 
       deviceInfoService = "";
       genericAccessInfo = "";
+      heartRateService = "";
       peripheral.disconnect();
 
     } else {
