@@ -30,6 +30,7 @@ String getServiceName(const String& uuid) {
     if (uuid == "1836") return "Personal Activity Monitoring";
     if (uuid == "1837") return "Fitness Machine";
     if (uuid == "1838") return "Health and Fitness Measurement";
+    if (uuid == "1814") return "Running Speed and Cadence Service (RSCS)";
     return "Unknown Service";
   }
   
