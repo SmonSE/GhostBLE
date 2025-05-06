@@ -1,4 +1,7 @@
 #include "globals.h"
+#include <set>
+
+std::set<String> seenDevices;  // Global set of seen device addresses
 
 bool targetFound = false;
 bool hasManuData = false;

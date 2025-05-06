@@ -19,8 +19,6 @@
 
 #define MAX_SEEN_DEVICES 1500 // max is 2000 devices
 
-std::set<String> seenDevices;  // Globales Set für bereits gesehene Adressen
-
 // Forward declarations of required services/classes
 class SDLogger;
 SDLogger sdLogger;

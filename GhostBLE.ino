@@ -22,6 +22,9 @@
 #include "src/images/nibblesHeartRight.h"
 #include "src/images/nibblesPawnd.h"
 
+unsigned long startTimeDevice;
+const unsigned long timerDurationDevice = 5 * 60 * 1000; // 5 Minuten in Millisekunden
+
 // Forward declarations of required services/classes
 class SDLogger;
 
@@ -69,8 +72,10 @@ void setup() {
   M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
   showFindingCounter(targetConnects, spottedDevice);
   delay(2000);
-  // OVERLAY WITH LETS WORK BUBBLE
 
+  startTimeDevice = millis(); // Startzeit speichern
+
+  // OVERLAY WITH LETS WORK BUBBLE
 }
 
 void loop() {
@@ -94,6 +99,14 @@ void loop() {
     }
 
     lastFaceUpdate = currentTime;
+  }
+
+  unsigned long currentTimeDevice = millis();
+  if (currentTimeDevice - startTimeDevice >= timerDurationDevice) {
+    Serial.println("5 Minuten sind vorbei!");
+    seenDevices.clear();
+    Serial.println("CLEAR SEEN DEVICES");
+    startTimeDevice = millis();
   }
 }
 

@@ -1,7 +1,11 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#include <set>
 #include <Arduino.h>
+
+// ScanDevices seenDevices
+extern std::set<String> seenDevices;
 
 // Global flags and strings
 extern bool targetFound;
