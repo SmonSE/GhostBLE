@@ -132,7 +132,7 @@ void scanForDevices() {
 
         // Log to SD
         if (!skipLogging) {
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService);
+          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService, genericAccessInfo);
         } else {
           Serial.println("Skip logging.");
         }
