@@ -2,8 +2,9 @@
 #include "../config/config.h"
 
 bool isTargetDevice(String name, String address, String serviceUuid, bool hasManuData) {
-  // 0. CATHACK-Signatur
-  if ((name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0" || name == "Keyboard_a9")) {
+
+  // 0. CATHACK / BRUCE Signatur
+  if ((name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0" || name == "Keyboard_e9" || name == "BruceNet")) {
     Serial.println("🎯 Device with ESP32 Hardware detected");
     return true;
   }
