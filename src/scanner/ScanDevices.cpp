@@ -195,15 +195,15 @@ void showAngryExpressionTask(void* parameter) {
 
 
 void showFindingCounter(int sniffed, int spotted) {
-  M5.Lcd.setTextColor(WHITE);         // Set text color to white
-  M5.Lcd.setTextSize(1);              // Set text size (1-7)
-  M5.Lcd.setCursor(5, 124);           // Set position: x=10, y=30
+  M5.Lcd.setTextColor(WHITE); 
+  M5.Lcd.setTextSize(1); 
+  M5.Lcd.setCursor(5, 124);
   M5.Lcd.print("Sniffed:");
   M5.Lcd.println(sniffed);
 
-  M5.Lcd.setTextColor(RED);         // Set text color to white
-  M5.Lcd.setTextSize(1);              // Set text size (1-7)
-  M5.Lcd.setCursor(180, 124);           // Set position: x=10, y=30
+  M5.Lcd.setTextColor(RED);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.setCursor(180, 124);
   M5.Lcd.print("Spotted:");
   M5.Lcd.println(spotted);
 }
