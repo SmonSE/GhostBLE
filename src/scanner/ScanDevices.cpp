@@ -55,7 +55,7 @@ void scanForDevices() {
         // Service calls
         deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
         genericAccessInfo = DeviceInfoServiceHandler::readGenericAccessInfo(peripheral);
-        //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
+        heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
         //batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
         //timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
 
