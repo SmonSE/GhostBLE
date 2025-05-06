@@ -15,5 +15,6 @@ void scanForDevices();
 void showGlassesExpressionTask(void* parameter);
 void showAngryExpressionTask(void* parameter);
 void showLastConnectedDevice();
+void showFindingCounter(int sniffed, int spotted);
 
 #endif // SCANDEVICES_H

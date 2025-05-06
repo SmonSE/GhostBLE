@@ -67,6 +67,7 @@ void setup() {
   Serial.println("BLE initialized successfully.");
 
   M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
+  showFindingCounter(targetConnects, spottedDevice);
   delay(2000);
   // OVERLAY WITH LETS WORK BUBBLE
 

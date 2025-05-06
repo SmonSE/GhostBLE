@@ -15,6 +15,7 @@
 #include "../images/nibblesHeartRight.h"
 #include "../images/nibblesPawnd.h"
 
+
 // Forward declarations of required services/classes
 class SDLogger;
 SDLogger sdLogger;
@@ -47,7 +48,7 @@ void scanForDevices() {
           xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
         }
 
-        targetFoundCount++;
+        targetConnects++;
         address = peripheral.address();
         Serial.print("Adresse: ");
         Serial.println(address);
@@ -55,7 +56,7 @@ void scanForDevices() {
         // Service calls
         deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
         genericAccessInfo = DeviceInfoServiceHandler::readGenericAccessInfo(peripheral);
-        heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
+        //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
         //batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
         //timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
 
@@ -105,6 +106,7 @@ void scanForDevices() {
 
           if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
             targetFound = true;
+            spottedDevice++;
             targetMessage = "Target Message: !!! Target detected !!!";
             Serial.println(targetMessage);
             break;  // break for loop
@@ -152,8 +154,8 @@ void scanForDevices() {
     peripheral = BLE.available();
   }
 
-  Serial.print("# Hits: ");
-  Serial.println(targetFoundCount);
+  Serial.print("# Connects: ");
+  Serial.println(targetConnects);
   Serial.println("\n\n");
 }
 
@@ -176,6 +178,7 @@ void showGlassesExpressionTask(void* parameter) {
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
     vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    showFindingCounter(targetConnects, spottedDevice);
     isGlassesTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
@@ -185,6 +188,22 @@ void showAngryExpressionTask(void* parameter) {
   drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
   vTaskDelay(pdMS_TO_TICKS(4000));  // 3 Sekunden
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  showFindingCounter(targetConnects, spottedDevice);
   isAngryTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
+}
+
+
+void showFindingCounter(int sniffed, int spotted) {
+  M5.Lcd.setTextColor(WHITE);         // Set text color to white
+  M5.Lcd.setTextSize(1);              // Set text size (1-7)
+  M5.Lcd.setCursor(5, 124);           // Set position: x=10, y=30
+  M5.Lcd.print("Sniffed:");
+  M5.Lcd.println(sniffed);
+
+  M5.Lcd.setTextColor(RED);         // Set text color to white
+  M5.Lcd.setTextSize(1);              // Set text size (1-7)
+  M5.Lcd.setCursor(180, 124);           // Set position: x=10, y=30
+  M5.Lcd.print("Spotted:");
+  M5.Lcd.println(spotted);
 }

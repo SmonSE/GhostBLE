@@ -10,7 +10,8 @@ extern bool skipLogging;
 extern bool isGlassesTaskRunning;
 extern bool isAngryTaskRunning;
 
-extern int targetFoundCount;
+extern int targetConnects;
+extern int spottedDevice;
 
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;

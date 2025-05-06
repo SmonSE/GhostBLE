@@ -6,7 +6,8 @@ bool skipLogging = false;
 bool isGlassesTaskRunning = false;
 bool isAngryTaskRunning = false;
 
-int targetFoundCount = 0;
+int targetConnects = 0;
+int spottedDevice = 0;
 
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
