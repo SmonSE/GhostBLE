@@ -54,6 +54,7 @@ void scanForDevices() {
 
         // Service calls
         deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
+        genericAccessInfo = DeviceInfoServiceHandler::readGenericAccessInfo(peripheral);
         //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
         //batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
         //timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
@@ -132,24 +133,15 @@ void scanForDevices() {
         // Log to SD
         if (!skipLogging) {
           sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService);
-
-            // Speichern für Anzeige auf Button G0
-          lastConnectedDeviceInfo =
-          "Adresse: " + address + "\n" +
-          "Name: " + localName + "\n" +
-          manuInfo + "\n" +
-          targetMessage + "\n" +
-          "UUID: " + mainUuidStr + "\n" +
-          deviceInfoService;
         } else {
           Serial.println("Skip logging.");
         }
-
       } else {
         Serial.println("Attribute discovery failed.");
       }
 
       deviceInfoService = "";
+      genericAccessInfo = "";
       peripheral.disconnect();
 
     } else {

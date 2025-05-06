@@ -19,6 +19,7 @@ String address = "";
 String serviceInfo = "";
 
 String deviceInfoService = "";
+String genericAccessInfo = "";
 String heartRateService = "";
 String batteryLevelService = "";
 String timeInfoService = "";

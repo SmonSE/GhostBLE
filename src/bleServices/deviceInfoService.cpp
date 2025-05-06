@@ -30,3 +30,42 @@ String DeviceInfoServiceHandler::readDeviceInfo(BLEDevice peripheral) {
 
   return deviceInfoString;
 }
+
+String DeviceInfoServiceHandler::readGenericAccessInfo(BLEDevice peripheral) {
+  String genericAccessInfoString = "";
+
+  BLEService genericAccessService = peripheral.service("1800");
+  if (genericAccessService) {
+    Serial.println("Generic Access Service found (0x1800)");
+    const char* accessChars[] = {"2A00", "2A01"};
+    const char* accessNames[] = {"Device Name", "Appearance"};
+
+    for (int i = 0; i < 2; i++) {
+      BLECharacteristic c = genericAccessService.characteristic(accessChars[i]);
+      if (c && c.canRead()) {
+        delay(100);  // Kurze Pause
+        uint8_t buffer[32];
+        int len = c.readValue(buffer, sizeof(buffer));
+        if (len > 0) {
+          String val = "";
+
+          if (strcmp(accessChars[i], "2A01") == 0 && len >= 2) {
+            // Appearance ist ein 16-bit Integer
+            uint16_t appearance = buffer[0] | (buffer[1] << 8);
+            val = "0x" + String(appearance, HEX);
+          } else {
+            for (int k = 0; k < len; k++) {
+              val += (char)buffer[k];
+            }
+          }
+
+          genericAccessInfoString += String(accessNames[i]) + ": " + val + "\n";
+          Serial.print("  Value: ");
+          Serial.println(val);
+        }
+      }
+    }
+  }
+
+  return genericAccessInfoString;
+}

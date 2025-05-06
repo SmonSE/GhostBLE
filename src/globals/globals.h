@@ -26,6 +26,7 @@ extern String address;
 extern String serviceInfo;
 
 extern String deviceInfoService;
+extern String genericAccessInfo;
 extern String heartRateService;
 extern String batteryLevelService;
 extern String timeInfoService;

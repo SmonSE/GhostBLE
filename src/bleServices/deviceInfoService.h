@@ -7,6 +7,7 @@
 class DeviceInfoServiceHandler {
 public:
   static String readDeviceInfo(BLEDevice peripheral);
+  static String readGenericAccessInfo(BLEDevice peripheral);
 };
 
 #endif
