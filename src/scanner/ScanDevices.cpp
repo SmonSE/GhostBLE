@@ -1,4 +1,5 @@
 #include <M5Cardputer.h>
+#include <set>
 
 #include "ScanDevices.h"
 #include "../globals/globals.h"
@@ -15,6 +16,10 @@
 #include "../images/nibblesHeartRight.h"
 #include "../images/nibblesPawnd.h"
 
+
+#define MAX_SEEN_DEVICES 1500 // max is 2000 devices
+
+std::set<String> seenDevices;  // Globales Set für bereits gesehene Adressen
 
 // Forward declarations of required services/classes
 class SDLogger;
@@ -37,6 +42,26 @@ void scanForDevices() {
     targetFound = false;
     hasManuData = false;
 
+    address = peripheral.address();
+    if (seenDevices.find(address) != seenDevices.end()) {
+      Serial.print("🛑 Bereits gesehen: ");
+      Serial.println(address);
+      peripheral = BLE.available();
+
+      // For Checking free HEAP
+      Serial.print("Devices seen: ");
+      Serial.println(seenDevices.size());
+      Serial.print("Free Heap: ");
+      Serial.println(ESP.getFreeHeap());
+
+      if (seenDevices.size() >= MAX_SEEN_DEVICES) {
+        seenDevices.clear();
+      }
+      continue;
+    }
+    
+    seenDevices.insert(address);  // ⬅️ Neue Adresse merken
+
     Serial.println("🔗 Trying to connect for service discovery...");
     delay(500);
     
@@ -49,16 +74,12 @@ void scanForDevices() {
         }
 
         targetConnects++;
-        address = peripheral.address();
         Serial.print("Adresse: ");
         Serial.println(address);
 
         // Service calls
         deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
         genericAccessInfo = DeviceInfoServiceHandler::readGenericAccessInfo(peripheral);
-        //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
-        //batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
-        //timeInfoService = CurrentTimeServiceHandler::readCurrentTime(peripheral);
 
         // Manufacturer handling
         if (peripheral.hasManufacturerData()) {
@@ -112,6 +133,7 @@ void scanForDevices() {
             break;  // break for loop
           }
         }
+
         // Break WHILE LOOP
         if (targetFound) {
           Serial.println("ScanDevices: Found Device -> break");

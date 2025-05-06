@@ -58,3 +58,31 @@ xTaskCreate(
   //M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
   //drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
   //drawOverlay(nibblesPawnd, NIBBLESPAWND_WIDTH, NIBBLESPAWND_HEIGHT, 77, 49);
+
+
+
+// Bruce Windows SPAM
+20:17:16.657 -> 🔗 Trying to connect for service discovery...
+20:17:17.549 -> ✅ Connected and discovered attributes!
+20:17:17.549 -> Adresse: f0:0f:39:d3:b0:84
+20:17:17.549 -> Manufacturer ID: 0x6 (Microsoft Corporation)
+20:17:17.549 -> Local Name: 
+20:17:17.549 -> RSSI: -62
+20:17:17.549 -> Distanz: 1.00 m
+
+// Bruce
+20:27:50.470 -> Adresse: f4:b2:da:f3:51:27
+20:27:50.470 -> Device Information Service found (0x180A)
+20:27:50.602 ->   Value: BruceNet
+20:27:50.602 -> Generic Access Service found (0x1800)
+20:27:50.701 ->   Value: Keyboard_e9
+20:27:50.833 ->   Value: 0x0
+20:27:50.833 -> Primary UUID: 1800
+20:27:50.833 -> Service UUID: 1800
+20:27:50.833 -> Service UUID: 1801
+20:27:50.833 -> Service UUID: 180a
+20:27:50.833 -> Service UUID: 1812
+20:27:50.833 -> Service UUID: 180f
+20:27:50.833 -> Local Name: 
+20:27:50.833 -> RSSI: -41
+20:27:50.833 -> Distanz: 0.10 m
