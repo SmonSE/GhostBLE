@@ -79,6 +79,7 @@ void scanForDevices() {
         deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
         genericAccessInfo = DeviceInfoServiceHandler::readGenericAccessInfo(peripheral);
         //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
+        batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
 
         // Manufacturer handling
         if (peripheral.hasManufacturerData()) {
@@ -155,7 +156,7 @@ void scanForDevices() {
 
         // Log to SD
         if (!skipLogging) {
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService, genericAccessInfo);
+          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService, genericAccessInfo, batteryLevelService);
         } else {
           Serial.println("Skip logging.");
         }
