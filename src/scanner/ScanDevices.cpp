@@ -1,3 +1,4 @@
+#include <NimBLEDevice.h>
 #include <M5Cardputer.h>
 #include <set>
 
@@ -7,226 +8,257 @@
 #include "../helper/ServiceHelper.h"
 #include "../helper/drawOverlay.h"
 
-#include "../images/nibblesFrontHappy.h"
 #include "../images/nibblesFront.h"
 #include "../images/nibblesGlasses.h"
 #include "../images/nibblesAngry.h"
 #include "../images/nibblesSad.h"
 #include "../images/nibblesHeartLeft.h"
 #include "../images/nibblesHeartRight.h"
-#include "../images/nibblesPawnd.h"
 
 
-#define MAX_SEEN_DEVICES 1000 // max is 2000 devices
+NimBLEScan* pBLEScan = nullptr;
 
 // Forward declarations of required services/classes
 class SDLogger;
 SDLogger sdLogger;
 
 
+#define MAX_SEEN_DEVICES 1000
+
+
 void scanForDevices() {
-  BLE.scan();
-  BLEDevice peripheral = BLE.available();
+  NimBLEScan* pScan = NimBLEDevice::getScan();
+  
+  if (pScan == nullptr) {
+    Serial.println("Scan instance creation failed.");
+    return;  // Early exit if pScan is null
+  }
 
-  while (peripheral) {
-    int rssi = 0;
-    String localName;
-    String address;
-    String manuInfo = "";
-    String targetMessage = "";
-    String mainUuidStr = "";
- 
-    bool skipLogging = false;
-    targetFound = false;
-    hasManuData = false;
+  pScan->setActiveScan(true);  // Set active scan mode
+  pScan->setInterval(100);
+  pScan->setWindow(100);
+  pScan->start(10, false);     // Start scanning for 10 seconds
 
-    address = peripheral.address();
-    if (seenDevices.find(address) != seenDevices.end()) {
-      Serial.print("🛑 Bereits gesehen: ");
-      Serial.println(address);
-      peripheral = BLE.available();
+  delay(1000);  // Add a small delay to ensure scan results are populated
 
-      // For Checking free HEAP
-      Serial.print("Devices seen: ");
-      Serial.println(seenDevices.size());
-      Serial.print("Free Heap: ");
-      Serial.println(ESP.getFreeHeap());
+  NimBLEScanResults results = pScan->getResults();  // Get scan results
+  if (results.getCount() == 0) {
+    //Serial.println("No devices found.");
+  } else {
+    for (int i = 0; i < results.getCount(); ++i) {
+      const NimBLEAdvertisedDevice* device = results.getDevice(i);
+      String address = device->getAddress().toString().c_str();
+      String localName = String(device->getName().c_str());
+      int rssi = device->getRSSI();
 
-      if (seenDevices.size() >= MAX_SEEN_DEVICES) {
-        seenDevices.clear();
+      if (seenDevices.empty()) {
+        Serial.println("🧪 seenDevices is currently empty");
       }
-      continue;
-    }
-    
-    seenDevices.insert(address);  // ⬅️ Neue Adresse merken
 
-    Serial.println("🔗 Trying to connect for service discovery...");
-    delay(500);
-    
-    if (peripheral.connect()) {
-      if (peripheral.discoverAttributes()) {
-        Serial.println("✅ Connected and discovered attributes!");
+      Serial.printf("🧪 seenDevices size: %d\n", seenDevices.size());
+      Serial.printf("🧪 Trying to access address: %s\n", address.c_str());      
 
-        if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-          xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
+      try {
+        if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
+          Serial.print("🛑 Bereits gesehen: ");
+          Serial.println(address.c_str());
+          continue;
         }
+      
+        seenDevices.insert(std::string(address.c_str()));
+      
+        if (seenDevices.size() >= MAX_SEEN_DEVICES) {
+          seenDevices.clear();
+        }
+      } catch (...) {
+        Serial.println("⚠️ Exception caught accessing seenDevices");
+      }
+      
 
-        targetConnects++;
-        Serial.print("Adresse: ");
-        Serial.println(address);
+      Serial.println("🔗 Trying to connect for service discovery...");
+      delay(1000);
+  
+      // Create client to connect to the device
+      NimBLEClient* pClient = NimBLEDevice::createClient();
+      if (pClient == nullptr) {
+        Serial.println("Client creation failed.");
+        delay(1000);
+        if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+          xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 0, NULL);
+        }
+        continue;  // Skip this device and move to the next one
+      }
+      
+      if (pClient->connect(device)) {
+        if (pClient->discoverAttributes()) {
+          Serial.println("✅ Connected and discovered attributes!");
 
-        // Service calls
-        deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(peripheral);
-        genericAccessInfo = DeviceInfoServiceHandler::readGenericAccessInfo(peripheral);
-        //heartRateService = HeartRateServiceHandler::readHeartRate(peripheral);
-        batteryLevelService = BatteryServiceHandler::readBatteryLevel(peripheral);
+          targetConnects++;
 
-        // Manufacturer handling
-        if (peripheral.hasManufacturerData()) {
-          hasManuData = true;
-          uint8_t mfgData[64];
-          int mfgDataLen = peripheral.manufacturerData(mfgData, sizeof(mfgData));
-          if (mfgDataLen >= 2) {
-            uint16_t manufacturerId = mfgData[1] << 8 | mfgData[0];
+          if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+            xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
+          }
+
+          Serial.print("Adresse: ");
+          Serial.println(address);
+
+          deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+          batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
+          //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+
+          // Manufacturer handling
+          String manuInfo = "";
+          if (device->haveManufacturerData()) {
+            std::string mfg = device->getManufacturerData();
+            Serial.print("Manufacturer Data: ");
+            Serial.println(mfg.c_str());
+
+            uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
             String manufacturerName = getManufacturerName(manufacturerId);
             manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
             Serial.println(manuInfo);
 
             if (isIgnoredManufacturer(manufacturerId)) {
               Serial.println("Ignore Manufacturer.");
-              skipLogging = true;
+              pClient->disconnect();
+              NimBLEDevice::deleteClient(pClient);
+              continue;
             }
+          }
+
+          std::string mainUuidStr = "";
+          if (pClient->getServices().size() > 0) {
+            NimBLERemoteService* mainService = pClient->getServices()[0];
+            mainUuidStr = mainService->getUUID().toString();
+            Serial.print("Primary UUID: ");
+            Serial.println(mainUuidStr.c_str());
+          }
+
+          bool isTarget = false;
+          for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
+            NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
+            std::string serviceUuid = service->getUUID().toString();
+            Serial.print("Service UUID: ");
+            Serial.println(serviceUuid.c_str());
+      
+            std::string localName = device->getName();
+            if (isTargetDevice(String(localName.c_str()), String(address.c_str()), String(serviceUuid.c_str()))) {
+              targetFound = true;
+              susDevice++;
+              Serial.println("Target Message: !!! Target detected !!!");
+              delay(2000);
+              if (!isAngryTaskRunning) {
+                Serial.println("showAngryExpressionTask");
+                //xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 1, NULL);
+              }
+              isTarget = true;
+              break;
+            }
+          }
+      
+          if (isTarget) {
+            Serial.println("ScanDevices: Found Device -> break");
+            pClient->disconnect();
+            NimBLEDevice::deleteClient(pClient);
+            break;
+          }
+
+          // Print device info
+          Serial.print("Local Name: ");
+          Serial.println(localName);
+
+          Serial.print("RSSI: ");
+          Serial.println(rssi);
+
+          float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
+          Serial.print("Distanz: ");
+          Serial.print(distance, 2);
+          Serial.println(" m");
+
+          // Log to SD card
+          if (!manuInfo.isEmpty()) {
+            sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, String(mainUuidStr.c_str()), deviceInfoService, genericAccessInfo, batteryLevelService);
           } else {
-            hasManuData = false;
-            manuInfo = "Manufacturer ID: ";
-            Serial.println(manuInfo);
+            Serial.println("Skip logging.");
           }
-        }
 
-        // Main UUID
-        if (peripheral.serviceCount() > 0) {
-          BLEService mainService = peripheral.service(0);
-          const char* mainUuid = mainService.uuid();
-          mainUuidStr = String(mainUuid);
-
-          Serial.print("Primary UUID: ");
-          Serial.println(mainUuidStr);
-        }
-
-        char serviceUuid[64];
-        for (int i = 0; i < peripheral.serviceCount(); i++) {
-          BLEService service = peripheral.service(i);
-          strncpy(serviceUuid, service.uuid(), sizeof(serviceUuid));
-          serviceUuid[sizeof(serviceUuid) - 1] = '\0';
-
-          String serviceInfo = "Service UUID: ";
-          serviceInfo += serviceUuid;
-          Serial.println(serviceInfo);
-
-          localName = peripheral.localName();
-
-          if (isTargetDevice(localName, address, serviceUuid, hasManuData)) {
-            targetFound = true;
-            spottedDevice++;
-            targetMessage = "Target Message: !!! Target detected !!!";
-            Serial.println(targetMessage);
-            break;  // break for loop
-          }
-        }
-
-        // Break WHILE LOOP
-        if (targetFound) {
-          Serial.println("ScanDevices: Found Device -> break");
-          break;
-        }
-
-        // Print device info
-        localName = peripheral.localName();
-        Serial.print("Local Name: ");
-        Serial.println(localName);
-
-        rssi = peripheral.rssi();
-        Serial.print("RSSI: ");
-        Serial.println(rssi);
-
-        float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-        Serial.print("Distanz: ");
-        Serial.print(distance, 2);
-        Serial.println(" m");
-
-        // Log to SD
-        if (!skipLogging) {
-          sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, mainUuidStr, deviceInfoService, genericAccessInfo, batteryLevelService);
         } else {
-          Serial.println("Skip logging.");
+          Serial.println("Attribute discovery failed.");
         }
-      } else {
-        Serial.println("Attribute discovery failed.");
+
+        pClient->disconnect();
+        NimBLEDevice::deleteClient(pClient);
       }
-
-      deviceInfoService = "";
-      genericAccessInfo = "";
-      heartRateService = "";
-      peripheral.disconnect();
-
-    } else {
-      Serial.println("Connection failed.");
+      Serial.println("###############################\n");
     }
-
-    Serial.println("###############################\n");
-    peripheral = BLE.available();
   }
 
-  Serial.print("# Connects: ");
-  Serial.println(targetConnects);
-  Serial.println("\n\n");
 }
 
-void showLastConnectedDevice() {
-  M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.setCursor(10, 10);
-  M5.Lcd.setTextSize(1);
-  M5.Lcd.setTextColor(WHITE);
-  
-  M5.Lcd.println("Letztes verbundenes Gerät:");
-  M5.Lcd.println("----------------------------");
-  M5.Lcd.println(lastConnectedDeviceInfo);
-
-  delay(5000);  // Zeige 5 Sekunden lang an
-  M5.Lcd.fillScreen(BLACK);
-}
 
 void showGlassesExpressionTask(void* parameter) {
-    isGlassesTaskRunning = true;
-    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    showFindingCounter(targetConnects, spottedDevice);
-    isGlassesTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
+  isGlassesTaskRunning = true;
+  drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
+  vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+
+  int getSpottedDevice = seenDevices.size();
+  spottedDevice = getSpottedDevice;
+  showFindingCounter(targetConnects, susDevice, spottedDevice);  
+
+  isGlassesTaskRunning = false;
+  vTaskDelete(NULL);  // Task selbst beenden
 }
+
 
 void showAngryExpressionTask(void* parameter) {
   isAngryTaskRunning = true;
   drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
-  vTaskDelay(pdMS_TO_TICKS(4000));  // 3 Sekunden
+  vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-  showFindingCounter(targetConnects, spottedDevice);
+
+  int getSpottedDevice = seenDevices.size();
+  spottedDevice = getSpottedDevice;
+  showFindingCounter(targetConnects, susDevice, spottedDevice);  
+
   isAngryTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
 }
 
 
-void showFindingCounter(int sniffed, int spotted) {
+void showSadExpressionTask(void* parameter) {
+  isSadTaskRunning = true;
+  drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 77, 42);
+  vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+
+  int getSpottedDevice = seenDevices.size();
+  spottedDevice = getSpottedDevice;
+  showFindingCounter(targetConnects, susDevice, spottedDevice);  
+
+  isSadTaskRunning = false;
+  vTaskDelete(NULL);  // Task selbst beenden
+}
+
+
+
+void showFindingCounter(int sniffed, int susDevice, int spotted) {
+
   M5.Lcd.setTextColor(WHITE); 
   M5.Lcd.setTextSize(1); 
   M5.Lcd.setCursor(5, 124);
+  M5.Lcd.print("Spotted:");
+  M5.Lcd.println(spotted);
+
+  M5.Lcd.setTextColor(WHITE); 
+  M5.Lcd.setTextSize(1); 
+  M5.Lcd.setCursor(100, 124);
   M5.Lcd.print("Sniffed:");
   M5.Lcd.println(sniffed);
 
   M5.Lcd.setTextColor(RED);
   M5.Lcd.setTextSize(1);
-  M5.Lcd.setCursor(180, 124);
-  M5.Lcd.print("Spotted:");
-  M5.Lcd.println(spotted);
+  M5.Lcd.setCursor(190, 124);
+  M5.Lcd.print("Sus:");
+  M5.Lcd.println(susDevice);
 }

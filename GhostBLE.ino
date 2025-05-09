@@ -1,10 +1,9 @@
-#include <M5StickCPlus2.h>
 #include <M5Cardputer.h>
-#include <ArduinoBLE.h>
 #include <M5Unified.h>
 #include <SD.h>
 #include <SPI.h>
 #include <vector>
+#include <NimBLEDevice.h>
 
 #include "src/globals/globals.h"
 
@@ -14,16 +13,16 @@
 #include "src/helper/drawOverlay.h"
 
 #include "src/images/nibblesStartWorking.h"
-#include "src/images/nibblesFrontHappy.h"
+#include "src/images/nibblesFront.h"
 #include "src/images/nibblesGlasses.h"
 #include "src/images/nibblesAngry.h"
 #include "src/images/nibblesSad.h"
 #include "src/images/nibblesHeartLeft.h"
 #include "src/images/nibblesHeartRight.h"
-#include "src/images/nibblesPawnd.h"
+
 
 unsigned long startTimeDevice;
-const unsigned long timerDurationDevice = 5 * 60 * 1000; // 5 Minuten in Millisekunden
+const unsigned long timerDurationDevice = 10 * 60 * 1000; // 10 Minuten in Millisekunden
 
 // Forward declarations of required services/classes
 class SDLogger;
@@ -37,15 +36,10 @@ std::vector<String> serviceUuids;
 
 void setup() {
   M5Cardputer.begin();   // for Cardputer
-  //M5.begin();          // for M5Stick
   Serial.begin(115200);
   delay(500);
 
   Serial.println("GhostBLE starting...");
-
-  #if defined(STICK_C_PLUS2)
-    M5.Lcd.setRotation(3);
-  #endif
 
   #if defined(CARDPUTER)
   M5.Lcd.setRotation(1);
@@ -56,10 +50,7 @@ void setup() {
   M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));  
   delay(5000);
 
-  if (!BLE.begin()) {
-    Serial.println("BLE initialization failed!");
-    while (1);  // Halt the program if BLE fails
-  }
+  NimBLEDevice::init("GhostBLE");
 
   #if defined(CARDPUTER)
   if (!sdLogger.begin(SD_CS_PIN)) {
@@ -69,9 +60,10 @@ void setup() {
 
   Serial.println("BLE initialized successfully.");
 
-  M5.Lcd.drawBmp(nibblesFrontHappy, sizeof(nibblesFrontHappy));
-  showFindingCounter(targetConnects, spottedDevice);
-  delay(2000);
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+
+  showFindingCounter(targetConnects, susDevice, spottedDevice);
+  delay(1000);
 
   startTimeDevice = millis(); // Startzeit speichern
 
@@ -82,30 +74,30 @@ void loop() {
   M5Cardputer.update();   // for Cardputer
 
   unsigned long currentTime = millis();  // ✅ Make sure this line is present
+  delay(100);
 
-  delay(500);
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
     if (!targetFound) {
-      delay(500);
       scanForDevices();
     } else {
-      BLE.stopScan();
-      if (!isAngryTaskRunning) {
-        Serial.println("showAngryExpressionTask");
-        xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 1, NULL);
-      }
+      Serial.println("NO SCAN LOOP -> YOU ARE IN ELSE");
+      //pBLEScan->stop();  // this causes CRASH
       delay(DEVICE_SCAN_TIMEOUT);
       targetFound = false;
     }
-
     lastFaceUpdate = currentTime;
   }
 
   unsigned long currentTimeDevice = millis();
   if (currentTimeDevice - startTimeDevice >= timerDurationDevice) {
     Serial.println("5 Minuten sind vorbei!");
-    seenDevices.clear();
-    Serial.println("CLEAR SEEN DEVICES");
+    if (!seenDevices.empty()) {
+      seenDevices.clear();
+      Serial.println("CLEAR SEEN DEVICES");
+    } else {
+      Serial.println("SEEN DEVICES STILL EMPTY");
+    }
+
     startTimeDevice = millis();
   }
 }

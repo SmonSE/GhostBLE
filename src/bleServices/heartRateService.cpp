@@ -1,34 +1,28 @@
-#include "heartRateService.h"
-#include <ArduinoBLE.h>
+#include "heartRateService.h"  // Include the header file
 
-String HeartRateServiceHandler::readHeartRate(BLEDevice peripheral) {
+String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
   String heartRateStr = "";
 
-  BLEService hrService = peripheral.service("180D");  // Heart Rate Service UUID
-  if (hrService) {
+  // Get the heart rate service
+  NimBLERemoteService* hrService = pClient->getService("180D");
+  if (hrService != nullptr) {
     Serial.println("Heart Rate Service found (0x180D)");
 
-    BLECharacteristic hrChar = hrService.characteristic("2A37");  // Heart Rate Measurement UUID
+    // Get the heart rate characteristic
+    NimBLERemoteCharacteristic* hrChar = hrService->getCharacteristic("2A37");
+    if (hrChar != nullptr) {
+      delay(100);  // Short delay to allow the device to respond
 
-    if (hrChar) {
-      // Subscribe to the characteristic (no callback function)
-      if (hrChar.subscribe()) {
-        Serial.println("Subscribed to notifications for heart rate");
-      } else {
-        Serial.println("Failed to subscribe to notifications for heart rate");
-      }
-
-      // Wait to receive notifications (polling)
-      delay(500);  // Adjust this delay as necessary
-
-      // Check if a value has been received
-      if (hrChar.canRead()) {
-        uint8_t buffer[20];  // Create a buffer to hold the data
-        int len = hrChar.readValue(buffer, sizeof(buffer));
-        if (len > 1) {
-          int bpm = buffer[1];  // Heart rate is usually in the second byte
+      // Check if the characteristic can be read
+      if (hrChar->canRead()) {
+        NimBLEAttValue result = hrChar->readValue();
+        
+        // Check if the read operation was successful
+        if (result.length() > 1) {
+          // Assuming heart rate is in the second byte
+          int bpm = result[1];  
           heartRateStr = String(bpm);
-          Serial.print("Heart Rate: ");
+          Serial.print("  Heart Rate: ");
           Serial.println(bpm);
         }
       }

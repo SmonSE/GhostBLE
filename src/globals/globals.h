@@ -1,11 +1,13 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 
+#pragma once
 #include <set>
+#include <string>
 #include <Arduino.h>
 
 // ScanDevices seenDevices
-extern std::set<String> seenDevices;
+extern std::set<std::string> seenDevices;
 
 // Global flags and strings
 extern bool targetFound;
@@ -13,7 +15,9 @@ extern bool hasManuData;
 extern bool skipLogging;
 extern bool isGlassesTaskRunning;
 extern bool isAngryTaskRunning;
+extern bool isSadTaskRunning;
 
+extern int susDevice;
 extern int targetConnects;
 extern int spottedDevice;
 

@@ -1,7 +1,7 @@
 #include "targetDevice.h"
 #include "../config/config.h"
 
-bool isTargetDevice(String name, String address, String serviceUuid, bool hasManuData) {
+bool isTargetDevice(String name, String address, String serviceUuid) {
 
   // 0. CATHACK / BRUCE Signatur
   if ((name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0" || name == "Keyboard_e9" || name == "BruceNet")) {

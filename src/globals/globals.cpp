@@ -1,14 +1,16 @@
 #include "globals.h"
 #include <set>
 
-std::set<String> seenDevices;  // Global set of seen device addresses
+std::set<std::string> seenDevices;
 
 bool targetFound = false;
 bool hasManuData = false;
 bool skipLogging = false;
 bool isGlassesTaskRunning = false;
 bool isAngryTaskRunning = false;
+bool isSadTaskRunning = false;
 
+int susDevice = 0;
 int targetConnects = 0;
 int spottedDevice = 0;
 

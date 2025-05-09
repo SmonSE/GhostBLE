@@ -1,15 +1,11 @@
 #ifndef HEART_RATE_SERVICE_H
 #define HEART_RATE_SERVICE_H
 
-#include <Arduino.h>
-#include <BLEDevice.h>
+#include "NimBLEDevice.h"
 
 class HeartRateServiceHandler {
 public:
-  static String readHeartRate(BLEDevice peripheral);
+  static String readHeartRate(NimBLEClient* pClient);
 };
 
-// Callback function for processing notifications
-void onHeartRateNotify(BLECharacteristic* characteristic);
-
-#endif
+#endif  // HEART_RATE_SERVICE_H

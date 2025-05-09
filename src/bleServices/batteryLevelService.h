@@ -1,12 +1,13 @@
-#ifndef BATTERY_SERVICE_HANDLER_H
-#define BATTERY_SERVICE_HANDLER_H
+#ifndef BATTERY_LEVEL_SERVICE_H
+#define BATTERY_LEVEL_SERVICE_H
 
+#include <NimBLEClient.h>
 #include <Arduino.h>
-#include <BLEDevice.h>
 
 class BatteryServiceHandler {
 public:
-    static String readBatteryLevel(BLEDevice peripheral);
+    // Reads battery level from connected client (0x180F service)
+    static String readBatteryLevel(NimBLEClient* pClient);
 };
 
-#endif
+#endif // BATTERY_LEVEL_SERVICE_H

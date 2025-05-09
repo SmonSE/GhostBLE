@@ -3,6 +3,6 @@
 
 #include <Arduino.h>
 
-bool isTargetDevice(String name, String address, String serviceUuid, bool hasManuData);
+bool isTargetDevice(String name, String address, String serviceUuid);
 
 #endif  // TARGET_DEVICE_H

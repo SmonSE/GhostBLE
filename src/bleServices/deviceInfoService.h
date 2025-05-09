@@ -2,12 +2,11 @@
 #define DEVICE_INFO_SERVICE_H
 
 #include <Arduino.h>
-#include <ArduinoBLE.h>
+#include <NimBLEDevice.h>
 
 class DeviceInfoServiceHandler {
 public:
-  static String readDeviceInfo(BLEDevice peripheral);
-  static String readGenericAccessInfo(BLEDevice peripheral);
+    static String readDeviceInfo(NimBLEClient* pClient);  // Pass the connected client
 };
 
-#endif
+#endif // DEVICE_INFO_SERVICE_H
