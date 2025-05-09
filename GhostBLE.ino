@@ -80,7 +80,6 @@ void loop() {
     if (!targetFound) {
       scanForDevices();
     } else {
-      Serial.println("NO SCAN LOOP -> YOU ARE IN ELSE");
       //pBLEScan->stop();  // this causes CRASH
       delay(DEVICE_SCAN_TIMEOUT);
       targetFound = false;
@@ -90,7 +89,7 @@ void loop() {
 
   unsigned long currentTimeDevice = millis();
   if (currentTimeDevice - startTimeDevice >= timerDurationDevice) {
-    Serial.println("5 Minuten sind vorbei!");
+    Serial.println("10 Minuten sind vorbei!");
     if (!seenDevices.empty()) {
       seenDevices.clear();
       Serial.println("CLEAR SEEN DEVICES");
