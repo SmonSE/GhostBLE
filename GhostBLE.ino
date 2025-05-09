@@ -50,7 +50,7 @@ void setup() {
   M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));  
   delay(5000);
 
-  NimBLEDevice::init("GhostBLE");
+  NimBLEDevice::init("");
 
   #if defined(CARDPUTER)
   if (!sdLogger.begin(SD_CS_PIN)) {
@@ -67,6 +67,7 @@ void setup() {
 
   startTimeDevice = millis(); // Startzeit speichern
 
+  scanIsRunning = false;
   // OVERLAY WITH LETS WORK BUBBLE
 }
 
@@ -74,14 +75,11 @@ void loop() {
   M5Cardputer.update();   // for Cardputer
 
   unsigned long currentTime = millis();  // ✅ Make sure this line is present
-  delay(100);
 
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-    if (!targetFound) {
+    if (!targetFound && !scanIsRunning) {
       scanForDevices();
     } else {
-      //pBLEScan->stop();  // this causes CRASH
-      delay(DEVICE_SCAN_TIMEOUT);
       targetFound = false;
     }
     lastFaceUpdate = currentTime;

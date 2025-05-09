@@ -9,6 +9,8 @@
 // ScanDevices seenDevices
 extern std::set<std::string> seenDevices;
 
+extern bool scanIsRunning;
+
 // Global flags and strings
 extern bool targetFound;
 extern bool hasManuData;

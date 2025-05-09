@@ -3,6 +3,8 @@
 
 std::set<std::string> seenDevices;
 
+bool scanIsRunning = false;
+
 bool targetFound = false;
 bool hasManuData = false;
 bool skipLogging = false;

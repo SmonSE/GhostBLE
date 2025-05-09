@@ -35,26 +35,29 @@ void scanForDevices() {
   }
 
   pScan->setActiveScan(true);  // Set active scan mode
-  pScan->setInterval(160);
-  pScan->setWindow(80);
-  pScan->start(15, false);     // Start scanning for 10 seconds
+  pScan->setInterval(1340);
+  pScan->setWindow(440);
+  pScan->clearResults();
 
-  delay(1000);  // Add a small delay to ensure scan results are populated
-
+  Serial.println("START SCAN");
+  pScan->start(10, false);  // Blocking scan for 5 seconds  
+  delay(1000);
   NimBLEScanResults results = pScan->getResults();  // Get scan results
   if (results.getCount() == 0) {
-    //Serial.println("No devices found.");
+    //Serial.print("Results getCount: ");
+    //Serial.println(results.getCount());
   } else {
+      scanIsRunning = true;
+      Serial.println("Scan Is Running");
     for (int i = 0; i < results.getCount(); ++i) {
       const NimBLEAdvertisedDevice* device = results.getDevice(i);
       String address = device->getAddress().toString().c_str();
-      String localName = String(device->getName().c_str());
+      String localName = device->haveName() ? String(device->getName().c_str()) : "Unknown";
       int rssi = device->getRSSI();
 
       if (seenDevices.empty()) {
         Serial.println("🧪 seenDevices is currently empty");
       }
-
       Serial.printf("🧪 seenDevices size: %d\n", seenDevices.size());
       Serial.printf("🧪 Trying to access address: %s\n", address.c_str());      
 
@@ -76,7 +79,7 @@ void scanForDevices() {
       
 
       Serial.println("🔗 Trying to connect for service discovery...");
-      delay(1000);
+      //sdelay(1000);
   
       // Create client to connect to the device
       NimBLEClient* pClient = NimBLEDevice::createClient();
@@ -198,9 +201,10 @@ void scanForDevices() {
       }
 
       Serial.println("###############################\n");
+
+      scanIsRunning = false;
     }
   }
-
 }
 
 
