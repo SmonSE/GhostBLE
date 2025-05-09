@@ -37,7 +37,7 @@ void scanForDevices() {
   pScan->setActiveScan(true);  // Set active scan mode
   pScan->setInterval(100);
   pScan->setWindow(100);
-  pScan->start(10, false);     // Start scanning for 10 seconds
+  pScan->start(15, false);     // Start scanning for 10 seconds
 
   delay(1000);  // Add a small delay to ensure scan results are populated
 
