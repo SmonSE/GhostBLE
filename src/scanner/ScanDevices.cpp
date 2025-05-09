@@ -57,6 +57,7 @@ void scanForDevices() {
       if (seenDevices.empty()) {
         Serial.println("🧪 seenDevices is currently empty");
       }
+      allSpottedDevice++;
       Serial.printf("🧪 seenDevices size: %d\n", seenDevices.size());
       Serial.printf("🧪 Trying to access address: %s\n", address.c_str());  
 
@@ -100,7 +101,7 @@ void scanForDevices() {
     
           deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
           batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-          heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+          //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
       
           // Manufacturer handling
           String manuInfo = "";
@@ -201,9 +202,7 @@ void showGlassesExpressionTask(void* parameter) {
   vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
 
-  int getSpottedDevice = seenDevices.size();
-  spottedDevice = getSpottedDevice;
-  showFindingCounter(targetConnects, susDevice, spottedDevice);  
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
 
   isGlassesTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
@@ -216,9 +215,7 @@ void showAngryExpressionTask(void* parameter) {
   vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
 
-  int getSpottedDevice = seenDevices.size();
-  spottedDevice = getSpottedDevice;
-  showFindingCounter(targetConnects, susDevice, spottedDevice);  
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
 
   isAngryTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
@@ -231,9 +228,7 @@ void showSadExpressionTask(void* parameter) {
   vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
 
-  int getSpottedDevice = seenDevices.size();
-  spottedDevice = getSpottedDevice;
-  showFindingCounter(targetConnects, susDevice, spottedDevice);  
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
 
   isSadTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden

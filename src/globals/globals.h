@@ -21,7 +21,7 @@ extern bool isSadTaskRunning;
 
 extern int susDevice;
 extern int targetConnects;
-extern int spottedDevice;
+extern int allSpottedDevice;
 
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;

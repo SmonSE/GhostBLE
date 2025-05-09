@@ -62,7 +62,7 @@ void setup() {
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
 
-  showFindingCounter(targetConnects, susDevice, spottedDevice);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
   delay(1000);
 
   startTimeDevice = millis(); // Startzeit speichern
