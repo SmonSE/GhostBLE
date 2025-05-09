@@ -189,7 +189,14 @@ void scanForDevices() {
 
         pClient->disconnect();
         NimBLEDevice::deleteClient(pClient);
+      } else {
+        Serial.println("Attribute discovery failed.");
+        if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+          Serial.println("showSadExpressionTask");
+          xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
+        }
       }
+
       Serial.println("###############################\n");
     }
   }
