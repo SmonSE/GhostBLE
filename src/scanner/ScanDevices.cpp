@@ -84,7 +84,8 @@ void scanForDevices() {
         Serial.println("Client creation failed.");
         delay(1000);
         if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-          xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 0, NULL);
+          Serial.println("showSadExpressionTask");
+          xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
         }
         continue;  // Skip this device and move to the next one
       }
@@ -149,7 +150,7 @@ void scanForDevices() {
               delay(2000);
               if (!isAngryTaskRunning) {
                 Serial.println("showAngryExpressionTask");
-                //xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 1, NULL);
+                xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 2, NULL);
               }
               isTarget = true;
               break;
