@@ -10,8 +10,6 @@
 #include "../helper/showExpression.h"
 
 
-NimBLEUUID serviceUuid("ABCD");
-
 NimBLEScan* pBLEScan = nullptr;
 
 // Forward declarations of required services/classes
