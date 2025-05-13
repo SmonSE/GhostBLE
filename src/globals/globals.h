@@ -5,9 +5,11 @@
 #include <set>
 #include <string>
 #include <Arduino.h>
+#include <vector> 
 
 // ScanDevices seenDevices
 extern std::set<std::string> seenDevices;
+extern std::vector<std::string> uuidList;
 
 extern bool scanIsRunning;
 

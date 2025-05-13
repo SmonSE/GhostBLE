@@ -33,6 +33,7 @@ bool SDLogger::begin(int csPin) {
 
 void SDLogger::writeDeviceInfo( const String& address, 
                                 const String& localName, 
+                                const std::vector<std::string>& uuids,
                                 const String& targetMessage, 
                                 const String& deviceInfoString, 
                                 const String& batteryLevelService) {
@@ -52,6 +53,12 @@ void SDLogger::writeDeviceInfo( const String& address,
             dataFile.println(localName);
         } else {
             dataFile.println("Local Name: (no name)");
+        }
+
+        dataFile.println("Service and Characteristic UUIDs:");
+        for (const auto& uuid : uuids) {
+            dataFile.print("  - ");
+            dataFile.println(uuid.c_str());
         }
 
         //Device Info String: 

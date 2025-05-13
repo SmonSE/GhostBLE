@@ -1,7 +1,10 @@
 #include "globals.h"
 #include <set>
+#include <string>
+#include <vector> 
 
 std::set<std::string> seenDevices;
+std::vector<std::string> uuidList;
 
 bool scanIsRunning = false;
 
