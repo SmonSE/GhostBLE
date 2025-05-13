@@ -26,18 +26,12 @@ extern int allSpottedDevice;
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;
 
-// Filterlogik: Herstellerdaten prüfen
-extern bool skipLogging;
-
-extern String manuInfo;
 extern String targetMessage;
-extern String mainUuidStr;
 extern String localName;
 extern String address;
 extern String serviceInfo;
 
 extern String deviceInfoService;
-extern String genericAccessInfo;
 extern String heartRateService;
 extern String batteryLevelService;
 extern String timeInfoService;

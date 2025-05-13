@@ -154,11 +154,8 @@ void scanForDevices() {
           Serial.println(" m");
       
           // Log to SD card
-          if (!manuInfo.isEmpty()) {
-            sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, deviceInfoService, genericAccessInfo, batteryLevelService);
-          } else {
-            Serial.println("Skip logging.");
-          }
+          sdLogger.writeDeviceInfo(address, localName, targetMessage, deviceInfoService, batteryLevelService);
+
         } else {
           Serial.println("Attribute discovery failed.");
         }
