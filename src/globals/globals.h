@@ -31,6 +31,7 @@ extern unsigned long lastFaceUpdate;
 extern String targetMessage;
 extern String localName;
 extern String address;
+extern String SserviceUuid;
 extern String serviceInfo;
 
 extern String deviceInfoService;

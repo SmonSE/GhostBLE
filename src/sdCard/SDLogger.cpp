@@ -55,14 +55,14 @@ void SDLogger::writeDeviceInfo( const String& address,
             dataFile.println("Local Name: (no name)");
         }
 
+        //Device Info String: 
+        dataFile.println(deviceInfoString);
+
         dataFile.println("Service and Characteristic UUIDs:");
         for (const auto& uuid : uuids) {
             dataFile.print("  - ");
             dataFile.println(uuid.c_str());
         }
-
-        //Device Info String: 
-        dataFile.println(deviceInfoString);
 
         // Target Message:
         dataFile.println(targetMessage);

@@ -25,6 +25,7 @@ unsigned long lastFaceUpdate = 0;
 String targetMessage = "";
 String localName = "";
 String address = "";
+String SserviceUuid = "";
 String serviceInfo = "";
 
 String deviceInfoService = "";

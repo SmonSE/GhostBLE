@@ -43,8 +43,8 @@ void scanForDevices() {
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
-      String address = device->getAddress().toString().c_str();
-      String localName = device->haveName() ? String(device->getName().c_str()) : "Unknown";
+      address = device->getAddress().toString().c_str();
+      localName = device->haveName() ? String(device->getName().c_str()) : "Unknown";
       int rssi = device->getRSSI();
 
       if (seenDevices.empty()) {
@@ -130,8 +130,12 @@ void scanForDevices() {
               uuidList.push_back("  Characteristic UUID: " + std::string(charUuid.c_str()));
             }
 
-            std::string localName = device->getName();
-            if (isTargetDevice(String(localName.c_str()), String(address.c_str()), String(serviceUuid.c_str()))) {
+            if (!device->getName().empty()) {
+              localName = device->getName().c_str();
+              //Serial.println("Replace localName with connected device->getName");
+            }
+
+            if (isTargetDevice(localName.c_str(), address.c_str(), SserviceUuid.c_str())) {
               targetFound = true;
               susDevice++;
               Serial.println("Target Message: !!! Target detected !!!");
@@ -144,14 +148,6 @@ void scanForDevices() {
               break;
             }
           }
-          
-          // If this is included he will not store detected Target to SDLogger
-          //if (isTarget) {
-          //  Serial.println("ScanDevices: Found Device -> break");
-          //  pClient->disconnect();
-          //  NimBLEDevice::deleteClient(pClient);
-          //  break;
-          //}
       
           // Print device info
           Serial.print("Local Name: ");
@@ -167,7 +163,7 @@ void scanForDevices() {
       
           // Log to SD card
           sdLogger.writeDeviceInfo(address, localName, uuidList, targetMessage, deviceInfoService, batteryLevelService);
-          Serial.println("Write Data to SD Logger");
+          //Serial.println("Write Data to SD Logger");
 
           // Clear uuidList after Stored to SD Card
           uuidList.clear();
