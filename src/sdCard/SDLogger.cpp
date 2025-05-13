@@ -35,7 +35,6 @@ void SDLogger::writeDeviceInfo( const String& address,
                                 const String& localName, 
                                 const String& manuInfo, 
                                 const String& targetMessage, 
-                                const String& mainUuidStr, 
                                 const String& deviceInfoString, 
                                 const String& genericAccessInfo, 
                                 const String& batteryLevelService) {
@@ -49,10 +48,6 @@ void SDLogger::writeDeviceInfo( const String& address,
 
         dataFile.print("Address: ");
         dataFile.println(address);
-
-        // Discovered Primary UUID: 
-        dataFile.print("Primary UUID: ");
-        dataFile.println(mainUuidStr);
 
         if (localName.length() > 0) {
             dataFile.print("Local Name: ");

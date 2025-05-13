@@ -17,24 +17,3 @@ const char* CATHACK_SERVICE_UUID_4 = "deadf154-0000-0000-0000-0000deadf154";
 const char* CATHACK_SERVICE_UUID_5 = "1800";
 const char* CATHACK_SERVICE_UUID_6 = "1801";
 
-// ===== Manufacturer Filtering =====
-const bool ENABLE_MANUFACTURER_FILTER = false;
-
-const uint16_t IGNORED_MANUFACTURERS[] = {
-    0x004C, // Apple
-    //0x0006, // Microsoft
-    //0x0075  // Samsung
-};
-
-const size_t IGNORED_MANUFACTURER_COUNT = sizeof(IGNORED_MANUFACTURERS) / sizeof(IGNORED_MANUFACTURERS[0]);
-
-bool isIgnoredManufacturer(uint16_t id) {
-    if (!ENABLE_MANUFACTURER_FILTER) return false;
-
-    for (size_t i = 0; i < IGNORED_MANUFACTURER_COUNT; ++i) {
-        if (IGNORED_MANUFACTURERS[i] == id) {
-            return true;
-        }
-    }
-    return false;
-}

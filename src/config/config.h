@@ -38,12 +38,4 @@ extern const char* CATHACK_SERVICE_UUID_6;
 #define RSSI_CONSTANT 20
 #define DISTANCE_CONSTANT -69
 
-// ===== Manufacturer Filter =====
-extern const bool ENABLE_MANUFACTURER_FILTER;
-extern const uint16_t IGNORED_MANUFACTURERS[];
-extern const size_t IGNORED_MANUFACTURER_COUNT;
-
-// ===== Utility Function =====
-bool isIgnoredManufacturer(uint16_t id);
-
 #endif // CONFIG_H

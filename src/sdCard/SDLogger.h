@@ -12,7 +12,6 @@ public:
                          const String& localName, 
                          const String& manuInfo, 
                          const String& targetMessage, 
-                         const String& mainUuidStr, 
                          const String& deviceInfoString, 
                          const String& genericAccessInfo,
                          const String& batteryLevelService);

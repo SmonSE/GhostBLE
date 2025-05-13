@@ -33,7 +33,7 @@ void scanForDevices() {
   pScan->setWindow(900);       // Adjust window to 900ms (90% of interval)
   pScan->clearResults();       // Clear previous scan results
   
-  NimBLEScanResults results = pScan->getResults(10 * 1000);  // Scan 10 seconds to get scan results
+  NimBLEScanResults results = pScan->getResults(5 * 1000);  // Scan 5 seconds to get scan results
   if (results.getCount() == 0) {
     // Serial.println(EMPTY COUNT);
   } else {
@@ -50,8 +50,7 @@ void scanForDevices() {
       if (seenDevices.empty()) {
         Serial.println("🧪 seenDevices is currently empty");
       }
-      allSpottedDevice++;
-      Serial.printf("🧪 seenDevices size: %d\n", seenDevices.size());
+      Serial.printf("🧪 seenDevices size: %d\n", seenDevices.size() + 1);
       Serial.printf("🧪 Trying to access address: %s\n", address.c_str());  
 
       try {
@@ -59,6 +58,8 @@ void scanForDevices() {
           Serial.print("🛑 Bereits gesehen: ");
           Serial.println(address.c_str());
           continue;
+        } else {
+          allSpottedDevice++;
         }
       
         seenDevices.insert(std::string(address.c_str()));
@@ -67,7 +68,7 @@ void scanForDevices() {
           seenDevices.clear();
         }
       } catch (...) {
-        Serial.println("⚠️ Exception caught accessing seenDevices");
+        Serial.println("Exception caught accessing seenDevices");
       }
       
       Serial.println("🔗 Trying to connect for service discovery...");
@@ -80,6 +81,8 @@ void scanForDevices() {
         break;
       }
 
+      pClient->setConnectTimeout(15 * 1000); // 15sec TimeOut -> default 30sec
+
       if (pClient->connect(*device)) {
         if (pClient->discoverAttributes()) {
           Serial.println("✅ Connected and discovered attributes!");
@@ -91,38 +94,23 @@ void scanForDevices() {
     
           Serial.print("Adresse: ");
           Serial.println(address);
-    
-          deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
-          batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-          //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-      
+
           // Manufacturer handling
           String manuInfo = "";
           if (device->haveManufacturerData()) {
             std::string mfg = device->getManufacturerData();
             Serial.print("Manufacturer Data: ");
             Serial.println(mfg.c_str());
-      
+                
             uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
             String manufacturerName = getManufacturerName(manufacturerId);
             manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
             Serial.println(manuInfo);
-      
-            if (isIgnoredManufacturer(manufacturerId)) {
-              Serial.println("Ignore Manufacturer.");
-              pClient->disconnect();
-              NimBLEDevice::deleteClient(pClient);
-              continue;
-            }
           }
     
-          std::string mainUuidStr = "";
-          if (pClient->getServices().size() > 0) {
-            NimBLERemoteService* mainService = pClient->getServices()[0];
-            mainUuidStr = mainService->getUUID().toString();
-            Serial.print("Primary UUID: ");
-            Serial.println(mainUuidStr.c_str());
-          }
+          deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+          batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
+          //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
     
           bool isTarget = false;
           for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
@@ -167,7 +155,7 @@ void scanForDevices() {
       
           // Log to SD card
           if (!manuInfo.isEmpty()) {
-            sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, String(mainUuidStr.c_str()), deviceInfoService, genericAccessInfo, batteryLevelService);
+            sdLogger.writeDeviceInfo(address, localName, manuInfo, targetMessage, deviceInfoService, genericAccessInfo, batteryLevelService);
           } else {
             Serial.println("Skip logging.");
           }
@@ -181,6 +169,7 @@ void scanForDevices() {
           xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
         }
       }
+      pClient->disconnect();
       NimBLEDevice::deleteClient(pClient);
     }
     Serial.println("###############################\n");
