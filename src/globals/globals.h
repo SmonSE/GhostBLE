@@ -10,6 +10,7 @@
 // ScanDevices seenDevices
 extern std::set<std::string> seenDevices;
 extern std::vector<std::string> uuidList;
+extern std::vector<std::string> nameList;
 
 extern bool scanIsRunning;
 
@@ -29,7 +30,6 @@ extern int batteryPercent;
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;
 
-extern String targetMessage;
 extern String localName;
 extern String address;
 extern String serviceInfo;

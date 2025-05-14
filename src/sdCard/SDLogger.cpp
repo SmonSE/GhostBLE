@@ -32,9 +32,9 @@ bool SDLogger::begin(int csPin) {
 }
 
 void SDLogger::writeDeviceInfo( const String& address, 
-                                const String& localName, 
+                                const String& localName,
+                                const std::vector<std::string>& nameList,
                                 const std::vector<std::string>& uuids,
-                                const String& targetMessage, 
                                 const String& deviceInfoString, 
                                 const String& batteryLevelService) {
     if (!initialized) {
@@ -55,6 +55,12 @@ void SDLogger::writeDeviceInfo( const String& address,
             dataFile.println("Local Name: (no name)");
         }
 
+        dataFile.println("Device Names:");
+        for (const auto& names : nameList) {
+            dataFile.print("  - ");
+            dataFile.println(names.c_str());
+        }
+
         //Device Info String: 
         dataFile.println(deviceInfoString);
 
@@ -63,9 +69,6 @@ void SDLogger::writeDeviceInfo( const String& address,
             dataFile.print("  - ");
             dataFile.println(uuid.c_str());
         }
-
-        // Target Message:
-        dataFile.println(targetMessage);
 
         dataFile.println("-------------------------------");
         dataFile.flush();  // Make sure the data is written to the card

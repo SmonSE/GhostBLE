@@ -10,8 +10,8 @@ public:
     bool begin(int csPin = -1); // Optional: provide CS pin
     void writeDeviceInfo(const String& address, 
                          const String& localName, 
+                         const std::vector<std::string>& nameList,
                          const std::vector<std::string>& uuids,
-                         const String& targetMessage, 
                          const String& deviceInfoString, 
                          const String& batteryLevelService);
 

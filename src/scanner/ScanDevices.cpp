@@ -48,10 +48,10 @@ void scanForDevices() {
       int rssi = device->getRSSI();
 
       if (seenDevices.empty()) {
-        Serial.println("🧪 seenDevices is currently empty");
+        Serial.println("  seenDevices is currently empty");
       }
-      Serial.printf("🧪 seenDevices size: %d\n", seenDevices.size() + 1);
-      Serial.printf("🧪 Trying to access address: %s\n", address.c_str());  
+      Serial.printf("  seenDevices size: %d\n", seenDevices.size() + 1);
+      Serial.printf("  Trying to access address: %s\n", address.c_str());  
 
       try {
         if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
@@ -71,7 +71,7 @@ void scanForDevices() {
         Serial.println("Exception caught accessing seenDevices");
       }
       
-      Serial.println("🔗 Trying to connect for service discovery...");
+      Serial.println("  Trying to connect for service discovery...");
 
       Serial.println("   connecting for service discovery...");
       NimBLEClient *pClient = NimBLEDevice::createClient();
@@ -124,8 +124,19 @@ void scanForDevices() {
               std::string charUuid = characteristic->getUUID().toString();
               Serial.print("  Characteristic UUID: ");
               Serial.println(charUuid.c_str());
-
               uuidList.push_back("  Characteristic UUID: " + std::string(charUuid.c_str()));
+              
+              if (characteristic) {
+                std::string name = characteristic->readValue();
+
+                if (!name.empty()) {
+                  //Serial.print("Gerätename: ");
+                  //Serial.println(name.c_str());
+                  nameList.push_back(std::string(name.c_str()));
+                }
+              } else {
+                Serial.println("Device Name Characteristic nicht gefunden.");
+              }
             }
 
             if (!device->getName().empty()) {
@@ -156,6 +167,14 @@ void scanForDevices() {
           Serial.print("  Local Name: ");
           Serial.println(localName);
 
+          Serial.println("  Device Name: ");
+          for (const auto& names : nameList) {
+            if (!names.empty()) {
+              Serial.print("    - ");
+              Serial.println(names.c_str());
+            }
+          }
+
           Serial.print("  RSSI: ");
           Serial.println(rssi);
       
@@ -167,11 +186,12 @@ void scanForDevices() {
           Serial.println("----------------------------------\n");
       
           // Log to SD card
-          sdLogger.writeDeviceInfo(address, localName, uuidList, targetMessage, deviceInfoService, batteryLevelService);
+          sdLogger.writeDeviceInfo(address, localName, nameList, uuidList, deviceInfoService, batteryLevelService);
           //Serial.println("Write Data to SD Logger");
 
           // Clear uuidList after Stored to SD Card
           uuidList.clear();
+          nameList.clear();
         } else {
           Serial.println("Attribute discovery failed.");
         }

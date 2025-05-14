@@ -5,6 +5,7 @@
 
 std::set<std::string> seenDevices;
 std::vector<std::string> uuidList;
+std::vector<std::string> nameList;
 
 bool scanIsRunning = false;
 
@@ -23,7 +24,6 @@ int batteryPercent = 0;
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
 
-String targetMessage = "";
 String localName = "";
 String address = "";
 String serviceInfo = "";

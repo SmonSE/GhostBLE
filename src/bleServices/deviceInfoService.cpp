@@ -28,7 +28,7 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
               Serial.printf("  %s: %s\n", charNames[i], val.c_str());
           }
         }
-      }
+      } 
 
     return deviceInfoString;
 }
