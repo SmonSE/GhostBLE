@@ -12,6 +12,7 @@
 #include "../images/nibblesHappy.h"
 #include "../images/nibblesHeartLeft.h"
 #include "../images/nibblesHeartRight.h"
+#include "../images/nibblesThugLife.h"
 
 
 void showGlassesExpressionTask(void* parameter) {
@@ -63,6 +64,24 @@ void showSadExpressionTask(void* parameter) {
     vTaskDelete(NULL);  // Task selbst beenden
 }
   
+  
+void showThugLifeExpressionTask(void* parameter) {
+  isSadTaskRunning = true;
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+
+  vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+
+  isSadTaskRunning = false;
+  vTaskDelete(NULL);  // Task selbst beenden
+}
+
+
 void showBatteryState() {
   // Read battery voltage
   float voltage = M5.Power.getBatteryVoltage(); // e.g., 4.1V

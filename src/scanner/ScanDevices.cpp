@@ -140,7 +140,8 @@ void scanForDevices() {
               delay(2000);
               if (!isAngryTaskRunning) {
                 Serial.println("showAngryExpressionTask");
-                xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 2, NULL);
+                xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
+                //xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 4, NULL);
               }
               isTarget = true;
               break;
