@@ -133,7 +133,7 @@ void scanForDevices() {
               //Serial.println("Replace localName with connected device->getName");
             }
 
-            if (isTargetDevice(localName.c_str(), address.c_str(), SserviceUuid.c_str())) {
+            if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str())) {
               targetFound = true;
               susDevice++;
               Serial.println("Target Message: !!! Target detected !!!");

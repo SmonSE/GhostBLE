@@ -17,10 +17,12 @@
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
     isGlassesTaskRunning = false;
@@ -32,10 +34,12 @@ void showAngryExpressionTask(void* parameter) {
     isAngryTaskRunning = true;
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+
     vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
     isAngryTaskRunning = false;
@@ -47,10 +51,12 @@ void showSadExpressionTask(void* parameter) {
     isSadTaskRunning = true;
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
     isSadTaskRunning = false;
