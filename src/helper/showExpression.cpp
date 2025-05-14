@@ -9,15 +9,18 @@
 #include "../images/nibblesGlasses.h"
 #include "../images/nibblesAngry.h"
 #include "../images/nibblesSad.h"
+#include "../images/nibblesHappy.h"
 #include "../images/nibblesHeartLeft.h"
 #include "../images/nibblesHeartRight.h"
 
+
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
-    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
+    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-  
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
     isGlassesTaskRunning = false;
@@ -27,9 +30,11 @@ void showGlassesExpressionTask(void* parameter) {
   
 void showAngryExpressionTask(void* parameter) {
     isAngryTaskRunning = true;
-    drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 77, 42);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
     vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
@@ -40,9 +45,11 @@ void showAngryExpressionTask(void* parameter) {
   
 void showSadExpressionTask(void* parameter) {
     isSadTaskRunning = true;
-    drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 77, 42);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   

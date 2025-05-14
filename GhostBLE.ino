@@ -20,6 +20,7 @@
 #include "src/images/nibblesSad.h"
 #include "src/images/nibblesHeartLeft.h"
 #include "src/images/nibblesHeartRight.h"
+#include "src/images/nibblesHappy.h"
 
 
 unsigned long startTimeDevice;
@@ -62,6 +63,7 @@ void setup() {
   Serial.println("BLE initialized successfully.");
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
 
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
