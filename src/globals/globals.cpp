@@ -18,6 +18,7 @@ bool isSadTaskRunning = false;
 int susDevice = 0;
 int targetConnects = 0;
 int allSpottedDevice = 0;
+int batteryPercent = 0;
 
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;

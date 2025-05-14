@@ -11,6 +11,7 @@
 #include "src/sdCard/SDLogger.h"
 #include "src/scanner/ScanDevices.h"
 #include "src/helper/drawOverlay.h"
+#include "src/helper/showExpression.h"
 
 #include "src/images/nibblesStartWorking.h"
 #include "src/images/nibblesFront.h"
@@ -63,6 +64,7 @@ void setup() {
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
 
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+
   delay(1000);
 
   startTimeDevice = millis(); // Startzeit speichern
@@ -91,9 +93,13 @@ void loop() {
     if (!seenDevices.empty()) {
       seenDevices.clear();
       Serial.println("CLEAR SEEN DEVICES");
+
     } else {
       Serial.println("SEEN DEVICES STILL EMPTY");
     }
+    // Update Battery every 10 min
+    showBatteryState();
+    Serial.println("Update Batterie State");
 
     startTimeDevice = millis();
   }
