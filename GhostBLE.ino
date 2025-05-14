@@ -97,8 +97,6 @@ void loop() {
     } else {
       Serial.println("SEEN DEVICES STILL EMPTY");
     }
-    // Update Battery every 10 min
-    showBatteryState();
     Serial.println("Update Batterie State");
 
     startTimeDevice = millis();

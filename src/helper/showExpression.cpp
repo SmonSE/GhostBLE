@@ -60,8 +60,8 @@ void showBatteryState() {
 
   M5.Lcd.setTextColor(WHITE); 
   M5.Lcd.setTextSize(1); 
-  M5.Lcd.setCursor(5, 10);
-  M5.Lcd.printf("Battery: %d%%", batteryPercent);
+  M5.Lcd.setCursor(210, 10);
+  M5.Lcd.printf("%d%%", batteryPercent);
 }
   
 void showFindingCounter(int sniffed, int susDevice, int spotted) {

@@ -91,20 +91,18 @@ void scanForDevices() {
           if (!isGlassesTaskRunning && !isAngryTaskRunning) {
             xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
           }
-    
-          Serial.print("Adresse: ");
-          Serial.println(address);
 
           // Manufacturer handling
           String manuInfo = "";
           if (device->haveManufacturerData()) {
+            Serial.println("Manufacturer Data");
             std::string mfg = device->getManufacturerData();
-            Serial.print("Manufacturer Data: ");
+            Serial.print("  Manufacturer Data: ");
             Serial.println(mfg.c_str());
                 
             uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
             String manufacturerName = getManufacturerName(manufacturerId);
-            manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
+            manuInfo = "  Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
             Serial.println(manuInfo);
           }
     
@@ -149,17 +147,23 @@ void scanForDevices() {
             }
           }
       
-          // Print device info
-          Serial.print("Local Name: ");
+          Serial.println("Device Infos");
+
+          Serial.print("  Adresse: ");
+          Serial.println(address);
+
+          Serial.print("  Local Name: ");
           Serial.println(localName);
-      
-          Serial.print("RSSI: ");
+
+          Serial.print("  RSSI: ");
           Serial.println(rssi);
       
           float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-          Serial.print("Distanz: ");
+          Serial.print("  Distanz: ");
           Serial.print(distance, 2);
           Serial.println(" m");
+
+          Serial.println("----------------------------------\n");
       
           // Log to SD card
           sdLogger.writeDeviceInfo(address, localName, uuidList, targetMessage, deviceInfoService, batteryLevelService);
