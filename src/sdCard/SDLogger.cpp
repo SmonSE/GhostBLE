@@ -57,8 +57,10 @@ void SDLogger::writeDeviceInfo( const String& address,
 
         dataFile.println("Device Names:");
         for (const auto& names : nameList) {
-            dataFile.print("  - ");
-            dataFile.println(names.c_str());
+            if (!names.empty()) {
+                dataFile.print("  - ");
+                dataFile.println(names.c_str());
+            }
         }
 
         //Device Info String: 
