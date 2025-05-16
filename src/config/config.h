@@ -29,10 +29,6 @@ extern const char* CATHACK_SERVICE_UUID_6;
 
 // ===== Time Intervals =====
 #define FACE_UPDATE_INTERVAL_MS 1000
-#define DEVICE_SCAN_TIMEOUT 5000
-
-// ===== Target Device MAC Address =====
-#define TARGET_MAC_ADDRESS "b0:81:84:96:a0:c9"
 
 // ===== Constants =====
 #define RSSI_CONSTANT 20

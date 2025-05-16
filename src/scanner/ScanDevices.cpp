@@ -28,12 +28,12 @@ void scanForDevices() {
     return;  // Early exit if pScan is null
   }
 
-  pScan->setActiveScan(true);  // Active scan
+  pScan->setActiveScan(true); // Active scan = true
   pScan->setInterval(1000);    // Adjust interval to 1 second
   pScan->setWindow(900);       // Adjust window to 900ms (90% of interval)
   pScan->clearResults();       // Clear previous scan results
   
-  NimBLEScanResults results = pScan->getResults(5 * 1000);  // Scan 5 seconds to get scan results
+  NimBLEScanResults results = pScan->getResults(3 * 1000);  // Scan 5 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
   if (results.getCount() == 0) {
     // Serial.println(EMPTY COUNT);
   } else {
@@ -81,7 +81,7 @@ void scanForDevices() {
         break;
       }
 
-      pClient->setConnectTimeout(15 * 1000); // 15sec TimeOut -> default 30sec
+      pClient->setConnectTimeout(5 * 1000); // 15sec TimeOut -> default 30sec
 
       if (pClient->connect(*device)) {
         if (pClient->discoverAttributes()) {
