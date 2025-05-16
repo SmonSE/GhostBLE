@@ -108,7 +108,6 @@ void scanForDevices() {
     
           deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
           batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-          //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
     
           bool isTarget = false;
           for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
