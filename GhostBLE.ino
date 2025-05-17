@@ -24,7 +24,7 @@
 
 
 unsigned long startTimeDevice;
-const unsigned long timerDurationDevice = 20 * 60 * 1000; // 10 Minuten in Millisekunden
+const unsigned long timerDurationDevice = 10 * 60 * 1000; // 10 Minuten in Millisekunden
 
 // Forward declarations of required services/classes
 class SDLogger;
@@ -82,6 +82,8 @@ void loop() {
 
   if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
     if (!targetFound && !scanIsRunning) {
+      NimBLEDevice::deinit(true);
+      NimBLEDevice::init("");
       scanForDevices();
     } else {
       targetFound = false;

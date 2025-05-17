@@ -10,7 +10,8 @@
 #include "../helper/showExpression.h"
 
 
-NimBLEScan* pBLEScan = nullptr;
+NimBLEScan* pScan = nullptr;
+NimBLEClient *pClient = nullptr;
 
 // Forward declarations of required services/classes
 class SDLogger;
@@ -28,12 +29,13 @@ void scanForDevices() {
     return;  // Early exit if pScan is null
   }
 
-  pScan->setActiveScan(true); // Active scan = true
-  pScan->setInterval(1000);    // Adjust interval to 1 second
-  pScan->setWindow(900);       // Adjust window to 900ms (90% of interval)
-  pScan->clearResults();       // Clear previous scan results
+  pScan->clearResults();        // 1. Clear previous results first
+  pScan->setActiveScan(true);   // 2. Set active scan mode
+  pScan->setInterval(1000);     // 3. Set scan interval
+  pScan->setWindow(900);        // 4. Set scan window
+  delay(100);                   // (Optional small delay for stability)
   
-  NimBLEScanResults results = pScan->getResults(3 * 1000);  // Scan 5 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
+  NimBLEScanResults results = pScan->getResults(5 * 1000);  // Scan 5 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
   if (results.getCount() == 0) {
     // Serial.println(EMPTY COUNT);
   } else {
@@ -61,12 +63,6 @@ void scanForDevices() {
         } else {
           allSpottedDevice++;
         }
-      
-        seenDevices.insert(std::string(address.c_str()));
-      
-        if (seenDevices.size() >= MAX_SEEN_DEVICES) {
-          seenDevices.clear();
-        }
       } catch (...) {
         Serial.println("Exception caught accessing seenDevices");
       }
@@ -74,14 +70,22 @@ void scanForDevices() {
       Serial.println("  Trying to connect for service discovery...");
 
       Serial.println("   connecting for service discovery...");
-      NimBLEClient *pClient = NimBLEDevice::createClient();
+      pClient = NimBLEDevice::createClient();
       delay(1000);
 
       if (!pClient) { // Make sure the client was created
         break;
+      } else {
+        Serial.println("INSERT SEEN DEVICE AT PCLIENT");
+        seenDevices.insert(std::string(address.c_str()));
+      }
+
+      if (seenDevices.size() >= MAX_SEEN_DEVICES) {
+        seenDevices.clear();
       }
 
       pClient->setConnectTimeout(5 * 1000); // 15sec TimeOut -> default 30sec
+      //pClient->setConnectTimeout(15000); // 15s
 
       if (pClient->connect(*device)) {
         if (pClient->discoverAttributes()) {
@@ -107,6 +111,13 @@ void scanForDevices() {
           }
     
           deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+
+          // Skipp Apple Products to speed up 
+          if (deviceInfoService.indexOf("Apple Inc.") != -1) {
+            Serial.println("APPLE DEVICE SKIPP");
+            continue;
+          }
+
           batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
     
           bool isTarget = false;
@@ -143,7 +154,7 @@ void scanForDevices() {
               //Serial.println("Replace localName with connected device->getName");
             }
 
-            if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str())) {
+            if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
               targetFound = true;
               susDevice++;
               Serial.println("Target Message: !!! Target detected !!!");
@@ -201,8 +212,11 @@ void scanForDevices() {
           xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
         }
       }
-      pClient->disconnect();
+      if (pClient->isConnected()) {
+        pClient->disconnect();
+      }
       NimBLEDevice::deleteClient(pClient);
+      pClient = nullptr;
     }
     Serial.println("###############################\n");
     scanIsRunning = false;
