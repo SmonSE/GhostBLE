@@ -195,7 +195,7 @@ void scanForDevices() {
 
           Serial.println("----------------------------------\n");
       
-          // Log to SD card
+          // Move to isTargetDevice to log on SD card
           sdLogger.writeDeviceInfo(address, localName, nameList, uuidList, deviceInfoService, batteryLevelService);
           //Serial.println("Write Data to SD Logger");
 
