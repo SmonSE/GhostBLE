@@ -53,7 +53,7 @@ void scanForDevices() {
         Serial.println("  seenDevices is currently empty");
       }
       Serial.printf("  seenDevices size: %d\n", seenDevices.size() + 1);
-      Serial.printf("  Trying to access address: %s\n", address.c_str());  
+      Serial.printf("  Trying to access address: %s\n", address.c_str());
 
       try {
         if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
@@ -76,7 +76,7 @@ void scanForDevices() {
       if (!pClient) { // Make sure the client was created
         break;
       } else {
-        Serial.println("INSERT SEEN DEVICE AT PCLIENT");
+        //Serial.println("INSERT SEEN DEVICE AT PCLIENT");
         seenDevices.insert(std::string(address.c_str()));
       }
 
@@ -84,8 +84,7 @@ void scanForDevices() {
         seenDevices.clear();
       }
 
-      pClient->setConnectTimeout(5 * 1000); // 15sec TimeOut -> default 30sec
-      //pClient->setConnectTimeout(15000); // 15s
+      pClient->setConnectTimeout(5 * 1000); // 5sec TimeOut -> default 30sec
 
       if (pClient->connect(*device)) {
         if (pClient->discoverAttributes()) {
