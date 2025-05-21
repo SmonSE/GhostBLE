@@ -33,6 +33,7 @@ extern unsigned long lastFaceUpdate;
 extern String localName;
 extern String address;
 extern String serviceInfo;
+extern String manuInfo;
 
 extern String deviceInfoService;
 extern String heartRateService;

@@ -96,7 +96,6 @@ void scanForDevices() {
           }
 
           // Manufacturer handling
-          String manuInfo = "";
           if (device->haveManufacturerData()) {
             Serial.println("Manufacturer Data");
             std::string mfg = device->getManufacturerData();
@@ -113,8 +112,8 @@ void scanForDevices() {
 
           // Skipp Apple Products to speed up 
           if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-            Serial.println("APPLE DEVICE SKIPP");
-            continue;
+            //Serial.println("APPLE DEVICE SKIPP");
+            //continue;
           }
 
           batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
@@ -195,7 +194,7 @@ void scanForDevices() {
           Serial.println("----------------------------------\n");
       
           // Move to isTargetDevice to log on SD card
-          sdLogger.writeDeviceInfo(address, localName, nameList, uuidList, deviceInfoService, batteryLevelService);
+          sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService);
           //Serial.println("Write Data to SD Logger");
 
           // Clear uuidList after Stored to SD Card

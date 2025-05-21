@@ -11,6 +11,7 @@ public:
     void writeDeviceInfo(const String& address, 
                          const String& localName, 
                          const std::vector<std::string>& nameList,
+                         const String& manuInfo,
                          const std::vector<std::string>& uuids,
                          const String& deviceInfoString, 
                          const String& batteryLevelService);

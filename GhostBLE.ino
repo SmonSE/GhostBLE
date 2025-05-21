@@ -24,7 +24,7 @@
 
 
 unsigned long startTimeDevice;
-const unsigned long timerDurationDevice = 20 * 60 * 1000; // 10 Minuten in Millisekunden
+const unsigned long timerDurationDevice = 60 * 60 * 1000; // 10 Minuten in Millisekunden
 
 // Forward declarations of required services/classes
 class SDLogger;

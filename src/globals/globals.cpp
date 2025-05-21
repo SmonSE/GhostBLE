@@ -27,6 +27,7 @@ unsigned long lastFaceUpdate = 0;
 String localName = "";
 String address = "";
 String serviceInfo = "";
+String manuInfo = "";
 
 String deviceInfoService = "";
 String heartRateService = "";
