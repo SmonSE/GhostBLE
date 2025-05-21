@@ -33,7 +33,8 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x17C) return "Huawei Technologies Co., Ltd.";
     if (manufacturerId == 0x18B) return "vivo Mobile Communication Co., Ltd.";
     if (manufacturerId == 0x195) return "OnePlus Electronics Corp.";
-    if (manufacturerId == 0xECB) return "JBL by Harman International";
+    if (manufacturerId == 0x0ECB) return "Zhong Shan City Richsound Electronic Industrial Ltd";
+    if (manufacturerId == 0x57) return "Harman International Industries, Inc";
     if (manufacturerId == 0x7F) return "Lenovo";
     if (manufacturerId == 0x1A6) return "Realme Mobile Telecommunications";
     if (manufacturerId == 0x1D6) return "Anker Innovations Limited";
