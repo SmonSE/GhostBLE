@@ -5,6 +5,9 @@
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
 
+#include "../globals/globals.h"
+#include "../helper/showExpression.h"
+
 String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
   String hrStr = "";
 
@@ -37,6 +40,11 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
 
         hrStr = "  Heart Rate: " + String(hrValue) + " bpm\n";
         Serial.println(hrStr);
+                  
+        if (!isThugLifeTaskRunning) {
+          Serial.println("showThugLifeExpressionTask");
+          xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
+        }
       } else {
         hrStr = "  Heart Rate read failed or empty value";
         Serial.println(hrStr);

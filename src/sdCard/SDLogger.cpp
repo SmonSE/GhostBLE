@@ -37,7 +37,8 @@ void SDLogger::writeDeviceInfo( const String& address,
                                 const String& manuInfo,
                                 const std::vector<std::string>& uuids,
                                 const String& deviceInfoString, 
-                                const String& batteryLevelService) {
+                                const String& batteryLevelService,
+                                const String& genericAccessService) {
     if (!initialized) {
         Serial.println("#SDLogger# SDLogger not initialized.");
         return;
@@ -65,6 +66,8 @@ void SDLogger::writeDeviceInfo( const String& address,
         }
 
         //Device Info String: 
+        dataFile.println(deviceInfoString);
+        dataFile.println(batteryLevelService);
         dataFile.println(deviceInfoString);
 
         dataFile.println(manuInfo);

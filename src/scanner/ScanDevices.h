@@ -6,6 +6,7 @@
 #include "../bleServices/batteryLevelService.h"
 #include "../bleServices/deviceInfoService.h"
 #include "../bleServices/heartRateService.h"
+#include "../bleServices/genericAccessService.h"
 #include "../sdCard/SDLogger.h"
 #include "../target/TargetDevice.h"
 

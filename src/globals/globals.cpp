@@ -15,6 +15,7 @@ bool skipLogging = false;
 bool isGlassesTaskRunning = false;
 bool isAngryTaskRunning = false;
 bool isSadTaskRunning = false;
+bool isThugLifeTaskRunning = false;
 
 int susDevice = 0;
 int targetConnects = 0;
@@ -32,6 +33,7 @@ String manuInfo = "";
 String deviceInfoService = "";
 String heartRateService = "";
 String batteryLevelService = "";
+String genericAccessService = "";
 String timeInfoService = "";
 
 String lastConnectedDeviceInfo = "Noch kein Gerät verbunden.";

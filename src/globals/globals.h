@@ -21,6 +21,7 @@ extern bool skipLogging;
 extern bool isGlassesTaskRunning;
 extern bool isAngryTaskRunning;
 extern bool isSadTaskRunning;
+extern bool isThugLifeTaskRunning;
 
 extern int susDevice;
 extern int targetConnects;
@@ -38,6 +39,7 @@ extern String manuInfo;
 extern String deviceInfoService;
 extern String heartRateService;
 extern String batteryLevelService;
+extern String genericAccessService;
 extern String timeInfoService;
 
 extern String lastConnectedDeviceInfo;

@@ -66,7 +66,7 @@ void showSadExpressionTask(void* parameter) {
   
   
 void showThugLifeExpressionTask(void* parameter) {
-  isSadTaskRunning = true;
+  isThugLifeTaskRunning = true;
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
@@ -77,7 +77,7 @@ void showThugLifeExpressionTask(void* parameter) {
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
 
-  isSadTaskRunning = false;
+  isThugLifeTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
 }
 

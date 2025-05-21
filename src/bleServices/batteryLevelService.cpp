@@ -5,6 +5,9 @@
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
 
+#include "../globals/globals.h"
+#include "../helper/showExpression.h"
+
 String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   String batteryStr = "";
 
@@ -31,6 +34,11 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
         if (level <= 100) {
           batteryStr = "  Battery Level: " + String(level) + "%\n";
           Serial.println(batteryStr);
+
+          if (!isThugLifeTaskRunning) {
+            Serial.println("showThugLifeExpressionTask");
+            xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
+          }
         } else {
           batteryStr = "  Battery read failed or invalid value: " + String(level) + "\n";
           Serial.println(batteryStr);

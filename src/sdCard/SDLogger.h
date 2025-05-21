@@ -14,7 +14,8 @@ public:
                          const String& manuInfo,
                          const std::vector<std::string>& uuids,
                          const String& deviceInfoString, 
-                         const String& batteryLevelService);
+                         const String& batteryLevelService,
+                         const String& genericAccessService);
 
 private:
     File dataFile;

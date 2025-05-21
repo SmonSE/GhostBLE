@@ -118,6 +118,7 @@ void scanForDevices() {
 
           batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
           heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+          genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
     
           bool isTarget = false;
           for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
@@ -195,7 +196,7 @@ void scanForDevices() {
           Serial.println("----------------------------------\n");
       
           // Move to isTargetDevice to log on SD card
-          sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService);
+          sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
           //Serial.println("Write Data to SD Logger");
 
           // Clear uuidList after Stored to SD Card

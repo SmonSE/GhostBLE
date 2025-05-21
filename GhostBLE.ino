@@ -52,7 +52,7 @@ void setup() {
   M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));  
   delay(5000);
 
-  NimBLEDevice::init("");
+  NimBLEDevice::init("bleDefender");
 
   #if defined(CARDPUTER)
   if (!sdLogger.begin(SD_CS_PIN)) {
