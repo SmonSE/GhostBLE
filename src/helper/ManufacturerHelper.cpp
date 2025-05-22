@@ -7,6 +7,7 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0xF) return "Broadcom Corporation";
     if (manufacturerId == 0x131) return "Google";
     if (manufacturerId == 0x75) return "Samsung Electronics Co.";
+    if (manufacturerId == 0x05A7) return "Samsung Electronics Co. Ltd.";
     if (manufacturerId == 0xE0) return "Nintendo Co., Ltd.";
     if (manufacturerId == 0x1) return "Ericsson Technology Licensing";
     if (manufacturerId == 0x2) return "Intel Corp.";
