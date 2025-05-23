@@ -29,6 +29,8 @@ extern int targetConnects;
 extern int allSpottedDevice;
 extern int batteryPercent;
 
+extern int rssi;
+
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;
 

@@ -23,6 +23,8 @@ int targetConnects = 0;
 int allSpottedDevice = 0;
 int batteryPercent = 0;
 
+int rssi = 0;
+
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
 

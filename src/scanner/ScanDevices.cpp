@@ -40,7 +40,7 @@ void scanForDevices() {
   if (results.getCount() == 0) {
      logToSerialAndWeb("NO DEVICES FOUND");
   } else {
-    logToSerialAndWeb("Devices found: " + String(results.getCount()));
+    logToSerialAndWeb("DEVICES FOUND: " + String(results.getCount()));
 
     scanIsRunning = true;
     logToSerialAndWeb("Scan Is Running");
@@ -50,7 +50,7 @@ void scanForDevices() {
 
       address = device->getAddress().toString().c_str();
       localName = device->haveName() ? String(device->getName().c_str()) : "Unknown";
-      int rssi = device->getRSSI();
+      rssi = device->getRSSI();
 
       if (seenDevices.empty()) {
         logToSerialAndWeb("  seenDevices is currently empty");
@@ -176,11 +176,10 @@ void scanForDevices() {
               logToSerialAndWeb(String("    - ") + names.c_str());
             }
           }
-
-          logToSerialAndWeb("  RSSI: " + rssi);
       
           float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-          logToSerialAndWeb("  Distance: " + String(distance, 2) + " m");
+          logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
+          logToSerialAndWeb(String("  - RSSI: " + rssi));
 
           logToSerialAndWeb("----------------------------------\n");
       
