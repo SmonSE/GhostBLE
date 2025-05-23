@@ -206,7 +206,11 @@ void scanForDevices() {
       NimBLEDevice::deleteClient(pClient);
       pClient = nullptr;
     }
-    logToSerialAndWeb("###############################\n");
+    logToSerialAndWeb("####################################\n");
+    logToSerialAndWeb("SpottedDevices:    " + allSpottedDevice);
+    logToSerialAndWeb("ConnectedDevices:  " + targetConnects);
+    logToSerialAndWeb("SuspiciousDevices: " + susDevice);
+    logToSerialAndWeb("####################################\n");
     scanIsRunning = false;
   }
 }
