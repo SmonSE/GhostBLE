@@ -22,6 +22,7 @@ extern bool isGlassesTaskRunning;
 extern bool isAngryTaskRunning;
 extern bool isSadTaskRunning;
 extern bool isThugLifeTaskRunning;
+extern bool isWebLogActive;
 
 extern int susDevice;
 extern int targetConnects;
@@ -43,6 +44,8 @@ extern String genericAccessService;
 extern String timeInfoService;
 
 extern String lastConnectedDeviceInfo;
+
+extern const char index_html[] PROGMEM;
 
 
 #endif // GLOBALS_H

@@ -8,6 +8,7 @@
 #include "../helper/ServiceHelper.h"
 #include "../helper/drawOverlay.h"
 #include "../helper/showExpression.h"
+#include "../logToSerialAndWeb/logger.h"
 
 
 NimBLEScan* pScan = nullptr;
@@ -40,8 +41,8 @@ void scanForDevices() {
     // Serial.println(EMPTY COUNT);
   } else {
     scanIsRunning = true;
-    Serial.println("Scan Is Running");
-
+    logToSerialAndWeb("Scan Is Running");
+  
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
@@ -50,33 +51,32 @@ void scanForDevices() {
       int rssi = device->getRSSI();
 
       if (seenDevices.empty()) {
-        Serial.println("  seenDevices is currently empty");
+        logToSerialAndWeb("  seenDevices is currently empty");
       }
-      Serial.printf("  seenDevices size: %d\n", seenDevices.size() + 1);
-      Serial.printf("  Trying to access address: %s\n", address.c_str());
+      logToSerialAndWeb("  seenDevices size: " + String(seenDevices.size() + 1));
+      logToSerialAndWeb(String("  Trying to access address: ") + address);
 
       try {
         if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
-          Serial.print("🛑 Bereits gesehen: ");
-          Serial.println(address.c_str());
+          logToSerialAndWeb(String("🛑 Bereits gesehen: ") + address.c_str());
           continue;
         } else {
           allSpottedDevice++;
         }
       } catch (...) {
-        Serial.println("Exception caught accessing seenDevices");
+        logToSerialAndWeb("Exception caught accessing seenDevices");
       }
       
-      Serial.println("  Trying to connect for service discovery...");
+      logToSerialAndWeb("  Trying to connect for service discovery...");
 
-      Serial.println("   connecting for service discovery...");
+      logToSerialAndWeb("   connecting for service discovery...");
       pClient = NimBLEDevice::createClient();
       delay(1000);
 
       if (!pClient) { // Make sure the client was created
         break;
       } else {
-        //Serial.println("INSERT SEEN DEVICE AT PCLIENT");
+        //logToSerialAndWeb("INSERT SEEN DEVICE AT PCLIENT");
         seenDevices.insert(std::string(address.c_str()));
       }
 
@@ -88,7 +88,7 @@ void scanForDevices() {
 
       if (pClient->connect(*device)) {
         if (pClient->discoverAttributes()) {
-          Serial.println("✅ Connected and discovered attributes!");
+          logToSerialAndWeb("✅ Connected and discovered attributes!");
           targetConnects++;
     
           if (!isGlassesTaskRunning && !isAngryTaskRunning) {
@@ -97,10 +97,9 @@ void scanForDevices() {
 
           // Manufacturer handling
           if (device->haveManufacturerData()) {
-            Serial.println("Manufacturer Data");
+            logToSerialAndWeb("Manufacturer Data");
             std::string mfg = device->getManufacturerData();
-            Serial.print("  Manufacturer Data: ");
-            Serial.println(mfg.c_str());
+            logToSerialAndWeb(String("  Manufacturer Data: ") + String(mfg.c_str()));
                 
             uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
             String manufacturerName = getManufacturerName(manufacturerId);
@@ -112,7 +111,7 @@ void scanForDevices() {
 
           // Skipp Apple Products to speed up 
           if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-            //Serial.println("APPLE DEVICE SKIPP");
+            //logToSerialAndWeb("APPLE DEVICE SKIPP");
             //continue;
           }
 
@@ -124,34 +123,31 @@ void scanForDevices() {
           for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
             NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
             std::string serviceUuid = service->getUUID().toString();
-            Serial.print("Service UUID: ");
-            Serial.println(serviceUuid.c_str());
+            logToSerialAndWeb(String("Service UUID: ") + serviceUuid.c_str());
 
             uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
 
             for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
               NimBLERemoteCharacteristic* characteristic = *cIt;
               std::string charUuid = characteristic->getUUID().toString();
-              Serial.print("  Characteristic UUID: ");
-              Serial.println(charUuid.c_str());
+              logToSerialAndWeb(String("  Characteristic UUID: ") + charUuid.c_str());
               uuidList.push_back("  Characteristic UUID: " + std::string(charUuid.c_str()));
               
               if (characteristic) {
                 std::string name = characteristic->readValue();
 
                 if (!name.empty()) {
-                  //Serial.print("Gerätename: ");
-                  //Serial.println(name.c_str());
+                  //logToSerialAndWeb(String("Gerätename: " + name.c_str()));
                   nameList.push_back(std::string(name.c_str()));
                 }
               } else {
-                Serial.println("Device Name Characteristic nicht gefunden.");
+                logToSerialAndWeb("Device Name Characteristic nicht gefunden.");
               }
             }
 
             if (!device->getName().empty()) {
               localName = device->getName().c_str();
-              //Serial.println("Replace localName with connected device->getName");
+              //logToSerialAndWeb("Replace localName with connected device->getName");
             }
 
             if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
@@ -160,7 +156,7 @@ void scanForDevices() {
               Serial.println("Target Message: !!! Target detected !!!");
               delay(2000);
               if (!isAngryTaskRunning) {
-                Serial.println("showAngryExpressionTask");
+                logToSerialAndWeb("showAngryExpressionTask");
                 xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
                 //xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 4, NULL);
               }
@@ -169,46 +165,37 @@ void scanForDevices() {
             }
           }
       
-          Serial.println("Device Infos");
-
-          Serial.print("  Adresse: ");
-          Serial.println(address);
-
-          Serial.print("  Local Name: ");
-          Serial.println(localName);
-
-          Serial.println("  Device Name: ");
+          logToSerialAndWeb("Device Infos");
+          logToSerialAndWeb(String("  Adresse: " + address));
+          logToSerialAndWeb(String("  Local Name: " + localName));
+          logToSerialAndWeb("  Device Name: ");
           for (const auto& names : nameList) {
             if (!names.empty()) {
-              Serial.print("    - ");
-              Serial.println(names.c_str());
+              logToSerialAndWeb(String("    - ") + names.c_str());
             }
           }
 
-          Serial.print("  RSSI: ");
-          Serial.println(rssi);
+          logToSerialAndWeb("  RSSI: " + rssi);
       
           float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-          Serial.print("  Distanz: ");
-          Serial.print(distance, 2);
-          Serial.println(" m");
+          logToSerialAndWeb("  Distance: " + String(distance, 2) + " m");
 
-          Serial.println("----------------------------------\n");
+          logToSerialAndWeb("----------------------------------\n");
       
           // Move to isTargetDevice to log on SD card
           sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
-          //Serial.println("Write Data to SD Logger");
+          //logToSerialAndWeb("Write Data to SD Logger");
 
           // Clear uuidList after Stored to SD Card
           uuidList.clear();
           nameList.clear();
         } else {
-          Serial.println("Attribute discovery failed.");
+          logToSerialAndWeb("Attribute discovery failed.");
         }
       } else {
         Serial.println("Attribute discovery FAILED.");
         if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-          Serial.println("showSadExpressionTask");
+          logToSerialAndWeb("showSadExpressionTask");
           xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
         }
       }
@@ -218,7 +205,7 @@ void scanForDevices() {
       NimBLEDevice::deleteClient(pClient);
       pClient = nullptr;
     }
-    Serial.println("###############################\n");
+    logToSerialAndWeb("###############################\n");
     scanIsRunning = false;
   }
 }

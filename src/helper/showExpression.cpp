@@ -92,11 +92,17 @@ void showBatteryState() {
 
   M5.Lcd.setTextColor(WHITE); 
   M5.Lcd.setTextSize(1); 
-  M5.Lcd.setCursor(210, 10);
+  M5.Lcd.setCursor(210, 5);
   M5.Lcd.printf("%d%%", batteryPercent);
 }
   
 void showFindingCounter(int sniffed, int susDevice, int spotted) {
+
+  M5.Lcd.setTextColor(WHITE); 
+  M5.Lcd.setTextSize(1); 
+  M5.Lcd.setCursor(5, 5);
+  M5.Lcd.print("Wifi:");
+  M5.Lcd.println(isWebLogActive ? "ON" : "OFF");
 
   showBatteryState();
 
