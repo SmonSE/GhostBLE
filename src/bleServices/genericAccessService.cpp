@@ -2,17 +2,19 @@
 #include <Arduino.h>
 #include <NimBLEDevice.h> 
 
+#include "../logToSerialAndWeb/logger.h"
+
 
 String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient) {
     String accessInfoString = "";
 
     NimBLERemoteService* gapService = pClient->getService("1800");
     if (!gapService) {
-        Serial.printf("Generic Access Service not found (0x1800)");
+        logToSerialAndWeb("Generic Access Service not found (0x1800)");
         return accessInfoString;
     }
 
-    Serial.printf("Generic Access Service found (0x1800)");
+    logToSerialAndWeb("Generic Access Service found (0x1800)");
 
     const char* charUUIDs[] = {"2A00", "2A01", "2A04", "2AA6"};
     const char* charNames[] = {
@@ -35,7 +37,7 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
             if (strcmp(charUUIDs[i], "2A01") == 0) {
                 uint16_t appearance = *(uint16_t*)value.data();
                 accessInfoString += "Appearance: 0x" + String(appearance, HEX) + "\n";
-                Serial.printf("  Appearance: 0x%04X\n", appearance);
+                logToSerialAndWeb("  Appearance: 0x" + String(appearance, HEX));
             } else if (strcmp(charUUIDs[i], "2A04") == 0) {
                 if (value.length() >= 8) {
                     uint16_t minInterval = *(uint16_t*)&value[0];

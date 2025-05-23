@@ -118,7 +118,7 @@ void scanForDevices() {
           }
 
           batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-          heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+          //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
           genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
     
           bool isTarget = false;
@@ -170,17 +170,19 @@ void scanForDevices() {
           logToSerialAndWeb("Device Infos");
           logToSerialAndWeb(String("  Adress: " + address));
           logToSerialAndWeb(String("  Local Name: " + localName));
+          delay(10);
           logToSerialAndWeb("  Device Name: ");
           for (const auto& names : nameList) {
             if (!names.empty()) {
               logToSerialAndWeb(String("    - ") + names.c_str());
             }
           }
-      
+          
+          delay(10);
           float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
           logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
           logToSerialAndWeb(String("  - RSSI: " + rssi));
-
+          delay(10);
           logToSerialAndWeb("----------------------------------\n");
       
           // Move to isTargetDevice to log on SD card
@@ -206,10 +208,15 @@ void scanForDevices() {
       NimBLEDevice::deleteClient(pClient);
       pClient = nullptr;
     }
+    delay(10);
     logToSerialAndWeb("####################################\n");
+    delay(10);
     logToSerialAndWeb("SpottedDevices:    " + allSpottedDevice);
+    delay(10);
     logToSerialAndWeb("ConnectedDevices:  " + targetConnects);
+    delay(10);
     logToSerialAndWeb("SuspiciousDevices: " + susDevice);
+    delay(10);
     logToSerialAndWeb("####################################\n");
     scanIsRunning = false;
   }
