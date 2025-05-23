@@ -7,22 +7,25 @@
 
 #include "../globals/globals.h"
 #include "../helper/showExpression.h"
+#include "../logToSerialAndWeb/logger.h"
+
 
 String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
   String hrStr = "";
+  logToSerialAndWeb("Heart Rate Service");
 
   // Retrieve the Heart Rate Service from the client
   NimBLERemoteService* hrService = pClient->getService("180D");
   if (hrService == nullptr) {
-    Serial.println("  Heart Rate Service not found");
+    logToSerialAndWeb("  Heart Rate Service not found");
     return hrStr;
   } else {
-    Serial.println("  Heart Rate Service found (0x180D)");
+    logToSerialAndWeb("  Heart Rate Service found (0x180D)");
 
     // Get the Heart Rate Measurement characteristic
     NimBLERemoteCharacteristic* pChar = hrService->getCharacteristic("2A37");
     if (pChar == nullptr) {
-      Serial.println("  Heart Rate Measurement Characteristic not found");
+      logToSerialAndWeb("  Heart Rate Measurement Characteristic not found");
       return hrStr;
     }
 
@@ -39,18 +42,18 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
         }
 
         hrStr = "  Heart Rate: " + String(hrValue) + " bpm\n";
-        Serial.println(hrStr);
+        logToSerialAndWeb(hrStr);
                   
         if (!isThugLifeTaskRunning) {
-          Serial.println("showThugLifeExpressionTask");
+          logToSerialAndWeb("showThugLifeExpressionTask");
           xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
         }
       } else {
         hrStr = "  Heart Rate read failed or empty value";
-        Serial.println(hrStr);
+        logToSerialAndWeb(hrStr);
       }
     } else {
-      Serial.println("  Heart Rate Characteristic not readable (usually not, use notifications)");
+      logToSerialAndWeb("  Heart Rate Characteristic not readable (usually not, use notifications)");
     }
   }
 

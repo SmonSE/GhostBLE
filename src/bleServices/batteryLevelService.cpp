@@ -11,6 +11,7 @@
 
 String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   String batteryStr = "";
+  logToSerialAndWeb("Battery Service");
 
   // Retrieve the Battery Service from the client
   NimBLERemoteService* batteryService = pClient->getService("180F");

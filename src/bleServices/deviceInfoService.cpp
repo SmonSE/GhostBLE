@@ -15,16 +15,16 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
         for (int i = 0; i < 6; i++) {
           NimBLERemoteCharacteristic* pChar = deviceInfoService->getCharacteristic(deviceChars[i]);
           if (pChar == nullptr) {
-              logToSerialAndWeb("  Characteristic " + String(deviceChars[i]) + " not found.\n");
+              logToSerialAndWeb("  Characteristic " + String(deviceChars[i]) + " not found.");
               continue;
           }
       
           if (pChar->canRead()) {
               std::string value = pChar->readValue();
               String val = String(value.c_str());
-              deviceInfoString += String(charNames[i]) + ": " + val + "\n";
+              deviceInfoString += String(charNames[i]) + ": " + val;
       
-              logToSerialAndWeb("  " + String(charNames[i]) + ": " + val + "\n");
+              logToSerialAndWeb("  " + String(charNames[i]) + ": " + val);
           }
         }
       } 
