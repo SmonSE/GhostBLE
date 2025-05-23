@@ -38,8 +38,10 @@ void scanForDevices() {
   
   NimBLEScanResults results = pScan->getResults(5 * 1000);  // Scan 5 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
   if (results.getCount() == 0) {
-    // Serial.println(EMPTY COUNT);
+     logToSerialAndWeb("NO DEVICES FOUND");
   } else {
+    logToSerialAndWeb("Devices found: " + String(results.getCount()));
+
     scanIsRunning = true;
     logToSerialAndWeb("Scan Is Running");
   
@@ -58,7 +60,7 @@ void scanForDevices() {
 
       try {
         if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
-          logToSerialAndWeb(String("🛑 Bereits gesehen: ") + address.c_str());
+          logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str());
           continue;
         } else {
           allSpottedDevice++;
@@ -141,7 +143,7 @@ void scanForDevices() {
                   nameList.push_back(std::string(name.c_str()));
                 }
               } else {
-                logToSerialAndWeb("Device Name Characteristic nicht gefunden.");
+                logToSerialAndWeb("Device Name Characteristic not found.");
               }
             }
 
@@ -166,7 +168,7 @@ void scanForDevices() {
           }
       
           logToSerialAndWeb("Device Infos");
-          logToSerialAndWeb(String("  Adresse: " + address));
+          logToSerialAndWeb(String("  Adress: " + address));
           logToSerialAndWeb(String("  Local Name: " + localName));
           logToSerialAndWeb("  Device Name: ");
           for (const auto& names : nameList) {
