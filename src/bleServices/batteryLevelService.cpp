@@ -1,12 +1,13 @@
 #include "batteryLevelService.h"
 
-// ✅ Include needed NimBLE headers
 #include <NimBLEDevice.h>
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
 
 #include "../globals/globals.h"
 #include "../helper/showExpression.h"
+#include "../logToSerialAndWeb/logger.h"
+
 
 String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   String batteryStr = "";
@@ -14,15 +15,15 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   // Retrieve the Battery Service from the client
   NimBLERemoteService* batteryService = pClient->getService("180F");
   if (batteryService == nullptr) {
-    Serial.println("  Battery Service not found");
+    logToSerialAndWeb("  Battery Service not found");
     return batteryStr;
   } else {
-    Serial.println("  Battery Service found (0x180F)");
+    logToSerialAndWeb("  Battery Service found (0x180F)");
 
     // Get the Battery Level characteristic
     NimBLERemoteCharacteristic* pChar = batteryService->getCharacteristic("2A19");
     if (pChar == nullptr) {
-      Serial.println("  Battery Level Characteristic not found");
+      logToSerialAndWeb("  Battery Level Characteristic not found");
       return batteryStr;
     }
 
@@ -33,22 +34,22 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
         uint8_t level = raw[0];
         if (level <= 100) {
           batteryStr = "  Battery Level: " + String(level) + "%\n";
-          Serial.println(batteryStr);
+          logToSerialAndWeb(batteryStr);
 
           if (!isThugLifeTaskRunning) {
-            Serial.println("showThugLifeExpressionTask");
+            logToSerialAndWeb("showThugLifeExpressionTask");
             xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
           }
         } else {
           batteryStr = "  Battery read failed or invalid value: " + String(level) + "\n";
-          Serial.println(batteryStr);
+          logToSerialAndWeb(batteryStr);
         }
       } else {
         batteryStr = "  Battery Level read failed or empty value";
-        Serial.println(batteryStr);
+        logToSerialAndWeb(batteryStr);
       }
     } else {
-      Serial.println("  Battery Level Characteristic not readable");
+      logToSerialAndWeb("  Battery Level Characteristic not readable");
     }
   }
 
