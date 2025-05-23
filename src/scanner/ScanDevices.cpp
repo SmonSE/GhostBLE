@@ -209,15 +209,15 @@ void scanForDevices() {
       pClient = nullptr;
     }
     delay(10);
-    logToSerialAndWeb("####################################\n");
+    logToSerialAndWeb("##########################\n");
     delay(10);
-    logToSerialAndWeb("SpottedDevices:    " + allSpottedDevice);
+    logToSerialAndWeb("Spotted:    " + allSpottedDevice);
     delay(10);
-    logToSerialAndWeb("ConnectedDevices:  " + targetConnects);
+    logToSerialAndWeb("Sniffed:    " + targetConnects);
     delay(10);
-    logToSerialAndWeb("SuspiciousDevices: " + susDevice);
+    logToSerialAndWeb("Suspicious: " + susDevice);
     delay(10);
-    logToSerialAndWeb("####################################\n");
+    logToSerialAndWeb("##########################\n");
     scanIsRunning = false;
   }
 }
