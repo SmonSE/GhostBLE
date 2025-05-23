@@ -36,7 +36,7 @@ void scanForDevices() {
   pScan->setWindow(900);        // 4. Set scan window
   delay(100);                   // (Optional small delay for stability)
   
-  NimBLEScanResults results = pScan->getResults(5 * 1000);  // Scan 5 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
+  NimBLEScanResults results = pScan->getResults(3 * 1000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
   if (results.getCount() == 0) {
      logToSerialAndWeb("NO DEVICES FOUND");
   } else {
