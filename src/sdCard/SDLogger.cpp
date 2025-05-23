@@ -68,7 +68,6 @@ void SDLogger::writeDeviceInfo( const String& address,
         //Device Info String: 
         dataFile.println(deviceInfoString);
         dataFile.println(batteryLevelService);
-        dataFile.println(deviceInfoString);
 
         dataFile.println(manuInfo);
 
