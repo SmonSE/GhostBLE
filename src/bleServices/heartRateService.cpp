@@ -29,6 +29,24 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
       return hrStr;
     }
 
+    if (pChar->canNotify()) {
+      pChar->subscribe(true, [](NimBLERemoteCharacteristic* chr, uint8_t* data, size_t length, bool isNotify) {
+        if (length > 1) {
+          uint8_t flags = data[0];
+          uint16_t hrValue = data[1];
+          if (flags & 0x01 && length >= 3) {
+            hrValue = (uint16_t)data[1] | (data[2] << 8);
+          }
+          String hrStr = "  Heart Rate Notification: " + String(hrValue) + " bpm\n";
+          logToSerialAndWeb(hrStr);
+          // You can also trigger your display task here if needed
+        }
+      });
+      logToSerialAndWeb("  Subscribed to Heart Rate notifications");
+    } else {
+      logToSerialAndWeb("  Heart Rate Characteristic does not support notifications");
+    }
+
     // Check if the characteristic is readable (Note: usually it's not)
     if (pChar->canRead()) {
       std::string raw = pChar->readValue();
@@ -38,7 +56,7 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
 
         // Optional: handle 16-bit HR values if flags indicate
         if (flags & 0x01 && raw.size() >= 3) {
-          hrValue = (uint16_t)raw[1] | (raw[2] << 8);
+          hrValue = (uint16_t)raw[1] | ((uint16_t)raw[2] << 8);
         }
 
         hrStr = "  Heart Rate: " + String(hrValue) + " bpm\n";
@@ -53,7 +71,7 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
         logToSerialAndWeb(hrStr);
       }
     } else {
-      logToSerialAndWeb("  Heart Rate Characteristic not readable (usually not, use notifications)");
+      logToSerialAndWeb("  Heart Rate Characteristic not readable. Try enabling notifications instead.");
     }
   }
 
