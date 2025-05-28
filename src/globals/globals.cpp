@@ -51,7 +51,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       background-color: black;
       color: #00FF00;
       font-family: monospace, monospace;
-      font-size: 24px;
+      font-size: 28px;
       margin: 10px;
     }
     h2 {

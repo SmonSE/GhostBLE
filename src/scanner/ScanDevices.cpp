@@ -30,13 +30,24 @@ void scanForDevices() {
     return;  // Early exit if pScan is null
   }
 
-  pScan->clearResults();        // 1. Clear previous results first
-  pScan->setActiveScan(true);   // 2. Set active scan mode
-  pScan->setInterval(1000);     // 3. Set scan interval
-  pScan->setWindow(900);        // 4. Set scan window
-  delay(100);                   // (Optional small delay for stability)
+  if (pScan != nullptr) {
+    pScan->clearResults();        // 1. Clear previous results first
+    pScan->setActiveScan(true);   // 2. Set active scan mode
+    pScan->setInterval(1000);     // 3. Set scan interval
+    pScan->setWindow(900);        // 4. Set scan window
+    delay(100);                   // Optional small delay for stability
+  } else {
+    logToSerialAndWeb("⚠️ pScan is null!");
+  }
+
+  NimBLEScanResults results;
+
+  if (pScan != nullptr) {
+    results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
+  } else {
+    logToSerialAndWeb("⚠️ pScan is null! Cannot get scan results.");
+  }
   
-  NimBLEScanResults results = pScan->getResults(3 * 1000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
   if (results.getCount() == 0) {
      logToSerialAndWeb("NO DEVICES FOUND");
   } else {
@@ -48,9 +59,13 @@ void scanForDevices() {
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
-      address = device->getAddress().toString().c_str();
-      localName = device->haveName() ? String(device->getName().c_str()) : "Unknown";
-      rssi = device->getRSSI();
+      if (device != nullptr) {
+          address = device->getAddress().toString().c_str();
+          localName = device->haveName() ? String(device->getName().c_str()) : "Unknown";
+          rssi = device->getRSSI();
+      } else {
+          logToSerialAndWeb("⚠️ device is null! Skipping.");
+      }
 
       if (seenDevices.empty()) {
         logToSerialAndWeb("  seenDevices is currently empty");
@@ -86,138 +101,147 @@ void scanForDevices() {
         seenDevices.clear();
       }
 
-      pClient->setConnectTimeout(5 * 1000); // 5sec TimeOut -> default 30sec
-
-      if (pClient->connect(*device)) {
-        if (pClient->discoverAttributes()) {
-          logToSerialAndWeb("✅ Connected and discovered attributes!");
-          targetConnects++;
-    
-          if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-            xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
-          }
-
-          // Manufacturer handling
-          if (device->haveManufacturerData()) {
-            logToSerialAndWeb("Manufacturer Data");
-            std::string mfg = device->getManufacturerData();
-            logToSerialAndWeb(String("  Manufacturer Data: ") + String(mfg.c_str()));
-                
-            uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
-            String manufacturerName = getManufacturerName(manufacturerId);
-            manuInfo = "  Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
-            Serial.println(manuInfo);
-          }
-    
-          deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
-
-          // Skipp Apple Products to speed up 
-          if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-            //logToSerialAndWeb("APPLE DEVICE SKIPP");
-            //continue;
-          }
-
-          batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-          //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-          genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
-    
-          bool isTarget = false;
-          for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
-            NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
-            std::string serviceUuid = service->getUUID().toString();
-            logToSerialAndWeb(String("Service UUID: ") + serviceUuid.c_str());
-
-            uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
-
-            for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
-              NimBLERemoteCharacteristic* characteristic = *cIt;
-              std::string charUuid = characteristic->getUUID().toString();
-              logToSerialAndWeb(String("  Characteristic UUID: ") + charUuid.c_str());
-              uuidList.push_back("  Characteristic UUID: " + std::string(charUuid.c_str()));
-              
-              if (characteristic) {
-                std::string name = characteristic->readValue();
-
-                if (!name.empty()) {
-                  //logToSerialAndWeb(String("Gerätename: " + name.c_str()));
-                  nameList.push_back(std::string(name.c_str()));
-                }
-              } else {
-                logToSerialAndWeb("Device Name Characteristic not found.");
-              }
-            }
-
-            if (!device->getName().empty()) {
-              localName = device->getName().c_str();
-              //logToSerialAndWeb("Replace localName with connected device->getName");
-            }
-
-            if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
-              targetFound = true;
-              susDevice++;
-              Serial.println("Target Message: !!! Target detected !!!");
-              delay(2000);
-              if (!isAngryTaskRunning) {
-                logToSerialAndWeb("showAngryExpressionTask");
-                xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
-                //xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 4, NULL);
-              }
-              isTarget = true;
-              break;
-            }
-          }
-      
-          logToSerialAndWeb("Device Infos");
-          logToSerialAndWeb(String("  Adress: " + address));
-          logToSerialAndWeb(String("  Local Name: " + localName));
-          delay(10);
-          logToSerialAndWeb("  Device Name: ");
-          for (const auto& names : nameList) {
-            if (!names.empty()) {
-              logToSerialAndWeb(String("    - ") + names.c_str());
-            }
-          }
-          
-          delay(10);
-          float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-          logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
-          logToSerialAndWeb(String("  - RSSI: " + rssi));
-          delay(10);
-          logToSerialAndWeb("----------------------------------\n");
-      
-          // Move to isTargetDevice to log on SD card
-          sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
-          //logToSerialAndWeb("Write Data to SD Logger");
-
-          // Clear uuidList after Stored to SD Card
-          uuidList.clear();
-          nameList.clear();
-        } else {
-          logToSerialAndWeb("Attribute discovery failed.");
-        }
+      if (pClient != nullptr) {
+          pClient->setConnectTimeout(5 * 1000); // Set 5s timeout
       } else {
-        Serial.println("Attribute discovery FAILED.");
-        if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-          logToSerialAndWeb("showSadExpressionTask");
-          xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
+          logToSerialAndWeb("⚠️ pClient is null! Cannot set connect timeout.");
+      }
+
+      if (pClient != nullptr) {
+        if (pClient->connect(*device)) {
+          if (pClient->discoverAttributes()) {
+            logToSerialAndWeb("✅ Connected and discovered attributes!");
+            targetConnects++;
+      
+            if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+              xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
+            }
+
+            // Manufacturer handling
+            if (device->haveManufacturerData()) {
+              logToSerialAndWeb("Manufacturer Data");
+              std::string mfg = device->getManufacturerData();
+              logToSerialAndWeb(String("  Manufacturer Data: ") + String(mfg.c_str()));
+                  
+              uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
+              String manufacturerName = getManufacturerName(manufacturerId);
+              manuInfo = "  Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
+              Serial.println(manuInfo);
+            }
+      
+            deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+
+            // Skipp Apple Products to speed up 
+            if (deviceInfoService.indexOf("Apple Inc.") != -1) {
+              logToSerialAndWeb("APPLE DEVICE SKIPP");
+              continue;
+            }
+
+            batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
+            heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+            genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+      
+            bool isTarget = false;
+            for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
+              NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
+              std::string serviceUuid = service->getUUID().toString();
+              logToSerialAndWeb(String("Service UUID: ") + serviceUuid.c_str());
+
+              uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
+
+              for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
+                NimBLERemoteCharacteristic* characteristic = *cIt;
+                std::string charUuid = characteristic->getUUID().toString();
+                logToSerialAndWeb(String("  Characteristic UUID: ") + charUuid.c_str());
+                uuidList.push_back("  Characteristic UUID: " + std::string(charUuid.c_str()));
+                
+                if (characteristic) {
+                  std::string name = characteristic->readValue();
+
+                  if (!name.empty()) {
+                    //logToSerialAndWeb(String("Gerätename: " + name.c_str()));
+                    nameList.push_back(std::string(name.c_str()));
+                  }
+                } else {
+                  logToSerialAndWeb("Device Name Characteristic not found.");
+                }
+              }
+
+              if (device != nullptr && !device->getName().empty()) {
+                localName = device->getName().c_str();
+                //logToSerialAndWeb("Replace localName with connected device->getName");
+              }
+
+              if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
+                targetFound = true;
+                susDevice++;
+                Serial.println("Target Message: !!! Target detected !!!");
+                delay(2000);
+                if (!isAngryTaskRunning) {
+                  logToSerialAndWeb("showAngryExpressionTask");
+                  xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
+                  //xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 4, NULL);
+                }
+                isTarget = true;
+                break;
+              }
+            }
+        
+            logToSerialAndWeb("Device Infos");
+            logToSerialAndWeb(String("  Adress: " + address));
+            logToSerialAndWeb(String("  Local Name: " + localName));
+            delay(100);
+            logToSerialAndWeb("  Device Name: ");
+            for (const auto& names : nameList) {
+              if (!names.empty()) {
+                logToSerialAndWeb(String("    - ") + names.c_str());
+              }
+            }
+            
+            delay(100);
+            float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
+            logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
+            delay(100);
+            logToSerialAndWeb("  - RSSI: " + String(rssi));
+            delay(100);
+            logToSerialAndWeb("----------------------------------\n");
+        
+            // Move to isTargetDevice to log on SD card
+            sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
+            //logToSerialAndWeb("Write Data to SD Logger");
+
+            // Clear uuidList after Stored to SD Card
+            uuidList.clear();
+            nameList.clear();
+          } else {
+            logToSerialAndWeb("Attribute discovery failed.");
+          }
+        } else {
+          Serial.println("Attribute discovery FAILED.");
+          if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+            logToSerialAndWeb("showSadExpressionTask");
+            xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
+          }
         }
       }
-      if (pClient->isConnected()) {
+      if (pClient != nullptr && pClient->isConnected()) {
         pClient->disconnect();
       }
       NimBLEDevice::deleteClient(pClient);
       pClient = nullptr;
     }
-    delay(10);
+    logToSerialAndWeb("\n");
+    delay(100);
+    logToSerialAndWeb("##########################");
+    delay(100);
+    logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
+    delay(100);
+    logToSerialAndWeb("Sniffed:    " + String(targetConnects));
+    delay(100);
+    logToSerialAndWeb("Suspicious: " + String(susDevice));
+    delay(100);
     logToSerialAndWeb("##########################\n");
-    delay(10);
-    logToSerialAndWeb("Spotted:    " + allSpottedDevice);
-    delay(10);
-    logToSerialAndWeb("Sniffed:    " + targetConnects);
-    delay(10);
-    logToSerialAndWeb("Suspicious: " + susDevice);
-    delay(10);
-    logToSerialAndWeb("##########################\n");
+    delay(100);
     scanIsRunning = false;
   }
 }
