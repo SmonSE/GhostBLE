@@ -24,6 +24,8 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
         "Central Address Resolution"
     };
 
+    logToSerialAndWeb("   Read value of generic access info");
+    
     for (int i = 0; i < 4; i++) {
         NimBLERemoteCharacteristic* pChar = gapService->getCharacteristic(charUUIDs[i]);
         if (!pChar) {
@@ -33,7 +35,7 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
 
         if (pChar->canRead()) {
             std::string value = pChar->readValue();
-
+            /*
             if (strcmp(charUUIDs[i], "2A01") == 0) {
                 uint16_t appearance = *(uint16_t*)value.data();
                 accessInfoString += "Appearance: 0x" + String(appearance, HEX) + "\n";
@@ -51,18 +53,19 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                     accessInfoString += "  Latency: " + String(latency) + "\n";
                     accessInfoString += "  Timeout: " + String(timeout) + "\n";
 
-                    Serial.printf("  PPCP - Min: %d, Max: %d, Latency: %d, Timeout: %d\n",
+                    Serial.printf("   PPCP - Min: %d, Max: %d, Latency: %d, Timeout: %d\n",
                         minInterval, maxInterval, latency, timeout);
                 }
             } else if (strcmp(charUUIDs[i], "2AA6") == 0) {
                 uint8_t support = value[0];
                 accessInfoString += "Central Address Resolution: " + String(support == 1 ? "Supported" : "Not Supported") + "\n";
-                Serial.printf("  Central Address Resolution: %s\n", support == 1 ? "Supported" : "Not Supported");
+                Serial.printf("   Central Address Resolution: %s\n", support == 1 ? "Supported" : "Not Supported");
             } else {
                 String val = String(value.c_str());
                 accessInfoString += String(charNames[i]) + ": " + val + "\n";
-                Serial.printf("  %s: %s\n", charNames[i], val.c_str());
+                Serial.printf("   %s: %s\n", charNames[i], val.c_str());
             }
+            */
         }
     }
 
