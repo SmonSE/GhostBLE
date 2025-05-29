@@ -32,6 +32,8 @@ String localName = "";
 String address = "";
 String serviceInfo = "";
 String manuInfo = "";
+String payload = "";
+String hexPayload = "";
 
 String deviceInfoService = "";
 String heartRateService = "";

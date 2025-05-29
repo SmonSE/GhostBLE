@@ -10,26 +10,26 @@
 
 String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   String batteryStr = "";
-  logToSerialAndWeb("Battery Service");
+  logToSerialAndWeb("   Battery Service");
 
   // Check for null client
   if (pClient == nullptr) {
-    logToSerialAndWeb("  ⚠️ pClient is null.");
+    logToSerialAndWeb("     ⚠️ pClient is null.");
     return batteryStr;
   }
 
   // Retrieve the Battery Service (UUID: 0x180F)
   NimBLERemoteService* batteryService = pClient->getService("180F");
   if (batteryService == nullptr) {
-    logToSerialAndWeb("  Battery Service not found");
+    logToSerialAndWeb("     Battery Service not found");
     return batteryStr;
   } else {
-    logToSerialAndWeb("  Battery Service found (0x180F)");
+    logToSerialAndWeb("     Battery Service found (0x180F)");
 
     // Retrieve the Battery Level Characteristic (UUID: 0x2A19)
     NimBLERemoteCharacteristic* pChar = batteryService->getCharacteristic("2A19");
     if (pChar == nullptr) {
-      logToSerialAndWeb("  Battery Level Characteristic not found");
+      logToSerialAndWeb("     Battery Level Characteristic not found");
       return batteryStr;
     }
 
@@ -42,7 +42,7 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
           uint8_t level = static_cast<uint8_t>(raw[0]);
 
           if (level <= 100) {
-            batteryStr = "  Battery Level: " + String(level) + "%\n";
+            batteryStr = "     Battery Level: " + String(level) + "%\n";
             logToSerialAndWeb(batteryStr);
 
             if (!isThugLifeTaskRunning) {
@@ -50,23 +50,23 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
               xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
             }
           } else {
-            batteryStr = "  Battery read failed or invalid value: " + String(level) + "\n";
+            batteryStr = "     Battery read failed or invalid value: " + String(level) + "\n";
             logToSerialAndWeb(batteryStr);
           }
         } else {
-          batteryStr = "  ⚠️ Battery data too short\n";
+          batteryStr = "     ⚠️ Battery data too short\n";
           logToSerialAndWeb(batteryStr);
         }
       } else {
-        batteryStr = "  ⚠️ Failed to read battery level (empty response)\n";
+        batteryStr = "     ⚠️ Failed to read battery level (empty response)\n";
         logToSerialAndWeb(batteryStr);
       }
     } else {
-      logToSerialAndWeb("  Battery Level Characteristic not readable");
+      logToSerialAndWeb("     Battery Level Characteristic not readable");
 
       // Optional: suggest using notification if available
       if (pChar->canNotify()) {
-        logToSerialAndWeb("  Battery Level Characteristic supports notify, consider subscribing.");
+        logToSerialAndWeb("     Battery Level Characteristic supports notify, consider subscribing.");
       }
     }
   }

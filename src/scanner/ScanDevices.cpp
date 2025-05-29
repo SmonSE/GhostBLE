@@ -22,6 +22,58 @@ SDLogger sdLogger;
 #define MAX_SEEN_DEVICES 1000
 
 
+// PRIVACY NEW
+// Ganz oben hinzufügen
+#include <map>
+#include <vector>
+#include <algorithm>
+
+// Global oder static in der Datei:
+struct DeviceInfo {
+  std::string last_mac;
+  uint8_t mac_change_count = 0;
+  std::vector<std::string> seen_macs;
+};
+
+std::map<std::string, DeviceInfo> mac_history;
+
+bool isASCII(const std::string& s) {
+  return std::all_of(s.begin(), s.end(), [](char c){ return c >= 32 && c <= 126; });
+}
+
+void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data) {
+  auto& info = mac_history[name];
+
+  if (!info.seen_macs.empty() && std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
+    info.mac_change_count++;
+    info.seen_macs.push_back(mac);
+  } else if (info.seen_macs.empty()) {
+    info.seen_macs.push_back(mac);
+  }
+
+  bool is_static_mac = info.mac_change_count == 0;
+  bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isASCII(adv_data);
+
+  Serial.printf("🔍 %s MAC: %s | Rotating: %s | Cleartext: %s\n",
+                name.c_str(), mac.c_str(),
+                is_static_mac ? "❌" : "✅",
+                adv_contains_cleartext ? "❗" : "✅");
+}
+
+// Helper function to convert raw payload bytes to hex string
+String payloadToHexString(const String& payload) {
+    String hexStr = "";
+    for (size_t i = 0; i < payload.length(); i++) {
+        uint8_t b = payload.charAt(i);
+        if (b < 0x10) hexStr += "0";
+        hexStr += String(b, HEX);
+        hexStr += " ";
+    }
+    return hexStr;
+}
+// PRIVACY NEW
+
+
 void scanForDevices() {
   NimBLEScan* pScan = NimBLEDevice::getScan();
   
@@ -32,7 +84,7 @@ void scanForDevices() {
 
   if (pScan != nullptr) {
     pScan->clearResults();        // 1. Clear previous results first
-    pScan->setActiveScan(true);   // 2. Set active scan mode
+    pScan->setActiveScan(false);  // 2. Set active scan mode
     pScan->setInterval(1000);     // 3. Set scan interval
     pScan->setWindow(900);        // 4. Set scan window
     delay(100);                   // Optional small delay for stability
@@ -51,27 +103,38 @@ void scanForDevices() {
   if (results.getCount() == 0) {
      logToSerialAndWeb("NO DEVICES FOUND");
   } else {
-    logToSerialAndWeb("DEVICES FOUND: " + String(results.getCount()));
+    logToSerialAndWeb("📲 DEVICES FOUND: " + String(results.getCount()));
 
     scanIsRunning = true;
-    logToSerialAndWeb("Scan Is Running");
+    logToSerialAndWeb("📡 Scan Is Running");
   
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
       if (device != nullptr) {
           address = device->getAddress().toString().c_str();
-          localName = device->haveName() ? String(device->getName().c_str()) : "Unknown";
+          localName = device->haveName() ? String(device->getName().c_str()) : "<NoName>";
           rssi = device->getRSSI();
+
+          std::vector<uint8_t> payloadVec = device->getPayload();
+          String payload = "";
+          for (size_t i = 0; i < payloadVec.size(); i++) {
+              if (payloadVec[i] < 16) payload += "0";
+              payload += String(payloadVec[i], HEX);
+          }
+          payload.toUpperCase();
       } else {
           logToSerialAndWeb("⚠️ device is null! Skipping.");
       }
 
       if (seenDevices.empty()) {
-        logToSerialAndWeb("  seenDevices is currently empty");
+        logToSerialAndWeb("   seenDevices is currently empty");
       }
-      logToSerialAndWeb("  seenDevices size: " + String(seenDevices.size() + 1));
-      logToSerialAndWeb(String("  Trying to access address: ") + address);
+
+      // ➕ Rufe Privacy-Analyse auf
+      handleDevicePrivacy(localName.c_str(), address.c_str(), payload.c_str());
+
+      logToSerialAndWeb(String("   Trying to connect to address: ") + address);
 
       try {
         if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
@@ -83,10 +146,10 @@ void scanForDevices() {
       } catch (...) {
         logToSerialAndWeb("Exception caught accessing seenDevices");
       }
-      
-      logToSerialAndWeb("  Trying to connect for service discovery...");
 
-      logToSerialAndWeb("   connecting for service discovery...");
+      // ➕ Rufe Privacy-Analyse auf
+      //handleDevicePrivacy(localName.c_str(), address.c_str(), payload.c_str());
+      
       pClient = NimBLEDevice::createClient();
       delay(1000);
 
@@ -110,7 +173,7 @@ void scanForDevices() {
       if (pClient != nullptr) {
         if (pClient->connect(*device)) {
           if (pClient->discoverAttributes()) {
-            logToSerialAndWeb("✅ Connected and discovered attributes!");
+            logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
       
             if (!isGlassesTaskRunning && !isAngryTaskRunning) {
@@ -119,13 +182,13 @@ void scanForDevices() {
 
             // Manufacturer handling
             if (device->haveManufacturerData()) {
-              logToSerialAndWeb("Manufacturer Data");
+              logToSerialAndWeb("   Manufacturer Data");
               std::string mfg = device->getManufacturerData();
-              logToSerialAndWeb(String("  Manufacturer Data: ") + String(mfg.c_str()));
+              logToSerialAndWeb(String("     Manufacturer Data: ") + String(mfg.c_str()));
                   
               uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
               String manufacturerName = getManufacturerName(manufacturerId);
-              manuInfo = "  Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
+              manuInfo = "     Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
               Serial.println(manuInfo);
             }
       
@@ -133,7 +196,8 @@ void scanForDevices() {
 
             // Skipp Apple Products to speed up 
             if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-              logToSerialAndWeb("APPLE DEVICE SKIPP");
+              logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
+              logToSerialAndWeb("   ...\n");
               continue;
             }
 
@@ -145,15 +209,15 @@ void scanForDevices() {
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
               std::string serviceUuid = service->getUUID().toString();
-              logToSerialAndWeb(String("Service UUID: ") + serviceUuid.c_str());
+              logToSerialAndWeb(String("   Service UUID: ") + serviceUuid.c_str());
 
               uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
 
               for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
                 NimBLERemoteCharacteristic* characteristic = *cIt;
                 std::string charUuid = characteristic->getUUID().toString();
-                logToSerialAndWeb(String("  Characteristic UUID: ") + charUuid.c_str());
-                uuidList.push_back("  Characteristic UUID: " + std::string(charUuid.c_str()));
+                logToSerialAndWeb(String("     Characteristic UUID: ") + charUuid.c_str());
+                uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
                 
                 if (characteristic) {
                   std::string name = characteristic->readValue();
@@ -163,7 +227,7 @@ void scanForDevices() {
                     nameList.push_back(std::string(name.c_str()));
                   }
                 } else {
-                  logToSerialAndWeb("Device Name Characteristic not found.");
+                  logToSerialAndWeb("   Device Name Characteristic not found.");
                 }
               }
 
@@ -175,7 +239,7 @@ void scanForDevices() {
               if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
                 targetFound = true;
                 susDevice++;
-                Serial.println("Target Message: !!! Target detected !!!");
+                logToSerialAndWeb("Target Message: !!! Target detected !!!");
                 delay(2000);
                 if (!isAngryTaskRunning) {
                   logToSerialAndWeb("showAngryExpressionTask");
@@ -186,23 +250,27 @@ void scanForDevices() {
                 break;
               }
             }
+
+            hexPayload = payloadToHexString(payload);
         
-            logToSerialAndWeb("Device Infos");
-            logToSerialAndWeb(String("  Adress: " + address));
-            logToSerialAndWeb(String("  Local Name: " + localName));
+            logToSerialAndWeb("📝 Device Infos");
+            logToSerialAndWeb(String("   Adress: " + address));
+            logToSerialAndWeb(String("   Name: " + localName));
             delay(100);
-            logToSerialAndWeb("  Device Name: ");
+            logToSerialAndWeb("   Device Name: ");
             for (const auto& names : nameList) {
               if (!names.empty()) {
-                logToSerialAndWeb(String("    - ") + names.c_str());
+                logToSerialAndWeb(String("     - ") + names.c_str());
               }
             }
             
             delay(100);
             float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-            logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
+            logToSerialAndWeb("🛰️ Distance: " + String(distance, 2) + " m");
             delay(100);
-            logToSerialAndWeb("  - RSSI: " + String(rssi));
+            logToSerialAndWeb("     - RSSI: " + String(rssi));
+            delay(100);
+            logToSerialAndWeb("Payload (hex): " + hexPayload);
             delay(100);
             logToSerialAndWeb("----------------------------------\n");
         
@@ -213,11 +281,9 @@ void scanForDevices() {
             // Clear uuidList after Stored to SD Card
             uuidList.clear();
             nameList.clear();
-          } else {
-            logToSerialAndWeb("Attribute discovery failed.");
-          }
+          } 
         } else {
-          Serial.println("Attribute discovery FAILED.");
+          logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
             logToSerialAndWeb("showSadExpressionTask");
             xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
@@ -230,9 +296,10 @@ void scanForDevices() {
       NimBLEDevice::deleteClient(pClient);
       pClient = nullptr;
     }
-    logToSerialAndWeb("\n");
     delay(100);
     logToSerialAndWeb("##########################");
+    delay(100);
+    logToSerialAndWeb("📊 Scan Summary:");
     delay(100);
     logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
     delay(100);

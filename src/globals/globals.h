@@ -38,6 +38,8 @@ extern String localName;
 extern String address;
 extern String serviceInfo;
 extern String manuInfo;
+extern String payload;
+extern String hexPayload;
 
 extern String deviceInfoService;
 extern String heartRateService;
