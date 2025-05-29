@@ -164,12 +164,13 @@ void onLongPress() {
 }
 
 void startWebLogServer() {
+  logToSerialAndWeb("WEB SERVER");
+
   if (wifiStarted) return;  // Don't start twice
 
   WiFi.softAP(ap_ssid, ap_password);
-  Serial.print("softAP started? YES\n");
-  Serial.print("Access Point IP: ");
-  Serial.println(WiFi.softAPIP());
+  logToSerialAndWeb("   SoftAP started? YES");
+  logToSerialAndWeb("   Access Point IP: " + WiFi.softAPIP());
 
   // Setup WebSocket events and handlers BEFORE starting the server
   ws.onEvent(onWsEvent);
@@ -180,6 +181,6 @@ void startWebLogServer() {
   });
 
   server.begin();
-  logToSerialAndWeb("Web server started.");
+  logToSerialAndWeb("   Web server started.");
   wifiStarted = true;
 }
