@@ -16,6 +16,7 @@ GhostBLE is a Bluetooth Low Energy (BLE) scanner designed for the **M5Stack** pl
   - **Cleartext detection** – Flags devices leaking unencrypted identifiers
 - 🧠 **Optional Connection Attempts** – Tries to connect and read GATT attributes (if possible)
 - 💾 **Logging to Serial + Web** – Output is sent to both Serial and optional web-based logging
+- 💾 **SD Card Logging** - Write all the important data to the attached SD Card on Cardputer
 - 😢 **Feedback Expression** – Displays a sad expression when a device connection or attribute discovery fails
 - 📊 **Summary Report** – After each scan, the tool prints:
   - Devices spotted
@@ -32,9 +33,9 @@ Trying to connect to address: d3:c9:9d:fa:d9:9a
 showSadExpressionTask
 
 📊 Scan Summary:
-Spotted: 4
-Sniffed: 2
-Suspicious: 0
+- Spotted: 4
+- Sniffed: 2
+- Suspicious: 0
 
 
 ---
@@ -46,17 +47,27 @@ Suspicious: 0
 | **Rotating**     | ✅      | Device uses MAC address randomization (RPA), a good privacy practice   |
 | **Cleartext**    | ❗      | Device advertises personal info (e.g., real name) in plain text        |
 
----
+## 🔄 Rotating vs. Cleartext
 
-## 🛠️ Architecture
+### 🔁 Rotating
 
-- `scanForDevices()` runs in the main loop and:
-  - Starts a BLE scan
-  - For each device:
-    - Extracts address, name, RSSI, and raw payload
-    - Attempts to connect and read characteristics (if allowed)
-    - Evaluates privacy posture
-  - Logs all details and produces a scan summary
+This indicates whether the device’s MAC address is rotating (changing) frequently.
+
+- ✅ **Rotating**: The device uses a **randomized or private address** that changes periodically to protect user privacy and avoid tracking.
+- ❌ **Not Rotating**: The device uses a **static or fixed MAC address**.
+
+### 🔓 Cleartext
+
+This refers to whether the data broadcast by the device is in cleartext (unencrypted, readable) or obfuscated/encrypted.
+
+- ❗ **Cleartext**: The advertising payload contains **unencrypted data** that anyone can read. This could include device name, services, or other openly broadcast info.
+- ✔️ **Not Cleartext**: The advertising data is **encrypted, obfuscated, or otherwise protected**.
+
+### 🛡️ Why It Matters
+
+- **Rotating MAC addresses** help prevent persistent tracking of devices, enhancing privacy.
+- **Cleartext advertising** can leak sensitive information and metadata, while **encrypted/obfuscated advertising** increases security and user privacy.
+
 
 ---
 
@@ -69,15 +80,6 @@ Each spotted device logs the following:
 - RSSI in dBm
 - Raw advertising payload (in hex)
 - Detected privacy flags (e.g., rotating, cleartext)
-
----
-
-## 💡 Future Ideas
-
-- Store logs on SD card or remote server
-- Add BLE advertisement parsing by type
-- Flag known devices or vendors
-- Visual dashboard via web server on the M5Stack
 
 ---
 
