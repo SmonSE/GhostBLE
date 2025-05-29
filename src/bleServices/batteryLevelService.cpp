@@ -42,7 +42,7 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
           uint8_t level = static_cast<uint8_t>(raw[0]);
 
           if (level <= 100) {
-            batteryStr = "     Battery Level: " + String(level) + "%\n";
+            batteryStr = "     Battery Level: " + String(level);
             logToSerialAndWeb(batteryStr);
 
             if (!isThugLifeTaskRunning) {
@@ -50,7 +50,7 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
               xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
             }
           } else {
-            batteryStr = "     Battery read failed or invalid value: " + String(level) + "\n";
+            batteryStr = "     Battery read failed or invalid value: " + String(level);
             logToSerialAndWeb(batteryStr);
           }
         } else {
@@ -58,7 +58,7 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
           logToSerialAndWeb(batteryStr);
         }
       } else {
-        batteryStr = "     ⚠️ Failed to read battery level (empty response)\n";
+        batteryStr = "     ⚠️ Failed to read battery level (empty response)";
         logToSerialAndWeb(batteryStr);
       }
     } else {

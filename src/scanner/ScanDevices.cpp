@@ -147,9 +147,6 @@ void scanForDevices() {
         logToSerialAndWeb("Exception caught accessing seenDevices");
       }
 
-      // ➕ Rufe Privacy-Analyse auf
-      //handleDevicePrivacy(localName.c_str(), address.c_str(), payload.c_str());
-      
       pClient = NimBLEDevice::createClient();
       delay(1000);
 
