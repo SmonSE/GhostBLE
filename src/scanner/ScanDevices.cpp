@@ -200,7 +200,7 @@ void scanForDevices() {
 
             batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-            genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+            //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
             bool isTarget = false;
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {

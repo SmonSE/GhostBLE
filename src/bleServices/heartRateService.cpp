@@ -50,7 +50,13 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
     } else {
       logToSerialAndWeb("     Heart Rate Characteristic does not support notifications");
     }
+
+    // to read the notified characteristic
+    if (pChar->canRead()) {
+      std::string value = pChar->readValue();      
+    }
+
   }
-  
+
   return hrStr;
 }
