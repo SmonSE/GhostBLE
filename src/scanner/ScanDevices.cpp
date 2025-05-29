@@ -194,7 +194,7 @@ void scanForDevices() {
             // Skipp Apple Products to speed up 
             if (deviceInfoService.indexOf("Apple Inc.") != -1) {
               logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
-              logToSerialAndWeb("   ...\n");
+              logToSerialAndWeb("   ...");
               continue;
             }
 
