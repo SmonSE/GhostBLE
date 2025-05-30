@@ -69,7 +69,7 @@ void setup() {
 
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));
-  delay(5000);
+  delay(2000);
 
   NimBLEDevice::init("bleDefender");
 
@@ -84,7 +84,7 @@ void setup() {
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
 
-  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+  //showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
   delay(1000);
 
@@ -94,6 +94,11 @@ void setup() {
 
   startTimeDevice = millis();
   scanIsRunning = false;
+
+
+  // To Update Wifi Logo to ON
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+  delay(5000);
 }
 
 

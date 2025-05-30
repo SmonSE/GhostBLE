@@ -37,11 +37,17 @@ struct DeviceInfo {
 
 std::map<std::string, DeviceInfo> mac_history;
 
-bool isASCII(const std::string& s) {
-  return std::all_of(s.begin(), s.end(), [](char c){ return c >= 32 && c <= 126; });
+bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength = 6) {
+  size_t printableCount = 0;
+  for (uint8_t b : bytes) {
+    if (b >= 32 && b <= 126) {
+      printableCount++;
+    }
+  }
+  return printableCount >= minLength;
 }
 
-void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data) {
+void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec) {
   auto& info = mac_history[name];
 
   if (!info.seen_macs.empty() && std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
@@ -52,12 +58,21 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
   }
 
   bool is_static_mac = info.mac_change_count == 0;
-  bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isASCII(adv_data);
+  bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isLikelyCleartextBytes(payloadVec);
 
-  Serial.printf("🔍 %s MAC: %s | Rotating: %s | Cleartext: %s\n",
-                name.c_str(), mac.c_str(),
-                is_static_mac ? "❌" : "✅",
-                adv_contains_cleartext ? "❗" : "✅");
+
+  //is_static_mac           ? "❌" : "✅" → bedeutet: ❌ = feste MAC, ✅ = rotierende MAC
+  //adv_contains_cleartext  ? "❌" : "✅" → bedeutet: ❌ = keine Klartextdaten, ✅ = Klartext erkannt
+  //is_connectable          ? "❌" : "✅" → bedeutet: ❌ = nicht connectable, ✅ = connectable
+
+
+  String logLine = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) +
+                  " | Rotating: " + (is_static_mac ? "❌" : "✅") +
+                  " | Cleartext: " + (adv_contains_cleartext ? "❌" : "✅") +
+                  " | Connectable: " + (is_connectable ? "❌" : "✅");
+
+  logToSerialAndWeb(logLine);
+
 }
 
 // Helper function to convert raw payload bytes to hex string
@@ -116,25 +131,14 @@ void scanForDevices() {
           localName = device->haveName() ? String(device->getName().c_str()) : "<NoName>";
           rssi = device->getRSSI();
 
+          is_connectable = device->isConnectable();
+
           std::vector<uint8_t> payloadVec = device->getPayload();
-          String payload = "";
-          for (size_t i = 0; i < payloadVec.size(); i++) {
-              if (payloadVec[i] < 16) payload += "0";
-              payload += String(payloadVec[i], HEX);
-          }
-          payload.toUpperCase();
+          handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec);
+
       } else {
           logToSerialAndWeb("⚠️ device is null! Skipping.");
       }
-
-      if (seenDevices.empty()) {
-        logToSerialAndWeb("   seenDevices is currently empty");
-      }
-
-      // ➕ Rufe Privacy-Analyse auf
-      handleDevicePrivacy(localName.c_str(), address.c_str(), payload.c_str());
-
-      logToSerialAndWeb(String("   Trying to connect to address: ") + address);
 
       try {
         if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
@@ -146,6 +150,13 @@ void scanForDevices() {
       } catch (...) {
         logToSerialAndWeb("Exception caught accessing seenDevices");
       }
+
+      if (is_connectable){
+        logToSerialAndWeb("   Device is not connectable");
+        continue;
+      }
+
+      logToSerialAndWeb(String("   Trying to connect to address: ") + address);
 
       pClient = NimBLEDevice::createClient();
       delay(1000);
@@ -168,7 +179,7 @@ void scanForDevices() {
       }
 
       if (pClient != nullptr) {
-        if (pClient->connect(*device)) {
+        if (pClient->connect(*device) && !is_connectable) {
           if (pClient->discoverAttributes()) {
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
@@ -267,7 +278,7 @@ void scanForDevices() {
             delay(100);
             logToSerialAndWeb("     - RSSI: " + String(rssi));
             delay(100);
-            logToSerialAndWeb("Payload (hex): " + hexPayload);
+            //logToSerialAndWeb("Payload (hex): " + hexPayload);
             delay(100);
             logToSerialAndWeb("----------------------------------\n");
         
@@ -282,7 +293,7 @@ void scanForDevices() {
         } else {
           logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-            logToSerialAndWeb("showSadExpressionTask");
+            //logToSerialAndWeb("showSadExpressionTask");
             xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
           }
         }

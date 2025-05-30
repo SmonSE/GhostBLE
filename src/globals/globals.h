@@ -23,6 +23,7 @@ extern bool isAngryTaskRunning;
 extern bool isSadTaskRunning;
 extern bool isThugLifeTaskRunning;
 extern bool isWebLogActive;
+extern bool is_connectable;
 
 extern int susDevice;
 extern int targetConnects;
@@ -40,6 +41,7 @@ extern String serviceInfo;
 extern String manuInfo;
 extern String payload;
 extern String hexPayload;
+extern String spacedPayload;
 
 extern String deviceInfoService;
 extern String heartRateService;

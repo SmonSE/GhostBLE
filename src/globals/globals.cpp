@@ -17,6 +17,7 @@ bool isAngryTaskRunning = false;
 bool isSadTaskRunning = false;
 bool isThugLifeTaskRunning = false;
 bool isWebLogActive = false;
+bool is_connectable = false;
 
 int susDevice = 0;
 int targetConnects = 0;
@@ -34,6 +35,7 @@ String serviceInfo = "";
 String manuInfo = "";
 String payload = "";
 String hexPayload = "";
+String spacedPayload = "";
 
 String deviceInfoService = "";
 String heartRateService = "";
