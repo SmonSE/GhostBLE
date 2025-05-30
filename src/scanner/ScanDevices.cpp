@@ -72,7 +72,6 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
                   " | Connectable: " + (is_connectable ? "❌" : "✅");
 
   logToSerialAndWeb(logLine);
-
 }
 
 // Helper function to convert raw payload bytes to hex string

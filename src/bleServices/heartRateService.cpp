@@ -41,7 +41,7 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
           logToSerialAndWeb(hrStr);
           // You can also trigger your display task here if needed
           if (!isThugLifeTaskRunning) {
-            logToSerialAndWeb("showThugLifeExpressionTask");
+            //logToSerialAndWeb("showThugLifeExpressionTask");
             xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
           }
         }
