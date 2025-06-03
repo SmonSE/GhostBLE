@@ -132,23 +132,19 @@ void scanForDevices() {
 
           is_connectable = device->isConnectable();
 
-          std::vector<uint8_t> payloadVec = device->getPayload();
+          std::vector<uint8_t> payloadVec;
           handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec);
 
       } else {
           logToSerialAndWeb("⚠️ device is null! Skipping.");
       }
 
-      try {
-        if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
-          logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str());
-          continue;
-        } else {
-          allSpottedDevice++;
-        }
-      } catch (...) {
-        logToSerialAndWeb("Exception caught accessing seenDevices");
-      }
+      if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
+        logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str());
+        continue;
+      } 
+
+      allSpottedDevice++;
 
       if (is_connectable){
         logToSerialAndWeb("   Device is not connectable");
@@ -251,15 +247,12 @@ void scanForDevices() {
                 if (!isAngryTaskRunning) {
                   logToSerialAndWeb("showAngryExpressionTask");
                   xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
-                  //xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 4, NULL);
                 }
                 isTarget = true;
                 break;
               }
             }
 
-            hexPayload = payloadToHexString(payload);
-        
             logToSerialAndWeb("📝 Device Infos");
             logToSerialAndWeb(String("   Adress: " + address));
             logToSerialAndWeb(String("   Name: " + localName));
@@ -276,8 +269,6 @@ void scanForDevices() {
             logToSerialAndWeb("🛰️ Distance: " + String(distance, 2) + " m");
             delay(100);
             logToSerialAndWeb("     - RSSI: " + String(rssi));
-            delay(100);
-            //logToSerialAndWeb("Payload (hex): " + hexPayload);
             delay(100);
             logToSerialAndWeb("----------------------------------\n");
         
