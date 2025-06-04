@@ -63,7 +63,7 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
   String logLine = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) +
                   " | Rotating: " + (is_static_mac ? "❌" : "✅") +
                   " | Cleartext: " + (adv_contains_cleartext ? "❌" : "✅") +
-                  " | Connectable: " + (is_connectable ? "❌" : "✅");
+                  " | Connectable: " + (is_connectable ? "✅" : "❌");
 
   logToSerialAndWeb(logLine);
 }
