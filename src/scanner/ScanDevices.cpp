@@ -37,6 +37,20 @@ struct DeviceInfo {
 
 std::map<std::string, DeviceInfo> mac_history;
 
+struct DevicePrivacyInfo {
+    std::vector<std::string> seen_macs;
+    int mac_change_count = 0;
+};
+
+// z. B. global:
+std::map<std::string, DevicePrivacyInfo> device_identity_history;
+
+
+// Funktion um Geräte über z.B. Services zu identifizieren
+std::string getIdentityFingerprint(const std::string& name, const std::string& adv_data) {
+    return name + "|" + adv_data;  // simple fingerprint
+}
+
 bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength = 6) {
   size_t printableCount = 0;
   for (uint8_t b : bytes) {
@@ -47,8 +61,14 @@ bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength 
   return printableCount >= minLength;
 }
 
-void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec) {
-  auto& info = mac_history[name];
+bool isRandomMAC(const std::string& mac) {
+    uint8_t firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
+    return (firstByte & 0xC0) == 0x40; // 0b01xxxxxx → Random Static
+}
+
+void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable) {
+  std::string identityKey = getIdentityFingerprint(name, adv_data);
+  auto& info = device_identity_history[identityKey];
 
   if (!info.seen_macs.empty() && std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
     info.mac_change_count++;
@@ -57,11 +77,13 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
     info.seen_macs.push_back(mac);
   }
 
-  bool is_static_mac = info.mac_change_count == 0;
+  bool rotating_mac = isRandomMAC(mac);
   bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isLikelyCleartextBytes(payloadVec);
 
+  logToSerialAndWeb("  PRIVACY: CRITICAL = ❌ | GOOD = ✅");
+
   String logLine = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) +
-                  " | Rotating: " + (is_static_mac ? "❌" : "✅") +
+                  " | Rotating: " + (rotating_mac ? "✅" : "❌") +
                   " | Cleartext: " + (adv_contains_cleartext ? "❌" : "✅") +
                   " | Connectable: " + (is_connectable ? "✅" : "❌");
 
@@ -127,7 +149,7 @@ void scanForDevices() {
           is_connectable = device->isConnectable();
 
           std::vector<uint8_t> payloadVec;
-          handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec);
+          handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec, is_connectable);
 
       } else {
           logToSerialAndWeb("⚠️ device is null! Skipping.");
@@ -293,9 +315,9 @@ void scanForDevices() {
     delay(100);
     logToSerialAndWeb("📊 Scan Summary:");
     delay(100);
-    logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
-    delay(100);
     logToSerialAndWeb("Sniffed:    " + String(targetConnects));
+    delay(100);
+    logToSerialAndWeb("Leaked:     " + String(leakedCounter));
     delay(100);
     logToSerialAndWeb("Suspicious: " + String(susDevice));
     delay(100);

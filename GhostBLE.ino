@@ -97,7 +97,7 @@ void setup() {
 
 
   // To Update Wifi Logo to ON
-  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+  showFindingCounter(targetConnects, susDevice, leakedCounter);
   delay(5000);
 }
 

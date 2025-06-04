@@ -22,6 +22,7 @@ bool is_connectable = false;
 int susDevice = 0;
 int targetConnects = 0;
 int allSpottedDevice = 0;
+int leakedCounter = 0;
 int batteryPercent = 0;
 
 int rssi = 0;

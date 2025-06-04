@@ -46,6 +46,6 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0xC3) return "Bose Corporation"; 
     if (manufacturerId == 0xAF) return "Plantronics (now Poly)";
     if (manufacturerId == 0x30) return "Symbol Technologies (barcode scanners)";
-    
+    if (manufacturerId == 0x3FF) return "Withings (Unofficial)";
     return "Unknown Manufacturer";
 }

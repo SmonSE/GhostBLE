@@ -45,6 +45,8 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
             batteryStr = "     Battery Level: " + String(level);
             logToSerialAndWeb(batteryStr);
 
+            leakedCounter++;
+
             if (!isThugLifeTaskRunning) {
               logToSerialAndWeb("showThugLifeExpressionTask");
               xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);

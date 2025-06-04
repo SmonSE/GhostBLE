@@ -28,6 +28,7 @@ extern bool is_connectable;
 extern int susDevice;
 extern int targetConnects;
 extern int allSpottedDevice;
+extern int leakedCounter;
 extern int batteryPercent;
 
 extern int rssi;
