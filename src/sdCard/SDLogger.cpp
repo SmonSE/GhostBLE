@@ -57,24 +57,24 @@ void SDLogger::writeDeviceInfo( const String& address,
             dataFile.println("Local Name: (no name)");
         }
 
-        dataFile.println("Device Names:");
-        for (const auto& names : nameList) {
-            if (!names.empty()) {
-                dataFile.print("  - ");
-                dataFile.println(names.c_str());
-            }
-        }
-
         //Device Info String: 
         dataFile.println(deviceInfoString);
         dataFile.println(batteryLevelService);
 
         dataFile.println(manuInfo);
 
-        dataFile.println("Service and Characteristic UUIDs:");
+        dataFile.println("Characteristic UUID:");
         for (const auto& uuid : uuids) {
             dataFile.print("  - ");
             dataFile.println(uuid.c_str());
+        }
+
+        dataFile.println("Characteristic NAME:");
+        for (const auto& names : nameList) {
+            if (!names.empty()) {
+                dataFile.print("  - ");
+                dataFile.println(names.c_str());
+            }
         }
 
         dataFile.println("-------------------------------");

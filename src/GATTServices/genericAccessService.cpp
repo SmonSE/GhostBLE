@@ -35,7 +35,7 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
 
         if (pChar->canRead()) {
             std::string value = pChar->readValue();
-            /*
+            
             if (strcmp(charUUIDs[i], "2A01") == 0) {
                 uint16_t appearance = *(uint16_t*)value.data();
                 accessInfoString += "Appearance: 0x" + String(appearance, HEX) + "\n";
@@ -65,7 +65,6 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                 accessInfoString += String(charNames[i]) + ": " + val + "\n";
                 Serial.printf("   %s: %s\n", charNames[i], val.c_str());
             }
-            */
         }
     }
 

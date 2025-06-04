@@ -60,12 +60,6 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
   bool is_static_mac = info.mac_change_count == 0;
   bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isLikelyCleartextBytes(payloadVec);
 
-
-  //is_static_mac           ? "❌" : "✅" → bedeutet: ❌ = feste MAC, ✅ = rotierende MAC
-  //adv_contains_cleartext  ? "❌" : "✅" → bedeutet: ❌ = keine Klartextdaten, ✅ = Klartext erkannt
-  //is_connectable          ? "❌" : "✅" → bedeutet: ❌ = nicht connectable, ✅ = connectable
-
-
   String logLine = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) +
                   " | Rotating: " + (is_static_mac ? "❌" : "✅") +
                   " | Cleartext: " + (adv_contains_cleartext ? "❌" : "✅") +
@@ -199,14 +193,14 @@ void scanForDevices() {
 
             // Skipp Apple Products to speed up 
             if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-              logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
-              logToSerialAndWeb("   ...");
-              continue;
+              //logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
+              //logToSerialAndWeb("   ...");
+              //continue;
             }
 
             batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-            //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+            genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
             bool isTarget = false;
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
@@ -226,7 +220,7 @@ void scanForDevices() {
                   std::string name = characteristic->readValue();
 
                   if (!name.empty()) {
-                    //logToSerialAndWeb(String("Gerätename: " + name.c_str()));
+                    logToSerialAndWeb(String("     Characteristic Name: ") + name.c_str());
                     nameList.push_back(std::string(name.c_str()));
                   }
                 } else {
