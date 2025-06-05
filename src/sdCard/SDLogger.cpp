@@ -33,6 +33,7 @@ bool SDLogger::begin(int csPin) {
 
 void SDLogger::writeDeviceInfo( const String& address, 
                                 const String& localName,
+                                const String& riskLevelSdCard,
                                 const std::vector<std::string>& nameList,
                                 const String& manuInfo,
                                 const std::vector<std::string>& uuids,
@@ -76,6 +77,8 @@ void SDLogger::writeDeviceInfo( const String& address,
                 dataFile.println(names.c_str());
             }
         }
+
+        dataFile.println(riskLevelSdCard);
 
         dataFile.println("-------------------------------");
         dataFile.flush();  // Make sure the data is written to the card

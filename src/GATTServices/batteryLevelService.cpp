@@ -10,26 +10,26 @@
 
 String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   String batteryStr = "";
-  logToSerialAndWeb("   Battery Service");
+  Serial.println("   Battery Service");
 
   // Check for null client
   if (pClient == nullptr) {
-    logToSerialAndWeb("     ⚠️ pClient is null.");
+    Serial.println("     ⚠️ pClient is null.");
     return batteryStr;
   }
 
   // Retrieve the Battery Service (UUID: 0x180F)
   NimBLERemoteService* batteryService = pClient->getService("180F");
   if (batteryService == nullptr) {
-    logToSerialAndWeb("     Battery Service not found");
+    Serial.println("     Battery Service not found");
     return batteryStr;
   } else {
-    logToSerialAndWeb("     Battery Service found (0x180F)");
+    Serial.println("     Battery Service found (0x180F)");
 
     // Retrieve the Battery Level Characteristic (UUID: 0x2A19)
     NimBLERemoteCharacteristic* pChar = batteryService->getCharacteristic("2A19");
     if (pChar == nullptr) {
-      logToSerialAndWeb("     Battery Level Characteristic not found");
+      Serial.println("     Battery Level Characteristic not found");
       return batteryStr;
     }
 
@@ -43,32 +43,32 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
 
           if (level <= 100) {
             batteryStr = "     Battery Level: " + String(level);
-            logToSerialAndWeb(batteryStr);
+            Serial.println(batteryStr);
 
             leakedCounter++;
 
             if (!isThugLifeTaskRunning) {
-              logToSerialAndWeb("showThugLifeExpressionTask");
+              //logToSerialAndWeb("showThugLifeExpressionTask");
               xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
             }
           } else {
             batteryStr = "     Battery read failed or invalid value: " + String(level);
-            logToSerialAndWeb(batteryStr);
+            Serial.println(batteryStr);
           }
         } else {
           batteryStr = "     ⚠️ Battery data too short\n";
-          logToSerialAndWeb(batteryStr);
+          Serial.println(batteryStr);
         }
       } else {
         batteryStr = "     ⚠️ Failed to read battery level (empty response)";
-        logToSerialAndWeb(batteryStr);
+        Serial.println(batteryStr);
       }
     } else {
-      logToSerialAndWeb("     Battery Level Characteristic not readable");
+      Serial.println("     Battery Level Characteristic not readable");
 
       // Optional: suggest using notification if available
       if (pChar->canNotify()) {
-        logToSerialAndWeb("     Battery Level Characteristic supports notify, consider subscribing.");
+        Serial.println("     Battery Level Characteristic supports notify, consider subscribing.");
       }
     }
   }

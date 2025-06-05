@@ -15,7 +15,7 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
         for (int i = 0; i < 6; i++) {
           NimBLERemoteCharacteristic* pChar = deviceInfoService->getCharacteristic(deviceChars[i]);
           if (pChar == nullptr) {
-              logToSerialAndWeb("     Characteristic " + String(deviceChars[i]) + " not found.");
+              Serial.println("     Characteristic " + String(deviceChars[i]) + " not found.");
               continue;
           }
       

@@ -24,7 +24,7 @@ int targetConnects = 0;
 int allSpottedDevice = 0;
 int leakedCounter = 0;
 int batteryPercent = 0;
-
+int riskScore = 0;
 int rssi = 0;
 
 unsigned long lastScanTime = 0;
@@ -60,7 +60,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       margin: 10px;
     }
     h2 {
-        font-size: 46px;
+        font-size: 40px;
     }
     #log {
       white-space: pre-wrap;

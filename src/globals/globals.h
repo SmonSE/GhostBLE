@@ -30,7 +30,7 @@ extern int targetConnects;
 extern int allSpottedDevice;
 extern int leakedCounter;
 extern int batteryPercent;
-
+extern int riskScore;
 extern int rssi;
 
 extern unsigned long lastScanTime;

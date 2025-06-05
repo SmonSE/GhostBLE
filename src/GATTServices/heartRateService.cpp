@@ -1,6 +1,5 @@
 #include "heartRateService.h"
 
-// ✅ Include needed NimBLE headers
 #include <NimBLEDevice.h>
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
@@ -12,20 +11,20 @@
 
 String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
   String hrStr = "";
-  logToSerialAndWeb("   Heart Rate Service");
+  Serial.println("   Heart Rate Service");
 
   // Retrieve the Heart Rate Service from the client
   NimBLERemoteService* hrService = pClient->getService("180D");
   if (hrService == nullptr) {
-    logToSerialAndWeb("     Heart Rate Service not found");
+    Serial.println("     Heart Rate Service not found");
     return hrStr;
   } else {
-    logToSerialAndWeb("     Heart Rate Service found (0x180D)");
+    Serial.println("     Heart Rate Service found (0x180D)");
 
     // Get the Heart Rate Measurement characteristic
     NimBLERemoteCharacteristic* pChar = hrService->getCharacteristic("2A37");
     if (pChar == nullptr) {
-      logToSerialAndWeb("     Heart Rate Measurement Characteristic not found");
+      Serial.println("     Heart Rate Measurement Characteristic not found");
       return hrStr;
     }
 
@@ -38,7 +37,7 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
             hrValue = (uint16_t)data[1] | (data[2] << 8);
           }
           String hrStr = "     ❤️ Heart Rate Notification: " + String(hrValue) + " bpm";
-          logToSerialAndWeb(hrStr);
+          Serial.println(hrStr);
           // You can also trigger your display task here if needed
           if (!isThugLifeTaskRunning) {
             //logToSerialAndWeb("showThugLifeExpressionTask");
@@ -46,9 +45,9 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
           }
         }
       });
-      logToSerialAndWeb("     Subscribed to Heart Rate notifications");
+      Serial.println("     Subscribed to Heart Rate notifications");
     } else {
-      logToSerialAndWeb("     Heart Rate Characteristic does not support notifications");
+      Serial.println("     Heart Rate Characteristic does not support notifications");
     }
 
     // to read the notified characteristic

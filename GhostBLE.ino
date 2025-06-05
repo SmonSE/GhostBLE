@@ -95,10 +95,9 @@ void setup() {
   startTimeDevice = millis();
   scanIsRunning = false;
 
-
+  delay(10000);
   // To Update Wifi Logo to ON
   showFindingCounter(targetConnects, susDevice, leakedCounter);
-  delay(5000);
 }
 
 

@@ -21,6 +21,27 @@ SDLogger sdLogger;
 
 #define MAX_SEEN_DEVICES 1000
 
+// vulnerableUUIDs
+std::vector<std::string> vulnerableUUIDs = {
+    "0000fd6f-0000-1000-8000-00805f9b34fb", // Apple Find My / AirTags (used for tracking)
+    "0000feed-0000-1000-8000-00805f9b34fb", // Tile tracker
+    "0000fef5-0000-1000-8000-00805f9b34fb", // Samsung SmartThings (also SmartTag)
+    "0000fe95-0000-1000-8000-00805f9b34fb", // Xiaomi (Mi Band / sensors, sometimes leaks info)
+    "0000fe2c-0000-1000-8000-00805f9b34fb", // Google Fast Pair (used to identify Android devices)
+    "0000fe03-0000-1000-8000-00805f9b34fb", // Amazon Echo and Alexa devices
+    "0000fe8f-0000-1000-8000-00805f9b34fb", // Facebook Beacon
+    "0000fe2e-0000-1000-8000-00805f9b34fb", // Microsoft Swift Pair
+    "00000020-5749-5448-0037-000000000000", // Withings / Nokia Health (seen in your logs )
+    "932c32bd-0000-47a2-835a-a8d455b859dd", // Philips Hue BLE Setup
+    "0000fff0-0000-1000-8000-00805f9b34fb"  // Unknown but commonly abused custom service (some malware)
+};
+
+bool isVulnerableService(const std::string& uuid) 
+{
+  return std::find(vulnerableUUIDs.begin(), vulnerableUUIDs.end(), uuid) != vulnerableUUIDs.end();
+}
+// vulnerableUUIDs
+
 
 // PRIVACY NEW
 // Ganz oben hinzufügen
@@ -45,7 +66,6 @@ struct DevicePrivacyInfo {
 // z. B. global:
 std::map<std::string, DevicePrivacyInfo> device_identity_history;
 
-
 // Funktion um Geräte über z.B. Services zu identifizieren
 std::string getIdentityFingerprint(const std::string& name, const std::string& adv_data) {
     return name + "|" + adv_data;  // simple fingerprint
@@ -66,6 +86,29 @@ bool isRandomMAC(const std::string& mac) {
     return (firstByte & 0xC0) == 0x40; // 0b01xxxxxx → Random Static
 }
 
+bool isStaticPublicMAC(const std::string& mac) {
+    uint8_t firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
+    return (firstByte & 0xC0) == 0x00; // 0b00xxxxxx → public MAC
+}
+
+String getMACPrivacyLabel(const std::string& mac) {
+    uint8_t firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
+
+    if ((firstByte & 0xC0) == 0x00) {
+      riskScore += 3;
+      return "Public (trackable)";
+    } else if ((firstByte & 0xC0) == 0x40) {
+      riskScore += 1;
+      return "Static Random (semi-private)";
+    } else if ((firstByte & 0xC0) == 0x80) {
+      return "Resolvable Private (private)";
+    } else if ((firstByte & 0xC0) == 0xC0) {
+      return "Non-resolvable Private (private)";
+    } else {
+      return "Unknown";
+    }                               
+}
+
 void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable) {
   std::string identityKey = getIdentityFingerprint(name, adv_data);
   auto& info = device_identity_history[identityKey];
@@ -78,16 +121,28 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
   }
 
   bool rotating_mac = isRandomMAC(mac);
+  bool staticPublic_mac = isStaticPublicMAC(mac);
   bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isLikelyCleartextBytes(payloadVec);
+  String macPrivacyLavel = getMACPrivacyLabel(mac);
 
-  logToSerialAndWeb("  PRIVACY: CRITICAL = ❌ | GOOD = ✅");
+  String logLineWebSocket = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
+                  "   Has rotating MAC: " + (rotating_mac ? "YES" : "NO") + "\n" +
+                  "   Has privacy:      " + macPrivacyLavel + "\n" +
+                  "   Has cleartext:    " + (adv_contains_cleartext ? "YES" : "NO") + "\n" +
+                  "   Is connectable:   " + (is_connectable ? "NO" : "YES");
 
-  String logLine = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) +
-                  " | Rotating: " + (rotating_mac ? "✅" : "❌") +
-                  " | Cleartext: " + (adv_contains_cleartext ? "❌" : "✅") +
-                  " | Connectable: " + (is_connectable ? "✅" : "❌");
+  logToSerialAndWeb(logLineWebSocket);
 
-  logToSerialAndWeb(logLine);
+  // Risk Score
+  //if (staticPublic_mac) riskScore += 3; // added at getMACPrivacyLabel
+  if (rotating_mac) riskScore -= 1;
+  if (!rotating_mac) riskScore += 1;
+  if (!is_connectable) riskScore += 2;
+  if (is_connectable) riskScore -= 2;
+  if (adv_contains_cleartext) riskScore += 2;
+  //if (hasWeakName(name)) riskScore += 2;
+  //if (usesVulnerableUUIDs) riskScore += 2;  // added below 
+
 }
 
 // Helper function to convert raw payload bytes to hex string
@@ -119,7 +174,7 @@ void scanForDevices() {
     pScan->setWindow(900);        // 4. Set scan window
     delay(100);                   // Optional small delay for stability
   } else {
-    logToSerialAndWeb("⚠️ pScan is null!");
+    Serial.println("⚠️ pScan is null!");
   }
 
   NimBLEScanResults results;
@@ -127,19 +182,22 @@ void scanForDevices() {
   if (pScan != nullptr) {
     results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
   } else {
-    logToSerialAndWeb("⚠️ pScan is null! Cannot get scan results.");
+    Serial.println("⚠️ pScan is null! Cannot get scan results.");
   }
   
   if (results.getCount() == 0) {
-     logToSerialAndWeb("NO DEVICES FOUND");
+     Serial.println("NO DEVICES FOUND");
   } else {
     logToSerialAndWeb("📲 DEVICES FOUND: " + String(results.getCount()));
 
     scanIsRunning = true;
+
     logToSerialAndWeb("📡 Scan Is Running");
   
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
+
+      riskScore = 0;  // reset Risk Score for every seen device
 
       if (device != nullptr) {
           address = device->getAddress().toString().c_str();
@@ -152,7 +210,7 @@ void scanForDevices() {
           handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec, is_connectable);
 
       } else {
-          logToSerialAndWeb("⚠️ device is null! Skipping.");
+          Serial.println("⚠️ device is null! Skipping.");
       }
 
       if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
@@ -164,10 +222,17 @@ void scanForDevices() {
 
       if (is_connectable){
         logToSerialAndWeb("   Device is not connectable");
+
+        // Risk Level
+        String riskLevel = "🟢 Secure";
+        if (riskScore >= 3 && riskScore < 6) riskLevel = "🟠 Moderate risk";
+        else if (riskScore >= 6) riskLevel = "🔴 High risk";
+
+        logToSerialAndWeb("📊 Risk Level: " + riskLevel + " Score: " + String(riskScore) + "\n");
         continue;
       }
 
-      logToSerialAndWeb(String("   Trying to connect to address: ") + address);
+      logToSerialAndWeb(String("   Trying to connect to MAC: ") + address);
 
       pClient = NimBLEDevice::createClient();
       delay(1000);
@@ -186,7 +251,7 @@ void scanForDevices() {
       if (pClient != nullptr) {
           pClient->setConnectTimeout(5 * 1000); // Set 5s timeout
       } else {
-          logToSerialAndWeb("⚠️ pClient is null! Cannot set connect timeout.");
+          Serial.println("⚠️ pClient is null! Cannot set connect timeout.");
       }
 
       if (pClient != nullptr) {
@@ -228,25 +293,31 @@ void scanForDevices() {
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
               std::string serviceUuid = service->getUUID().toString();
-              logToSerialAndWeb(String("   Service UUID: ") + serviceUuid.c_str());
+              Serial.println(String("   Service UUID: ") + serviceUuid.c_str());
+
+              // isVulnerableService
+              bool vulnerable = isVulnerableService(serviceUuid.c_str());
+              Serial.println(String("     isVulnerableService UUID: ") + serviceUuid.c_str() + " → " + (vulnerable ? "✅ YES" : "❌ NO"));
+              if (vulnerable) riskScore += 2;
+              // isVulnerableService
 
               uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
 
               for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
                 NimBLERemoteCharacteristic* characteristic = *cIt;
                 std::string charUuid = characteristic->getUUID().toString();
-                logToSerialAndWeb(String("     Characteristic UUID: ") + charUuid.c_str());
+                Serial.println(String("     Characteristic UUID: ") + charUuid.c_str());
                 uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
                 
                 if (characteristic) {
                   std::string name = characteristic->readValue();
 
                   if (!name.empty()) {
-                    logToSerialAndWeb(String("     Characteristic Name: ") + name.c_str());
+                    Serial.println(String("     Characteristic Name: ") + name.c_str());
                     nameList.push_back(std::string(name.c_str()));
                   }
                 } else {
-                  logToSerialAndWeb("   Device Name Characteristic not found.");
+                  Serial.println("   Device Name Characteristic not found.");
                 }
               }
 
@@ -261,7 +332,7 @@ void scanForDevices() {
                 logToSerialAndWeb("Target Message: !!! Target detected !!!");
                 delay(2000);
                 if (!isAngryTaskRunning) {
-                  logToSerialAndWeb("showAngryExpressionTask");
+                  //logToSerialAndWeb("showAngryExpressionTask");
                   xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
                 }
                 isTarget = true;
@@ -286,18 +357,41 @@ void scanForDevices() {
             delay(100);
             logToSerialAndWeb("     - RSSI: " + String(rssi));
             delay(100);
+
+            // Risk Level
+            String riskLevel = "🟢 Secure";
+            if (riskScore >= 3 && riskScore < 6) riskLevel = "🟠 Moderate risk";
+            else if (riskScore >= 6) riskLevel = "🔴 High risk";
+
+            logToSerialAndWeb("📊 Risk Level: " + riskLevel + " Score: " + String(riskScore) + "\n");
+
+            String riskLevelSd = "Secure";
+            if (riskScore >= 3 && riskScore < 6) riskLevelSd = "Moderate risk";
+            else if (riskScore >= 6) riskLevelSd = "High risk";
+            String riskLevelSdCard = "Risk Level: " + riskLevelSd + " Score: " + String(riskScore);
+
+            delay(100);
+
             logToSerialAndWeb("----------------------------------\n");
         
             // Move to isTargetDevice to log on SD card
-            sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
+            sdLogger.writeDeviceInfo(address, localName, riskLevelSdCard, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
             //logToSerialAndWeb("Write Data to SD Logger");
 
-            // Clear uuidList after Stored to SD Card
+            // Clear uuidList / nameList / riskScore after Stored to SD Card
             uuidList.clear();
             nameList.clear();
-          } 
+          }
         } else {
           logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
+
+          // Risk Level
+          String riskLevel = "🟢 Secure";
+          if (riskScore >= 3 && riskScore < 6) riskLevel = "🟠 Moderate risk";
+          else if (riskScore >= 6) riskLevel = "🔴 High risk";
+
+          logToSerialAndWeb("📊 Risk Level: " + riskLevel + " Score: " + String(riskScore) + "\n");
+
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
             //logToSerialAndWeb("showSadExpressionTask");
             xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
@@ -321,6 +415,7 @@ void scanForDevices() {
     delay(100);
     logToSerialAndWeb("Suspicious: " + String(susDevice));
     delay(100);
+    
     logToSerialAndWeb("##########################\n");
     delay(100);
     scanIsRunning = false;
