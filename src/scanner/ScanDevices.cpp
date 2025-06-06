@@ -55,9 +55,9 @@ void scanForDevices() {
 
   if (pScan != nullptr) {
     pScan->clearResults();        // 1. Clear previous results first
-    pScan->setActiveScan(false);  // 2. Set active scan mode
-    pScan->setInterval(1000);     // 3. Set scan interval
-    pScan->setWindow(900);        // 4. Set scan window
+    pScan->setActiveScan(true);   // 2. Set active scan mode
+    pScan->setInterval(45);       // 3. Set scan interval // old 1000
+    pScan->setWindow(15);         // 4. Set scan window   // old 900
     delay(100);                   // Optional small delay for stability
   } else {
     Serial.println("⚠️ pScan is null!");
@@ -87,7 +87,7 @@ void scanForDevices() {
 
       if (device != nullptr) {
           address = device->getAddress().toString().c_str();
-          localName = device->haveName() ? String(device->getName().c_str()) : "<NoName>";
+          localName = device->haveName() ? String(device->getName().c_str()) : "< -- >";
           rssi = device->getRSSI();
 
           is_connectable = device->isConnectable();
