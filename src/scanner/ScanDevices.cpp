@@ -22,6 +22,7 @@ NimBLEClient *pClient = nullptr;
 class SDLogger;
 SDLogger sdLogger;
 
+bool isTarget = false;
 
 #define MAX_SEEN_DEVICES 1000
 
@@ -86,18 +87,35 @@ void scanForDevices() {
       riskScore = 0;  // reset Risk Score for every seen device
 
       if (device != nullptr) {
-          address = device->getAddress().toString().c_str();
-          localName = device->haveName() ? String(device->getName().c_str()) : "< -- >";
-          rssi = device->getRSSI();
+        address = device->getAddress().toString().c_str();
+        localName = device->haveName() ? String(device->getName().c_str()) : "< -- >";
+        rssi = device->getRSSI();
 
-          is_connectable = device->isConnectable();
+        is_connectable = device->isConnectable();
 
-          std::vector<uint8_t> payloadVec;
-          handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec, is_connectable);
+        std::vector<uint8_t> payloadVec;
+        handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec, is_connectable);
 
+        // Check for localName is target!
+        String serviceUuid = "";
+        String deviceInfoService = "";
+
+        if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
+          targetFound = true;
+          susDevice++;
+          logToSerialAndWeb("Target Message: !!! Target detected !!!");
+          delay(2000);
+          if (!isAngryTaskRunning) {
+            //logToSerialAndWeb("showAngryExpressionTask");
+            xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
+          }
+          isTarget = true;
+        }
       } else {
           Serial.println("⚠️ device is null! Skipping.");
       }
+
+      isTarget = false;
 
       if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
         logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
@@ -175,7 +193,6 @@ void scanForDevices() {
             heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
             genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
-            bool isTarget = false;
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
               std::string serviceUuid = service->getUUID().toString();

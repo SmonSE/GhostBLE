@@ -8,9 +8,15 @@
 std::map<std::string, DeviceInfo> mac_history;
 std::map<std::string, DevicePrivacyInfo> device_identity_history;
 std::vector<std::string> weakNames = {"<NoName>", "BLE_Device", "Unknown", "SensorTag", "ESP32"};
+std::vector<std::string> emptyNames = {"", "< -- >"};
+
 
 bool hasWeakName(const std::string& name) {
     return std::find(weakNames.begin(), weakNames.end(), name) != weakNames.end();
+}
+
+bool hasEmptyName(const std::string& name) {
+    return std::find(emptyNames.begin(), emptyNames.end(), name) != emptyNames.end();
 }
 
 // Funktion um Geräte über z.B. Services zu identifizieren
@@ -68,6 +74,7 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
   }
 
   bool weakName = hasWeakName(name.c_str());
+  bool emptyName = hasEmptyName(name.c_str());
   bool rotating_mac = isRandomMAC(mac);
   bool staticPublic_mac = isStaticPublicMAC(mac);
   bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isLikelyCleartextBytes(payloadVec);
@@ -76,6 +83,7 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
   String logLineWebSocket = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
                   "   Has rotating MAC: " + (rotating_mac ? "YES" : "NO") + "\n" +
                   "   Has privacy:      " + macPrivacyLavel + "\n" +
+                  "   Has empty name:   " + (emptyName ? "YES" : "NO") + "\n" +
                   "   Has weak name:    " + (weakName ? "YES" : "NO") + "\n" +
                   "   Has cleartext:    " + (adv_contains_cleartext ? "YES" : "NO") + "\n" +
                   "   Is connectable:   " + (is_connectable ? "NO" : "YES");
@@ -85,6 +93,7 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
   // Risk Score
   //if (staticPublic_mac) riskScore += 3; // added at getMACPrivacyLabel
   if (weakName) riskScore += 3;
+  if (!emptyName) riskScore += 3;
   if (rotating_mac) riskScore -= 1;
   if (!rotating_mac) riskScore += 1;
   if (!is_connectable) riskScore += 2;
