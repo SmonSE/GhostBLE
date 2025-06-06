@@ -100,7 +100,7 @@ void scanForDevices() {
       }
 
       if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
-        logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str());
+        logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
         continue;
       } 
 
