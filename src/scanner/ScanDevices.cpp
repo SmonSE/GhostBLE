@@ -47,8 +47,9 @@ bool isVulnerableService(const std::string& uuid)
 }
 
 void scanForDevices() {
+
   NimBLEScan* pScan = NimBLEDevice::getScan();
-  
+
   if (pScan == nullptr) {
     Serial.println("Scan instance creation failed.");
     return;  // Early exit if pScan is null
@@ -86,12 +87,20 @@ void scanForDevices() {
 
       riskScore = 0;  // reset Risk Score for every seen device
 
+
       if (device != nullptr) {
         address = device->getAddress().toString().c_str();
         localName = device->haveName() ? String(device->getName().c_str()) : "< -- >";
         rssi = device->getRSSI();
 
         is_connectable = device->isConnectable();
+
+        // Dedupe: Insert into seenDevices immediately (before any connect attempt)
+        if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
+          logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
+          continue;
+        }
+        seenDevices.insert(std::string(address.c_str()));
 
         std::vector<uint8_t> payloadVec;
         handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec, is_connectable);
@@ -113,16 +122,16 @@ void scanForDevices() {
         }
       } else {
           Serial.println("⚠️ device is null! Skipping.");
+          continue;
       }
 
       isTarget = false;
 
-      if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
-        logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
-        continue;
-      } 
-
       allSpottedDevice++;
+
+
+      // Leaked: riskScore >= 3
+      if (riskScore >= 3) leakedCounter++;
 
       if (is_connectable){
         logToSerialAndWeb("   Device is not connectable");
@@ -136,6 +145,7 @@ void scanForDevices() {
         continue;
       }
 
+
       logToSerialAndWeb(String("   Trying to connect to MAC: ") + address);
 
       pClient = NimBLEDevice::createClient();
@@ -143,9 +153,6 @@ void scanForDevices() {
 
       if (!pClient) { // Make sure the client was created
         break;
-      } else {
-        //logToSerialAndWeb("INSERT SEEN DEVICE AT PCLIENT");
-        seenDevices.insert(std::string(address.c_str()));
       }
 
       if (seenDevices.size() >= MAX_SEEN_DEVICES) {
@@ -184,14 +191,14 @@ void scanForDevices() {
 
             // Skipp Apple Products to speed up 
             if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-              //logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
-              //logToSerialAndWeb("   ...");
-              //continue;
+              logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
+              logToSerialAndWeb("   ...");
+              continue;
             }
 
-            batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-            heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-            genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+            //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
+            //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+            //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
