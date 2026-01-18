@@ -85,14 +85,21 @@ void scanForDevices() {
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
-      riskScore = 0;  // reset Risk Score for every seen device
+      // New risk scoring system
+      riskScore = 0;
+      bool hasVulnerableUUID = false;
+      bool hasCustomService = false;
+      bool hasSensitiveCharacteristic = false;
+      bool hasWeakName = false;
+      bool isUnknownManufacturer = false;
+      bool isSecurityOrTrackingDevice = false;
+      bool noAuthOrEncryption = false; // Placeholder, needs BLE security check
 
 
       if (device != nullptr) {
         address = device->getAddress().toString().c_str();
         localName = device->haveName() ? String(device->getName().c_str()) : "< -- >";
         rssi = device->getRSSI();
-
         is_connectable = device->isConnectable();
 
         // Dedupe: Insert into seenDevices immediately (before any connect attempt)
@@ -105,24 +112,64 @@ void scanForDevices() {
         std::vector<uint8_t> payloadVec;
         handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec, is_connectable);
 
-        // Check for localName is target!
-        String serviceUuid = "";
-        String deviceInfoService = "";
-
-        if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
-          targetFound = true;
-          susDevice++;
-          logToSerialAndWeb("Target Message: !!! Target detected !!!");
-          delay(2000);
-          if (!isAngryTaskRunning) {
-            //logToSerialAndWeb("showAngryExpressionTask");
-            xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
-          }
-          isTarget = true;
+        // Risk factor: Weak/default device name
+        if (localName == "< -- >" || localName == "BLE Device" || localName == "Unknown") {
+          hasWeakName = true;
+          riskScore += 1;
         }
+
+        // Risk factor: Device type (simple heuristic)
+        if (localName.indexOf("Tracker") != -1 || localName.indexOf("Tag") != -1 || localName.indexOf("Medical") != -1 || localName.indexOf("Security") != -1) {
+          isSecurityOrTrackingDevice = true;
+          riskScore += 2;
+        }
+
+        // Risk factor: Manufacturer
+        if (device->haveManufacturerData()) {
+          std::string mfg = device->getManufacturerData();
+          uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
+          String manufacturerName = getManufacturerName(manufacturerId);
+          if (manufacturerName == "Unknown Manufacturer") {
+            isUnknownManufacturer = true;
+            riskScore += 2;
+          }
+        }
+
+        // Risk factor: Connectable
+        if (is_connectable) {
+          riskScore += 1;
+        }
+
+        // Risk factor: Service UUID (advertised)
+        std::string serviceUuid = device->getServiceUUID().toString();
+        if (!serviceUuid.empty()) {
+          if (isVulnerableService(serviceUuid)) {
+            hasVulnerableUUID = true;
+            riskScore += 3;
+          }
+          // Custom/private service UUID (not standard 16-bit)
+          if (serviceUuid.length() > 8 && serviceUuid.find("0000") != 0) {
+            hasCustomService = true;
+            riskScore += 2;
+          }
+        }
+
+        // Risk factor: Sensitive characteristics (simple heuristic)
+        // This requires connection, so only check if connectable
+        if (is_connectable) {
+          // ...existing code for connecting and discovering attributes...
+          // After discovering characteristics, check for sensitive ones
+          // Example: device info, health, location
+          // You can add more checks here as needed
+        }
+
+        // Risk factor: No authentication/encryption (placeholder)
+        // If you can check BLE security level, add +2 for no auth/encryption
+
+        // ...existing code for target device check...
       } else {
-          Serial.println("⚠️ device is null! Skipping.");
-          continue;
+        Serial.println("⚠️ device is null! Skipping.");
+        continue;
       }
 
       isTarget = false;
@@ -133,17 +180,28 @@ void scanForDevices() {
       // Leaked: riskScore >= 3
       if (riskScore >= 3) leakedCounter++;
 
-      if (is_connectable){
+      // Print device connectability
+      if (!is_connectable) {
         logToSerialAndWeb("   Device is not connectable");
-
-        // Risk Level
-        String riskLevel = "🟢 Secure";
-        if (riskScore >= 3 && riskScore < 6) riskLevel = "🟠 Moderate risk";
-        else if (riskScore >= 6) riskLevel = "🔴 High risk";
-
-        logToSerialAndWeb("📊 Risk Level: " + riskLevel + " Score: " + String(riskScore) + "\n");
-        continue;
       }
+
+      // Risk Level
+      String riskLevel = "🟢 Secure";
+      if (riskScore >= 3 && riskScore < 6) riskLevel = "🟠 Moderate risk";
+      else if (riskScore >= 6) riskLevel = "🔴 High risk";
+
+      logToSerialAndWeb("📊 Risk Level: " + riskLevel + " Score: " + String(riskScore));
+      logToSerialAndWeb("   Risk Factors:");
+      if (hasVulnerableUUID) logToSerialAndWeb("     - Vulnerable UUID detected");
+      if (hasCustomService) logToSerialAndWeb("     - Custom/private service UUID");
+      if (isUnknownManufacturer) logToSerialAndWeb("     - Unknown manufacturer");
+      if (is_connectable) logToSerialAndWeb("     - Device is connectable");
+      if (hasSensitiveCharacteristic) logToSerialAndWeb("     - Sensitive characteristic exposed");
+      if (hasWeakName) logToSerialAndWeb("     - Weak/default device name");
+      if (isSecurityOrTrackingDevice) logToSerialAndWeb("     - Security/tracking device type");
+      if (noAuthOrEncryption) logToSerialAndWeb("     - No authentication/encryption");
+      logToSerialAndWeb("\n");
+      continue;
 
 
       logToSerialAndWeb(String("   Trying to connect to MAC: ") + address);

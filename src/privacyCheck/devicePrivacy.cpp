@@ -84,9 +84,9 @@ void handleDevicePrivacy(const std::string& name, const std::string& mac, const 
                   "   Has rotating MAC: " + (rotating_mac ? "YES" : "NO") + "\n" +
                   "   Has privacy:      " + macPrivacyLavel + "\n" +
                   "   Has empty name:   " + (emptyName ? "YES" : "NO") + "\n" +
-                  "   Has weak name:    " + (weakName ? "YES" : "NO") + "\n" +
+                  "   Has hacker name:  " + (weakName ? "YES" : "NO") + "\n" +
                   "   Has cleartext:    " + (adv_contains_cleartext ? "YES" : "NO") + "\n" +
-                  "   Is connectable:   " + (is_connectable ? "NO" : "YES");
+                  "   Is connectable:   " + (is_connectable ? "YES" : "NO");
 
   logToSerialAndWeb(logLineWebSocket);
 
