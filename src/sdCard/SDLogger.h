@@ -18,6 +18,11 @@ public:
                          const String& batteryLevelService,
                          const String& genericAccessService);
 
+    void writeIBeaconInfo(const String& beaconUUID, 
+                          const String& beaconMajor, 
+                          const String& beaconMinor,
+                          const String& beaconDistance);
+
 private:
     File dataFile;
     bool initialized;

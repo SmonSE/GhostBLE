@@ -86,3 +86,33 @@ void SDLogger::writeDeviceInfo( const String& address,
         Serial.println("#SDLogger# Error writing to file. File not open.");
     }
 }
+
+void SDLogger::writeIBeaconInfo( const String& beaconUUID, 
+                                 const String& beaconMajor,
+                                 const String& beaconMinor,
+                                 const String& beaconDistance ) {
+    if (!initialized) {
+        Serial.println("#SDLogger# SDLogger not initialized.");
+        return;
+    }
+
+    // Check if the file is open before writing
+    if (dataFile) {
+        dataFile.print("Beacon UUID: ");
+        dataFile.println(beaconUUID);
+        
+        dataFile.print("Beacon Major: ");
+        dataFile.println(beaconMajor);
+
+        dataFile.print("Beacon Minor: ");
+        dataFile.println(beaconMinor);
+
+        dataFile.print("Estimated Distance: ");
+        dataFile.println(beaconDistance);
+        dataFile.println("-------------------------------");
+        dataFile.flush();  // Make sure the data is written to the card
+    } else {
+        Serial.println("#SDLogger# Error writing to file. File not open.");
+    }
+}
+
