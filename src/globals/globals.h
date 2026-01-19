@@ -21,9 +21,11 @@ extern bool skipLogging;
 extern bool isGlassesTaskRunning;
 extern bool isAngryTaskRunning;
 extern bool isSadTaskRunning;
+extern bool isHappyTaskRunning;
 extern bool isThugLifeTaskRunning;
 extern bool isWebLogActive;
 extern bool is_connectable;
+extern bool bleScanEnabledWeb;
 
 extern int susDevice;
 extern int targetConnects;

@@ -63,6 +63,17 @@ void showSadExpressionTask(void* parameter) {
     isSadTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
+
+void showHappyExpressionTask(void* parameter) {
+    isHappyTaskRunning = true;
+    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+  
+    isHappyTaskRunning = false;
+    vTaskDelete(NULL);  // Task selbst beenden
+}
   
   
 void showThugLifeExpressionTask(void* parameter) {
@@ -103,6 +114,12 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   M5.Lcd.setCursor(5, 5);
   M5.Lcd.print("Wifi:");
   M5.Lcd.println(isWebLogActive ? "ON" : "OFF");
+
+  M5.Lcd.setTextColor(WHITE); 
+  M5.Lcd.setTextSize(1); 
+  M5.Lcd.setCursor(100, 5);
+  M5.Lcd.print("Scan:");
+  M5.Lcd.println(bleScanEnabledWeb ? "ON" : "OFF");
 
   showBatteryState();
 

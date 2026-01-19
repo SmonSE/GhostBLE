@@ -149,6 +149,17 @@ DeviceAssessment assessDevice(bool connectable, bool hasWritableChar, bool encry
   return d;
 }
 
+void startBleScan() {
+  Serial.println("▶️ Starting BLE scan...");
+  scanIsRunning = false;   // allow scanForDevices() to trigger
+}
+
+void stopBleScan() {
+  Serial.println("🛑 Stopping BLE scan...");
+  NimBLEDevice::getScan()->stop();
+  scanIsRunning = false;
+}
+
 void scanForDevices() {
 
   NimBLEScan* pScan = NimBLEDevice::getScan();
@@ -488,6 +499,9 @@ void scanForDevices() {
     
     logToSerialAndWeb("##########################\n");
     delay(100);
+
+    xTaskCreate(showHappyExpressionTask, "HappyFace", 2048, NULL, 1, NULL);
+
     scanIsRunning = false;
   }
 }

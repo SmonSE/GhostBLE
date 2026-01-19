@@ -20,6 +20,7 @@
 #include "src/images/nibblesHeartLeft.h"
 #include "src/images/nibblesHeartRight.h"
 #include "src/images/nibblesHappy.h"
+#include "src/images/nibblesThugLife.h"
 
 #include "src/logToSerialAndWeb/logger.h"
 
@@ -92,6 +93,8 @@ void setup() {
   isWebLogActive = true;     // Status anpassen
   startWebLogServer();
 
+  ws.textAll("BLE_SCAN_READY");
+
   startTimeDevice = millis();
   scanIsRunning = false;
 
@@ -108,7 +111,7 @@ void loop() {
 
   // Long press detection for BtnG0
   if (M5Cardputer.BtnA.isPressed()) {
-    Serial.println("### BUTTON BTN0 PRESSED ###");
+    //Serial.println("### BUTTON BTN0 PRESSED ###");
     if (!buttonHeld) {
       if (buttonPressStart == 0) {
         buttonPressStart = currentTime;
@@ -123,15 +126,15 @@ void loop() {
   }
 
   // BLE scan loop
-  if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-    if (!targetFound && !scanIsRunning) {
-      NimBLEDevice::deinit(true);
-      NimBLEDevice::init("");
-      scanForDevices();
-    } else {
-      targetFound = false;
+  if (bleScanEnabledWeb) {
+    if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
+      if (!targetFound && !scanIsRunning) {
+        scanForDevices();
+      } else {
+        targetFound = false;
+      }
+      lastFaceUpdate = currentTime;
     }
-    lastFaceUpdate = currentTime;
   }
 
   // Timer every 60 minutes
@@ -147,7 +150,6 @@ void loop() {
     Serial.println("Update Batterie State");
     startTimeDevice = millis();
   }
-
   // Let system handle BLE, GPIO, etc.
   yield();
 }
@@ -159,11 +161,23 @@ void stopWebLogServer() {
 }
 
 void onLongPress() {
-  isWebLogActive = !isWebLogActive;  // Toggle status
-  if (isWebLogActive) {
-    Serial.println("Long press detected: Web server OFF");
-    logToSerialAndWeb("Web server stopped.");
-    stopWebLogServer();
+  bleScanEnabledWeb = !bleScanEnabledWeb;
+
+  if (bleScanEnabledWeb) {
+    logToSerialAndWeb("▶️ BLE Scan ENABLED");
+    ws.textAll("BLE_SCAN_ON");
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice); 
+  } 
+  else {
+    logToSerialAndWeb("⏹️ BLE Scan DISABLED");
+    ws.textAll("BLE_SCAN_OFF");
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice); 
+
+    stopBleScan();   // 👈 THIS is the important part
   }
 }
 
@@ -186,4 +200,6 @@ logToSerialAndWeb("WEB SERVER");
   server.begin();
   logToSerialAndWeb("   - Web server started.");
   wifiStarted = true;
+
+  logToSerialAndWeb("Pres BtnG0 to TOGGLE BLE Scan");
 }

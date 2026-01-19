@@ -15,6 +15,8 @@
 
 extern NimBLEScan* pBLEScan;
 
+void startBleScan();
+void stopBleScan();
 void scanForDevices();
 void showGlassesExpressionTask(void* parameter);
 void showAngryExpressionTask(void* parameter);

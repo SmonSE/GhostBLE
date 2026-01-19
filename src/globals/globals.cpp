@@ -15,9 +15,11 @@ bool skipLogging = false;
 bool isGlassesTaskRunning = false;
 bool isAngryTaskRunning = false;
 bool isSadTaskRunning = false;
+bool isHappyTaskRunning = false;
 bool isThugLifeTaskRunning = false;
 bool isWebLogActive = false;
 bool is_connectable = false;
+bool bleScanEnabledWeb = false;
 
 int susDevice = 0;
 int targetConnects = 0;
@@ -76,7 +78,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       const socket = new WebSocket(`ws://${location.host}/ws`);
 
       socket.onopen = () => {
-        logElement.textContent += "WebSocket connected\n";
+        logElement.textContent += "WebSocket connected. Pres BtnG0 to TOGGLE BLE Scan\n";
       };
 
       socket.onmessage = (event) => {
