@@ -10,7 +10,6 @@ public:
     bool begin(int csPin = -1); // Optional: provide CS pin
     void writeDeviceInfo(const String& address, 
                          const String& localName, 
-                         const String& riskLevelSdCard,
                          const std::vector<std::string>& nameList,
                          const String& manuInfo,
                          const std::vector<std::string>& uuids,

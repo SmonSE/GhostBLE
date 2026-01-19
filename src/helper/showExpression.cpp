@@ -24,7 +24,7 @@ void showGlassesExpressionTask(void* parameter) {
 
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, leakedCounter);  
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
     isGlassesTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
@@ -41,7 +41,7 @@ void showAngryExpressionTask(void* parameter) {
 
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, leakedCounter);  
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
     isAngryTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
@@ -58,7 +58,7 @@ void showSadExpressionTask(void* parameter) {
 
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, leakedCounter);  
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
   
     isSadTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
@@ -75,7 +75,7 @@ void showThugLifeExpressionTask(void* parameter) {
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  showFindingCounter(targetConnects, susDevice, leakedCounter);  
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
 
   isThugLifeTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
@@ -115,7 +115,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   M5.Lcd.setTextColor(WHITE); 
   M5.Lcd.setTextSize(1); 
   M5.Lcd.setCursor(100, 124);
-  M5.Lcd.print("Leaked:");
+  M5.Lcd.print("Spotted:");
   M5.Lcd.println(spotted);
   
   M5.Lcd.setTextColor(RED);

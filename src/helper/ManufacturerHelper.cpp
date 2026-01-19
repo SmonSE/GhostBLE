@@ -6,6 +6,7 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x6) return "Microsoft Corporation";
     if (manufacturerId == 0xF) return "Broadcom Corporation";
     if (manufacturerId == 0x131) return "Google";
+    if (manufacturerId == 0x40) return "Epson America, Inc.";
     if (manufacturerId == 0x75) return "Samsung Electronics Co.";
     if (manufacturerId == 0x05A7) return "Samsung Electronics Co. Ltd.";
     if (manufacturerId == 0xE0) return "Nintendo Co., Ltd.";
@@ -34,7 +35,7 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x17C) return "Huawei Technologies Co., Ltd.";
     if (manufacturerId == 0x18B) return "vivo Mobile Communication Co., Ltd.";
     if (manufacturerId == 0x195) return "OnePlus Electronics Corp.";
-    if (manufacturerId == 0x0ECB) return "Zhong Shan City Richsound Electronic Industrial Ltd";
+    if (manufacturerId == 0x0ECB) return "JBL - Zhong Shan City Richsound Electronic Industrial Ltd";
     if (manufacturerId == 0x57) return "Harman International Industries, Inc";
     if (manufacturerId == 0x7F) return "Lenovo";
     if (manufacturerId == 0x1A6) return "Realme Mobile Telecommunications";
@@ -47,5 +48,7 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0xAF) return "Plantronics (now Poly)";
     if (manufacturerId == 0x30) return "Symbol Technologies (barcode scanners)";
     if (manufacturerId == 0x3FF) return "Withings (Unofficial)";
+    if (manufacturerId == 0x180A) return "Sennheiser - Sonova Consumer Hearing";
+
     return "Unknown Manufacturer";
 }

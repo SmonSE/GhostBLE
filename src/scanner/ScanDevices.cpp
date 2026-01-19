@@ -54,6 +54,15 @@ struct IBeaconInfo {
   int8_t txPower = 0;
 };
 
+struct DeviceAssessment {
+  bool hackable = false;
+
+  String behavior;      // Connectable / Broadcast only / Locked
+  String protocol;      // Standard BLE / Proprietary
+  String control;       // Accessible / Not accessible
+  String explanation;   // Human explanation
+};
+
 IBeaconInfo parseIBeacon(const std::string& mfg) {
   IBeaconInfo info;
 
@@ -89,6 +98,54 @@ float estimateDistance(int txPower, int rssi) {
   float ratio = rssi * 1.0 / txPower;
   if (ratio < 1.0) return pow(ratio, 10);
   return 0.89976 * pow(ratio, 7.7095) + 0.111;
+}
+
+DeviceAssessment assessDevice(bool connectable, bool hasWritableChar, bool encrypted,  bool proprietary)
+{
+  DeviceAssessment d;
+
+  if (!connectable) {
+    d.hackable = false;
+    d.behavior = "Broadcast only";
+    d.protocol = "Standard BLE";
+    d.control  = "❌ Not accessible via BLE";
+    d.explanation =
+      "This device only broadcasts information and cannot be connected to.";
+  }
+  else if (encrypted) {
+    d.hackable = false;
+    d.behavior = "Connectable but locked";
+    d.protocol = proprietary ? "Proprietary" : "Standard BLE";
+    d.control  = "❌ Not accessible via BLE";
+    d.explanation =
+      "A secure pairing is required. Only authorized apps can control it.";
+  }
+  else if (proprietary) {
+    d.hackable = false;
+    d.behavior = "Connectable";
+    d.protocol = "Proprietary";
+    d.control  = "❌ Not accessible via BLE";
+    d.explanation =
+      "The communication protocol is unknown and not publicly documented.";
+  }
+  else if (hasWritableChar) {
+    d.hackable = true;
+    d.behavior = "Connectable";
+    d.protocol = "Standard BLE";
+    d.control  = "✅ Accessible via BLE";
+    d.explanation =
+      "Commands can potentially be sent without authentication.";
+  }
+  else {
+    d.hackable = false;
+    d.behavior = "Connectable";
+    d.protocol = "Standard BLE";
+    d.control  = "❌ No controllable characteristics found";
+    d.explanation =
+      "The device exposes no writable BLE characteristics.";
+  }
+
+  return d;
 }
 
 void scanForDevices() {
@@ -131,14 +188,16 @@ void scanForDevices() {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
       // New risk scoring system
-      riskScore = 0;
       bool hasVulnerableUUID = false;
       bool hasCustomService = false;
       bool hasSensitiveCharacteristic = false;
       bool hasWeakName = false;
       bool isUnknownManufacturer = false;
       bool isSecurityOrTrackingDevice = false;
-      bool noAuthOrEncryption = false; // Placeholder, needs BLE security check
+      bool noAuthOrEncryption = false;
+      bool hasWritableChar = false;
+      bool encrypted = false;
+      bool proprietary = false;
 
       bool isIBeacon = false;
       IBeaconInfo beacon;
@@ -162,13 +221,11 @@ void scanForDevices() {
         // Risk factor: Weak/default device name
         if (localName == "< -- >" || localName == "BLE Device" || localName == "Unknown") {
           hasWeakName = true;
-          riskScore += 1;
         }
 
         // Risk factor: Device type (simple heuristic)
         if (localName.indexOf("Tracker") != -1 || localName.indexOf("Tag") != -1 || localName.indexOf("Medical") != -1 || localName.indexOf("Security") != -1) {
           isSecurityOrTrackingDevice = true;
-          riskScore += 2;
         }
 
         if (device->haveManufacturerData()) {
@@ -185,20 +242,11 @@ void scanForDevices() {
             logToSerialAndWeb("   Major: " + String(beacon.major));
             logToSerialAndWeb("   Minor: " + String(beacon.minor));
             logToSerialAndWeb("   TX:    " + String(beacon.txPower));
-
-            // iBeacons are interesting 😉
-            riskScore += 1;
           }
 
           if (manufacturerName == "Unknown Manufacturer") {
             isUnknownManufacturer = true;
-            riskScore += 2;
           }
-        }
-
-        // Risk factor: Connectable
-        if (is_connectable) {
-          riskScore += 1;
         }
 
         // Risk factor: Service UUID (advertised)
@@ -206,12 +254,14 @@ void scanForDevices() {
         if (!serviceUuid.empty()) {
           if (isVulnerableService(serviceUuid)) {
             hasVulnerableUUID = true;
-            riskScore += 3;
           }
           // Custom/private service UUID (not standard 16-bit)
           if (serviceUuid.length() > 8 && serviceUuid.find("0000") != 0) {
             hasCustomService = true;
-            riskScore += 2;
+          }
+
+          if (hasCustomService) {
+              proprietary = true;
           }
         }
 
@@ -234,12 +284,7 @@ void scanForDevices() {
       }
 
       isTarget = false;
-
       allSpottedDevice++;
-
-
-      // Leaked: riskScore >= 3
-      if (riskScore >= 3) leakedCounter++;
 
       // Print device connectability
       if (!is_connectable) {
@@ -269,6 +314,16 @@ void scanForDevices() {
         //if (pClient->connect(*device) && !is_connectable) {
         if (is_connectable && pClient->connect(*device)) {  
           if (pClient->discoverAttributes()) {
+
+            deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+
+            // Skipp Apple Products to speed up 
+            if (deviceInfoService.indexOf("Apple Inc.") != -1) {
+              logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
+              logToSerialAndWeb("   ...");
+              continue;
+            }
+
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
       
@@ -290,16 +345,7 @@ void scanForDevices() {
               }
             }
       
-            deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
-
-            // Skipp Apple Products to speed up 
-            if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-              logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
-              logToSerialAndWeb("   ...");
-              continue;
-            }
-
-            //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
+            batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
             //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
@@ -311,8 +357,6 @@ void scanForDevices() {
               // isVulnerableService
               bool vulnerable = isVulnerableService(serviceUuid.c_str());
               Serial.println(String("     isVulnerableService UUID: ") + serviceUuid.c_str() + " → " + (vulnerable ? "✅ YES" : "❌ NO"));
-              if (vulnerable) riskScore += 2;
-              // isVulnerableService
 
               uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
 
@@ -321,7 +365,11 @@ void scanForDevices() {
                 std::string charUuid = characteristic->getUUID().toString();
                 Serial.println(String("     Characteristic UUID: ") + charUuid.c_str());
                 uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
-                
+
+                if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
+                    hasWritableChar = true;
+                }
+                                
                 if (characteristic) {
                   std::string name = characteristic->readValue();
 
@@ -371,6 +419,20 @@ void scanForDevices() {
             logToSerialAndWeb("     - RSSI: " + String(rssi));
             delay(100);
 
+            DeviceAssessment assessment = assessDevice(is_connectable, hasWritableChar, encrypted, proprietary);
+            logToSerialAndWeb("");
+            logToSerialAndWeb("⏳ Device Assessment");
+            logToSerialAndWeb("   - Behavior: " + assessment.behavior);
+            logToSerialAndWeb("   - Protocol: " + assessment.protocol);
+            logToSerialAndWeb("   - Control: " + assessment.control);
+            logToSerialAndWeb(
+            
+            String("🥷🏻 Hackable via BLE: ") + (assessment.hackable ? "✅ YES" : "❌ NO"));
+            logToSerialAndWeb("");
+            logToSerialAndWeb("What this means:");
+            logToSerialAndWeb(assessment.explanation);
+            logToSerialAndWeb("");
+
             // iBeacon info
             if (isIBeacon) {
               logToSerialAndWeb("👁️ Beacon Type: iBeacon");
@@ -383,61 +445,21 @@ void scanForDevices() {
               sdLogger.writeIBeaconInfo(String(beacon.uuid.c_str()), String(beacon.major), String(beacon.minor), String(beaconDistance, 2));
             }
 
-            // Risk Level
-            String riskLevel = "🟢 Secure";
-            if (riskScore >= 3 && riskScore < 6) riskLevel = "🟠 Moderate risk";
-            else if (riskScore >= 6) riskLevel = "🔴 High risk";
-
-            String riskLevelSd = "Secure";
-            if (riskScore >= 3 && riskScore < 6) riskLevelSd = "Moderate risk";
-            else if (riskScore >= 6) riskLevelSd = "High risk";
-            String riskLevelSdCard = "Risk Level: " + riskLevelSd + " Score: " + String(riskScore);
-
-            logToSerialAndWeb("📊 Risk Level: " + riskLevel + " Score: " + String(riskScore));
-            logToSerialAndWeb("   Risk Factors:");
-            if (hasVulnerableUUID) logToSerialAndWeb("     - Vulnerable UUID detected");
-            if (hasCustomService) logToSerialAndWeb("     - Custom/private service UUID");
-            if (isUnknownManufacturer) logToSerialAndWeb("     - Unknown manufacturer");
-            if (is_connectable) logToSerialAndWeb("     - Device is connectable");
-            if (hasSensitiveCharacteristic) logToSerialAndWeb("     - Sensitive characteristic exposed");
-            if (hasWeakName) logToSerialAndWeb("     - Weak/default device name");
-            if (isSecurityOrTrackingDevice) logToSerialAndWeb("     - Security/tracking device type");
-            if (noAuthOrEncryption) logToSerialAndWeb("     - No authentication/encryption");
-            logToSerialAndWeb("");
-
             delay(100);
 
             logToSerialAndWeb("----------------------------------\n");
         
             // Move to isTargetDevice to log on SD card
-            sdLogger.writeDeviceInfo(address, localName, riskLevelSdCard, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
+            sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
             
             //logToSerialAndWeb("Write Data to SD Logger");
 
-            // Clear uuidList / nameList / riskScore after Stored to SD Card
+            // Clear uuidList / nameList after Stored to SD Card
             uuidList.clear();
             nameList.clear();
           }
         } else {
           logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
-
-          // Risk Level
-          String riskLevel = "🟢 Secure";
-          if (riskScore >= 3 && riskScore < 6) riskLevel = "🟠 Moderate risk";
-          else if (riskScore >= 6) riskLevel = "🔴 High risk";
-
-          logToSerialAndWeb("📊 Risk Level: " + riskLevel + " Score: " + String(riskScore));
-          logToSerialAndWeb("   Risk Factors:");
-          if (hasVulnerableUUID) logToSerialAndWeb("     - Vulnerable UUID detected");
-          if (hasCustomService) logToSerialAndWeb("     - Custom/private service UUID");
-          if (isUnknownManufacturer) logToSerialAndWeb("     - Unknown manufacturer");
-          if (is_connectable) logToSerialAndWeb("     - Device is connectable");
-          if (hasSensitiveCharacteristic) logToSerialAndWeb("     - Sensitive characteristic exposed");
-          if (hasWeakName) logToSerialAndWeb("     - Weak/default device name");
-          if (isSecurityOrTrackingDevice) logToSerialAndWeb("     - Security/tracking device type");
-          if (noAuthOrEncryption) logToSerialAndWeb("     - No authentication/encryption");
-          logToSerialAndWeb("");
-
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
             //logToSerialAndWeb("showSadExpressionTask");
             xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
@@ -457,7 +479,7 @@ void scanForDevices() {
     delay(100);
     logToSerialAndWeb("Sniffed:    " + String(targetConnects));
     delay(100);
-    logToSerialAndWeb("Leaked:     " + String(leakedCounter));
+    logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
     delay(100);
     logToSerialAndWeb("Suspicious: " + String(susDevice));
     delay(100);
