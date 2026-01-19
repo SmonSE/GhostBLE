@@ -15,6 +15,7 @@
 #include "../privacyCheck/devicePrivacy.h"
 
 
+
 NimBLEScan* pScan = nullptr;
 NimBLEClient *pClient = nullptr;
 
@@ -346,7 +347,8 @@ void scanForDevices() {
             }
       
             batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-            //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+            heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+            temperatureService = TemperatureServiceHandler::readTemperature(pClient);
             //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {

@@ -48,7 +48,7 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0xAF) return "Plantronics (now Poly)";
     if (manufacturerId == 0x30) return "Symbol Technologies (barcode scanners)";
     if (manufacturerId == 0x3FF) return "Withings (Unofficial)";
-    if (manufacturerId == 0x180A) return "Sennheiser - Sonova Consumer Hearing";
+    if (manufacturerId == 0xBA3) return "Sennheiser - Sonova Consumer Hearing";
 
     return "Unknown Manufacturer";
 }

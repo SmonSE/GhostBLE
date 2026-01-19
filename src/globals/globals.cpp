@@ -40,6 +40,7 @@ String spacedPayload = "";
 
 String deviceInfoService = "";
 String heartRateService = "";
+String temperatureService = "";
 String batteryLevelService = "";
 String genericAccessService = "";
 String timeInfoService = "";

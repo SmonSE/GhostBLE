@@ -46,6 +46,7 @@ extern String spacedPayload;
 
 extern String deviceInfoService;
 extern String heartRateService;
+extern String temperatureService;
 extern String batteryLevelService;
 extern String genericAccessService;
 extern String timeInfoService;

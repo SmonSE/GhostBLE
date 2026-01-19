@@ -10,52 +10,50 @@
 
 
 String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
-  String hrStr = "";
-  Serial.println("   Heart Rate Service");
+    Serial.println("   Heart Rate Service");
 
-  // Retrieve the Heart Rate Service from the client
-  NimBLERemoteService* hrService = pClient->getService("180D");
-  if (hrService == nullptr) {
-    Serial.println("     Heart Rate Service not found");
-    return hrStr;
-  } else {
+    if (!pClient) return "";
+
+    NimBLERemoteService* hrService = pClient->getService("180D");
+    if (!hrService) {
+        Serial.println("     Heart Rate Service not found");
+        return "";
+    }
+
     Serial.println("     Heart Rate Service found (0x180D)");
 
-    // Get the Heart Rate Measurement characteristic
     NimBLERemoteCharacteristic* pChar = hrService->getCharacteristic("2A37");
-    if (pChar == nullptr) {
-      Serial.println("     Heart Rate Measurement Characteristic not found");
-      return hrStr;
+    if (!pChar) {
+        Serial.println("     Heart Rate Measurement Characteristic not found");
+        return "";
     }
 
-    if (pChar->canNotify()) {
-      pChar->subscribe(true, [](NimBLERemoteCharacteristic* chr, uint8_t* data, size_t length, bool isNotify) {
-        if (length > 1) {
-          uint8_t flags = data[0];
-          uint16_t hrValue = data[1];
-          if (flags & 0x01 && length >= 3) {
-            hrValue = (uint16_t)data[1] | (data[2] << 8);
-          }
-          String hrStr = "     ❤️ Heart Rate Notification: " + String(hrValue) + " bpm";
-          Serial.println(hrStr);
-          // You can also trigger your display task here if needed
-          if (!isThugLifeTaskRunning) {
-            //logToSerialAndWeb("showThugLifeExpressionTask");
-            xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
-          }
-        }
-      });
-      Serial.println("     Subscribed to Heart Rate notifications");
-    } else {
-      Serial.println("     Heart Rate Characteristic does not support notifications");
+    static bool subscribed = false;
+
+    if (pChar->canNotify() && !subscribed) {
+        subscribed = true;
+
+        pChar->subscribe(true,
+            [](NimBLERemoteCharacteristic*, uint8_t* data, size_t length, bool) {
+
+                if (length < 2) return;
+
+                uint8_t flags = data[0];
+                uint16_t hr = 0;
+
+                if (flags & 0x01) {
+                    if (length < 3) return;
+                    hr = data[1] | (data[2] << 8);
+                } else {
+                    hr = data[1];
+                }
+
+                Serial.printf("     ❤️ Heart Rate: %d bpm\n", hr);
+            }
+        );
+
+        Serial.println("     Subscribed to Heart Rate notifications");
     }
 
-    // to read the notified characteristic
-    if (pChar->canRead()) {
-      std::string value = pChar->readValue();      
-    }
-
-  }
-
-  return hrStr;
+    return "";
 }
