@@ -330,11 +330,11 @@ void scanForDevices() {
             deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
 
             // Skipp Apple Products to speed up 
-            if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-              logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
-              logToSerialAndWeb("   ...");
-              continue;
-            }
+            //if (deviceInfoService.indexOf("Apple Inc.") != -1) {
+              //logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
+              //logToSerialAndWeb("   ...");
+              //continue;
+            //}
 
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;

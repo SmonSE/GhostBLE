@@ -150,6 +150,10 @@ void loop() {
 
       for (char c : status.word) {
         Serial.printf("Key: %c\n", c);
+
+        if (c == 'w' || c == 'W') {
+          toggleWiFi();
+        }
       }
 
       if (status.enter) {
@@ -234,6 +238,27 @@ void onLongPress() {
   }
 }
 
+void toggleWiFi() {
+  if (wifiStarted) {
+    logToSerialAndWeb("WIFI / WEB SERVER OFF");
+    stopWebLogServer();
+    wifiStarted = false;
+    isWebLogActive = false;
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon OFF
+  } else {
+    logToSerialAndWeb("WIFI / WEB SERVER ON");
+    startWebLogServer();
+    isWebLogActive = true;
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
+  }
+
+  playNotificationPro(); // optional akustisches Feedback
+}
+
 void startWebLogServer() {
 logToSerialAndWeb("WEB SERVER");
   if (wifiStarted) return;  // Don't start twice
@@ -256,3 +281,4 @@ logToSerialAndWeb("WEB SERVER");
 
   logToSerialAndWeb("Pres BtnG0 to TOGGLE BLE Scan");
 }
+
