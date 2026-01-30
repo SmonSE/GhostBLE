@@ -36,10 +36,39 @@ const char* ap_password = "12345678";
 
 AsyncWebServer server(80);
 
+auto keys = M5Cardputer.Keyboard.keysState();
+
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len) {
   if (type == WS_EVT_CONNECT) {
     Serial.printf("WebSocket client connected: %u\n", client->id());
+  }
+}
+
+void playMysteryBoot() {
+  M5.Speaker.setVolume(60);
+
+  int notes[] = { 440, 622, 880, 740, 1046 };
+  int durations[] = { 180, 120, 150, 220, 300 };
+
+  for (int i = 0; i < 5; i++) {
+    M5.Speaker.tone(notes[i], durations[i]);
+    delay(durations[i] + 40);
+  }
+
+  // low bass finish
+  M5.Speaker.tone(220, 400);
+}
+
+void playNotificationPro() {
+  M5.Speaker.setVolume(40);
+
+  int notes[] = { 1568, 1865, 2093 }; // G6, A#6, C7
+  int dur = 80;
+
+  for (int i = 0; i < 3; i++) {
+    M5.Speaker.tone(notes[i], dur);
+    delay(dur + 40);
   }
 }
 
@@ -98,7 +127,12 @@ void setup() {
   startTimeDevice = millis();
   scanIsRunning = false;
 
-  delay(10000);
+  //M5.Speaker.tone(1800, 120);
+  playMysteryBoot();
+
+  delay(8000);
+  //playNotificationPro();
+
   // To Update Wifi Logo to ON
   showFindingCounter(targetConnects, susDevice, leakedCounter);
 }
@@ -108,6 +142,26 @@ void loop() {
   ws.cleanupClients();  // Wichtig für WebSocket-Verbindungen
   M5Cardputer.update();
   unsigned long currentTime = millis();
+
+  if (M5Cardputer.Keyboard.isChange()) {
+    if (M5Cardputer.Keyboard.isPressed()) {
+
+      auto status = M5Cardputer.Keyboard.keysState();
+
+      for (char c : status.word) {
+        Serial.printf("Key: %c\n", c);
+      }
+
+      if (status.enter) {
+        Serial.println("ENTER pressed");
+      } 
+      if (status.fn)    Serial.println("FN pressed");
+      if (status.tab)   Serial.println("TAB pressed");
+      if (status.del){
+        Serial.println("DEL pressed");
+      }   
+    }
+  }
 
   // Long press detection for BtnG0
   if (M5Cardputer.BtnA.isPressed()) {
@@ -176,7 +230,6 @@ void onLongPress() {
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice); 
-
     stopBleScan();   // 👈 THIS is the important part
   }
 }

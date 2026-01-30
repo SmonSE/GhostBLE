@@ -62,9 +62,9 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
 
   //leakedCounter++;
   // Crash
-  if (!isThugLifeTaskRunning) {
+  //if (!isThugLifeTaskRunning) {
     //xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
-  }
+  //}
 
   return batteryStr;
 }
