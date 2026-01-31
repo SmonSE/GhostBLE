@@ -125,6 +125,12 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
   M5.Lcd.setTextColor(WHITE); 
   M5.Lcd.setTextSize(1); 
+  M5.Lcd.setCursor(5, 104);
+  M5.Lcd.print("Beacons:");
+  M5.Lcd.println(beaconsFound);
+
+  M5.Lcd.setTextColor(WHITE); 
+  M5.Lcd.setTextSize(1); 
   M5.Lcd.setCursor(5, 124);
   M5.Lcd.print("Sniffed:");
   M5.Lcd.println(sniffed);

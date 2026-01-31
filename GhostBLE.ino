@@ -145,7 +145,6 @@ void loop() {
 
   if (M5Cardputer.Keyboard.isChange()) {
     if (M5Cardputer.Keyboard.isPressed()) {
-
       auto status = M5Cardputer.Keyboard.keysState();
 
       for (char c : status.word) {
@@ -212,12 +211,6 @@ void loop() {
   yield();
 }
 
-void stopWebLogServer() {
-  ws.closeAll();       // alle Clients trennen
-  server.end();        // Server stoppen
-  WiFi.softAPdisconnect(true);  // Access Point beenden
-}
-
 void onLongPress() {
   bleScanEnabledWeb = !bleScanEnabledWeb;
 
@@ -259,9 +252,27 @@ void toggleWiFi() {
   playNotificationPro(); // optional akustisches Feedback
 }
 
+void stopWebLogServer() {
+  ws.closeAll();       // alle Clients trennen
+  server.end();        // Server stoppen
+  delay(50); 
+  WiFi.softAPdisconnect(true);  // Access Point beenden
+  delay(50);
+
+  WiFi.mode(WIFI_OFF);
+  delay(100);                   // 👈 THIS is critical
+
+  wifiStarted    = false;
+  isWebLogActive = false;
+
+  Serial.println("WiFi fully stopped");
+}
+
+
 void startWebLogServer() {
-logToSerialAndWeb("WEB SERVER");
+  logToSerialAndWeb("WEB SERVER");
   if (wifiStarted) return;  // Don't start twice
+  WiFi.mode(WIFI_AP);
   Serial.print("   - SoftAP started? YES\n");
   WiFi.softAP(ap_ssid, ap_password);
   Serial.print("   - Access Point IP: ");

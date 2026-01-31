@@ -28,6 +28,7 @@ extern bool is_connectable;
 extern bool bleScanEnabledWeb;
 
 extern int susDevice;
+extern int beaconsFound;
 extern int targetConnects;
 extern int allSpottedDevice;
 extern int leakedCounter;

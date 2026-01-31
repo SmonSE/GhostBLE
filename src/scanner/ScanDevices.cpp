@@ -360,7 +360,7 @@ void scanForDevices() {
             batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
             temperatureService = TemperatureServiceHandler::readTemperature(pClient);
-            //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+            genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
@@ -448,6 +448,7 @@ void scanForDevices() {
 
             // iBeacon info
             if (isIBeacon) {
+              beaconsFound++;
               logToSerialAndWeb("👁️ Beacon Type: iBeacon");
               logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
               logToSerialAndWeb("   Major: " + String(beacon.major));
@@ -495,6 +496,8 @@ void scanForDevices() {
     logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
     delay(100);
     logToSerialAndWeb("Suspicious: " + String(susDevice));
+    delay(100);
+    logToSerialAndWeb("Beacons:    " + String(beaconsFound));
     delay(100);
     
     logToSerialAndWeb("##########################\n");

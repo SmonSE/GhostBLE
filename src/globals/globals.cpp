@@ -22,6 +22,7 @@ bool is_connectable = false;
 bool bleScanEnabledWeb = false;
 
 int susDevice = 0;
+int beaconsFound = 0;
 int targetConnects = 0;
 int allSpottedDevice = 0;
 int leakedCounter = 0;
