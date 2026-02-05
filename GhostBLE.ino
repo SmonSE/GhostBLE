@@ -128,7 +128,7 @@ void setup() {
   scanIsRunning = false;
 
   //M5.Speaker.tone(1800, 120);
-  playMysteryBoot();
+  //playMysteryBoot();
 
   delay(8000);
   //playNotificationPro();
@@ -249,7 +249,7 @@ void toggleWiFi() {
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   }
 
-  playNotificationPro(); // optional akustisches Feedback
+  //playNotificationPro(); // optional akustisches Feedback
 }
 
 void stopWebLogServer() {

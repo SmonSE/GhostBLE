@@ -27,26 +27,6 @@ bool isTarget = false;
 
 #define MAX_SEEN_DEVICES 1000
 
-// vulnerableUUIDs
-std::vector<std::string> vulnerableUUIDs = {
-    "0000fd6f-0000-1000-8000-00805f9b34fb", // Apple Find My / AirTags (used for tracking)
-    "0000feed-0000-1000-8000-00805f9b34fb", // Tile tracker
-    "0000fef5-0000-1000-8000-00805f9b34fb", // Samsung SmartThings (also SmartTag)
-    "0000fe95-0000-1000-8000-00805f9b34fb", // Xiaomi (Mi Band / sensors, sometimes leaks info)
-    "0000fe2c-0000-1000-8000-00805f9b34fb", // Google Fast Pair (used to identify Android devices)
-    "0000fe03-0000-1000-8000-00805f9b34fb", // Amazon Echo and Alexa devices
-    "0000fe8f-0000-1000-8000-00805f9b34fb", // Facebook Beacon
-    "0000fe2e-0000-1000-8000-00805f9b34fb", // Microsoft Swift Pair
-    "00000020-5749-5448-0037-000000000000", // Withings / Nokia Health (seen in your logs )
-    "932c32bd-0000-47a2-835a-a8d455b859dd", // Philips Hue BLE Setup
-    "0000fff0-0000-1000-8000-00805f9b34fb"  // Unknown but commonly abused custom service (some malware)
-};
-
-bool isVulnerableService(const std::string& uuid) 
-{
-  return std::find(vulnerableUUIDs.begin(), vulnerableUUIDs.end(), uuid) != vulnerableUUIDs.end();
-}
-
 struct IBeaconInfo {
   bool valid = false;
   std::string uuid;
@@ -101,54 +81,6 @@ float estimateDistance(int txPower, int rssi) {
   return 0.89976 * pow(ratio, 7.7095) + 0.111;
 }
 
-DeviceAssessment assessDevice(bool connectable, bool hasWritableChar, bool encrypted,  bool proprietary)
-{
-  DeviceAssessment d;
-
-  if (!connectable) {
-    d.hackable = false;
-    d.behavior = "Broadcast only";
-    d.protocol = "Standard BLE";
-    d.control  = "❌ Not accessible via BLE";
-    d.explanation =
-      "This device only broadcasts information and cannot be connected to.";
-  }
-  else if (encrypted) {
-    d.hackable = false;
-    d.behavior = "Connectable but locked";
-    d.protocol = proprietary ? "Proprietary" : "Standard BLE";
-    d.control  = "❌ Not accessible via BLE";
-    d.explanation =
-      "A secure pairing is required. Only authorized apps can control it.";
-  }
-  else if (proprietary) {
-    d.hackable = false;
-    d.behavior = "Connectable";
-    d.protocol = "Proprietary";
-    d.control  = "❌ Not accessible via BLE";
-    d.explanation =
-      "The communication protocol is unknown and not publicly documented.";
-  }
-  else if (hasWritableChar) {
-    d.hackable = true;
-    d.behavior = "Connectable";
-    d.protocol = "Standard BLE";
-    d.control  = "✅ Accessible via BLE";
-    d.explanation =
-      "Commands can potentially be sent without authentication.";
-  }
-  else {
-    d.hackable = false;
-    d.behavior = "Connectable";
-    d.protocol = "Standard BLE";
-    d.control  = "❌ No controllable characteristics found";
-    d.explanation =
-      "The device exposes no writable BLE characteristics.";
-  }
-
-  return d;
-}
-
 void startBleScan() {
   Serial.println("▶️ Starting BLE scan...");
   scanIsRunning = false;   // allow scanForDevices() to trigger
@@ -200,7 +132,6 @@ void scanForDevices() {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
       // New risk scoring system
-      bool hasVulnerableUUID = false;
       bool hasCustomService = false;
       bool hasSensitiveCharacteristic = false;
       bool hasWeakName = false;
@@ -226,9 +157,6 @@ void scanForDevices() {
           continue;
         }
         seenDevices.insert(std::string(address.c_str()));
-
-        std::vector<uint8_t> payloadVec;
-        handleDevicePrivacy(localName.c_str(), address.c_str(), spacedPayload.c_str(), payloadVec, is_connectable);
 
         // Risk factor: Weak/default device name
         if (localName == "< -- >" || localName == "BLE Device" || localName == "Unknown") {
@@ -264,10 +192,6 @@ void scanForDevices() {
         // Risk factor: Service UUID (advertised)
         std::string serviceUuid = device->getServiceUUID().toString();
         if (!serviceUuid.empty()) {
-          if (isVulnerableService(serviceUuid)) {
-            hasVulnerableUUID = true;
-          }
-          // Custom/private service UUID (not standard 16-bit)
           if (serviceUuid.length() > 8 && serviceUuid.find("0000") != 0) {
             hasCustomService = true;
           }
@@ -276,20 +200,6 @@ void scanForDevices() {
               proprietary = true;
           }
         }
-
-        // Risk factor: Sensitive characteristics (simple heuristic)
-        // This requires connection, so only check if connectable
-        if (is_connectable) {
-          // ...existing code for connecting and discovering attributes...
-          // After discovering characteristics, check for sensitive ones
-          // Example: device info, health, location
-          // You can add more checks here as needed
-        }
-
-        // Risk factor: No authentication/encryption (placeholder)
-        // If you can check BLE security level, add +2 for no auth/encryption
-
-        // ...existing code for target device check...
       } else {
         Serial.println("⚠️ device is null! Skipping.");
         continue;
@@ -345,38 +255,32 @@ void scanForDevices() {
 
             // Manufacturer handling
             if (device->haveManufacturerData()) {
-              logToSerialAndWeb("   Manufacturer Data");
+              logToSerialAndWeb("Manufacturer Data");
               std::string mfg = device->getManufacturerData();
-              logToSerialAndWeb(String("     Manufacturer Data: ") + String(mfg.c_str()));
+              logToSerialAndWeb(String("Manufacturer Data: ") + String(mfg.c_str()));
                 
               if (mfg.size() >= 2) {
                 uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
                 String manufacturerName = getManufacturerName(manufacturerId);
-                manuInfo = "     Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
+                manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
                 Serial.println(manuInfo);
               }
             }
       
             batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-            heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-            temperatureService = TemperatureServiceHandler::readTemperature(pClient);
+            //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+            //temperatureService = TemperatureServiceHandler::readTemperature(pClient);
             genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
               std::string serviceUuid = service->getUUID().toString();
-              Serial.println(String("   Service UUID: ") + serviceUuid.c_str());
-
-              // isVulnerableService
-              bool vulnerable = isVulnerableService(serviceUuid.c_str());
-              Serial.println(String("     isVulnerableService UUID: ") + serviceUuid.c_str() + " → " + (vulnerable ? "✅ YES" : "❌ NO"));
-
               uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
 
               for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
                 NimBLERemoteCharacteristic* characteristic = *cIt;
                 std::string charUuid = characteristic->getUUID().toString();
-                Serial.println(String("     Characteristic UUID: ") + charUuid.c_str());
+                //Serial.println(String("     Characteristic UUID: ") + charUuid.c_str());
                 uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
 
                 if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
@@ -432,20 +336,6 @@ void scanForDevices() {
             logToSerialAndWeb("     - RSSI: " + String(rssi));
             delay(100);
 
-            DeviceAssessment assessment = assessDevice(is_connectable, hasWritableChar, encrypted, proprietary);
-            logToSerialAndWeb("");
-            logToSerialAndWeb("⏳ Device Assessment");
-            logToSerialAndWeb("   - Behavior: " + assessment.behavior);
-            logToSerialAndWeb("   - Protocol: " + assessment.protocol);
-            logToSerialAndWeb("   - Control: " + assessment.control);
-            logToSerialAndWeb(
-            
-            String("🥷🏻 Hackable via BLE: ") + (assessment.hackable ? "✅ YES" : "❌ NO"));
-            logToSerialAndWeb("");
-            logToSerialAndWeb("What this means:");
-            logToSerialAndWeb(assessment.explanation);
-            logToSerialAndWeb("");
-
             // iBeacon info
             if (isIBeacon) {
               beaconsFound++;
@@ -464,7 +354,7 @@ void scanForDevices() {
             logToSerialAndWeb("----------------------------------\n");
         
             // Move to isTargetDevice to log on SD card
-            sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, uuidList, deviceInfoService, batteryLevelService, genericAccessService);
+            sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, deviceInfoService, batteryLevelService, genericAccessService);
             
             //logToSerialAndWeb("Write Data to SD Logger");
 

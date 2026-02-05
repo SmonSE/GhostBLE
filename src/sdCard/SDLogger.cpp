@@ -35,7 +35,6 @@ void SDLogger::writeDeviceInfo( const String& address,
                                 const String& localName,
                                 const std::vector<std::string>& nameList,
                                 const String& manuInfo,
-                                const std::vector<std::string>& uuids,
                                 const String& deviceInfoString, 
                                 const String& batteryLevelService,
                                 const String& genericAccessService) {
@@ -62,12 +61,6 @@ void SDLogger::writeDeviceInfo( const String& address,
         dataFile.println(batteryLevelService);
 
         dataFile.println(manuInfo);
-
-        dataFile.println("Characteristic UUID:");
-        for (const auto& uuid : uuids) {
-            dataFile.print("  - ");
-            dataFile.println(uuid.c_str());
-        }
 
         dataFile.println("Characteristic NAME:");
         for (const auto& names : nameList) {
