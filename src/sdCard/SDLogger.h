@@ -16,10 +16,14 @@ public:
                          const String& batteryLevelService,
                          const String& genericAccessService);
 
-    void writeIBeaconInfo(const String& beaconUUID, 
-                          const String& beaconMajor, 
-                          const String& beaconMinor,
-                          const String& beaconDistance);
+    void writeIBeaconInfo(
+        const String& uuid,
+        const String& major,
+        const String& minor,
+        const String& distance,
+        const String& manufacturerName,
+        uint16_t manufacturerId,
+        int rssi);
 
 private:
     File dataFile;

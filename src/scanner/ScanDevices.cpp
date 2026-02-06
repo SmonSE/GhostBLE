@@ -94,6 +94,9 @@ void stopBleScan() {
 
 void scanForDevices() {
 
+  uint16_t manufacturerId = 0;
+  String manufacturerName = "Unknown";
+
   NimBLEScan* pScan = NimBLEDevice::getScan();
 
   if (pScan == nullptr) {
@@ -170,8 +173,8 @@ void scanForDevices() {
 
         if (device->haveManufacturerData()) {
           std::string mfg = device->getManufacturerData();
-          uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
-          String manufacturerName = getManufacturerName(manufacturerId);
+          manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
+          manufacturerName = getManufacturerName(manufacturerId);
 
           // Detect iBeacon
           beacon = parseIBeacon(mfg);
@@ -261,7 +264,7 @@ void scanForDevices() {
                 
               if (mfg.size() >= 2) {
                 uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
-                String manufacturerName = getManufacturerName(manufacturerId);
+                manufacturerName = getManufacturerName(manufacturerId);
                 manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
                 Serial.println(manuInfo);
               }
@@ -346,7 +349,15 @@ void scanForDevices() {
               float beaconDistance = estimateDistance(beacon.txPower, rssi);
               logToSerialAndWeb("📏 Beacon Distance: ~" + String(beaconDistance, 2) + " m");
 
-              sdLogger.writeIBeaconInfo(String(beacon.uuid.c_str()), String(beacon.major), String(beacon.minor), String(beaconDistance, 2));
+              sdLogger.writeIBeaconInfo(
+                  String(beacon.uuid.c_str()),
+                  String(beacon.major),
+                  String(beacon.minor),
+                  String(beaconDistance, 2),
+                  manufacturerName,
+                  manufacturerId,
+                  rssi
+              );
             }
 
             delay(100);

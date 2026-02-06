@@ -249,7 +249,7 @@ void toggleWiFi() {
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   }
 
-  //playNotificationPro(); // optional akustisches Feedback
+  playNotificationPro(); // optional akustisches Feedback
 }
 
 void stopWebLogServer() {

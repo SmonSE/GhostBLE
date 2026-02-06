@@ -77,32 +77,44 @@ void SDLogger::writeDeviceInfo( const String& address,
     }
 }
 
-void SDLogger::writeIBeaconInfo( const String& beaconUUID, 
-                                 const String& beaconMajor,
-                                 const String& beaconMinor,
-                                 const String& beaconDistance ) {
-    if (!initialized) {
-        Serial.println("#SDLogger# SDLogger not initialized.");
-        return;
-    }
+void SDLogger::writeIBeaconInfo(
+    const String& uuid,
+    const String& major,
+    const String& minor,
+    const String& distance,
+    const String& manufacturerName,
+    uint16_t manufacturerId,
+    int rssi)
+{
+    if (!initialized || !dataFile) return;
 
-    // Check if the file is open before writing
-    if (dataFile) {
-        dataFile.print("Beacon UUID: ");
-        dataFile.println(beaconUUID);
-        
-        dataFile.print("Beacon Major: ");
-        dataFile.println(beaconMajor);
+    dataFile.println("---- iBeacon ----");
 
-        dataFile.print("Beacon Minor: ");
-        dataFile.println(beaconMinor);
+    dataFile.print("UUID: ");
+    dataFile.println(uuid);
 
-        dataFile.print("Estimated Distance: ");
-        dataFile.println(beaconDistance);
-        dataFile.println("-------------------------------");
-        dataFile.flush();  // Make sure the data is written to the card
-    } else {
-        Serial.println("#SDLogger# Error writing to file. File not open.");
-    }
+    dataFile.print("Major: ");
+    dataFile.println(major);
+
+    dataFile.print("Minor: ");
+    dataFile.println(minor);
+
+    dataFile.print("Distance: ");
+    dataFile.print(distance);
+    dataFile.println(" m");
+
+    dataFile.print("RSSI: ");
+    dataFile.println(rssi);
+
+    dataFile.print("Manufacturer: ");
+    dataFile.println(manufacturerName);
+
+    dataFile.print("Manufacturer ID: 0x");
+    dataFile.println(manufacturerId, HEX);
+
+    dataFile.println("-------------------------------");
+
+    dataFile.flush();
 }
+
 
