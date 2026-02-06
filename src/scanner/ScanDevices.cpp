@@ -208,6 +208,20 @@ void scanForDevices() {
         continue;
       }
 
+      // --- Payload direkt holen ---
+      std::vector<uint8_t> payloadVec = device->getPayload();
+
+      // --- daraus String erzeugen ---
+      std::string advData(payloadVec.begin(), payloadVec.end());
+
+      handleDevicePrivacy(
+          std::string(localName.c_str()),
+          std::string(address.c_str()),
+          advData,
+          payloadVec,
+          is_connectable
+      );
+
       isTarget = false;
       allSpottedDevice++;
 
@@ -241,13 +255,6 @@ void scanForDevices() {
           if (pClient->discoverAttributes()) {
 
             deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
-
-            // Skipp Apple Products to speed up 
-            //if (deviceInfoService.indexOf("Apple Inc.") != -1) {
-              //logToSerialAndWeb("🍏 APPLE DEVICE SKIPP");
-              //logToSerialAndWeb("   ...");
-              //continue;
-            //}
 
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
@@ -290,15 +297,28 @@ void scanForDevices() {
                     hasWritableChar = true;
                 }
                                 
-                if (characteristic) {
-                  std::string name = characteristic->readValue();
+                if (characteristic) 
+                {
+                    std::string rawValue = characteristic->readValue();
 
-                  if (!name.empty()) {
-                    Serial.println(String("     Characteristic Name: ") + name.c_str());
-                    nameList.push_back(std::string(name.c_str()));
-                  }
+                    if (!rawValue.empty()) {
+
+                        std::vector<uint8_t> valueBytes(
+                            rawValue.begin(),
+                            rawValue.end()
+                        );
+                        // Only show readable text
+                        if (isLikelyCleartextBytes(valueBytes, 4)) {
+
+                            Serial.println(
+                                String("     Characteristic Name: ") +
+                                rawValue.c_str()
+                            );
+                            nameList.push_back(rawValue);
+                        }
+                    }
                 } else {
-                  Serial.println("   Device Name Characteristic not found.");
+                    Serial.println("   Device Name Characteristic not found.");
                 }
               }
 

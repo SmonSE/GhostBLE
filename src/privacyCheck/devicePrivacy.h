@@ -19,6 +19,18 @@ struct DevicePrivacyInfo {
     int mac_change_count = 0;
 };
 
+enum class MACType {
+    Public,
+    StaticRandom,
+    ResolvablePrivate,
+    NonResolvablePrivate,
+    Unknown
+};
+
+MACType getMACType(const std::string& mac);
+String macTypeToString(MACType type);
+bool isRotatingMAC(MACType type);
+
 // === Functions ===
 
 // MAC privacy

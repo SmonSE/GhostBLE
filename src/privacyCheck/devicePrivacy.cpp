@@ -10,6 +10,66 @@ std::map<std::string, DevicePrivacyInfo> device_identity_history;
 std::vector<std::string> weakNames = {"<NoName>", "BLE_Device", "Unknown", "SensorTag", "ESP32"};
 std::vector<std::string> emptyNames = {"", "< -- >"};
 
+enum class DeviceCategory {
+    LOW_RISK,
+    EXPOSURE,
+    MISCONFIGURATION,
+    POTENTIAL_VULNERABILITY
+};
+
+MACType getMACType(const std::string& mac)
+{
+    if (mac.length() < 2) return MACType::Unknown;
+
+    uint8_t firstByte = std::stoi(mac.substr(0,2), nullptr, 16);
+
+    uint8_t typeBits = firstByte & 0xC0;
+
+    switch(typeBits)
+    {
+        case 0x00:
+            return MACType::Public;
+
+        case 0x40:
+            return MACType::StaticRandom;
+
+        case 0x80:
+            return MACType::ResolvablePrivate;
+
+        case 0xC0:
+            return MACType::NonResolvablePrivate;
+
+        default:
+            return MACType::Unknown;
+    }
+}
+
+String macTypeToString(MACType type)
+{
+    switch(type)
+    {
+        case MACType::Public:
+            return "Public";
+
+        case MACType::StaticRandom:
+            return "Static Random (semi-private)";
+
+        case MACType::ResolvablePrivate:
+            return "Resolvable Private (private)";
+
+        case MACType::NonResolvablePrivate:
+            return "Non-Resolvable Private (very private)";
+
+        default:
+            return "Unknown";
+    }
+}
+
+bool isRotatingMAC(MACType type)
+{
+    return (type == MACType::ResolvablePrivate ||
+            type == MACType::NonResolvablePrivate);
+}
 
 bool hasWeakName(const std::string& name) {
     return std::find(weakNames.begin(), weakNames.end(), name) != weakNames.end();
@@ -34,73 +94,120 @@ bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength)
   return printableCount >= minLength;
 }
 
-bool isRandomMAC(const std::string& mac) {
-    uint8_t firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
-    return (firstByte & 0xC0) == 0x40; // 0b01xxxxxx → Random Static
+DeviceCategory classifyDevice(
+    bool weakName,
+    bool emptyName,
+    bool rotating_mac,
+    bool staticPublic_mac,
+    bool adv_contains_cleartext,
+    bool is_connectable)
+{
+    // Exposure = Informationen sichtbar
+    if (!emptyName || adv_contains_cleartext || staticPublic_mac) {
+        return DeviceCategory::EXPOSURE;
+    }
+
+    // Misconfiguration = unnötig offen oder schlecht konfiguriert
+    if (weakName || is_connectable) {
+        return DeviceCategory::MISCONFIGURATION;
+    }
+
+    // Potential vulnerability (nur Vermutung!)
+    if (!rotating_mac && adv_contains_cleartext) {
+        return DeviceCategory::POTENTIAL_VULNERABILITY;
+    }
+
+    return DeviceCategory::LOW_RISK;
 }
 
-bool isStaticPublicMAC(const std::string& mac) {
-    uint8_t firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
-    return (firstByte & 0xC0) == 0x00; // 0b00xxxxxx → public MAC
+String categoryToString(DeviceCategory cat)
+{
+    switch (cat) {
+        case DeviceCategory::EXPOSURE:
+            return "Exposure";
+        case DeviceCategory::MISCONFIGURATION:
+            return "Misconfiguration";
+        case DeviceCategory::POTENTIAL_VULNERABILITY:
+            return "Potential Vulnerability";
+        default:
+            return "Low Risk";
+    }
 }
+void handleDevicePrivacy(
+    const std::string& name,
+    const std::string& mac,
+    const std::string& adv_data,
+    const std::vector<uint8_t>& payloadVec,
+    bool is_connectable)
+{
+    std::string identityKey = getIdentityFingerprint(name, adv_data);
+    auto& info = device_identity_history[identityKey];
 
-String getMACPrivacyLabel(const std::string& mac) {
-    uint8_t firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
+    if (!info.seen_macs.empty() &&
+        std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
+        info.mac_change_count++;
+        info.seen_macs.push_back(mac);
+    } else if (info.seen_macs.empty()) {
+        info.seen_macs.push_back(mac);
+    }
 
-    if ((firstByte & 0xC0) == 0x00) {
-      riskScore += 3;
-      return "Public (trackable)";
-    } else if ((firstByte & 0xC0) == 0x40) {
-      riskScore += 1;
-      return "Static Random (semi-private)";
-    } else if ((firstByte & 0xC0) == 0x80) {
-      return "Resolvable Private (private)";
-    } else if ((firstByte & 0xC0) == 0xC0) {
-      return "Non-resolvable Private (private)";
-    } else {
-      return "Unknown";
-    }                               
-}
+    bool weakName = hasWeakName(name);
+    bool emptyName = hasEmptyName(name);
+    bool adv_contains_cleartext =
+        adv_data.find("http") != std::string::npos ||
+        isLikelyCleartextBytes(payloadVec);
 
-void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable) {
-  std::string identityKey = getIdentityFingerprint(name, adv_data);
-  auto& info = device_identity_history[identityKey];
+    // ✅ SINGLE SOURCE OF TRUTH
+    MACType macType = getMACType(mac);
+    bool rotating_mac = isRotatingMAC(macType);
+    String macPrivacyLabel = macTypeToString(macType);
 
-  if (!info.seen_macs.empty() && std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
-    info.mac_change_count++;
-    info.seen_macs.push_back(mac);
-  } else if (info.seen_macs.empty()) {
-    info.seen_macs.push_back(mac);
-  }
+    bool staticPublic_mac = (macType == MACType::Public);
 
-  bool weakName = hasWeakName(name.c_str());
-  bool emptyName = hasEmptyName(name.c_str());
-  bool rotating_mac = isRandomMAC(mac);
-  bool staticPublic_mac = isStaticPublicMAC(mac);
-  bool adv_contains_cleartext = adv_data.find("http") != std::string::npos || isLikelyCleartextBytes(payloadVec);
-  String macPrivacyLavel = getMACPrivacyLabel(mac);
+    bool isLikelyConsumerDevice =
+        name.find("JBL") != std::string::npos ||
+        name.find("Sony") != std::string::npos ||
+        name.find("Bose") != std::string::npos ||
+        name.find("AirPods") != std::string::npos;
 
-  String logLineWebSocket = "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
-                  "   Has rotating MAC: " + (rotating_mac ? "YES" : "NO") + "\n" +
-                  "   Has privacy:      " + macPrivacyLavel + "\n" +
-                  "   Has empty name:   " + (emptyName ? "YES" : "NO") + "\n" +
-                  "   Has hacker name:  " + (weakName ? "YES" : "NO") + "\n" +
-                  "   Has cleartext:    " + (adv_contains_cleartext ? "YES" : "NO") + "\n" +
-                  "   Is connectable:   " + (is_connectable ? "YES" : "NO");
+    if (isLikelyConsumerDevice && rotating_mac) {
+        riskScore -= 3;
+    }
 
-  logToSerialAndWeb(logLineWebSocket);
+    DeviceCategory category = classifyDevice(
+        weakName,
+        emptyName,
+        rotating_mac,
+        staticPublic_mac,
+        adv_contains_cleartext,
+        is_connectable
+    );
 
-  // Risk Score
-  //if (staticPublic_mac) riskScore += 3; // added at getMACPrivacyLabel
-  if (weakName) riskScore += 3;
-  if (!emptyName) riskScore += 3;
-  if (rotating_mac) riskScore -= 1;
-  if (!rotating_mac) riskScore += 1;
-  if (!is_connectable) riskScore += 2;
-  if (is_connectable) riskScore -= 2;
-  if (adv_contains_cleartext) riskScore += 2;
-  //if (usesVulnerableUUIDs) riskScore += 2;  // added below 
+    String categoryStr = categoryToString(category);
 
+    String logLineWebSocket =
+        "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
+        "   Category:          " + categoryStr + "\n" +
+        "   MAC Type:          " + macPrivacyLabel + "\n" +
+        "   Has rotating MAC: " + (rotating_mac ? " YES" : " NO") + "\n" +
+        "   Empty name:       " + (emptyName ? " YES" : " NO") + "\n" +
+        "   Weak name:        " + (weakName ? " YES" : " NO") + "\n" +
+        "   Cleartext data:   " + (adv_contains_cleartext ? " YES" : " NO") + "\n" +
+        "   Connectable:      " + (is_connectable ? " YES" : " NO");
+
+    logToSerialAndWeb(logLineWebSocket);
+
+    // ---- Risk score ----
+
+    if (weakName) riskScore += 3;
+    if (!emptyName && !rotating_mac) riskScore += 3;
+    if (rotating_mac) riskScore -= 1;
+    else riskScore += 1;
+
+    if (!is_connectable) riskScore += 2;
+    else riskScore -= 2;
+
+    if (adv_contains_cleartext) riskScore += 2;
 }
 
 // Helper function to convert raw payload bytes to hex string
