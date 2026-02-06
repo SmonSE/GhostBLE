@@ -13,7 +13,9 @@
 #include "../helper/showExpression.h"
 #include "../logToSerialAndWeb/logger.h"
 #include "../privacyCheck/devicePrivacy.h"
-
+#include "../analyzer/ExposureAnalyzer.h"
+#include "../models/DeviceInfo.h"
+#include "../privacyCheck/ExposureClassifier.h"
 
 
 NimBLEScan* pScan = nullptr;
@@ -34,6 +36,12 @@ struct IBeaconInfo {
   uint16_t major = 0;
   uint16_t minor = 0;
   int8_t txPower = 0;
+};
+
+static const std::vector<std::string> roomWords = {
+    "wohnzimmer", "küche", "kueche", "bad",
+    "schlafzimmer", "office", "living",
+    "bedroom", "kitchen", "bath"
 };
 
 struct DeviceAssessment {
@@ -93,8 +101,48 @@ void stopBleScan() {
   scanIsRunning = false;
 }
 
+bool isPrintableText(const std::string& s)
+{
+    if (s.empty()) return false;
+
+    for (char c : s)
+    {
+        // allow printable ASCII only
+        if (c < 32 || c > 126)
+            return false;
+    }
+    return true;
+}
+
+String bytesToHexString(const std::string& data)
+{
+    String out;
+
+    for (uint8_t b : data)
+    {
+        if (b < 0x10) out += "0";
+        out += String(b, HEX);
+        out += " ";
+    }
+
+    out.toUpperCase();
+    return out;
+}
+
+static const char* tierToString(ExposureTier tier)
+{
+    switch(tier)
+    {
+        case ExposureTier::Passive: return "PASSIVE";
+        case ExposureTier::Active:  return "ACTIVE";
+        case ExposureTier::Consent: return "CONSENT";
+        default: return "NONE";
+    }
+}
+
 void scanForDevices() {
 
+  DeviceInfo dev;
   uint16_t manufacturerId = 0;
   String manufacturerName = "Unknown";
 
@@ -220,7 +268,8 @@ void scanForDevices() {
           std::string(address.c_str()),
           advData,
           payloadVec,
-          is_connectable
+          is_connectable,
+          dev
       );
 
       isTarget = false;
@@ -231,7 +280,7 @@ void scanForDevices() {
         logToSerialAndWeb("   Device is not connectable");
       }
 
-      logToSerialAndWeb(String("   Trying to connect to MAC: ") + address);
+      //logToSerialAndWeb(String("   Trying to connect to MAC: ") + address);
 
       pClient = NimBLEDevice::createClient();
       delay(1000);
@@ -255,7 +304,16 @@ void scanForDevices() {
         if (is_connectable && pClient->connect(*device)) {  
           if (pClient->discoverAttributes()) {
 
+            if (device->haveName()) {
+                dev.advHasName = true;
+            }
+
             deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+
+            if (!deviceInfoService.isEmpty()) {
+                dev.gattHasName = true;
+            }
+
             bestDeviceName = std::string(deviceInfoService.c_str());
 
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
@@ -264,25 +322,11 @@ void scanForDevices() {
             if (!isGlassesTaskRunning && !isAngryTaskRunning) {
               xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
             }
-
-            // Manufacturer handling
-            if (device->haveManufacturerData()) {
-              logToSerialAndWeb("Manufacturer Data");
-              std::string mfg = device->getManufacturerData();
-              logToSerialAndWeb(String("Manufacturer Data: ") + String(mfg.c_str()));
-                
-              if (mfg.size() >= 2) {
-                uint16_t manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
-                manufacturerName = getManufacturerName(manufacturerId);
-                manuInfo = "Manufacturer ID: 0x" + String(manufacturerId, HEX) + " (" + manufacturerName + ")";
-                Serial.println(manuInfo);
-              }
-            }
       
-            batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
+            //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
             //temperatureService = TemperatureServiceHandler::readTemperature(pClient);
-            genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+            //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
       
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
@@ -295,29 +339,51 @@ void scanForDevices() {
                 //Serial.println(String("     Characteristic UUID: ") + charUuid.c_str());
                 uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
 
+                if (charUuid == "2a24") {               // Model Number
+                    dev.gattHasModelInfo = false;
+                }
+
+                if (charUuid == "2a29" ||               // Manufacturer Name
+                    charUuid == "2a25") {               // Serial Number
+                    dev.gattHasIdentityInfo = false;
+                }
+
                 if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
                     hasWritableChar = true;
                 }
                                 
-                if (characteristic) 
+                if (characteristic)
                 {
-                  std::string rawValue = characteristic->readValue();
+                    std::string rawValue = characteristic->readValue();
 
-                  if (!rawValue.empty()) 
-                  {
-                    std::vector<uint8_t> valueBytes(rawValue.begin(), rawValue.end());
-                    // Only show readable text
-                    if (isLikelyCleartextBytes(valueBytes, 4)) 
+                    if (!rawValue.empty())
                     {
-                      Serial.println(String("     Characteristic Name: ") +rawValue.c_str());
-                      nameList.push_back(rawValue);
+                        if (isPrintableText(rawValue))
+                        {
+                            //Serial.println(String("     Characteristic Name: ") + rawValue.c_str());
+                            dev.gattHasName = true;   // ← missing in many cases
+                            nameList.push_back(rawValue);
+
+                            if (looksLikePersonalName(rawValue))
+                            {
+                                dev.gattHasPersonalName = true;
+                            }
+
+                            if (looksLikeIdentityData(rawValue))
+                                dev.gattHasIdentityInfo = true;
+
+                            if (looksLikeEnvironmentName(rawValue))
+                                dev.gattHasEnvironmentName = true;
+
+                            if (bestDeviceName.empty())
+                            {
+                                bestDeviceName = rawValue;
+                            }
+                        }
                     }
-                  }
-                  if (bestDeviceName.empty()) 
-                  {
-                    bestDeviceName = rawValue;
-                  }
-                } else {
+                }
+                else
+                {
                     Serial.println("   Device Name Characteristic not found.");
                 }
               }
@@ -325,6 +391,7 @@ void scanForDevices() {
               if (device != nullptr && !device->getName().empty()) {
                 localName = device->getName().c_str();
                 //logToSerialAndWeb("Replace localName with connected device->getName");
+                //dev.gattHasName = true;
               }
 
               if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
@@ -343,13 +410,37 @@ void scanForDevices() {
 
             logToSerialAndWeb("📝 Device Infos");
             logToSerialAndWeb(String("   Adress: " + address));
-            logToSerialAndWeb(String("   Name: " + String(bestDeviceName.c_str())));
+            //logToSerialAndWeb(String("   Name: " + String(bestDeviceName.c_str())));
             delay(100);
             logToSerialAndWeb("   Device Name: ");
             for (const auto& names : nameList) {
               if (!names.empty()) {
                 logToSerialAndWeb(String("     - ") + names.c_str());
               }
+            }
+
+            // Manufacturer handling
+            if (device->haveManufacturerData())
+            {
+                std::string mfg = device->getManufacturerData();
+
+                // print HEX only
+                //logToSerialAndWeb(String("Manufacturer Data (HEX): ") + bytesToHexString(mfg));
+
+                if (mfg.size() >= 2)
+                {
+                    uint16_t manufacturerId =
+                        ((uint8_t)mfg[1] << 8) | (uint8_t)mfg[0];
+
+                    manufacturerName = getManufacturerName(manufacturerId);
+
+                    manuInfo =
+                        "   Manufacturer ID: 0x" +
+                        String(manufacturerId, HEX) +
+                        " (" + manufacturerName + ")";
+
+                    logToSerialAndWeb(manuInfo);
+                }
             }
             
             delay(100);
@@ -382,8 +473,41 @@ void scanForDevices() {
 
             delay(100);
 
-            logToSerialAndWeb("----------------------------------\n");
-        
+            // Analyze exposure and log results
+            std::string mac = device->getAddress().toString().c_str();
+
+            MACType macType = getMACType(mac);
+
+            dev.mac = mac;
+            dev.name = bestDeviceName.c_str();
+            dev.manufacturer = manufacturerName.c_str();
+
+            dev.isConnectable = is_connectable;
+
+            dev.isPublicMac = isStaticPublicMAC(mac);
+            dev.hasStaticMac = (macType == MACType::StaticRandom);
+            dev.hasRotatingMac = isRotatingMAC(macType);
+
+            dev.hasName = !dev.name.empty();
+            dev.hasManufacturerData = !dev.manufacturer.empty();
+            dev.hasCleartextData = containsCleartext(payloadVec);
+
+            ExposureResult exposure = analyzeExposure(dev);
+
+            logToSerialAndWeb("📊 Uncovering Summary");
+            logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
+            logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
+            logToSerialAndWeb("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
+            logToSerialAndWeb("   Privacy Level: " + String(exposure.privacyLevel.c_str()));
+            logToSerialAndWeb(String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
+
+            logToSerialAndWeb("\n   Reason:");
+            for (auto& r : exposure.reasons) {
+                logToSerialAndWeb("    - " + String(r.c_str()));
+            }
+
+            logToSerialAndWeb("----------------------------------");
+
             // Move to isTargetDevice to log on SD card
             sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, deviceInfoService, batteryLevelService, genericAccessService);
             

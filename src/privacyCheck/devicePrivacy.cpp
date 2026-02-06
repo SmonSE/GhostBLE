@@ -12,7 +12,7 @@ std::vector<std::string> emptyNames = {"", "< -- >"};
 
 enum class DeviceCategory {
     LOW_RISK,
-    EXPOSURE,
+    UNCOVERING,
     MISCONFIGURATION,
     POTENTIAL_VULNERABILITY
 };
@@ -94,6 +94,37 @@ bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength)
   return printableCount >= minLength;
 }
 
+#include "devicePrivacy.h"
+
+bool isStaticPublicMAC(const std::string& mac)
+{
+    // einfache Heuristik:
+    // Public MAC = kein Random Bit gesetzt
+    // (für GhostBLE erstmal ausreichend)
+
+    if (mac.length() < 2)
+        return false;
+
+    // erstes Byte der MAC
+    unsigned int firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
+
+    // Bit 1 = locally administered
+    bool locallyAdministered = firstByte & 0x02;
+
+    // wenn nicht locally administered → public MAC
+    return !locallyAdministered;
+}
+
+bool containsCleartext(const std::vector<uint8_t>& payload)
+{
+    for (auto b : payload) {
+        if (b >= 32 && b <= 126) {
+            return true;
+        }
+    }
+    return false;
+}
+
 DeviceCategory classifyDevice(
     bool weakName,
     bool emptyName,
@@ -104,7 +135,7 @@ DeviceCategory classifyDevice(
 {
     // Exposure = Informationen sichtbar
     if (!emptyName || adv_contains_cleartext || staticPublic_mac) {
-        return DeviceCategory::EXPOSURE;
+        return DeviceCategory::UNCOVERING;
     }
 
     // Misconfiguration = unnötig offen oder schlecht konfiguriert
@@ -123,8 +154,8 @@ DeviceCategory classifyDevice(
 String categoryToString(DeviceCategory cat)
 {
     switch (cat) {
-        case DeviceCategory::EXPOSURE:
-            return "Exposure";
+        case DeviceCategory::UNCOVERING:
+            return "Uncovering";
         case DeviceCategory::MISCONFIGURATION:
             return "Misconfiguration";
         case DeviceCategory::POTENTIAL_VULNERABILITY:
@@ -138,7 +169,8 @@ void handleDevicePrivacy(
     const std::string& mac,
     const std::string& adv_data,
     const std::vector<uint8_t>& payloadVec,
-    bool is_connectable)
+    bool is_connectable,
+    DeviceInfo& dev)
 {
     std::string identityKey = getIdentityFingerprint(name, adv_data);
     auto& info = device_identity_history[identityKey];
@@ -151,6 +183,15 @@ void handleDevicePrivacy(
         info.seen_macs.push_back(mac);
     }
 
+    if (name.find("von ") != std::string::npos){
+      dev.gattHasPersonalName = true;
+    }
+
+    if (adv_data.find("Device Information") != std::string::npos &&
+        adv_data.find("Serial Number") != std::string::npos) {
+        dev.gattHasNameIdentityData = true;
+    }
+      
     bool weakName = hasWeakName(name);
     bool emptyName = hasEmptyName(name);
     bool adv_contains_cleartext =
@@ -186,7 +227,7 @@ void handleDevicePrivacy(
     String categoryStr = categoryToString(category);
 
     String logLineWebSocket =
-        "🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
+        "\n🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
         "   Category:          " + categoryStr + "\n" +
         "   MAC Type:          " + macPrivacyLabel + "\n" +
         "   Has rotating MAC: " + (rotating_mac ? " YES" : " NO") + "\n" +

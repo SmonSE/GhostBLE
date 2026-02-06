@@ -5,15 +5,9 @@
 #include <string>
 #include <vector>
 #include <map>
+#include "../models/DeviceInfo.h"
 
 // === Structs ===
-
-struct DeviceInfo {
-    std::string last_mac;
-    uint8_t mac_change_count = 0;
-    std::vector<std::string> seen_macs;
-};
-
 struct DevicePrivacyInfo {
     std::vector<std::string> seen_macs;
     int mac_change_count = 0;
@@ -38,8 +32,10 @@ bool isRandomMAC(const std::string& mac);
 bool isStaticPublicMAC(const std::string& mac);
 String getMACPrivacyLabel(const std::string& mac);
 
+bool containsCleartext(const std::vector<uint8_t>& payload);
+
 // Privacy analysis
-void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable);
+void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable, DeviceInfo& dev);
 
 // Fingerprinting
 std::string getIdentityFingerprint(const std::string& name, const std::string& adv_data);
