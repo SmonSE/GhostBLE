@@ -24,6 +24,7 @@ class SDLogger;
 SDLogger sdLogger;
 
 bool isTarget = false;
+std::string bestDeviceName = "";
 
 #define MAX_SEEN_DEVICES 1000
 
@@ -255,6 +256,7 @@ void scanForDevices() {
           if (pClient->discoverAttributes()) {
 
             deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+            bestDeviceName = std::string(deviceInfoService.c_str());
 
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
@@ -299,24 +301,22 @@ void scanForDevices() {
                                 
                 if (characteristic) 
                 {
-                    std::string rawValue = characteristic->readValue();
+                  std::string rawValue = characteristic->readValue();
 
-                    if (!rawValue.empty()) {
-
-                        std::vector<uint8_t> valueBytes(
-                            rawValue.begin(),
-                            rawValue.end()
-                        );
-                        // Only show readable text
-                        if (isLikelyCleartextBytes(valueBytes, 4)) {
-
-                            Serial.println(
-                                String("     Characteristic Name: ") +
-                                rawValue.c_str()
-                            );
-                            nameList.push_back(rawValue);
-                        }
+                  if (!rawValue.empty()) 
+                  {
+                    std::vector<uint8_t> valueBytes(rawValue.begin(), rawValue.end());
+                    // Only show readable text
+                    if (isLikelyCleartextBytes(valueBytes, 4)) 
+                    {
+                      Serial.println(String("     Characteristic Name: ") +rawValue.c_str());
+                      nameList.push_back(rawValue);
                     }
+                  }
+                  if (bestDeviceName.empty()) 
+                  {
+                    bestDeviceName = rawValue;
+                  }
                 } else {
                     Serial.println("   Device Name Characteristic not found.");
                 }
@@ -343,7 +343,7 @@ void scanForDevices() {
 
             logToSerialAndWeb("📝 Device Infos");
             logToSerialAndWeb(String("   Adress: " + address));
-            logToSerialAndWeb(String("   Name: " + localName));
+            logToSerialAndWeb(String("   Name: " + String(bestDeviceName.c_str())));
             delay(100);
             logToSerialAndWeb("   Device Name: ");
             for (const auto& names : nameList) {
