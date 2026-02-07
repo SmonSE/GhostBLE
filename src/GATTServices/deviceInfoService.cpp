@@ -10,7 +10,7 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
         //logToSerialAndWeb("   Device Information Service found (0x180A)");
 
         const char* deviceChars[] = {"2A29", "2A24", "2A25", "2A27", "2A26", "2A28"};
-        const char* charNames[]   = {"Manufacturer Name", "Model Number", "Serial Number", "Hardware Revision", "Firmware Revision", "Software Revision"};
+        const char* charNames[]   = {"   Manufacturer Name", "   Model Number", "   Serial Number", "   Hardware Revision", "   Firmware Revision", "   Software Revision"};
 
         for (int i = 0; i < 6; i++) {
           NimBLERemoteCharacteristic* pChar = deviceInfoService->getCharacteristic(deviceChars[i]);

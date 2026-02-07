@@ -130,7 +130,7 @@ void setup() {
   //M5.Speaker.tone(1800, 120);
   //playMysteryBoot();
 
-  delay(8000);
+  delay(3000);
   //playNotificationPro();
 
   // To Update Wifi Logo to ON
