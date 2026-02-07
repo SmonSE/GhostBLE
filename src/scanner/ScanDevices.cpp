@@ -318,6 +318,10 @@ void scanForDevices() {
 
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
+
+            if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+              xTaskCreate(showGlassesExpressionTask, "BLEGlases", 2048, NULL, 0, NULL);
+            }
       
             //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
@@ -413,31 +417,6 @@ void scanForDevices() {
               if (!names.empty()) {
                 logToSerialAndWeb(String("     - ") + names.c_str());
               }
-            }
-
-            // Manufacturer handling
-            if (device->haveManufacturerData())
-            {
-                std::string mfg = device->getManufacturerData();
-
-                // print HEX only
-                //logToSerialAndWeb(String("Manufacturer Data (HEX): ") + bytesToHexString(mfg));
-                /*
-                if (mfg.size() >= 2)
-                {
-                    uint16_t manufacturerId =
-                        ((uint8_t)mfg[1] << 8) | (uint8_t)mfg[0];
-
-                    manufacturerName = getManufacturerName(manufacturerId);
-
-                    manuInfo =
-                        "   Manufacturer ID: 0x" +
-                        String(manufacturerId, HEX) +
-                        " (" + manufacturerName + ")";
-
-                    logToSerialAndWeb(manuInfo);
-                }
-                */
             }
             
             delay(100);
