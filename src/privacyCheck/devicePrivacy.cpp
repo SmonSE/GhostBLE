@@ -1,5 +1,8 @@
 #include "devicePrivacy.h"
 #include "../globals/globals.h"
+#include "../sdCard/SDLogger.h"
+
+extern SDLogger sdLogger; // -> not nice impl, but for logging in this file we need access to the SDLogger instance
 
 #include <map>
 #include <vector>
@@ -227,7 +230,7 @@ void handleDevicePrivacy(
     String categoryStr = categoryToString(category);
 
     String logLineWebSocket =
-        "\n🔍 " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
+        "\nName: " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
         "   Category:          " + categoryStr + "\n" +
         "   MAC Type:          " + macPrivacyLabel + "\n" +
         "   Has rotating MAC: " + (rotating_mac ? " YES" : " NO") + "\n" +
@@ -237,9 +240,9 @@ void handleDevicePrivacy(
         "   Connectable:      " + (is_connectable ? " YES" : " NO");
 
     logToSerialAndWeb(logLineWebSocket);
-
+    //sdLogger.writeCategory(logLineWebSocket);
+    
     // ---- Risk score ----
-
     if (weakName) riskScore += 3;
     if (!emptyName && !rotating_mac) riskScore += 3;
     if (rotating_mac) riskScore -= 1;

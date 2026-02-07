@@ -56,7 +56,8 @@ bool looksLikeEnvironmentName(const std::string& name)
         "wohnzimmer", "küche", "kueche",
         "bad", "schlafzimmer",
         "office", "living",
-        "bedroom", "kitchen", "bath"
+        "bedroom", "kitchen", "bath",
+        "Arbeitszimmer", "Gästezimmer", "Garage", "Büro"
     };
 
     for (const auto& word : roomWords)

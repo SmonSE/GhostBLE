@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include <SD.h>
 #include <vector>
+#include "../analyzer/ExposureAnalyzer.h"
 
 class SDLogger {
 public:
@@ -12,9 +13,7 @@ public:
                          const String& localName, 
                          const std::vector<std::string>& nameList,
                          const String& manuInfo,
-                         const String& deviceInfoString, 
-                         const String& batteryLevelService,
-                         const String& genericAccessService);
+                         const String& deviceInfoString);
 
     void writeIBeaconInfo(
         const String& uuid,
@@ -24,6 +23,10 @@ public:
         const String& manufacturerName,
         uint16_t manufacturerId,
         int rssi);
+
+    void writeUncovered(const ExposureResult& exposure);
+
+    void writeCategory(const String& category);
 
 private:
     File dataFile;

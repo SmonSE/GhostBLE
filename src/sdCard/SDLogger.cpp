@@ -1,6 +1,21 @@
+#pragma once
 #include "SDLogger.h"
+#include <string>
+#include <vector>
+#include "../analyzer/ExposureAnalyzer.h"
 #include "../helper/ServiceHelper.h"  // Assuming you still need service name mapping
 
+
+static const char* tierToString(ExposureTier tier)
+{
+    switch(tier)
+    {
+        case ExposureTier::Passive: return "PASSIVE";
+        case ExposureTier::Active:  return "ACTIVE";
+        case ExposureTier::Consent: return "CONSENT";
+        default: return "NONE";
+    }
+}
 
 SDLogger::SDLogger() : initialized(false) {}
 
@@ -31,50 +46,64 @@ bool SDLogger::begin(int csPin) {
     return true;
 }
 
+void SDLogger::writeCategory(const String& category)
+{
+    if (!initialized || !dataFile) return;
+    
+    dataFile.println(category);
+}
+
 void SDLogger::writeDeviceInfo( const String& address, 
                                 const String& localName,
                                 const std::vector<std::string>& nameList,
                                 const String& manuInfo,
-                                const String& deviceInfoString, 
-                                const String& batteryLevelService,
-                                const String& genericAccessService) {
-    if (!initialized) {
-        Serial.println("#SDLogger# SDLogger not initialized.");
-        return;
-    }
+                                const String& deviceInfoString) 
+{
+    if (!initialized || !dataFile) return;
+    
+    dataFile.println("\n--------- New Target ----------");
+    dataFile.println("\nDevice Info");
+    dataFile.println("   Address: " + address);
 
-    // Check if the file is open before writing
-    if (dataFile) {
-
-        dataFile.print("Address: ");
-        dataFile.println(address);
-
-        if (localName.length() > 0) {
-            dataFile.print("Local Name: ");
-            dataFile.println(localName);
-        } else {
-            dataFile.println("Local Name: (no name)");
-        }
-
-        //Device Info String: 
-        dataFile.println(deviceInfoString);
-        dataFile.println(batteryLevelService);
-
-        dataFile.println(manuInfo);
-
-        dataFile.println("Characteristic NAME:");
-        for (const auto& names : nameList) {
-            if (!names.empty()) {
-                dataFile.print("  - ");
-                dataFile.println(names.c_str());
-            }
-        }
-
-        dataFile.println("-------------------------------");
-        dataFile.flush();  // Make sure the data is written to the card
+    if (localName.length() > 0) {
+        dataFile.println("   Local Name: " + localName);
     } else {
-        Serial.println("#SDLogger# Error writing to file. File not open.");
+        dataFile.println("   Local Name: (no name)");
     }
+
+    //Device Info String: 
+    dataFile.println(deviceInfoString);
+    dataFile.println(manuInfo);
+
+    dataFile.println("   Characteristic NAME:");
+    for (const auto& names : nameList) {
+        if (!names.empty()) {
+            dataFile.print("   - ");
+            dataFile.println(names.c_str());
+        }
+    }
+
+    dataFile.flush();  // Make sure the data is written to the card
+}
+
+void SDLogger::writeUncovered(    const ExposureResult& exposure) 
+{
+    if (!initialized || !dataFile) return;
+
+    dataFile.println("\nUncovering Summary");
+    dataFile.println("   Device Type: " + String(exposure.deviceType.c_str()));
+    dataFile.println("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
+    dataFile.println("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
+    dataFile.println("   Privacy Level: " + String(exposure.privacyLevel.c_str()));
+    dataFile.println("   Uncovering Tier: " + String(tierToString(exposure.exposureTier)));
+
+    dataFile.println("\n   Reason");
+    for (auto& r : exposure.reasons) {
+        dataFile.println("   - " + String(r.c_str()));
+    }
+
+    dataFile.println("\n-------------------------------");
+    dataFile.flush();  // Make sure the data is written to the card
 }
 
 void SDLogger::writeIBeaconInfo(
@@ -88,7 +117,7 @@ void SDLogger::writeIBeaconInfo(
 {
     if (!initialized || !dataFile) return;
 
-    dataFile.println("---- iBeacon ----");
+    dataFile.println("\n----------- iBeacon -----------");
 
     dataFile.print("UUID: ");
     dataFile.println(uuid);

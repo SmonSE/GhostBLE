@@ -199,7 +199,7 @@ void scanForDevices() {
 
       if (device != nullptr) {
         address = device->getAddress().toString().c_str();
-        localName = device->haveName() ? String(device->getName().c_str()) : "< -- >";
+        localName = device->haveName() ? String(device->getName().c_str()) : "";
         rssi = device->getRSSI();
         is_connectable = device->isConnectable();
 
@@ -229,7 +229,7 @@ void scanForDevices() {
           beacon = parseIBeacon(mfg);
           if (beacon.valid) {
             isIBeacon = true;
-            logToSerialAndWeb("🟦 iBeacon detected!");
+            logToSerialAndWeb("iBeacon detected!");
             logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
             logToSerialAndWeb("   Major: " + String(beacon.major));
             logToSerialAndWeb("   Minor: " + String(beacon.minor));
@@ -408,7 +408,7 @@ void scanForDevices() {
               }
             }
 
-            logToSerialAndWeb("📝 Device Infos");
+            logToSerialAndWeb("Device Infos");
             logToSerialAndWeb(String("   Adress: " + address));
             //logToSerialAndWeb(String("   Name: " + String(bestDeviceName.c_str())));
             delay(100);
@@ -426,7 +426,7 @@ void scanForDevices() {
 
                 // print HEX only
                 //logToSerialAndWeb(String("Manufacturer Data (HEX): ") + bytesToHexString(mfg));
-
+                /*
                 if (mfg.size() >= 2)
                 {
                     uint16_t manufacturerId =
@@ -441,11 +441,12 @@ void scanForDevices() {
 
                     logToSerialAndWeb(manuInfo);
                 }
+                */
             }
             
             delay(100);
             float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-            logToSerialAndWeb("🛰️ Distance: " + String(distance, 2) + " m");
+            logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
             delay(100);
             logToSerialAndWeb("     - RSSI: " + String(rssi));
             delay(100);
@@ -453,12 +454,12 @@ void scanForDevices() {
             // iBeacon info
             if (isIBeacon) {
               beaconsFound++;
-              logToSerialAndWeb("👁️ Beacon Type: iBeacon");
+              logToSerialAndWeb("Beacon Type: iBeacon");
               logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
               logToSerialAndWeb("   Major: " + String(beacon.major));
               logToSerialAndWeb("   Minor: " + String(beacon.minor));
               float beaconDistance = estimateDistance(beacon.txPower, rssi);
-              logToSerialAndWeb("📏 Beacon Distance: ~" + String(beaconDistance, 2) + " m");
+              logToSerialAndWeb("   Beacon Distance: ~" + String(beaconDistance, 2) + " m");
 
               sdLogger.writeIBeaconInfo(
                   String(beacon.uuid.c_str()),
@@ -494,7 +495,7 @@ void scanForDevices() {
 
             ExposureResult exposure = analyzeExposure(dev);
 
-            logToSerialAndWeb("📊 Uncovering Summary");
+            logToSerialAndWeb("Uncovering Summary");
             logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
             logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
             logToSerialAndWeb("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
@@ -509,9 +510,18 @@ void scanForDevices() {
             logToSerialAndWeb("----------------------------------");
 
             // Move to isTargetDevice to log on SD card
-            sdLogger.writeDeviceInfo(address, localName, nameList, manuInfo, deviceInfoService, batteryLevelService, genericAccessService);
+            sdLogger.writeDeviceInfo(
+                address, 
+                localName, 
+                nameList, 
+                manuInfo, 
+                deviceInfoService
+            );
             
             //logToSerialAndWeb("Write Data to SD Logger");
+            delay(100);
+
+            sdLogger.writeUncovered(exposure);
 
             // Clear uuidList / nameList after Stored to SD Card
             uuidList.clear();
@@ -534,7 +544,7 @@ void scanForDevices() {
     delay(100);
     logToSerialAndWeb("##########################");
     delay(100);
-    logToSerialAndWeb("📊 Scan Summary:");
+    logToSerialAndWeb("Scan Summary:");
     delay(100);
     logToSerialAndWeb("Sniffed:    " + String(targetConnects));
     delay(100);
