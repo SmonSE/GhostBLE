@@ -319,10 +319,6 @@ void scanForDevices() {
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
       
-            if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-              xTaskCreate(showGlassesExpressionTask, "HappyFace", 2048, NULL, 0, NULL);
-            }
-      
             //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
             //temperatureService = TemperatureServiceHandler::readTemperature(pClient);
@@ -557,8 +553,6 @@ void scanForDevices() {
     
     logToSerialAndWeb("##########################\n");
     delay(100);
-
-    xTaskCreate(showHappyExpressionTask, "HappyFace", 2048, NULL, 1, NULL);
 
     scanIsRunning = false;
   }
