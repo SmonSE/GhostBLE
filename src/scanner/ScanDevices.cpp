@@ -320,7 +320,7 @@ void scanForDevices() {
             targetConnects++;
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-              xTaskCreate(showGlassesExpressionTask, "BLEGlases", 2048, NULL, 0, NULL);
+              xTaskCreate(showGlassesExpressionTask, "BLEGlases", 4096, NULL, 0, NULL);
             }
       
             //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
@@ -489,7 +489,7 @@ void scanForDevices() {
                 address, 
                 localName, 
                 nameList, 
-                manuInfo, 
+                manufacturerName.c_str(), 
                 deviceInfoService
             );
             

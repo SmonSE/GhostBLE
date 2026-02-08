@@ -37,7 +37,7 @@ void showAngryExpressionTask(void* parameter) {
     drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
     //showFindingCounter(targetConnects, susDevice, leakedCounter);  
 
-    vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);

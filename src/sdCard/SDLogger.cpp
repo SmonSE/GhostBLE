@@ -73,8 +73,7 @@ void SDLogger::writeDeviceInfo( const String& address,
 
     //Device Info String: 
     dataFile.println(deviceInfoString);
-    
-    dataFile.println(manuInfo);
+    dataFile.println("   " + manuInfo);
 
     dataFile.println("   Characteristic Name:");
     for (const auto& names : nameList) {
