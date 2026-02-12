@@ -147,6 +147,7 @@ void loop() {
     if (M5Cardputer.Keyboard.isPressed()) {
       auto status = M5Cardputer.Keyboard.keysState();
 
+      /*
       for (char c : status.word) {
         Serial.printf("Key: %c\n", c);
 
@@ -154,12 +155,18 @@ void loop() {
           toggleWiFi();
         }
       }
+      */
 
       if (status.enter) {
         Serial.println("ENTER pressed");
       } 
-      if (status.fn)    Serial.println("FN pressed");
-      if (status.tab)   Serial.println("TAB pressed");
+      if (status.fn) {    
+        Serial.println("FN pressed");
+        toggleWiFi();
+      }
+      if (status.tab){
+        Serial.println("TAB pressed");
+      }   
       if (status.del){
         Serial.println("DEL pressed");
       }   

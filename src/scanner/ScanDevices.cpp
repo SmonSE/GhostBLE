@@ -26,7 +26,6 @@ class SDLogger;
 SDLogger sdLogger;
 
 bool isTarget = false;
-std::string bestDeviceName = "";
 
 #define MAX_SEEN_DEVICES 1000
 
@@ -236,7 +235,7 @@ void scanForDevices() {
             logToSerialAndWeb("   TX:    " + String(beacon.txPower));
           }
 
-          if (manufacturerName == "Unknown Manufacturer") {
+          if (manufacturerName.isEmpty()) {
             isUnknownManufacturer = true;
           }
         }
@@ -259,8 +258,6 @@ void scanForDevices() {
 
       // --- Payload direkt holen ---
       std::vector<uint8_t> payloadVec = device->getPayload();
-
-      // --- daraus String erzeugen ---
       std::string advData(payloadVec.begin(), payloadVec.end());
 
       handleDevicePrivacy(
@@ -271,6 +268,10 @@ void scanForDevices() {
           is_connectable,
           dev
       );
+
+      // for else ExposureAnalyzer
+      dev.name = localName.c_str();
+      dev.manufacturer = manufacturerName.c_str();
 
       isTarget = false;
       allSpottedDevice++;
@@ -294,13 +295,12 @@ void scanForDevices() {
       }
 
       if (pClient != nullptr) {
-          pClient->setConnectTimeout(5 * 1000); // Set 5s timeout
+          pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
       } else {
           Serial.println("⚠️ pClient is null! Cannot set connect timeout.");
       }
 
       if (pClient != nullptr) {
-        //if (pClient->connect(*device) && !is_connectable) {
         if (is_connectable && pClient->connect(*device)) {  
           if (pClient->discoverAttributes()) {
 
@@ -313,8 +313,6 @@ void scanForDevices() {
             if (!deviceInfoService.isEmpty()) {
                 dev.gattHasName = true;
             }
-
-            bestDeviceName = std::string(deviceInfoService.c_str());
 
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
@@ -340,12 +338,12 @@ void scanForDevices() {
                 uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
 
                 if (charUuid == "2a24") {               // Model Number
-                    dev.gattHasModelInfo = false;
+                    dev.gattHasModelInfo = true;
                 }
 
                 if (charUuid == "2a29" ||               // Manufacturer Name
                     charUuid == "2a25") {               // Serial Number
-                    dev.gattHasIdentityInfo = false;
+                    dev.gattHasIdentityInfo = true;
                 }
 
                 if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
@@ -374,11 +372,6 @@ void scanForDevices() {
 
                             if (looksLikeEnvironmentName(rawValue))
                                 dev.gattHasEnvironmentName = true;
-
-                            if (bestDeviceName.empty())
-                            {
-                                bestDeviceName = rawValue;
-                            }
                         }
                     }
                 }
@@ -410,7 +403,8 @@ void scanForDevices() {
 
             logToSerialAndWeb("Device Infos");
             logToSerialAndWeb(String("   Adress: " + address));
-            //logToSerialAndWeb(String("   Name: " + String(bestDeviceName.c_str())));
+            logToSerialAndWeb(String("   Name:   " + localName));
+            logToSerialAndWeb(String("   Manuf.: " + manufacturerName));
             delay(100);
             logToSerialAndWeb("   Device Name: ");
             for (const auto& names : nameList) {
@@ -455,7 +449,7 @@ void scanForDevices() {
             MACType macType = getMACType(mac);
 
             dev.mac = mac;
-            dev.name = bestDeviceName.c_str();
+            dev.name = localName.c_str();
             dev.manufacturer = manufacturerName.c_str();
 
             dev.isConnectable = is_connectable;
@@ -503,7 +497,25 @@ void scanForDevices() {
             nameList.clear();
           }
         } else {
-          logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
+            logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
+
+            dev.isConnectable = false;
+
+            ExposureResult exposure = analyzeExposure(dev);
+
+            logToSerialAndWeb("Uncovering Summary");
+            logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
+            logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
+            logToSerialAndWeb("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
+            logToSerialAndWeb("   Privacy Level: " + String(exposure.privacyLevel.c_str()));
+            logToSerialAndWeb(String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
+
+            logToSerialAndWeb("\n   Reason:");
+            for (auto& r : exposure.reasons) {
+                logToSerialAndWeb("    - " + String(r.c_str()));
+            }
+
+            logToSerialAndWeb("----------------------------------");
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
             //logToSerialAndWeb("showSadExpressionTask");
             xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
