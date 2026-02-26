@@ -87,6 +87,7 @@ File dataFile;
 std::vector<String> serviceUuids;
 
 void setup() {
+  M5.Power.begin();
   M5Cardputer.begin();
   Serial.begin(115200);
   delay(500);
