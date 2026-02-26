@@ -603,6 +603,22 @@ void scanForDevices() {
 
             ExposureResult exposure = analyzeExposure(dev);
 
+            // Move to isTargetDevice to log on SD card
+            sdLogger.writeDeviceInfo(
+                address, 
+                localName, 
+                nameList, 
+                manufacturerName.c_str(), 
+                deviceInfoService
+            );
+
+            // Subscribe to notifications for all characteristics that support it
+            logToSerialAndWeb("Sub to Notifi all Chars");
+            subscribeToAllNotifications(pClient, genericNotifyCallback);
+            
+            //logToSerialAndWeb("Write Data to SD Logger");
+            delay(250);
+
             logToSerialAndWeb("Uncovering Summary");
             logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
             logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
@@ -615,22 +631,8 @@ void scanForDevices() {
                 logToSerialAndWeb("    - " + String(r.c_str()));
             }
 
+            delay(250);
             logToSerialAndWeb("----------------------------------");
-
-            // Move to isTargetDevice to log on SD card
-            sdLogger.writeDeviceInfo(
-                address, 
-                localName, 
-                nameList, 
-                manufacturerName.c_str(), 
-                deviceInfoService
-            );
-
-            // Subscribe to notifications for all characteristics that support it
-            subscribeToAllNotifications(pClient, genericNotifyCallback);
-            
-            //logToSerialAndWeb("Write Data to SD Logger");
-            delay(500);
 
             sdLogger.writeUncovered(exposure);
 
