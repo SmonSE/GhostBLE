@@ -133,6 +133,8 @@ void setup() {
   delay(3000);
   //playNotificationPro();
 
+  toggleWiFi();
+
   // To Update Wifi Logo to ON
   showFindingCounter(targetConnects, susDevice, leakedCounter);
 }
@@ -256,7 +258,7 @@ void toggleWiFi() {
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   }
 
-  playNotificationPro(); // optional akustisches Feedback
+  //playNotificationPro(); // optional akustisches Feedback
 }
 
 void stopWebLogServer() {

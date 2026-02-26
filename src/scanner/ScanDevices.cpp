@@ -25,6 +25,145 @@ NimBLEClient *pClient = nullptr;
 class SDLogger;
 SDLogger sdLogger;
 
+// Subscribe to all notifiable characteristics on a connected device
+template<typename Callback>
+void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) {
+    if (!client) return;
+    auto services = client->getServices(); // returns std::vector<NimBLERemoteService*>
+    for (auto* service : services) {
+        if (!service) continue;
+        auto characteristics = service->getCharacteristics(true); // returns std::vector<NimBLERemoteCharacteristic*>
+        for (auto* characteristic : characteristics) {
+            if (!characteristic) continue;
+            if (characteristic->canNotify()) {
+                characteristic->subscribe(true, notifyCallback);
+                Serial.printf("   Subscribed to notifis for char %s in service %s\n",
+                    characteristic->getUUID().toString().c_str(),
+                    service->getUUID().toString().c_str());
+            }
+        }
+    }
+}
+
+// Example generic notification callback
+void genericNotifyCallback(NimBLERemoteCharacteristic* pChar, uint8_t* data, size_t length, bool isNotify) {
+    std::string uuid = pChar->getUUID().toString();
+    Serial.printf("   [Notifis] Char UUID: %s, Data: ", uuid.c_str());
+    String hexData;
+    for (size_t i = 0; i < length; ++i) {
+        Serial.printf("%02X ", data[i]);
+        hexData += String(data[i], HEX);
+        if (i < length - 1) hexData += " ";
+    }
+
+    String logLine = "   BLE Notify: UUID=" + String(uuid.c_str()) + ", Data=" + hexData;
+
+    // Human-readable decoding for known characteristics
+    if (uuid == "2a37" || uuid == "0x2a37") { // Heart Rate Measurement
+      if (length >= 2) {
+        uint8_t flags = data[0];
+        uint16_t hr = 0;
+        if (flags & 0x01) {
+          if (length >= 3)
+            hr = data[1] | (data[2] << 8);
+        } else {
+          hr = data[1];
+        }
+        Serial.printf(" | Heart Rate: %u bpm", hr);
+        logLine += " | Heart Rate: " + String(hr) + " bpm";
+      }
+    } else if (uuid == "2a53" || uuid == "0x2a53") { // Step Count or Glucose Measurement (example, may differ)
+      if (length >= 4) {
+        uint32_t steps = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
+        Serial.printf(" | Step Count: %u", steps);
+        logLine += " | Step Count: " + String(steps);
+      } else if (length >= 2) {
+        uint16_t glucose = data[1];
+        Serial.printf(" | Glucose (raw): %u", glucose);
+        logLine += " | Glucose (raw): " + String(glucose);
+      }
+    } else if (uuid == "2a19" || uuid == "0x2a19") { // Battery Level
+      if (length >= 1) {
+        Serial.printf(" | Battery Level: %u%%", data[0]);
+        logLine += " | Battery Level: " + String(data[0]) + "%";
+      }
+    } else if (uuid == "2a2b" || uuid == "0x2a2b") { // Current Time
+      if (length >= 7) {
+        uint16_t year = data[0] | (data[1] << 8);
+        uint8_t month = data[2];
+        uint8_t day = data[3];
+        uint8_t hour = data[4];
+        uint8_t minute = data[5];
+        uint8_t second = data[6];
+        Serial.printf(" | Current Time: %04u-%02u-%02u %02u:%02u:%02u",
+          year, month, day, hour, minute, second);
+        logLine += " | Current Time: " + String(year) + "-" + String(month) + "-" + String(day) + " " + String(hour) + ":" + String(minute) + ":" + String(second);
+      }
+    } else if (uuid == "2a1c" || uuid == "0x2a1c") { // Temperature Measurement
+      if (length >= 5) {
+        int32_t mantissa = (int32_t)(data[1] | (data[2] << 8) | (data[3] << 16));
+        if (mantissa & 0x800000) mantissa |= 0xFF000000; // sign extend
+        int8_t exponent = (int8_t)data[4];
+        float temperature = mantissa * pow(10.0f, exponent);
+        String unit = (data[0] & 0x01) ? "F" : "C";
+        Serial.printf(" | Temperature: %.2f °%s", temperature, unit.c_str());
+        logLine += " | Temperature: " + String(temperature, 2) + " °" + unit;
+      }
+    } else if (uuid == "2a6e" || uuid == "0x2a6e") { // Environmental Sensing: Temperature
+      if (length >= 2) {
+        int16_t tempRaw = (int16_t)(data[0] | (data[1] << 8));
+        float temperature = tempRaw / 100.0f;
+        Serial.printf(" | Env Temperature: %.2f °C", temperature);
+        logLine += " | Env Temperature: " + String(temperature, 2) + " °C";
+      }
+    } else if (uuid == "2a6f" || uuid == "0x2a6f") { // Environmental Sensing: Humidity
+      if (length >= 2) {
+        uint16_t humRaw = (uint16_t)(data[0] | (data[1] << 8));
+        float humidity = humRaw / 100.0f;
+        Serial.printf(" | Humidity: %.2f%%", humidity);
+        logLine += " | Humidity: " + String(humidity, 2) + "%";
+      }
+    } else if (uuid == "2a6d" || uuid == "0x2a6d") { // Environmental Sensing: Pressure
+      if (length >= 4) {
+        uint32_t presRaw = (uint32_t)(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24));
+        float pressure = presRaw / 10.0f;
+        Serial.printf(" | Pressure: %.1f hPa", pressure);
+        logLine += " | Pressure: " + String(pressure, 1) + " hPa";
+      }
+    } else if (uuid == "2a77" || uuid == "0x2a77") { // Illuminance
+      if (length >= 2) {
+        uint16_t luxRaw = (uint16_t)(data[0] | (data[1] << 8));
+        Serial.printf(" | Illuminance: %u lux", luxRaw);
+        logLine += " | Illuminance: " + String(luxRaw) + " lux";
+      }
+    } else if (uuid == "2a5c" || uuid == "0x2a5c") { // CO2 Concentration
+      if (length >= 2) {
+        uint16_t co2Raw = (uint16_t)(data[0] | (data[1] << 8));
+        Serial.printf(" | CO2: %u ppm", co2Raw);
+        logLine += " | CO2: " + String(co2Raw) + " ppm";
+      }
+    } else if (uuid == "2a4d" || uuid == "0x2a4d") { // HID Report
+      if (length >= 1) {
+        uint8_t reportId = data[0];
+        Serial.printf(" | HID Report ID: %u", reportId);
+        logLine += " | HID Report ID: " + String(reportId);
+        if (length > 1) {
+          Serial.printf(" | HID Data: ");
+          String hidData;
+          for (size_t i = 1; i < length; ++i) {
+            Serial.printf("%02X ", data[i]);
+            hidData += String(data[i], HEX);
+            if (i < length - 1) hidData += " ";
+          }
+          logLine += " | HID Data: " + hidData;
+        }
+      }
+    }
+
+    Serial.println();
+    sdLogger.writeCategory(logLine);
+}
+
 bool isTarget = false;
 
 #define MAX_SEEN_DEVICES 1000
@@ -318,9 +457,9 @@ void scanForDevices() {
             targetConnects++;
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-              xTaskCreate(showGlassesExpressionTask, "BLEGlases", 4096, NULL, 0, NULL);
+              xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlases", 4096, NULL, 0, NULL, 1);
             }
-      
+
             //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
             //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
             //temperatureService = TemperatureServiceHandler::readTemperature(pClient);
@@ -394,7 +533,7 @@ void scanForDevices() {
                 delay(2000);
                 if (!isAngryTaskRunning) {
                   //logToSerialAndWeb("showAngryExpressionTask");
-                  xTaskCreate(showAngryExpressionTask, "AngryFace", 2048, NULL, 4, NULL);
+                  xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, NULL, 1);
                 }
                 isTarget = true;
                 break;
@@ -412,7 +551,7 @@ void scanForDevices() {
                 logToSerialAndWeb(String("     - ") + names.c_str());
               }
             }
-            
+
             delay(100);
             float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
             logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
@@ -486,9 +625,12 @@ void scanForDevices() {
                 manufacturerName.c_str(), 
                 deviceInfoService
             );
+
+            // Subscribe to notifications for all characteristics that support it
+            subscribeToAllNotifications(pClient, genericNotifyCallback);
             
             //logToSerialAndWeb("Write Data to SD Logger");
-            delay(100);
+            delay(500);
 
             sdLogger.writeUncovered(exposure);
 
@@ -518,7 +660,7 @@ void scanForDevices() {
             logToSerialAndWeb("----------------------------------");
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
             //logToSerialAndWeb("showSadExpressionTask");
-            xTaskCreate(showSadExpressionTask, "SadFace", 2048, NULL, 1, NULL);
+            xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, NULL, 1);
           }
         }
       }
