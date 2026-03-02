@@ -61,7 +61,7 @@ void SDLogger::writeDeviceInfo( const String& address,
 {
     if (!initialized || !dataFile) return;
     
-    dataFile.println("\n--------- New Target ----------");
+    //dataFile.println("\n--------- New Target ----------");
     dataFile.println("\nDevice Info");
     dataFile.println("   Address: " + address);
 

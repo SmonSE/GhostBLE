@@ -42,12 +42,16 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
 
     // -------- Exposure evaluation --------
 
-    if (dev.isPublicMac) {
+
+    // Combine public and static MAC address reasons if both are true
+    if (dev.isPublicMac && dev.hasStaticMac) {
+        score += 40; // public
+        score += 20; // static
+        result.reasons.push_back("public static MAC address");
+    } else if (dev.isPublicMac) {
         score += 40;
         result.reasons.push_back("public MAC address");
-    }
-
-    if (dev.hasStaticMac) {
+    } else if (dev.hasStaticMac) {
         score += 20;
         result.reasons.push_back("static MAC address");
     }

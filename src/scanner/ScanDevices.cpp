@@ -37,9 +37,12 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
             if (!characteristic) continue;
             if (characteristic->canNotify()) {
                 characteristic->subscribe(true, notifyCallback);
-                Serial.printf("   Subscribed to notifis for char %s in service %s\n",
-                    characteristic->getUUID().toString().c_str(),
-                    service->getUUID().toString().c_str());
+                logToSerialAndWeb(
+                  String("   Subscribed to notifis for char ") +
+                  characteristic->getUUID().toString().c_str() +
+                  " in service " +
+                  service->getUUID().toString().c_str()
+                );
             }
         }
     }
@@ -48,12 +51,14 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
 // Example generic notification callback
 void genericNotifyCallback(NimBLERemoteCharacteristic* pChar, uint8_t* data, size_t length, bool isNotify) {
     std::string uuid = pChar->getUUID().toString();
-    Serial.printf("   [Notifis] Char UUID: %s, Data: ", uuid.c_str());
+    logToSerialAndWeb(String("   [Notifis] Char UUID: ") + uuid.c_str() + ", Data: ");
     String hexData;
     for (size_t i = 0; i < length; ++i) {
-        Serial.printf("%02X ", data[i]);
-        hexData += String(data[i], HEX);
-        if (i < length - 1) hexData += " ";
+      char buf[8];
+      snprintf(buf, sizeof(buf), "%02X", data[i]);
+      logToSerialAndWeb(String(buf));
+      hexData += String(data[i], HEX);
+      if (i < length - 1) hexData += " ";
     }
 
     String logLine = "   BLE Notify: UUID=" + String(uuid.c_str()) + ", Data=" + hexData;
@@ -69,22 +74,22 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar, uint8_t* data, siz
         } else {
           hr = data[1];
         }
-        Serial.printf(" | Heart Rate: %u bpm", hr);
+        logToSerialAndWeb(String(" | Heart Rate: ") + String(hr) + " bpm");
         logLine += " | Heart Rate: " + String(hr) + " bpm";
       }
     } else if (uuid == "2a53" || uuid == "0x2a53") { // Step Count or Glucose Measurement (example, may differ)
       if (length >= 4) {
         uint32_t steps = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-        Serial.printf(" | Step Count: %u", steps);
+        logToSerialAndWeb(String(" | Step Count: ") + String(steps));
         logLine += " | Step Count: " + String(steps);
       } else if (length >= 2) {
         uint16_t glucose = data[1];
-        Serial.printf(" | Glucose (raw): %u", glucose);
+        logToSerialAndWeb(String(" | Glucose (raw): ") + String(glucose));
         logLine += " | Glucose (raw): " + String(glucose);
       }
     } else if (uuid == "2a19" || uuid == "0x2a19") { // Battery Level
       if (length >= 1) {
-        Serial.printf(" | Battery Level: %u%%", data[0]);
+        logToSerialAndWeb(String(" | Battery Level: ") + String(data[0]) + "%");
         logLine += " | Battery Level: " + String(data[0]) + "%";
       }
     } else if (uuid == "2a2b" || uuid == "0x2a2b") { // Current Time
@@ -95,8 +100,9 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar, uint8_t* data, siz
         uint8_t hour = data[4];
         uint8_t minute = data[5];
         uint8_t second = data[6];
-        Serial.printf(" | Current Time: %04u-%02u-%02u %02u:%02u:%02u",
-          year, month, day, hour, minute, second);
+        char buf[32];
+        snprintf(buf, sizeof(buf), " | Current Time: %04u-%02u-%02u %02u:%02u:%02u", year, month, day, hour, minute, second);
+        logToSerialAndWeb(String(buf));
         logLine += " | Current Time: " + String(year) + "-" + String(month) + "-" + String(day) + " " + String(hour) + ":" + String(minute) + ":" + String(second);
       }
     } else if (uuid == "2a1c" || uuid == "0x2a1c") { // Temperature Measurement
@@ -106,52 +112,54 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar, uint8_t* data, siz
         int8_t exponent = (int8_t)data[4];
         float temperature = mantissa * pow(10.0f, exponent);
         String unit = (data[0] & 0x01) ? "F" : "C";
-        Serial.printf(" | Temperature: %.2f °%s", temperature, unit.c_str());
+        logToSerialAndWeb(String(" | Temperature: ") + String(temperature, 2) + " °" + unit);
         logLine += " | Temperature: " + String(temperature, 2) + " °" + unit;
       }
     } else if (uuid == "2a6e" || uuid == "0x2a6e") { // Environmental Sensing: Temperature
       if (length >= 2) {
         int16_t tempRaw = (int16_t)(data[0] | (data[1] << 8));
         float temperature = tempRaw / 100.0f;
-        Serial.printf(" | Env Temperature: %.2f °C", temperature);
+        logToSerialAndWeb(String(" | Env Temperature: ") + String(temperature, 2) + " °C");
         logLine += " | Env Temperature: " + String(temperature, 2) + " °C";
       }
     } else if (uuid == "2a6f" || uuid == "0x2a6f") { // Environmental Sensing: Humidity
       if (length >= 2) {
         uint16_t humRaw = (uint16_t)(data[0] | (data[1] << 8));
         float humidity = humRaw / 100.0f;
-        Serial.printf(" | Humidity: %.2f%%", humidity);
+        logToSerialAndWeb(String(" | Humidity: ") + String(humidity, 2) + "%");
         logLine += " | Humidity: " + String(humidity, 2) + "%";
       }
     } else if (uuid == "2a6d" || uuid == "0x2a6d") { // Environmental Sensing: Pressure
       if (length >= 4) {
         uint32_t presRaw = (uint32_t)(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24));
         float pressure = presRaw / 10.0f;
-        Serial.printf(" | Pressure: %.1f hPa", pressure);
+        logToSerialAndWeb(String(" | Pressure: ") + String(pressure, 1) + " hPa");
         logLine += " | Pressure: " + String(pressure, 1) + " hPa";
       }
     } else if (uuid == "2a77" || uuid == "0x2a77") { // Illuminance
       if (length >= 2) {
         uint16_t luxRaw = (uint16_t)(data[0] | (data[1] << 8));
-        Serial.printf(" | Illuminance: %u lux", luxRaw);
+        logToSerialAndWeb(String(" | Illuminance: ") + String(luxRaw) + " lux");
         logLine += " | Illuminance: " + String(luxRaw) + " lux";
       }
     } else if (uuid == "2a5c" || uuid == "0x2a5c") { // CO2 Concentration
       if (length >= 2) {
         uint16_t co2Raw = (uint16_t)(data[0] | (data[1] << 8));
-        Serial.printf(" | CO2: %u ppm", co2Raw);
+        logToSerialAndWeb(String(" | CO2: ") + String(co2Raw) + " ppm");
         logLine += " | CO2: " + String(co2Raw) + " ppm";
       }
     } else if (uuid == "2a4d" || uuid == "0x2a4d") { // HID Report
       if (length >= 1) {
         uint8_t reportId = data[0];
-        Serial.printf(" | HID Report ID: %u", reportId);
+        logToSerialAndWeb(String(" | HID Report ID: ") + String(reportId));
         logLine += " | HID Report ID: " + String(reportId);
         if (length > 1) {
-          Serial.printf(" | HID Data: ");
+          logToSerialAndWeb(" | HID Data: ");
           String hidData;
           for (size_t i = 1; i < length; ++i) {
-            Serial.printf("%02X ", data[i]);
+            char buf[8];
+            snprintf(buf, sizeof(buf), "%02X", data[i]);
+            logToSerialAndWeb(String(" | HID Data: ") + String(buf));
             hidData += String(data[i], HEX);
             if (i < length - 1) hidData += " ";
           }
@@ -349,7 +357,7 @@ void scanForDevices() {
         seenDevices.insert(std::string(address.c_str()));
 
         // Risk factor: Weak/default device name
-        if (localName == "< -- >" || localName == "BLE Device" || localName == "Unknown") {
+        if (localName == "< -- >" || localName == "BLE Device" || localName == "Random") {
           hasWeakName = true;
         }
 
@@ -420,8 +428,6 @@ void scanForDevices() {
         logToSerialAndWeb("   Device is not connectable");
       }
 
-      //logToSerialAndWeb(String("   Trying to connect to MAC: ") + address);
-
       pClient = NimBLEDevice::createClient();
       delay(1000);
 
@@ -464,6 +470,10 @@ void scanForDevices() {
             //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
             //temperatureService = TemperatureServiceHandler::readTemperature(pClient);
             //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+
+            // Subscribe to notifications for all characteristics that support it
+            logToSerialAndWeb("Sub to Notifi all Chars");
+            subscribeToAllNotifications(pClient, genericNotifyCallback);
       
             for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
               NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
@@ -611,10 +621,6 @@ void scanForDevices() {
                 manufacturerName.c_str(), 
                 deviceInfoService
             );
-
-            // Subscribe to notifications for all characteristics that support it
-            logToSerialAndWeb("Sub to Notifi all Chars");
-            subscribeToAllNotifications(pClient, genericNotifyCallback);
             
             //logToSerialAndWeb("Write Data to SD Logger");
             delay(250);
@@ -635,6 +641,7 @@ void scanForDevices() {
             logToSerialAndWeb("----------------------------------");
 
             sdLogger.writeUncovered(exposure);
+            delay(250);
 
             // Clear uuidList / nameList after Stored to SD Card
             uuidList.clear();
@@ -664,6 +671,26 @@ void scanForDevices() {
             //logToSerialAndWeb("showSadExpressionTask");
             xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, NULL, 1);
           }
+
+          // Move to isTargetDevice to log on SD card
+          if (!localName.isEmpty())
+          {
+            sdLogger.writeDeviceInfo(
+                  address, 
+                  localName, 
+                  nameList, 
+                  manufacturerName.c_str(), 
+                  deviceInfoService
+            );
+            delay(500);
+            sdLogger.writeUncovered(exposure);
+            delay(250);
+          }
+
+
+          // Clear uuidList / nameList after Stored to SD Card
+          uuidList.clear();
+          nameList.clear();
         }
       }
       if (pClient != nullptr && pClient->isConnected()) {

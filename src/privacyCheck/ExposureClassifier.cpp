@@ -30,6 +30,8 @@ bool looksLikePersonalName(const std::string& name)
     if (lower.find(" von ") != std::string::npos) return true;
     if (lower.find("'s ") != std::string::npos) return true;
     if (lower.find("’s ") != std::string::npos) return true;
+    if (lower.find("von") != std::string::npos) return true;
+    if (lower.find("from") != std::string::npos) return true;
 
     // Weak indicators
     bool deviceWord =
@@ -37,7 +39,9 @@ bool looksLikePersonalName(const std::string& name)
         lower.find("ipad") != std::string::npos ||
         lower.find("galaxy") != std::string::npos ||
         lower.find("pixel") != std::string::npos ||
-        lower.find("airpods") != std::string::npos;
+        lower.find("airpods") != std::string::npos ||
+        lower.find("smart") != std::string::npos ||
+        lower.find("tag") != std::string::npos;
 
     bool hasSpace = lower.find(" ") != std::string::npos;
 
