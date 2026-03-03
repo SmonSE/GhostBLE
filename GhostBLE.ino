@@ -21,6 +21,7 @@
 #include "src/images/nibblesHeartRight.h"
 #include "src/images/nibblesHappy.h"
 #include "src/images/nibblesThugLife.h"
+#include "src/images/nibblesBubble.h"
 
 #include "src/logToSerialAndWeb/logger.h"
 

@@ -4,9 +4,9 @@ import os
 def is_magentaish(r, g, b, tolerance=180):
     return abs(r - 255) < tolerance and g < tolerance and abs(b - 255) < tolerance
 
-def convert_png_with_transparency(png_path, output_name="nibblesThugLife"):
+def convert_png_with_transparency(png_path, output_name="speechBubble"):
     img = Image.open(png_path).convert("RGB")
-    img = img.resize((80, 36))  # z. B. angry expression
+    img = img.resize((110, 40))  # z. B. angry expression
 
     width, height = img.size
     pixels = img.load()
@@ -28,4 +28,4 @@ def convert_png_with_transparency(png_path, output_name="nibblesThugLife"):
     print(f"#define {output_name.upper()}_HEIGHT {height}")
 
 # Beispielaufruf
-convert_png_with_transparency("nibbles_thug_life_2.png", output_name="nibblesThugLife")
+convert_png_with_transparency("nibblesBubble.png", output_name="speechBubble")

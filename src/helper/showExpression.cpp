@@ -13,6 +13,7 @@
 #include "../images/nibblesHeartLeft.h"
 #include "../images/nibblesHeartRight.h"
 #include "../images/nibblesThugLife.h"
+#include "src/images/nibblesBubble.h"
 
 static float smoothedVoltage = 0;
 static int displayedPercent = 100;
@@ -29,12 +30,26 @@ void showGlassesExpressionTask(void* parameter) {
 
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+
+    if (localName.length() > 0) {
+      if(localName.length() > 14) {
+        localName = localName.substring(0, 15) + "...";
+      }
+      drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
+      delay(200);
+      M5.Lcd.setTextColor(BLACK); 
+      //M5.Lcd.setFont(&fonts::Font2); 
+      M5.Lcd.setTextSize(1); 
+      M5.Lcd.setCursor(140, 27);
+      M5.Lcd.println(localName.c_str());
+      vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+    }
   
     isGlassesTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
-  
+
   
 void showAngryExpressionTask(void* parameter) {
     isAngryTaskRunning = true;
@@ -59,12 +74,25 @@ void showSadExpressionTask(void* parameter) {
     drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
 
+    if (localName.length() > 0) {
+      if(localName.length() > 14) {
+        localName = localName.substring(0, 15) + "...";
+      }
+      drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
+      delay(200);
+      M5.Lcd.setTextColor(BLACK); 
+      //M5.Lcd.setFont(&fonts::Font2); 
+      M5.Lcd.setTextSize(1); 
+      M5.Lcd.setCursor(140, 27);
+      M5.Lcd.println(localName.c_str());
+    }
+
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
-  
+
     isSadTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
@@ -75,7 +103,9 @@ void showHappyExpressionTask(void* parameter) {
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
-  
+
+    vTaskDelay(pdMS_TO_TICKS(4000));  // 4 Sekunden
+
     isHappyTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }

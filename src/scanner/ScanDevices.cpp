@@ -646,6 +646,9 @@ void scanForDevices() {
             // Clear uuidList / nameList after Stored to SD Card
             uuidList.clear();
             nameList.clear();
+            localName.clear();
+            manufacturerName.clear();
+            deviceInfoService.clear();
           }
         } else {
             logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
@@ -689,8 +692,12 @@ void scanForDevices() {
 
 
           // Clear uuidList / nameList after Stored to SD Card
+
           uuidList.clear();
           nameList.clear();
+          localName.clear();
+          manufacturerName.clear();
+          deviceInfoService.clear();
         }
       }
       if (pClient != nullptr && pClient->isConnected()) {
