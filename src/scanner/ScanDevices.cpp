@@ -35,7 +35,7 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
         auto characteristics = service->getCharacteristics(true); // returns std::vector<NimBLERemoteCharacteristic*>
         for (auto* characteristic : characteristics) {
             if (!characteristic) continue;
-            if (characteristic->canNotify()) {
+            if (characteristic->canNotify() && characteristic->canRead()) {
                 characteristic->subscribe(true, notifyCallback);
                 logToSerialAndWeb(
                   String("   Subscribed to notifis for char ") +
@@ -48,124 +48,128 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
     }
 }
 
-// Example generic notification callback
-void genericNotifyCallback(NimBLERemoteCharacteristic* pChar, uint8_t* data, size_t length, bool isNotify) {
-    std::string uuid = pChar->getUUID().toString();
-    logToSerialAndWeb(String("   [Notifis] Char UUID: ") + uuid.c_str() + ", Data: ");
-    String hexData;
+void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
+                           uint8_t* data,
+                           size_t length,
+                           bool isNotify) {
+
+    NimBLEUUID charUUID = pChar->getUUID();
+    std::string uuidStr = charUUID.toString();
+
+    String logLine = "BLE Notify: UUID=" + String(uuidStr.c_str());
+
+    // ---------- ASCII Extraction (min length 4) ----------
+    String asciiExtracted;
+    String currentSequence;
+
     for (size_t i = 0; i < length; ++i) {
-      char buf[8];
-      snprintf(buf, sizeof(buf), "%02X", data[i]);
-      logToSerialAndWeb(String(buf));
-      hexData += String(data[i], HEX);
-      if (i < length - 1) hexData += " ";
+        if (data[i] >= 32 && data[i] <= 126) {
+            currentSequence += (char)data[i];
+        } else {
+            if (currentSequence.length() >= 4) {
+                asciiExtracted += currentSequence + " ";
+            }
+            currentSequence = "";
+        }
     }
 
-    String logLine = "   BLE Notify: UUID=" + String(uuid.c_str()) + ", Data=" + hexData;
+    // catch trailing sequence
+    if (currentSequence.length() >= 4) {
+        asciiExtracted += currentSequence;
+    }
 
-    // Human-readable decoding for known characteristics
-    if (uuid == "2a37" || uuid == "0x2a37") { // Heart Rate Measurement
-      if (length >= 2) {
-        uint8_t flags = data[0];
-        uint16_t hr = 0;
-        if (flags & 0x01) {
-          if (length >= 3)
-            hr = data[1] | (data[2] << 8);
-        } else {
-          hr = data[1];
+    // ---------- Detect Full ASCII ----------
+    bool allPrintable = true;
+    for (size_t i = 0; i < length; ++i) {
+        if (data[i] < 32 || data[i] > 126) {
+            allPrintable = false;
+            break;
         }
-        logToSerialAndWeb(String(" | Heart Rate: ") + String(hr) + " bpm");
-        logLine += " | Heart Rate: " + String(hr) + " bpm";
-      }
-    } else if (uuid == "2a53" || uuid == "0x2a53") { // Step Count or Glucose Measurement (example, may differ)
-      if (length >= 4) {
-        uint32_t steps = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-        logToSerialAndWeb(String(" | Step Count: ") + String(steps));
-        logLine += " | Step Count: " + String(steps);
-      } else if (length >= 2) {
-        uint16_t glucose = data[1];
-        logToSerialAndWeb(String(" | Glucose (raw): ") + String(glucose));
-        logLine += " | Glucose (raw): " + String(glucose);
-      }
-    } else if (uuid == "2a19" || uuid == "0x2a19") { // Battery Level
-      if (length >= 1) {
-        logToSerialAndWeb(String(" | Battery Level: ") + String(data[0]) + "%");
-        logLine += " | Battery Level: " + String(data[0]) + "%";
-      }
-    } else if (uuid == "2a2b" || uuid == "0x2a2b") { // Current Time
-      if (length >= 7) {
-        uint16_t year = data[0] | (data[1] << 8);
-        uint8_t month = data[2];
-        uint8_t day = data[3];
-        uint8_t hour = data[4];
-        uint8_t minute = data[5];
-        uint8_t second = data[6];
-        char buf[32];
-        snprintf(buf, sizeof(buf), " | Current Time: %04u-%02u-%02u %02u:%02u:%02u", year, month, day, hour, minute, second);
-        logToSerialAndWeb(String(buf));
-        logLine += " | Current Time: " + String(year) + "-" + String(month) + "-" + String(day) + " " + String(hour) + ":" + String(minute) + ":" + String(second);
-      }
-    } else if (uuid == "2a1c" || uuid == "0x2a1c") { // Temperature Measurement
-      if (length >= 5) {
-        int32_t mantissa = (int32_t)(data[1] | (data[2] << 8) | (data[3] << 16));
-        if (mantissa & 0x800000) mantissa |= 0xFF000000; // sign extend
-        int8_t exponent = (int8_t)data[4];
-        float temperature = mantissa * pow(10.0f, exponent);
-        String unit = (data[0] & 0x01) ? "F" : "C";
-        logToSerialAndWeb(String(" | Temperature: ") + String(temperature, 2) + " °" + unit);
-        logLine += " | Temperature: " + String(temperature, 2) + " °" + unit;
-      }
-    } else if (uuid == "2a6e" || uuid == "0x2a6e") { // Environmental Sensing: Temperature
-      if (length >= 2) {
-        int16_t tempRaw = (int16_t)(data[0] | (data[1] << 8));
-        float temperature = tempRaw / 100.0f;
-        logToSerialAndWeb(String(" | Env Temperature: ") + String(temperature, 2) + " °C");
-        logLine += " | Env Temperature: " + String(temperature, 2) + " °C";
-      }
-    } else if (uuid == "2a6f" || uuid == "0x2a6f") { // Environmental Sensing: Humidity
-      if (length >= 2) {
-        uint16_t humRaw = (uint16_t)(data[0] | (data[1] << 8));
-        float humidity = humRaw / 100.0f;
-        logToSerialAndWeb(String(" | Humidity: ") + String(humidity, 2) + "%");
-        logLine += " | Humidity: " + String(humidity, 2) + "%";
-      }
-    } else if (uuid == "2a6d" || uuid == "0x2a6d") { // Environmental Sensing: Pressure
-      if (length >= 4) {
-        uint32_t presRaw = (uint32_t)(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24));
-        float pressure = presRaw / 10.0f;
-        logToSerialAndWeb(String(" | Pressure: ") + String(pressure, 1) + " hPa");
-        logLine += " | Pressure: " + String(pressure, 1) + " hPa";
-      }
-    } else if (uuid == "2a77" || uuid == "0x2a77") { // Illuminance
-      if (length >= 2) {
-        uint16_t luxRaw = (uint16_t)(data[0] | (data[1] << 8));
-        logToSerialAndWeb(String(" | Illuminance: ") + String(luxRaw) + " lux");
-        logLine += " | Illuminance: " + String(luxRaw) + " lux";
-      }
-    } else if (uuid == "2a5c" || uuid == "0x2a5c") { // CO2 Concentration
-      if (length >= 2) {
-        uint16_t co2Raw = (uint16_t)(data[0] | (data[1] << 8));
-        logToSerialAndWeb(String(" | CO2: ") + String(co2Raw) + " ppm");
-        logLine += " | CO2: " + String(co2Raw) + " ppm";
-      }
-    } else if (uuid == "2a4d" || uuid == "0x2a4d") { // HID Report
-      if (length >= 1) {
-        uint8_t reportId = data[0];
-        logToSerialAndWeb(String(" | HID Report ID: ") + String(reportId));
-        logLine += " | HID Report ID: " + String(reportId);
-        if (length > 1) {
-          logToSerialAndWeb(" | HID Data: ");
-          String hidData;
-          for (size_t i = 1; i < length; ++i) {
-            char buf[8];
-            snprintf(buf, sizeof(buf), "%02X", data[i]);
-            logToSerialAndWeb(String(" | HID Data: ") + String(buf));
-            hidData += String(data[i], HEX);
-            if (i < length - 1) hidData += " ";
-          }
-          logLine += " | HID Data: " + hidData;
+    }
+
+    if (allPrintable && length > 0) {
+        String fullAscii;
+        for (size_t i = 0; i < length; ++i) {
+            fullAscii += (char)data[i];
         }
-      }
+
+        logToSerialAndWeb("   FULL ASCII: " + fullAscii);
+        logLine += " | " + fullAscii;
+    }
+    else if (asciiExtracted.length() > 0) {
+        logToSerialAndWeb("   ASCII: " + asciiExtracted);
+        logLine += " | " + asciiExtracted;
+    }
+
+    // ---------- Safe 16-bit UUID Handling (Version-Independent) ----------
+    if (charUUID.bitSize() == 16) {
+
+        // Convert to lowercase string
+        std::string uuidLower = charUUID.toString();
+        std::transform(uuidLower.begin(), uuidLower.end(), uuidLower.begin(), ::tolower);
+
+        // Extract first 4 hex characters (standard BLE base UUID format)
+        // Example:
+        // 00002a37-0000-1000-8000-00805f9b34fb
+        //       ^^^^
+        uint16_t shortUUID = 0;
+
+        if (uuidLower.length() >= 8) {
+            std::string shortPart = uuidLower.substr(4, 4);
+            shortUUID = (uint16_t) strtol(shortPart.c_str(), nullptr, 16);
+        }
+
+        switch (shortUUID) {
+
+            case 0x2A37: { // Heart Rate Measurement
+                if (length >= 2) {
+                    uint8_t flags = data[0];
+                    uint16_t hr = 0;
+
+                    if (flags & 0x01) {
+                        if (length >= 3)
+                            hr = data[1] | (data[2] << 8);
+                    } else {
+                        hr = data[1];
+                    }
+
+                    logToSerialAndWeb(" | Heart Rate: " + String(hr) + " bpm");
+                    logLine += " | Heart Rate: " + String(hr) + " bpm";
+                }
+                break;
+            }
+
+            case 0x2A19: { // Battery Level
+                if (length >= 1) {
+                    logToSerialAndWeb(" | Battery Level: " + String(data[0]) + "%");
+                    logLine += " | Battery Level: " + String(data[0]) + "%";
+                }
+                break;
+            }
+
+            case 0x2A2B: { // Current Time
+                if (length >= 7) {
+                    uint16_t year   = data[0] | (data[1] << 8);
+                    uint8_t month   = data[2];
+                    uint8_t day     = data[3];
+                    uint8_t hour    = data[4];
+                    uint8_t minute  = data[5];
+                    uint8_t second  = data[6];
+
+                    char buf[40];
+                    snprintf(buf, sizeof(buf),
+                            " | Current Time: %04u-%02u-%02u %02u:%02u:%02u",
+                            year, month, day, hour, minute, second);
+
+                    logToSerialAndWeb(String(buf));
+                    logLine += String(buf);
+                }
+                break;
+            }
+
+            default:
+                break;
+        }
     }
 
     Serial.println();
@@ -551,9 +555,10 @@ void scanForDevices() {
             }
 
             logToSerialAndWeb("Device Infos");
-            logToSerialAndWeb(String("   Adress: " + address));
-            logToSerialAndWeb(String("   Name:   " + localName));
-            logToSerialAndWeb(String("   Manuf.: " + manufacturerName));
+            logToSerialAndWeb(String("   Adress:  " + address));
+            logToSerialAndWeb(String("   Name:    " + localName));
+            logToSerialAndWeb(String("   Manuf.:  " + manufacturerName));
+            
             delay(100);
             logToSerialAndWeb("   Device Name: ");
             for (const auto& names : nameList) {
@@ -585,7 +590,6 @@ void scanForDevices() {
                   String(beacon.minor),
                   String(beaconDistance, 2),
                   manufacturerName,
-                  manufacturerId,
                   rssi
               );
             }
@@ -618,7 +622,6 @@ void scanForDevices() {
                 address, 
                 localName, 
                 nameList, 
-                manufacturerName.c_str(), 
                 deviceInfoService
             );
             
@@ -682,7 +685,6 @@ void scanForDevices() {
                   address, 
                   localName, 
                   nameList, 
-                  manufacturerName.c_str(), 
                   deviceInfoService
             );
             delay(500);
@@ -690,9 +692,7 @@ void scanForDevices() {
             delay(250);
           }
 
-
           // Clear uuidList / nameList after Stored to SD Card
-
           uuidList.clear();
           nameList.clear();
           localName.clear();

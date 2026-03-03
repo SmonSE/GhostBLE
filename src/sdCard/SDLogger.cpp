@@ -56,7 +56,6 @@ void SDLogger::writeCategory(const String& category)
 void SDLogger::writeDeviceInfo( const String& address, 
                                 const String& localName,
                                 const std::vector<std::string>& nameList,
-                                const String& manuInfo,
                                 const String& deviceInfoString) 
 {
     if (!initialized || !dataFile) return;
@@ -73,7 +72,6 @@ void SDLogger::writeDeviceInfo( const String& address,
 
     //Device Info String: 
     dataFile.println(deviceInfoString);
-    dataFile.println("   " + manuInfo);
 
     dataFile.println("   Characteristic Name:");
     for (const auto& names : nameList) {
@@ -112,7 +110,6 @@ void SDLogger::writeIBeaconInfo(
     const String& minor,
     const String& distance,
     const String& manufacturerName,
-    uint16_t manufacturerId,
     int rssi)
 {
     if (!initialized || !dataFile) return;
@@ -137,9 +134,6 @@ void SDLogger::writeIBeaconInfo(
 
     dataFile.print("Manufacturer: ");
     dataFile.println(manufacturerName);
-
-    dataFile.print("Manufacturer ID: 0x");
-    dataFile.println(manufacturerId, HEX);
 
     dataFile.println("-------------------------------");
 

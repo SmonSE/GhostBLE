@@ -12,7 +12,6 @@ public:
     void writeDeviceInfo(const String& address, 
                          const String& localName, 
                          const std::vector<std::string>& nameList,
-                         const String& manuInfo,
                          const String& deviceInfoString);
 
     void writeIBeaconInfo(
@@ -21,7 +20,6 @@ public:
         const String& minor,
         const String& distance,
         const String& manufacturerName,
-        uint16_t manufacturerId,
         int rssi);
 
     void writeUncovered(const ExposureResult& exposure);
