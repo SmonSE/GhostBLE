@@ -100,25 +100,33 @@ void setup() {
   #endif
 
   M5.Lcd.fillScreen(BLACK);
-  M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));
-  delay(2000);
+  //M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));
+  delay(250);
 
   NimBLEDevice::init("bleDefender");
-
-  #if defined(CARDPUTER)
-  if (!sdLogger.begin(SD_CS_PIN)) {
-    while (1);
-  }
-  #endif
-
   Serial.println("BLE initialized successfully.");
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
+  delay(200);
 
-  //showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-  delay(1000);
+  #if defined(CARDPUTER)
+  if (!sdLogger.begin(SD_CS_PIN)) {
+    M5.Lcd.setTextColor(BLACK); 
+    M5.Lcd.setTextSize(1); 
+    M5.Lcd.setCursor(140, 27);
+    M5.Lcd.println("  NO SD CARD! ");
+    while (1);
+  }
+  #endif
+
+  M5.Lcd.setTextColor(BLACK); 
+  M5.Lcd.setTextSize(1); 
+  M5.Lcd.setCursor(140, 27);
+  M5.Lcd.println(" HI I'M NIBBLES");
+  vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
 
   // **Hier den Webserver und AP direkt starten**
   isWebLogActive = true;     // Status anpassen
