@@ -28,22 +28,40 @@ SDLogger sdLogger;
 // Subscribe to all notifiable characteristics on a connected device
 template<typename Callback>
 void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) {
+  String logSubs = "Subscribing: " ;
     if (!client) return;
     auto services = client->getServices(); // returns std::vector<NimBLERemoteService*>
     for (auto* service : services) {
         if (!service) continue;
         auto characteristics = service->getCharacteristics(true); // returns std::vector<NimBLERemoteCharacteristic*>
         for (auto* characteristic : characteristics) {
-            if (!characteristic) continue;
-            if (characteristic->canNotify() && characteristic->canRead()) {
+          if (!characteristic) continue;
+          if (characteristic->canNotify()) 
+          {
+            if (characteristic->canNotify())
                 characteristic->subscribe(true, notifyCallback);
-                logToSerialAndWeb(
-                  String("   Subscribed to notifis for char ") +
-                  characteristic->getUUID().toString().c_str() +
-                  " in service " +
-                  service->getUUID().toString().c_str()
-                );
+            else if (characteristic->canIndicate())
+                characteristic->subscribe(false, notifyCallback);
+            if (characteristic->canRead()) {
+                std::string val = characteristic->readValue();
+                logToSerialAndWeb(("   Read value length: " + String(val.length())).c_str());
+                logSubs += "   Read value length: " + String(val.length());
             }
+            logToSerialAndWeb(
+                String("   Subscribed to notifis for char ") +
+                characteristic->getUUID().toString().c_str() +
+                " in service " +
+                service->getUUID().toString().c_str()
+            );
+            logSubs += String("   Subscribed to notifis for char ") + 
+                characteristic->getUUID().toString().c_str() +
+                " in service " +
+                service->getUUID().toString().c_str();
+          }
+          if (logSubs.length() > 0) {
+            sdLogger.writeCategory(logSubs);
+          }
+          logSubs = "";
         }
     }
 }
@@ -56,7 +74,61 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
     NimBLEUUID charUUID = pChar->getUUID();
     std::string uuidStr = charUUID.toString();
 
-    String logLine = "BLE Notify: UUID=" + String(uuidStr.c_str());
+    logToSerialAndWeb("BLE Notify");
+    logToSerialAndWeb("   UUID: " + String(uuidStr.c_str()));
+    logToSerialAndWeb("   LEN : " + String(length));
+
+    // ---------- Build HEX + ASCII ----------
+    String hexString;
+    String asciiString;
+
+    hexString.reserve(length * 2);
+    asciiString.reserve(length);
+
+    for (size_t i = 0; i < length; ++i) {
+
+        char buf[4];
+        sprintf(buf, "%02X", data[i]);
+        hexString += buf;
+
+        if (data[i] >= 32 && data[i] <= 126) {
+            asciiString += (char)data[i];
+        } else {
+            asciiString += ".";
+        }
+    }
+    logToSerialAndWeb("   HEX : " + hexString);
+
+    // ---------- Automatic Float32 Detection ----------
+    if (length >= 4 && length % 4 == 0) {
+
+        String floatValues;
+        bool plausible = false;
+
+        for (size_t i = 0; i < length; i += 4) {
+
+            float value;
+            memcpy(&value, &data[i], sizeof(float));   // interpret bytes as float
+
+            // filter unrealistic garbage
+            if (!isnan(value) && !isinf(value) && value > -10000 && value < 10000) {
+
+                floatValues += String(value, 3);
+
+                if (i + 4 < length)
+                    floatValues += " ";
+
+                plausible = true;
+            }
+        }
+
+        if (plausible) {
+            logToSerialAndWeb("   Float32: " + floatValues);
+        }
+    }
+    logToSerialAndWeb("   ASCII: " + asciiString);
+
+    String logLine = "BLE Notify: UUID=" + String(uuidStr.c_str()) + " | HEX=" + hexString;
 
     // ---------- ASCII Extraction (min length 4) ----------
     String asciiExtracted;
@@ -73,45 +145,21 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
         }
     }
 
-    // catch trailing sequence
     if (currentSequence.length() >= 4) {
         asciiExtracted += currentSequence;
     }
 
-    // ---------- Detect Full ASCII ----------
-    bool allPrintable = true;
-    for (size_t i = 0; i < length; ++i) {
-        if (data[i] < 32 || data[i] > 126) {
-            allPrintable = false;
-            break;
-        }
+    if (asciiExtracted.length() > 0) {
+        logToSerialAndWeb("   ASCII Seq: " + asciiExtracted);
+        logLine += " | ASCII=" + asciiExtracted;
     }
 
-    if (allPrintable && length > 0) {
-        String fullAscii;
-        for (size_t i = 0; i < length; ++i) {
-            fullAscii += (char)data[i];
-        }
-
-        logToSerialAndWeb("   FULL ASCII: " + fullAscii);
-        logLine += " | " + fullAscii;
-    }
-    else if (asciiExtracted.length() > 0) {
-        logToSerialAndWeb("   ASCII: " + asciiExtracted);
-        logLine += " | " + asciiExtracted;
-    }
-
-    // ---------- Safe 16-bit UUID Handling (Version-Independent) ----------
+    // ---------- Safe 16-bit UUID Handling ----------
     if (charUUID.bitSize() == 16) {
 
-        // Convert to lowercase string
         std::string uuidLower = charUUID.toString();
         std::transform(uuidLower.begin(), uuidLower.end(), uuidLower.begin(), ::tolower);
 
-        // Extract first 4 hex characters (standard BLE base UUID format)
-        // Example:
-        // 00002a37-0000-1000-8000-00805f9b34fb
-        //       ^^^^
         uint16_t shortUUID = 0;
 
         if (uuidLower.length() >= 8) {
@@ -120,8 +168,7 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
         }
 
         switch (shortUUID) {
-
-            case 0x2A37: { // Heart Rate Measurement
+            case 0x2A37: { // Heart Rate
                 if (length >= 2) {
                     uint8_t flags = data[0];
                     uint16_t hr = 0;
@@ -133,20 +180,18 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
                         hr = data[1];
                     }
 
-                    logToSerialAndWeb(" | Heart Rate: " + String(hr) + " bpm");
-                    logLine += " | Heart Rate: " + String(hr) + " bpm";
+                    logToSerialAndWeb("   Heart Rate: " + String(hr) + " bpm");
+                    logLine += " | HR=" + String(hr);
                 }
                 break;
             }
-
             case 0x2A19: { // Battery Level
                 if (length >= 1) {
-                    logToSerialAndWeb(" | Battery Level: " + String(data[0]) + "%");
-                    logLine += " | Battery Level: " + String(data[0]) + "%";
+                    logToSerialAndWeb("   Battery Level: " + String(data[0]) + "%");
+                    logLine += " | Battery=" + String(data[0]) + "%";
                 }
                 break;
             }
-
             case 0x2A2B: { // Current Time
                 if (length >= 7) {
                     uint16_t year   = data[0] | (data[1] << 8);
@@ -158,21 +203,18 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
 
                     char buf[40];
                     snprintf(buf, sizeof(buf),
-                            " | Current Time: %04u-%02u-%02u %02u:%02u:%02u",
+                            "%04u-%02u-%02u %02u:%02u:%02u",
                             year, month, day, hour, minute, second);
 
-                    logToSerialAndWeb(String(buf));
-                    logLine += String(buf);
+                    logToSerialAndWeb("   Current Time: " + String(buf));
+                    logLine += " | Time=" + String(buf);
                 }
                 break;
             }
-
             default:
                 break;
         }
     }
-
-    Serial.println();
     sdLogger.writeCategory(logLine);
 }
 
