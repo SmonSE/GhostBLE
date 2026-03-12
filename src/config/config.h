@@ -29,9 +29,6 @@ extern const char* CATHACK_SERVICE_UUID_0;
 extern const char* CATHACK_SERVICE_UUID_1;
 extern const char* CATHACK_SERVICE_UUID_2;
 extern const char* CATHACK_SERVICE_UUID_3;
-extern const char* CATHACK_SERVICE_UUID_4;
-extern const char* CATHACK_SERVICE_UUID_5;
-extern const char* CATHACK_SERVICE_UUID_6;
 
 // ===== GPS Pins =====
 // Grove port GPS (e.g. M5Stack GPS Unit on Grove UART)
