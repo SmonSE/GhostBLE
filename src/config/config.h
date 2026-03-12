@@ -40,13 +40,20 @@ extern const char* CATHACK_SERVICE_UUID_3;
   #define GPS_GROVE_TX 32
 #endif
 
-// LoRa cap GPS (e.g. LoRa + GPS hat module)
+// LoRa cap GPS (e.g. LoRa + GPS cap module with ATGM336H)
 #if defined(CARDPUTER)
-  #define GPS_LORA_RX 18
-  #define GPS_LORA_TX 17
+  #define GPS_LORA_RX 15
+  #define GPS_LORA_TX 13
 #elif defined(STICK_C_PLUS2)
   #define GPS_LORA_RX 36
   #define GPS_LORA_TX 26
+#endif
+
+// LoRa SX1262 chip select (shared SPI bus with SD card)
+#if defined(CARDPUTER)
+  #define LORA_CS_PIN 5
+#elif defined(STICK_C_PLUS2)
+  #define LORA_CS_PIN -1
 #endif
 
 #define GPS_BAUD_RATE 9600
