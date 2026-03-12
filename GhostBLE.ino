@@ -30,7 +30,7 @@
 
 
 unsigned long startTimeDevice;
-const unsigned long timerDurationDevice = 60 * 60 * 1000; // 60 Minuten in Millisekunden
+const unsigned long timerDurationDevice = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 const char* ap_ssid = "ESP32-Log";
 const char* ap_password = "12345678";

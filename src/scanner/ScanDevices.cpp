@@ -82,7 +82,8 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
 
 bool isTarget = false;
 
-#define MAX_SEEN_DEVICES 1000
+#define MAX_SEEN_DEVICES 500
+#define MIN_FREE_HEAP_BYTES 20000
 
 struct IBeaconInfo {
   bool valid = false;
@@ -343,7 +344,9 @@ void scanForDevices() {
         break;
       }
 
-      if (seenDevices.size() >= MAX_SEEN_DEVICES) {
+      if (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES) {
+        Serial.println("Clearing seenDevices (size: " + String(seenDevices.size()) +
+                        ", free heap: " + String(ESP.getFreeHeap()) + ")");
         seenDevices.clear();
       }
 
