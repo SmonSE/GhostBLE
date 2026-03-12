@@ -24,6 +24,11 @@ extern std::atomic<bool> isAngryTaskRunning;
 extern std::atomic<bool> isSadTaskRunning;
 extern std::atomic<bool> isHappyTaskRunning;
 extern std::atomic<bool> isThugLifeTaskRunning;
+
+// FreeRTOS task handles for expression animations
+extern TaskHandle_t glassesTaskHandle;
+extern TaskHandle_t angryTaskHandle;
+extern TaskHandle_t sadTaskHandle;
 extern bool isWebLogActive;
 extern bool is_connectable;
 extern bool bleScanEnabledWeb;

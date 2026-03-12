@@ -18,6 +18,11 @@ std::atomic<bool> isAngryTaskRunning{false};
 std::atomic<bool> isSadTaskRunning{false};
 std::atomic<bool> isHappyTaskRunning{false};
 std::atomic<bool> isThugLifeTaskRunning{false};
+
+TaskHandle_t glassesTaskHandle = NULL;
+TaskHandle_t angryTaskHandle = NULL;
+TaskHandle_t sadTaskHandle = NULL;
+
 bool isWebLogActive = false;
 bool is_connectable = false;
 bool bleScanEnabledWeb = false;
