@@ -34,8 +34,8 @@
 unsigned long startTimeDevice;
 const unsigned long timerDurationDevice = 60 * 60 * 1000; // 60 Minuten in Millisekunden
 
-const char* ap_ssid = "ESP32-Log";
-const char* ap_password = "12345678";
+const char* ap_ssid = WIFI_AP_SSID;
+const char* ap_password = WIFI_AP_PASSWORD;
 
 AsyncWebServer server(80);
 

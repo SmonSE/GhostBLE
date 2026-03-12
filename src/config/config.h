@@ -51,6 +51,10 @@ extern const char* CATHACK_SERVICE_UUID_3;
 
 #define GPS_BAUD_RATE 9600
 
+// ===== WiFi AP Settings =====
+#define WIFI_AP_SSID "GhostBLE"
+#define WIFI_AP_PASSWORD "ghostble123!"
+
 // ===== Time Intervals =====
 #define FACE_UPDATE_INTERVAL_MS 1000
 
