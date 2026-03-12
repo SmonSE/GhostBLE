@@ -1,7 +1,8 @@
 #include "globals.h"
 #include <set>
 #include <string>
-#include <vector> 
+#include <vector>
+#include <atomic>
 
 std::set<std::string> seenDevices;
 std::vector<std::string> uuidList;
@@ -12,11 +13,11 @@ bool scanIsRunning = false;
 bool targetFound = false;
 bool hasManuData = false;
 bool skipLogging = false;
-bool isGlassesTaskRunning = false;
-bool isAngryTaskRunning = false;
-bool isSadTaskRunning = false;
-bool isHappyTaskRunning = false;
-bool isThugLifeTaskRunning = false;
+std::atomic<bool> isGlassesTaskRunning{false};
+std::atomic<bool> isAngryTaskRunning{false};
+std::atomic<bool> isSadTaskRunning{false};
+std::atomic<bool> isHappyTaskRunning{false};
+std::atomic<bool> isThugLifeTaskRunning{false};
 bool isWebLogActive = false;
 bool is_connectable = false;
 bool bleScanEnabledWeb = false;

@@ -5,7 +5,8 @@
 #include <set>
 #include <string>
 #include <Arduino.h>
-#include <vector> 
+#include <vector>
+#include <atomic>
 
 // ScanDevices seenDevices
 extern std::set<std::string> seenDevices;
@@ -18,11 +19,11 @@ extern bool scanIsRunning;
 extern bool targetFound;
 extern bool hasManuData;
 extern bool skipLogging;
-extern bool isGlassesTaskRunning;
-extern bool isAngryTaskRunning;
-extern bool isSadTaskRunning;
-extern bool isHappyTaskRunning;
-extern bool isThugLifeTaskRunning;
+extern std::atomic<bool> isGlassesTaskRunning;
+extern std::atomic<bool> isAngryTaskRunning;
+extern std::atomic<bool> isSadTaskRunning;
+extern std::atomic<bool> isHappyTaskRunning;
+extern std::atomic<bool> isThugLifeTaskRunning;
 extern bool isWebLogActive;
 extern bool is_connectable;
 extern bool bleScanEnabledWeb;
