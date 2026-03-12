@@ -376,11 +376,6 @@ void scanForDevices() {
               xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlases", 4096, NULL, 0, NULL, 1);
             }
 
-            //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-            //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-            //temperatureService = TemperatureServiceHandler::readTemperature(pClient);
-            //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
-
             // Subscribe to notifications for all characteristics that support it
             logToSerialAndWeb("Sub to Notifi all Chars");
             subscribeToAllNotifications(pClient, genericNotifyCallback);
@@ -393,7 +388,6 @@ void scanForDevices() {
               for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
                 NimBLERemoteCharacteristic* characteristic = *cIt;
                 std::string charUuid = characteristic->getUUID().toString();
-                //Serial.println(String("     Characteristic UUID: ") + charUuid.c_str());
                 uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
 
                 if (charUuid == "2a24") {               // Model Number
@@ -417,7 +411,6 @@ void scanForDevices() {
                     {
                         if (isPrintableText(rawValue))
                         {
-                            //Serial.println(String("     Characteristic Name: ") + rawValue.c_str());
                             dev.gattHasName = true;   // ← missing in many cases
                             nameList.push_back(rawValue);
 
@@ -442,8 +435,6 @@ void scanForDevices() {
 
               if (device != nullptr && !device->getName().empty()) {
                 localName = device->getName().c_str();
-                //logToSerialAndWeb("Replace localName with connected device->getName");
-                //dev.gattHasName = true;
               }
 
               if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
@@ -452,7 +443,6 @@ void scanForDevices() {
                 logToSerialAndWeb("Target Message: !!! Target detected !!!");
                 vTaskDelay(pdMS_TO_TICKS(2000));
                 if (!isAngryTaskRunning) {
-                  //logToSerialAndWeb("showAngryExpressionTask");
                   xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, NULL, 1);
                 }
                 isTarget = true;
@@ -568,7 +558,6 @@ void scanForDevices() {
 
             logToSerialAndWeb("----------------------------------");
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-            //logToSerialAndWeb("showSadExpressionTask");
             xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, NULL, 1);
           }
 
