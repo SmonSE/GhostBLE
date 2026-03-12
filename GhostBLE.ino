@@ -95,6 +95,8 @@ void setup() {
 
   Serial.println("GhostBLE starting...");
 
+  initLogger();
+
   #if defined(CARDPUTER)
   M5.Lcd.setRotation(1);
   #endif
