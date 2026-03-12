@@ -8,3 +8,6 @@
 __pycache__/
 *.pyc
 
+# build files
+build/
+dist/
