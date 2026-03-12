@@ -61,12 +61,13 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
         String battery = String(data[0]) + "%";
 
         logToSerialAndWeb("   Battery Level: " + battery);
-        logLine += " | Battery=" + battery;
+        logLine += " | Battery=" + battery + "%";
     }
 
     if (uuidStr == "2a19" && length == 1) {
         uint8_t battery = data[0];
         Serial.printf("Battery Level: %d%%\n", battery);
+        logLine += " | Battery Level=" + String(battery) + "%";
     }
 
     if (uuidStr.endsWith("2a00"))
