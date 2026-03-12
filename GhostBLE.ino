@@ -100,7 +100,6 @@ void setup() {
   #endif
 
   M5.Lcd.fillScreen(BLACK);
-  //M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));
   delay(250);
 
   NimBLEDevice::init("bleDefender");
@@ -137,11 +136,7 @@ void setup() {
   startTimeDevice = millis();
   scanIsRunning = false;
 
-  //M5.Speaker.tone(1800, 120);
-  //playMysteryBoot();
-
   delay(3000);
-  //playNotificationPro();
 
   toggleWiFi();
 
@@ -158,16 +153,6 @@ void loop() {
   if (M5Cardputer.Keyboard.isChange()) {
     if (M5Cardputer.Keyboard.isPressed()) {
       auto status = M5Cardputer.Keyboard.keysState();
-
-      /*
-      for (char c : status.word) {
-        Serial.printf("Key: %c\n", c);
-
-        if (c == 'w' || c == 'W') {
-          toggleWiFi();
-        }
-      }
-      */
 
       if (status.enter) {
         Serial.println("ENTER pressed");
@@ -187,7 +172,6 @@ void loop() {
 
   // Long press detection for BtnG0
   if (M5Cardputer.BtnA.isPressed()) {
-    //Serial.println("### BUTTON BTN0 PRESSED ###");
     if (!buttonHeld) {
       if (buttonPressStart == 0) {
         buttonPressStart = currentTime;
@@ -268,7 +252,6 @@ void toggleWiFi() {
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   }
 
-  //playNotificationPro(); // optional akustisches Feedback
 }
 
 void stopWebLogServer() {

@@ -60,11 +60,5 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
 
   Serial.print(batteryStr);
 
-  //leakedCounter++;
-  // Crash
-  //if (!isThugLifeTaskRunning) {
-    //xTaskCreate(showThugLifeExpressionTask, "ThugLifeFace", 2048, NULL, 3, NULL);
-  //}
-
   return batteryStr;
 }

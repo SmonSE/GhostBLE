@@ -240,8 +240,7 @@ void handleDevicePrivacy(
         "   Connectable:      " + (is_connectable ? " YES" : " NO");
 
     logToSerialAndWeb(logLineWebSocket);
-    //sdLogger.writeCategory(logLineWebSocket);
-    
+
     // ---- Risk score ----
     if (weakName) riskScore += 3;
     if (!emptyName && !rotating_mac) riskScore += 3;
