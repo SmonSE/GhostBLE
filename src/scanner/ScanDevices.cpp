@@ -19,10 +19,14 @@
 #include "../helper/BLEDecoder.h"
 #include "../gps/GPSManager.h"
 #include "../wardriving/WigleLogger.h"
+#include "../pwnbeacon/PwnBeacon.h"
 
 // Wardriving instances (defined in GhostBLE.ino)
 extern GPSManager gpsManager;
 extern WigleLogger wigleLogger;
+
+// PwnBeacon instance (defined in GhostBLE.ino)
+extern PwnBeaconManager pwnBeacon;
 
 
 NimBLEClient *pClient = nullptr;
@@ -268,6 +272,12 @@ void scanForDevices() {
           continue;
         }
         seenDevices.insert(std::string(address.c_str()));
+
+        // Check for PwnBeacon advertisement
+        if (pwnbeaconEnabled && pwnBeacon.parseAdvertisedDevice(device)) {
+          pwnbeaconPeersFound = pwnBeacon.getPeerCount();
+          logToSerialAndWeb("👾 PwnBeacon peer detected: " + String(device->getAddress().toString().c_str()));
+        }
 
         // Risk factor: Weak/default device name
         if (localName == "< -- >" || localName == "BLE Device" || localName == "Random") {
@@ -618,6 +628,10 @@ void scanForDevices() {
     logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
     logToSerialAndWeb("Suspicious: " + String(susDevice));
     logToSerialAndWeb("Beacons:    " + String(beaconsFound));
+    if (pwnbeaconEnabled) {
+      pwnBeacon.checkGonePeers();
+      logToSerialAndWeb("PwnPeers:   " + String(pwnBeacon.getPeerCount()));
+    }
     if (wardrivingEnabled) {
       logToSerialAndWeb("WiGLE log:  " + String(wigleLogger.getLoggedCount()));
       wigleLogger.flush();

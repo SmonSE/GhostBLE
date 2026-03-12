@@ -28,7 +28,13 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     return true;
   }
 
-  // 3. FLIPPER ZERO UUIDs
+  // 3. PWNAGOTCHI / PwnBeacon
+  if (serviceUuid == "b34c0000-dead-face-1337-c0deba5e0001") {
+    Serial.println("👾 PWNAGOTCHI detected (PwnBeacon)");
+    return true;
+  }
+
+  // 4. FLIPPER ZERO UUIDs
   if (serviceUuid == FLIPPER_BLACK_UUID) {
     Serial.println("🐬 FLIPPER ZERO detected (Black)");
     return true;

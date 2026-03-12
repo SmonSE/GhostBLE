@@ -214,6 +214,14 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
     M5.Lcd.print("WD:ON");
   }
 
+  // PwnBeacon status line
+  if (pwnbeaconEnabled) {
+    M5.Lcd.setTextColor(MAGENTA);
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setCursor(55, 94);
+    M5.Lcd.printf("PB:%d", pwnbeaconPeersFound);
+  }
+
   M5.Lcd.setTextColor(WHITE);
   M5.Lcd.setTextSize(1);
   M5.Lcd.setCursor(5, 104);
