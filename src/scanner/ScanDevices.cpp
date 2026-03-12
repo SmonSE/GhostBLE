@@ -337,7 +337,7 @@ void scanForDevices() {
       }
 
       pClient = NimBLEDevice::createClient();
-      delay(1000);
+      vTaskDelay(pdMS_TO_TICKS(200));
 
       if (!pClient) { // Make sure the client was created
         break;
@@ -448,7 +448,7 @@ void scanForDevices() {
                 targetFound = true;
                 susDevice++;
                 logToSerialAndWeb("Target Message: !!! Target detected !!!");
-                delay(2000);
+                vTaskDelay(pdMS_TO_TICKS(2000));
                 if (!isAngryTaskRunning) {
                   //logToSerialAndWeb("showAngryExpressionTask");
                   xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, NULL, 1);
@@ -462,8 +462,6 @@ void scanForDevices() {
             logToSerialAndWeb(String("   Adress:  " + address));
             logToSerialAndWeb(String("   Name:    " + localName));
             logToSerialAndWeb(String("   Manuf.:  " + manufacturerName));
-            
-            delay(100);
             logToSerialAndWeb("   Device Name: ");
             for (const auto& names : nameList) {
               if (!names.empty()) {
@@ -471,12 +469,9 @@ void scanForDevices() {
               }
             }
 
-            delay(100);
             float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
             logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
-            delay(100);
             logToSerialAndWeb("     - RSSI: " + String(rssi));
-            delay(100);
 
             // iBeacon info
             if (isIBeacon) {
@@ -497,8 +492,6 @@ void scanForDevices() {
                   rssi
               );
             }
-
-            delay(100);
 
             // Analyze exposure and log results
             std::string mac = device->getAddress().toString().c_str();
@@ -529,9 +522,6 @@ void scanForDevices() {
                 deviceInfoService
             );
             
-            //logToSerialAndWeb("Write Data to SD Logger");
-            delay(250);
-
             logToSerialAndWeb("Uncovering Summary");
             logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
             logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
@@ -544,11 +534,9 @@ void scanForDevices() {
                 logToSerialAndWeb("    - " + String(r.c_str()));
             }
 
-            delay(250);
             logToSerialAndWeb("----------------------------------");
 
             sdLogger.writeUncovered(exposure);
-            delay(250);
 
             // Clear uuidList / nameList after Stored to SD Card
             uuidList.clear();
@@ -591,9 +579,7 @@ void scanForDevices() {
                   nameList, 
                   deviceInfoService
             );
-            delay(500);
             sdLogger.writeUncovered(exposure);
-            delay(250);
           }
 
           // Clear uuidList / nameList after Stored to SD Card
@@ -610,22 +596,13 @@ void scanForDevices() {
       NimBLEDevice::deleteClient(pClient);
       pClient = nullptr;
     }
-    delay(100);
     logToSerialAndWeb("##########################");
-    delay(100);
     logToSerialAndWeb("Scan Summary:");
-    delay(100);
     logToSerialAndWeb("Sniffed:    " + String(targetConnects));
-    delay(100);
     logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
-    delay(100);
     logToSerialAndWeb("Suspicious: " + String(susDevice));
-    delay(100);
     logToSerialAndWeb("Beacons:    " + String(beaconsFound));
-    delay(100);
-    
     logToSerialAndWeb("##########################\n");
-    delay(100);
 
     scanIsRunning = false;
   }
