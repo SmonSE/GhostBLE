@@ -16,6 +16,7 @@
 #include "../analyzer/ExposureAnalyzer.h"
 #include "../models/DeviceInfo.h"
 #include "../privacyCheck/ExposureClassifier.h"
+#include "../helper/BLEDecoder.h"
 
 
 NimBLEScan* pScan = nullptr;
@@ -69,153 +70,14 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
 void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
                            uint8_t* data,
                            size_t length,
-                           bool isNotify) {
+                           bool isNotify)
+{
+    if (!pChar || !data || length == 0) return;
 
     NimBLEUUID charUUID = pChar->getUUID();
-    std::string uuidStr = charUUID.toString();
 
-    logToSerialAndWeb("BLE Notify");
-    logToSerialAndWeb("   UUID: " + String(uuidStr.c_str()));
-    logToSerialAndWeb("   LEN : " + String(length));
-
-    // ---------- Build HEX + ASCII ----------
-    String hexString;
-    String asciiString;
-
-    hexString.reserve(length * 2);
-    asciiString.reserve(length);
-
-    for (size_t i = 0; i < length; ++i) {
-
-        char buf[4];
-        sprintf(buf, "%02X", data[i]);
-        hexString += buf;
-
-        if (data[i] >= 32 && data[i] <= 126) {
-            asciiString += (char)data[i];
-        } else {
-            asciiString += ".";
-        }
-    }
-    logToSerialAndWeb("   HEX : " + hexString);
-
-    // ---------- Automatic Float32 Detection ----------
-    if (length >= 4 && length % 4 == 0) {
-
-        String floatValues;
-        bool plausible = false;
-
-        for (size_t i = 0; i < length; i += 4) {
-
-            float value;
-            memcpy(&value, &data[i], sizeof(float));   // interpret bytes as float
-
-            // filter unrealistic garbage
-            if (!isnan(value) && !isinf(value) && value > -10000 && value < 10000) {
-
-                floatValues += String(value, 3);
-
-                if (i + 4 < length)
-                    floatValues += " ";
-
-                plausible = true;
-            }
-        }
-
-        if (plausible) {
-            logToSerialAndWeb("   Float32: " + floatValues);
-        }
-    }
-    logToSerialAndWeb("   ASCII: " + asciiString);
-
-    String logLine = "BLE Notify: UUID=" + String(uuidStr.c_str()) + " | HEX=" + hexString;
-
-    // ---------- ASCII Extraction (min length 4) ----------
-    String asciiExtracted;
-    String currentSequence;
-
-    for (size_t i = 0; i < length; ++i) {
-        if (data[i] >= 32 && data[i] <= 126) {
-            currentSequence += (char)data[i];
-        } else {
-            if (currentSequence.length() >= 4) {
-                asciiExtracted += currentSequence + " ";
-            }
-            currentSequence = "";
-        }
-    }
-
-    if (currentSequence.length() >= 4) {
-        asciiExtracted += currentSequence;
-    }
-
-    if (asciiExtracted.length() > 0) {
-        logToSerialAndWeb("   ASCII Seq: " + asciiExtracted);
-        logLine += " | ASCII=" + asciiExtracted;
-    }
-
-    // ---------- Safe 16-bit UUID Handling ----------
-    if (charUUID.bitSize() == 16) {
-
-        std::string uuidLower = charUUID.toString();
-        std::transform(uuidLower.begin(), uuidLower.end(), uuidLower.begin(), ::tolower);
-
-        uint16_t shortUUID = 0;
-
-        if (uuidLower.length() >= 8) {
-            std::string shortPart = uuidLower.substr(4, 4);
-            shortUUID = (uint16_t) strtol(shortPart.c_str(), nullptr, 16);
-        }
-
-        switch (shortUUID) {
-            case 0x2A37: { // Heart Rate
-                if (length >= 2) {
-                    uint8_t flags = data[0];
-                    uint16_t hr = 0;
-
-                    if (flags & 0x01) {
-                        if (length >= 3)
-                            hr = data[1] | (data[2] << 8);
-                    } else {
-                        hr = data[1];
-                    }
-
-                    logToSerialAndWeb("   Heart Rate: " + String(hr) + " bpm");
-                    logLine += " | HR=" + String(hr);
-                }
-                break;
-            }
-            case 0x2A19: { // Battery Level
-                if (length >= 1) {
-                    logToSerialAndWeb("   Battery Level: " + String(data[0]) + "%");
-                    logLine += " | Battery=" + String(data[0]) + "%";
-                }
-                break;
-            }
-            case 0x2A2B: { // Current Time
-                if (length >= 7) {
-                    uint16_t year   = data[0] | (data[1] << 8);
-                    uint8_t month   = data[2];
-                    uint8_t day     = data[3];
-                    uint8_t hour    = data[4];
-                    uint8_t minute  = data[5];
-                    uint8_t second  = data[6];
-
-                    char buf[40];
-                    snprintf(buf, sizeof(buf),
-                            "%04u-%02u-%02u %02u:%02u:%02u",
-                            year, month, day, hour, minute, second);
-
-                    logToSerialAndWeb("   Current Time: " + String(buf));
-                    logLine += " | Time=" + String(buf);
-                }
-                break;
-            }
-            default:
-                break;
-        }
-    }
-    sdLogger.writeCategory(logLine);
+    // Forward everything to the decoder
+    decodeBLEData(charUUID.toString(), data, length);
 }
 
 bool isTarget = false;
