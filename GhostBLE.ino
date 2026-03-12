@@ -26,6 +26,7 @@
 #include "src/logToSerialAndWeb/logger.h"
 #include "src/gps/GPSManager.h"
 #include "src/wardriving/WigleLogger.h"
+#include "src/pwnbeacon/PwnBeacon.h"
 
 #include <WiFi.h>
 #include <AsyncTCP.h>
@@ -89,6 +90,9 @@ extern SDLogger sdLogger;
 // GPS and wardriving
 GPSManager gpsManager;
 WigleLogger wigleLogger;
+
+// PwnBeacon
+PwnBeaconManager pwnBeacon;
 
 File dataFile;
 std::vector<String> serviceUuids;
@@ -190,6 +194,12 @@ void loop() {
         Serial.println("DEL pressed");
         switchGPSSource();
       }
+      for (char c : status.word) {
+        if (c == 'p' || c == 'P') {
+          Serial.println("P pressed");
+          togglePwnBeacon();
+        }
+      }
     }
   }
 
@@ -218,7 +228,15 @@ void loop() {
   if (bleScanEnabledWeb) {
     if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
       if (!targetFound && !scanIsRunning) {
+        // Update PwnBeacon pwnd counters before scanning
+        if (pwnbeaconEnabled) {
+          pwnBeacon.setPwnd(targetConnects, allSpottedDevice);
+        }
         scanForDevices();
+        // Re-advertise after scan (scan may have interrupted advertising)
+        if (pwnbeaconEnabled) {
+          pwnBeacon.advertise();
+        }
       } else {
         targetFound = false;
       }
@@ -323,6 +341,26 @@ void startWebLogServer() {
   wifiStarted = true;
 
   logToSerialAndWeb("Pres BtnG0 to TOGGLE BLE Scan");
+}
+
+void togglePwnBeacon() {
+  pwnbeaconEnabled = !pwnbeaconEnabled;
+
+  if (pwnbeaconEnabled) {
+    // Generate a unique identity from the BLE MAC address
+    String identity = String(NimBLEDevice::getAddress().toString().c_str());
+    pwnBeacon.begin("Nibbles", identity.c_str());
+    logToSerialAndWeb("PwnBeacon ON - broadcasting as 'Nibbles'");
+  } else {
+    pwnBeacon.end();
+    pwnbeaconPeersFound = 0;
+    logToSerialAndWeb("PwnBeacon OFF (" + String(pwnBeacon.getPeerCount()) + " peers seen)");
+  }
+
+  ws.textAll(pwnbeaconEnabled ? "PWNBEACON_ON" : "PWNBEACON_OFF");
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
 
 void toggleWardriving() {

@@ -19,13 +19,13 @@ public:
 
     void update();
 
-    bool isValid() const;
-    double getLatitude() const;
-    double getLongitude() const;
-    double getAltitude() const;
-    float getHDOP() const;
-    uint32_t getSatellites() const;
-    String getTimestamp() const;
+    bool isValid();
+    double getLatitude();
+    double getLongitude();
+    double getAltitude();
+    float getHDOP();
+    uint32_t getSatellites();
+    String getTimestamp();
 
 private:
     TinyGPSPlus gps;
