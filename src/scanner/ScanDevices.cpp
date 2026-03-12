@@ -508,7 +508,7 @@ void scanForDevices() {
 
             dev.isConnectable = is_connectable;
 
-            dev.isPublicMac = isStaticPublicMAC(mac);
+            dev.isPublicMac = isUniversallyAdministeredMAC(mac);
             dev.hasStaticMac = (macType == MACType::StaticRandom);
             dev.hasRotatingMac = isRotatingMAC(macType);
 
