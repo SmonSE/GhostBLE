@@ -24,6 +24,8 @@
 #include "src/images/nibblesBubble.h"
 
 #include "src/logToSerialAndWeb/logger.h"
+#include "src/gps/GPSManager.h"
+#include "src/wardriving/WigleLogger.h"
 
 #include <WiFi.h>
 #include <AsyncTCP.h>
@@ -83,6 +85,10 @@ bool wifiStarted = false;
 
 // External global instances
 extern SDLogger sdLogger;
+
+// GPS and wardriving
+GPSManager gpsManager;
+WigleLogger wigleLogger;
 
 File dataFile;
 std::vector<String> serviceUuids;
@@ -178,10 +184,12 @@ void loop() {
       }
       if (status.tab){
         Serial.println("TAB pressed");
-      }   
+        toggleWardriving();
+      }
       if (status.del){
         Serial.println("DEL pressed");
-      }   
+        switchGPSSource();
+      }
     }
   }
 
@@ -199,6 +207,11 @@ void loop() {
   } else {
     buttonPressStart = 0;
     buttonHeld = false;
+  }
+
+  // Update GPS if wardriving is active
+  if (wardrivingEnabled) {
+    gpsManager.update();
   }
 
   // BLE scan loop
@@ -310,5 +323,45 @@ void startWebLogServer() {
   wifiStarted = true;
 
   logToSerialAndWeb("Pres BtnG0 to TOGGLE BLE Scan");
+}
+
+void toggleWardriving() {
+  wardrivingEnabled = !wardrivingEnabled;
+
+  if (wardrivingEnabled) {
+    gpsManager.begin(GPSSource::GROVE);
+    if (wigleLogger.begin()) {
+      logToSerialAndWeb("Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
+      logToSerialAndWeb("  File: " + wigleLogger.getFilename());
+    } else {
+      logToSerialAndWeb("Wardriving: SD write failed!");
+      wardrivingEnabled = false;
+    }
+  } else {
+    wigleLogger.end();
+    logToSerialAndWeb("Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");
+  }
+
+  ws.textAll(wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+}
+
+void switchGPSSource() {
+  if (!wardrivingEnabled) {
+    logToSerialAndWeb("Enable wardriving first (TAB)");
+    return;
+  }
+
+  GPSSource next = (gpsManager.getSource() == GPSSource::GROVE)
+                   ? GPSSource::LORA_CAP
+                   : GPSSource::GROVE;
+  gpsManager.switchSource(next);
+  logToSerialAndWeb("GPS: " + String(gpsManager.getSourceName()));
+
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
 

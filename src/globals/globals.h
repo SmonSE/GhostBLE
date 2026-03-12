@@ -27,6 +27,7 @@ extern std::atomic<bool> isThugLifeTaskRunning;
 extern bool isWebLogActive;
 extern bool is_connectable;
 extern bool bleScanEnabledWeb;
+extern bool wardrivingEnabled;
 
 extern int susDevice;
 extern int beaconsFound;

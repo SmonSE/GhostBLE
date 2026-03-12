@@ -17,6 +17,12 @@
 #include "../models/DeviceInfo.h"
 #include "../privacyCheck/ExposureClassifier.h"
 #include "../helper/BLEDecoder.h"
+#include "../gps/GPSManager.h"
+#include "../wardriving/WigleLogger.h"
+
+// Wardriving instances (defined in GhostBLE.ino)
+extern GPSManager gpsManager;
+extern WigleLogger wigleLogger;
 
 
 NimBLEClient *pClient = nullptr;
@@ -586,6 +592,20 @@ void scanForDevices() {
           deviceInfoService.clear();
         }
       }
+      // Wardriving: log device with GPS coordinates
+      if (wardrivingEnabled && gpsManager.isValid()) {
+        wigleLogger.logDevice(
+            address,
+            localName.length() > 0 ? localName : String(dev.name.c_str()),
+            rssi,
+            gpsManager.getLatitude(),
+            gpsManager.getLongitude(),
+            gpsManager.getAltitude(),
+            gpsManager.getHDOP(),
+            gpsManager.getTimestamp()
+        );
+      }
+
       if (pClient != nullptr && pClient->isConnected()) {
         pClient->disconnect();
       }
@@ -598,6 +618,10 @@ void scanForDevices() {
     logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
     logToSerialAndWeb("Suspicious: " + String(susDevice));
     logToSerialAndWeb("Beacons:    " + String(beaconsFound));
+    if (wardrivingEnabled) {
+      logToSerialAndWeb("WiGLE log:  " + String(wigleLogger.getLoggedCount()));
+      wigleLogger.flush();
+    }
     logToSerialAndWeb("##########################\n");
 
     scanIsRunning = false;

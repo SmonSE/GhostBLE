@@ -33,6 +33,27 @@ extern const char* CATHACK_SERVICE_UUID_4;
 extern const char* CATHACK_SERVICE_UUID_5;
 extern const char* CATHACK_SERVICE_UUID_6;
 
+// ===== GPS Pins =====
+// Grove port GPS (e.g. M5Stack GPS Unit on Grove UART)
+#if defined(CARDPUTER)
+  #define GPS_GROVE_RX 1
+  #define GPS_GROVE_TX 2
+#elif defined(STICK_C_PLUS2)
+  #define GPS_GROVE_RX 33
+  #define GPS_GROVE_TX 32
+#endif
+
+// LoRa cap GPS (e.g. LoRa + GPS hat module)
+#if defined(CARDPUTER)
+  #define GPS_LORA_RX 18
+  #define GPS_LORA_TX 17
+#elif defined(STICK_C_PLUS2)
+  #define GPS_LORA_RX 36
+  #define GPS_LORA_TX 26
+#endif
+
+#define GPS_BAUD_RATE 9600
+
 // ===== Time Intervals =====
 #define FACE_UPDATE_INTERVAL_MS 1000
 

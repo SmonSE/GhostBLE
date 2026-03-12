@@ -21,6 +21,7 @@ std::atomic<bool> isThugLifeTaskRunning{false};
 bool isWebLogActive = false;
 bool is_connectable = false;
 bool bleScanEnabledWeb = false;
+bool wardrivingEnabled = false;
 
 int susDevice = 0;
 int beaconsFound = 0;
