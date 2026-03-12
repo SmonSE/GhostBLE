@@ -206,8 +206,16 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
   showBatteryState();
 
-  M5.Lcd.setTextColor(WHITE); 
-  M5.Lcd.setTextSize(1); 
+  // Wardriving status line
+  if (wardrivingEnabled) {
+    M5.Lcd.setTextColor(GREEN);
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setCursor(5, 94);
+    M5.Lcd.print("WD:ON");
+  }
+
+  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.setTextSize(1);
   M5.Lcd.setCursor(5, 104);
   M5.Lcd.print("Beacons:");
   M5.Lcd.println(beaconsFound);
