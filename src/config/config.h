@@ -23,9 +23,6 @@ extern const char* CATHACK_SERVICE_UUID_0;
 extern const char* CATHACK_SERVICE_UUID_1;
 extern const char* CATHACK_SERVICE_UUID_2;
 extern const char* CATHACK_SERVICE_UUID_3;
-extern const char* CATHACK_SERVICE_UUID_4;
-extern const char* CATHACK_SERVICE_UUID_5;
-extern const char* CATHACK_SERVICE_UUID_6;
 
 // ===== Time Intervals =====
 #define FACE_UPDATE_INTERVAL_MS 1000
