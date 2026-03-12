@@ -32,7 +32,7 @@
 
 
 unsigned long startTimeDevice;
-const unsigned long timerDurationDevice = 60 * 60 * 1000; // 60 Minuten in Millisekunden
+const unsigned long timerDurationDevice = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 const char* ap_ssid = WIFI_AP_SSID;
 const char* ap_password = WIFI_AP_PASSWORD;
