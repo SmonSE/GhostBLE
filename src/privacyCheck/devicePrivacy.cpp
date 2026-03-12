@@ -136,19 +136,19 @@ DeviceCategory classifyDevice(
     bool adv_contains_cleartext,
     bool is_connectable)
 {
-    // Exposure = Informationen sichtbar
-    if (!emptyName || adv_contains_cleartext || staticPublic_mac) {
+    // Potential vulnerability: static MAC + cleartext data exposed
+    if (!rotating_mac && adv_contains_cleartext && staticPublic_mac) {
+        return DeviceCategory::POTENTIAL_VULNERABILITY;
+    }
+
+    // Uncovering: device exposes identity through multiple signals
+    if ((!emptyName && adv_contains_cleartext) || (staticPublic_mac && adv_contains_cleartext)) {
         return DeviceCategory::UNCOVERING;
     }
 
-    // Misconfiguration = unnötig offen oder schlecht konfiguriert
-    if (weakName || is_connectable) {
+    // Misconfiguration: weak name combined with open connectivity
+    if (weakName && is_connectable) {
         return DeviceCategory::MISCONFIGURATION;
-    }
-
-    // Potential vulnerability (nur Vermutung!)
-    if (!rotating_mac && adv_contains_cleartext) {
-        return DeviceCategory::POTENTIAL_VULNERABILITY;
     }
 
     return DeviceCategory::LOW_RISK;
