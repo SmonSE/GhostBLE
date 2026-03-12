@@ -99,22 +99,16 @@ bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength)
 
 #include "devicePrivacy.h"
 
-bool isStaticPublicMAC(const std::string& mac)
+bool isUniversallyAdministeredMAC(const std::string& mac)
 {
-    // einfache Heuristik:
-    // Public MAC = kein Random Bit gesetzt
-    // (für GhostBLE erstmal ausreichend)
-
     if (mac.length() < 2)
         return false;
 
-    // erstes Byte der MAC
     unsigned int firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
 
-    // Bit 1 = locally administered
+    // Bit 1 (0x02) = U/L bit: 0 = universally administered, 1 = locally administered
     bool locallyAdministered = firstByte & 0x02;
 
-    // wenn nicht locally administered → public MAC
     return !locallyAdministered;
 }
 
