@@ -24,16 +24,18 @@
 #include "src/images/nibblesBubble.h"
 
 #include "src/logToSerialAndWeb/logger.h"
+#include "src/gps/GPSManager.h"
+#include "src/wardriving/WigleLogger.h"
 
 #include <WiFi.h>
 #include <AsyncTCP.h>
 
 
 unsigned long startTimeDevice;
-const unsigned long timerDurationDevice = 60 * 60 * 1000; // 60 Minuten in Millisekunden
+const unsigned long timerDurationDevice = 30 * 60 * 1000; // 30 minutes in milliseconds
 
-const char* ap_ssid = "ESP32-Log";
-const char* ap_password = "12345678";
+const char* ap_ssid = WIFI_AP_SSID;
+const char* ap_password = WIFI_AP_PASSWORD;
 
 AsyncWebServer server(80);
 
@@ -84,6 +86,10 @@ bool wifiStarted = false;
 // External global instances
 extern SDLogger sdLogger;
 
+// GPS and wardriving
+GPSManager gpsManager;
+WigleLogger wigleLogger;
+
 File dataFile;
 std::vector<String> serviceUuids;
 
@@ -100,7 +106,6 @@ void setup() {
   #endif
 
   M5.Lcd.fillScreen(BLACK);
-  //M5.Lcd.drawBmp(nibblesStartWorking, sizeof(nibblesStartWorking));
   delay(250);
 
   NimBLEDevice::init("bleDefender");
@@ -137,11 +142,7 @@ void setup() {
   startTimeDevice = millis();
   scanIsRunning = false;
 
-  //M5.Speaker.tone(1800, 120);
-  //playMysteryBoot();
-
   delay(3000);
-  //playNotificationPro();
 
   toggleWiFi();
 
@@ -159,16 +160,6 @@ void loop() {
     if (M5Cardputer.Keyboard.isPressed()) {
       auto status = M5Cardputer.Keyboard.keysState();
 
-      /*
-      for (char c : status.word) {
-        Serial.printf("Key: %c\n", c);
-
-        if (c == 'w' || c == 'W') {
-          toggleWiFi();
-        }
-      }
-      */
-
       if (status.enter) {
         Serial.println("ENTER pressed");
       } 
@@ -178,16 +169,17 @@ void loop() {
       }
       if (status.tab){
         Serial.println("TAB pressed");
-      }   
+        toggleWardriving();
+      }
       if (status.del){
         Serial.println("DEL pressed");
-      }   
+        switchGPSSource();
+      }
     }
   }
 
   // Long press detection for BtnG0
   if (M5Cardputer.BtnA.isPressed()) {
-    //Serial.println("### BUTTON BTN0 PRESSED ###");
     if (!buttonHeld) {
       if (buttonPressStart == 0) {
         buttonPressStart = currentTime;
@@ -199,6 +191,11 @@ void loop() {
   } else {
     buttonPressStart = 0;
     buttonHeld = false;
+  }
+
+  // Update GPS if wardriving is active
+  if (wardrivingEnabled) {
+    gpsManager.update();
   }
 
   // BLE scan loop
@@ -268,7 +265,6 @@ void toggleWiFi() {
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   }
 
-  //playNotificationPro(); // optional akustisches Feedback
 }
 
 void stopWebLogServer() {
@@ -310,5 +306,45 @@ void startWebLogServer() {
   wifiStarted = true;
 
   logToSerialAndWeb("Pres BtnG0 to TOGGLE BLE Scan");
+}
+
+void toggleWardriving() {
+  wardrivingEnabled = !wardrivingEnabled;
+
+  if (wardrivingEnabled) {
+    gpsManager.begin(GPSSource::GROVE);
+    if (wigleLogger.begin()) {
+      logToSerialAndWeb("Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
+      logToSerialAndWeb("  File: " + wigleLogger.getFilename());
+    } else {
+      logToSerialAndWeb("Wardriving: SD write failed!");
+      wardrivingEnabled = false;
+    }
+  } else {
+    wigleLogger.end();
+    logToSerialAndWeb("Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");
+  }
+
+  ws.textAll(wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+}
+
+void switchGPSSource() {
+  if (!wardrivingEnabled) {
+    logToSerialAndWeb("Enable wardriving first (TAB)");
+    return;
+  }
+
+  GPSSource next = (gpsManager.getSource() == GPSSource::GROVE)
+                   ? GPSSource::LORA_CAP
+                   : GPSSource::GROVE;
+  gpsManager.switchSource(next);
+  logToSerialAndWeb("GPS: " + String(gpsManager.getSourceName()));
+
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
 

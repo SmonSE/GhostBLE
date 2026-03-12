@@ -17,6 +17,12 @@
 #include "../models/DeviceInfo.h"
 #include "../privacyCheck/ExposureClassifier.h"
 #include "../helper/BLEDecoder.h"
+#include "../gps/GPSManager.h"
+#include "../wardriving/WigleLogger.h"
+
+// Wardriving instances (defined in GhostBLE.ino)
+extern GPSManager gpsManager;
+extern WigleLogger wigleLogger;
 
 
 NimBLEClient *pClient = nullptr;
@@ -81,7 +87,8 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
 
 bool isTarget = false;
 
-#define MAX_SEEN_DEVICES 1000
+#define MAX_SEEN_DEVICES 500
+#define MIN_FREE_HEAP_BYTES 20000
 
 struct IBeaconInfo {
   bool valid = false;
@@ -343,7 +350,9 @@ void scanForDevices() {
         continue;
       }
 
-      if (seenDevices.size() >= MAX_SEEN_DEVICES) {
+      if (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES) {
+        Serial.println("Clearing seenDevices (size: " + String(seenDevices.size()) +
+                        ", free heap: " + String(ESP.getFreeHeap()) + ")");
         seenDevices.clear();
       }
 
@@ -370,11 +379,6 @@ void scanForDevices() {
               xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
             }
 
-            //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-            //heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-            //temperatureService = TemperatureServiceHandler::readTemperature(pClient);
-            //genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
-
             // Subscribe to notifications for all characteristics that support it
             logToSerialAndWeb("Sub to Notifi all Chars");
             subscribeToAllNotifications(pClient, genericNotifyCallback);
@@ -387,7 +391,6 @@ void scanForDevices() {
               for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
                 NimBLERemoteCharacteristic* characteristic = *cIt;
                 std::string charUuid = characteristic->getUUID().toString();
-                //Serial.println(String("     Characteristic UUID: ") + charUuid.c_str());
                 uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
 
                 if (charUuid == "2a24") {               // Model Number
@@ -411,7 +414,6 @@ void scanForDevices() {
                     {
                         if (isPrintableText(rawValue))
                         {
-                            //Serial.println(String("     Characteristic Name: ") + rawValue.c_str());
                             dev.gattHasName = true;   // ← missing in many cases
                             nameList.push_back(rawValue);
 
@@ -436,8 +438,6 @@ void scanForDevices() {
 
               if (device != nullptr && !device->getName().empty()) {
                 localName = device->getName().c_str();
-                //logToSerialAndWeb("Replace localName with connected device->getName");
-                //dev.gattHasName = true;
               }
 
               if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
@@ -500,7 +500,7 @@ void scanForDevices() {
 
             dev.isConnectable = is_connectable;
 
-            dev.isPublicMac = isStaticPublicMAC(mac);
+            dev.isPublicMac = isUniversallyAdministeredMAC(mac);
             dev.hasStaticMac = (macType == MACType::StaticRandom);
             dev.hasRotatingMac = isRotatingMAC(macType);
 
@@ -586,6 +586,20 @@ void scanForDevices() {
           deviceInfoService.clear();
         }
       }
+      // Wardriving: log device with GPS coordinates
+      if (wardrivingEnabled && gpsManager.isValid()) {
+        wigleLogger.logDevice(
+            address,
+            localName.length() > 0 ? localName : String(dev.name.c_str()),
+            rssi,
+            gpsManager.getLatitude(),
+            gpsManager.getLongitude(),
+            gpsManager.getAltitude(),
+            gpsManager.getHDOP(),
+            gpsManager.getTimestamp()
+        );
+      }
+
       if (pClient != nullptr && pClient->isConnected()) {
         pClient->disconnect();
       }
@@ -598,6 +612,10 @@ void scanForDevices() {
     logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
     logToSerialAndWeb("Suspicious: " + String(susDevice));
     logToSerialAndWeb("Beacons:    " + String(beaconsFound));
+    if (wardrivingEnabled) {
+      logToSerialAndWeb("WiGLE log:  " + String(wigleLogger.getLoggedCount()));
+      wigleLogger.flush();
+    }
     logToSerialAndWeb("##########################\n");
 
     scanIsRunning = false;

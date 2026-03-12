@@ -99,22 +99,16 @@ bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength)
 
 #include "devicePrivacy.h"
 
-bool isStaticPublicMAC(const std::string& mac)
+bool isUniversallyAdministeredMAC(const std::string& mac)
 {
-    // einfache Heuristik:
-    // Public MAC = kein Random Bit gesetzt
-    // (für GhostBLE erstmal ausreichend)
-
     if (mac.length() < 2)
         return false;
 
-    // erstes Byte der MAC
     unsigned int firstByte = std::stoi(mac.substr(0, 2), nullptr, 16);
 
-    // Bit 1 = locally administered
+    // Bit 1 (0x02) = U/L bit: 0 = universally administered, 1 = locally administered
     bool locallyAdministered = firstByte & 0x02;
 
-    // wenn nicht locally administered → public MAC
     return !locallyAdministered;
 }
 
@@ -136,19 +130,19 @@ DeviceCategory classifyDevice(
     bool adv_contains_cleartext,
     bool is_connectable)
 {
-    // Exposure = Informationen sichtbar
-    if (!emptyName || adv_contains_cleartext || staticPublic_mac) {
+    // Potential vulnerability: static MAC + cleartext data exposed
+    if (!rotating_mac && adv_contains_cleartext && staticPublic_mac) {
+        return DeviceCategory::POTENTIAL_VULNERABILITY;
+    }
+
+    // Uncovering: device exposes identity through multiple signals
+    if ((!emptyName && adv_contains_cleartext) || (staticPublic_mac && adv_contains_cleartext)) {
         return DeviceCategory::UNCOVERING;
     }
 
-    // Misconfiguration = unnötig offen oder schlecht konfiguriert
-    if (weakName || is_connectable) {
+    // Misconfiguration: weak name combined with open connectivity
+    if (weakName && is_connectable) {
         return DeviceCategory::MISCONFIGURATION;
-    }
-
-    // Potential vulnerability (nur Vermutung!)
-    if (!rotating_mac && adv_contains_cleartext) {
-        return DeviceCategory::POTENTIAL_VULNERABILITY;
     }
 
     return DeviceCategory::LOW_RISK;
@@ -240,8 +234,7 @@ void handleDevicePrivacy(
         "   Connectable:      " + (is_connectable ? " YES" : " NO");
 
     logToSerialAndWeb(logLineWebSocket);
-    //sdLogger.writeCategory(logLineWebSocket);
-    
+
     // ---- Risk score ----
     if (weakName) riskScore += 3;
     if (!emptyName && !rotating_mac) riskScore += 3;

@@ -21,8 +21,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   }
 
   // 2. CATHACK-Signatur
-  if ((serviceUuid == CATHACK_SERVICE_UUID_5 ||
-       serviceUuid == CATHACK_SERVICE_UUID_6) &&
+  if (serviceUuid == CATHACK_SERVICE_UUID_3 &&
       (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
     Serial.println("🎯 Device with CATHACK Firmware detected");
     return true;

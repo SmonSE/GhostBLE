@@ -24,7 +24,6 @@ static unsigned long usbDisconnectTime = 0;
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
-    //showFindingCounter(targetConnects, susDevice, leakedCounter);  
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
@@ -39,7 +38,6 @@ void showGlassesExpressionTask(void* parameter) {
       drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
       delay(200);
       M5.Lcd.setTextColor(BLACK); 
-      //M5.Lcd.setFont(&fonts::Font2); 
       M5.Lcd.setTextSize(1); 
       M5.Lcd.setCursor(140, 27);
       M5.Lcd.println(localName.c_str());
@@ -55,7 +53,6 @@ void showAngryExpressionTask(void* parameter) {
     isAngryTaskRunning = true;
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
-    //showFindingCounter(targetConnects, susDevice, leakedCounter);  
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
@@ -81,7 +78,6 @@ void showSadExpressionTask(void* parameter) {
       drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
       delay(200);
       M5.Lcd.setTextColor(BLACK); 
-      //M5.Lcd.setFont(&fonts::Font2); 
       M5.Lcd.setTextSize(1); 
       M5.Lcd.setCursor(140, 27);
       M5.Lcd.println(localName.c_str());
@@ -115,7 +111,6 @@ void showThugLifeExpressionTask(void* parameter) {
   isThugLifeTaskRunning = true;
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-  //showFindingCounter(targetConnects, susDevice, leakedCounter);  
 
   vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
@@ -206,8 +201,16 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
   showBatteryState();
 
-  M5.Lcd.setTextColor(WHITE); 
-  M5.Lcd.setTextSize(1); 
+  // Wardriving status line
+  if (wardrivingEnabled) {
+    M5.Lcd.setTextColor(GREEN);
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setCursor(5, 94);
+    M5.Lcd.print("WD:ON");
+  }
+
+  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.setTextSize(1);
   M5.Lcd.setCursor(5, 104);
   M5.Lcd.print("Beacons:");
   M5.Lcd.println(beaconsFound);

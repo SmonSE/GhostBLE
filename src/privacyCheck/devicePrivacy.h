@@ -29,7 +29,7 @@ bool isRotatingMAC(MACType type);
 
 // MAC privacy
 bool isRandomMAC(const std::string& mac);
-bool isStaticPublicMAC(const std::string& mac);
+bool isUniversallyAdministeredMAC(const std::string& mac);
 String getMACPrivacyLabel(const std::string& mac);
 
 bool containsCleartext(const std::vector<uint8_t>& payload);

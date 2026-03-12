@@ -51,9 +51,12 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     // ---- Compact LogLine (SD Card) ----
     String logLine;
     logLine.reserve(200);
-    logLine += "BLE Notify: UUID=" + uuidStr;
-    logLine += " | HEX=" + hexString;
-    logLine += " | ASCII=" + asciiString;
+    logLine += "BLE Notify: UUID=";
+    logLine += uuidStr;
+    logLine += " | HEX=";
+    logLine += hexString;
+    logLine += " | ASCII=";
+    logLine += asciiString;
 
     // ---- Known BLE characteristics ----
     if (uuidStr.endsWith("2a19") && length >= 1)
@@ -61,13 +64,17 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
         String battery = String(data[0]) + "%";
 
         logToSerialAndWeb("   Battery Level: " + battery);
-        logLine += " | Battery=" + battery + "%";
+        logLine += " | Battery=";
+        logLine += battery;
+        logLine += "%";
     }
 
     if (uuidStr == "2a19" && length == 1) {
         uint8_t battery = data[0];
         Serial.printf("Battery Level: %d%%\n", battery);
-        logLine += " | Battery Level=" + String(battery) + "%";
+        logLine += " | Battery Level=";
+        logLine += String(battery);
+        logLine += "%";
     }
 
     if (uuidStr.endsWith("2a00"))
@@ -75,7 +82,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
         String name = asciiString;
 
         logToSerialAndWeb("   Device Name: " + name);
-        logLine += " | Name=" + name;
+        logLine += " | Name=";
+        logLine += name;
     }
 
     // ---- UINT16 detection ----
@@ -92,7 +100,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
         values.trim();
 
         logToSerialAndWeb("   UINT16: " + values);
-        logLine += " | UINT16=" + values;
+        logLine += " | UINT16=";
+        logLine += values;
     }
 
     // ---- UINT32 detection ----
@@ -114,7 +123,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
         values.trim();
 
         logToSerialAndWeb("   UINT32: " + values);
-        logLine += " | UINT32=" + values;
+        logLine += " | UINT32=";
+        logLine += values;
     }
 
     // ---- FLOAT32 detection ----
@@ -126,12 +136,12 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
         String value = String(f, 6);
 
         logToSerialAndWeb("   FLOAT32: " + value);
-        logLine += " | FLOAT32=" + value;
+        logLine += " | FLOAT32=";
+        logLine += value;
     }
 
     logToSerialAndWeb("");
 
     // ---- Write ONE compact line to SD ----
     sdLogger.writeCategory(logLine);
-    logLine.reserve(200);
 }
