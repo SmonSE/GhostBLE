@@ -13,8 +13,6 @@
 
 #include <NimBLEDevice.h>
 
-extern NimBLEScan* pBLEScan;
-
 void startBleScan();
 void stopBleScan();
 void scanForDevices();
