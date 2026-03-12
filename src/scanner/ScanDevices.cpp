@@ -340,20 +340,17 @@ void scanForDevices() {
       delay(1000);
 
       if (!pClient) { // Make sure the client was created
-        break;
+        Serial.println("⚠️ Failed to create BLE client, skipping device.");
+        continue;
       }
 
       if (seenDevices.size() >= MAX_SEEN_DEVICES) {
         seenDevices.clear();
       }
 
-      if (pClient != nullptr) {
-          pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
-      } else {
-          Serial.println("⚠️ pClient is null! Cannot set connect timeout.");
-      }
+      pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
 
-      if (pClient != nullptr) {
+      {
         if (is_connectable && pClient->connect(*device)) {  
           if (pClient->discoverAttributes()) {
 
