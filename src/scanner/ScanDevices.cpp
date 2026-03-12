@@ -19,7 +19,6 @@
 #include "../helper/BLEDecoder.h"
 
 
-NimBLEScan* pScan = nullptr;
 NimBLEClient *pClient = nullptr;
 
 // Forward declarations of required services/classes
