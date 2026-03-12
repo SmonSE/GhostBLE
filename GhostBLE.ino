@@ -119,6 +119,12 @@ void setup() {
   delay(200);
 
 
+  // Deselect LoRa chip to free shared SPI bus for SD card
+  #if defined(LORA_CS_PIN) && (LORA_CS_PIN >= 0)
+  pinMode(LORA_CS_PIN, OUTPUT);
+  digitalWrite(LORA_CS_PIN, HIGH);
+  #endif
+
   #if defined(CARDPUTER)
   if (!sdLogger.begin(SD_CS_PIN)) {
     M5.Lcd.setTextColor(BLACK); 
