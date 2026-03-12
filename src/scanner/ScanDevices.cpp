@@ -367,7 +367,7 @@ void scanForDevices() {
             targetConnects++;
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-              xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlases", 4096, NULL, 0, NULL, 1);
+              xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
             }
 
             //batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
@@ -447,7 +447,7 @@ void scanForDevices() {
                 vTaskDelay(pdMS_TO_TICKS(2000));
                 if (!isAngryTaskRunning) {
                   //logToSerialAndWeb("showAngryExpressionTask");
-                  xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, NULL, 1);
+                  xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1);
                 }
                 isTarget = true;
                 break;
@@ -563,7 +563,7 @@ void scanForDevices() {
             logToSerialAndWeb("----------------------------------");
           if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
             //logToSerialAndWeb("showSadExpressionTask");
-            xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, NULL, 1);
+            xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1);
           }
 
           // Move to isTargetDevice to log on SD card
