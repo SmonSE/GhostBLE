@@ -35,11 +35,11 @@ void showGlassesExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 15) + "...";
       }
-      drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
+      drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 125, 15);
       delay(200);
       M5.Lcd.setTextColor(BLACK); 
       M5.Lcd.setTextSize(1); 
-      M5.Lcd.setCursor(140, 27);
+      M5.Lcd.setCursor(136, 27);
       M5.Lcd.println(localName.c_str());
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
     }
@@ -205,7 +205,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   if (wardrivingEnabled) {
     M5.Lcd.setTextColor(GREEN);
     M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(5, 94);
+    M5.Lcd.setCursor(5, 20);
     M5.Lcd.print("WD:ON");
   }
 

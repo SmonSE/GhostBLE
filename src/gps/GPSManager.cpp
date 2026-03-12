@@ -44,31 +44,31 @@ void GPSManager::update() {
     }
 }
 
-bool GPSManager::isValid() const {
+bool GPSManager::isValid()  {
     return gps.location.isValid() && gps.location.age() < 5000;
 }
 
-double GPSManager::getLatitude() const {
+double GPSManager::getLatitude()  {
     return gps.location.isValid() ? gps.location.lat() : 0.0;
 }
 
-double GPSManager::getLongitude() const {
+double GPSManager::getLongitude()  {
     return gps.location.isValid() ? gps.location.lng() : 0.0;
 }
 
-double GPSManager::getAltitude() const {
+double GPSManager::getAltitude()  {
     return gps.altitude.isValid() ? gps.altitude.meters() : 0.0;
 }
 
-float GPSManager::getHDOP() const {
+float GPSManager::getHDOP()  {
     return gps.hdop.isValid() ? (float)gps.hdop.hdop() : 99.9f;
 }
 
-uint32_t GPSManager::getSatellites() const {
+uint32_t GPSManager::getSatellites()  {
     return gps.satellites.isValid() ? gps.satellites.value() : 0;
 }
 
-String GPSManager::getTimestamp() const {
+String GPSManager::getTimestamp()  {
     if (gps.date.isValid() && gps.time.isValid()) {
         char buf[24];
         snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",

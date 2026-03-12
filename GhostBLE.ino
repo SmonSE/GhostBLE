@@ -115,7 +115,7 @@ void setup() {
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
+  drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 125, 15);
   delay(200);
 
 
@@ -123,7 +123,7 @@ void setup() {
   if (!sdLogger.begin(SD_CS_PIN)) {
     M5.Lcd.setTextColor(BLACK); 
     M5.Lcd.setTextSize(1); 
-    M5.Lcd.setCursor(140, 27);
+    M5.Lcd.setCursor(136, 27);
     M5.Lcd.println("  NO SD CARD! ");
     while (1);
   }
@@ -131,8 +131,8 @@ void setup() {
 
   M5.Lcd.setTextColor(BLACK); 
   M5.Lcd.setTextSize(1); 
-  M5.Lcd.setCursor(140, 27);
-  M5.Lcd.println(" HI I'M NIBBLES");
+  M5.Lcd.setCursor(136, 27);
+  M5.Lcd.println("HI I'M NIBBLES");
   vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
 
   // **Hier den Webserver und AP direkt starten**
