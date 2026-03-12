@@ -37,15 +37,19 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
             std::string value = pChar->readValue();
             
             if (strcmp(charUUIDs[i], "2A01") == 0) {
-                uint16_t appearance = *(uint16_t*)value.data();
-                accessInfoString += "Appearance: 0x" + String(appearance, HEX) + "\n";
-                Serial.println("     Appearance: 0x" + String(appearance, HEX));
+                if (value.size() >= 2) {
+                    uint16_t appearance;
+                    memcpy(&appearance, value.data(), sizeof(appearance));
+                    accessInfoString += "Appearance: 0x" + String(appearance, HEX) + "\n";
+                    Serial.println("     Appearance: 0x" + String(appearance, HEX));
+                }
             } else if (strcmp(charUUIDs[i], "2A04") == 0) {
                 if (value.length() >= 8) {
-                    uint16_t minInterval = *(uint16_t*)&value[0];
-                    uint16_t maxInterval = *(uint16_t*)&value[2];
-                    uint16_t latency     = *(uint16_t*)&value[4];
-                    uint16_t timeout     = *(uint16_t*)&value[6];
+                    uint16_t minInterval, maxInterval, latency, timeout;
+                    memcpy(&minInterval, &value[0], sizeof(uint16_t));
+                    memcpy(&maxInterval, &value[2], sizeof(uint16_t));
+                    memcpy(&latency,     &value[4], sizeof(uint16_t));
+                    memcpy(&timeout,     &value[6], sizeof(uint16_t));
 
                     accessInfoString += "Preferred Connection Parameters:\n";
                     accessInfoString += "  Min Interval: " + String(minInterval) + "\n";
@@ -56,7 +60,7 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                     Serial.printf("     PPCP - Min: %d, Max: %d, Latency: %d, Timeout: %d\n",
                         minInterval, maxInterval, latency, timeout);
                 }
-            } else if (strcmp(charUUIDs[i], "2AA6") == 0) {
+            } else if (strcmp(charUUIDs[i], "2AA6") == 0 && !value.empty()) {
                 uint8_t support = value[0];
                 accessInfoString += "Central Address Resolution: " + String(support == 1 ? "Supported" : "Not Supported") + "\n";
                 Serial.printf("     Central Address Resolution: %s\n", support == 1 ? "Supported" : "Not Supported");
