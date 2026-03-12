@@ -3,12 +3,18 @@
 
 #include <Arduino.h>
 
-// ===== SD Card Pin =====
-#define SD_CS_PIN  // Define your actual pin number here
-
 // ===== Hardware Platform =====
 //#define STICK_C_PLUS2
 #define CARDPUTER
+
+// ===== SD Card Pin =====
+#if defined(CARDPUTER)
+  #define SD_CS_PIN 12
+#elif defined(STICK_C_PLUS2)
+  #define SD_CS_PIN 14
+#else
+  #error "No hardware platform defined. Define CARDPUTER or STICK_C_PLUS2."
+#endif
 
 // ===== Flipper Zero UUIDs =====
 extern const char* FLIPPER_BLACK_UUID;
