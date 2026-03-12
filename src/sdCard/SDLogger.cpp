@@ -19,6 +19,19 @@ static const char* tierToString(ExposureTier tier)
 
 SDLogger::SDLogger() : initialized(false) {}
 
+SDLogger::~SDLogger() {
+    end();
+}
+
+void SDLogger::end() {
+    if (initialized && dataFile) {
+        dataFile.flush();
+        dataFile.close();
+        initialized = false;
+        Serial.println("#SDLogger# File closed.");
+    }
+}
+
 bool SDLogger::begin(int csPin) {
     // Initialize SD card with the correct chip select pin
     if (csPin != -1) {

@@ -8,9 +8,11 @@
 class SDLogger {
 public:
     SDLogger();
+    ~SDLogger();
     bool begin(int csPin = -1); // Optional: provide CS pin
-    void writeDeviceInfo(const String& address, 
-                         const String& localName, 
+    void end();
+    void writeDeviceInfo(const String& address,
+                         const String& localName,
                          const std::vector<std::string>& nameList,
                          const String& deviceInfoString);
 
