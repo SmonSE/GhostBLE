@@ -6,17 +6,6 @@
 #include "../helper/ServiceHelper.h"  // Assuming you still need service name mapping
 
 
-static const char* tierToString(ExposureTier tier)
-{
-    switch(tier)
-    {
-        case ExposureTier::Passive: return "PASSIVE";
-        case ExposureTier::Active:  return "ACTIVE";
-        case ExposureTier::Consent: return "CONSENT";
-        default: return "NONE";
-    }
-}
-
 SDLogger::SDLogger() : initialized(false) {}
 
 SDLogger::~SDLogger() {

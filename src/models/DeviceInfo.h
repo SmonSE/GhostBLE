@@ -8,6 +8,17 @@ enum class ExposureTier {
     Consent
 };
 
+inline const char* tierToString(ExposureTier tier)
+{
+    switch(tier)
+    {
+        case ExposureTier::Passive: return "PASSIVE";
+        case ExposureTier::Active:  return "ACTIVE";
+        case ExposureTier::Consent: return "CONSENT";
+        default: return "NONE";
+    }
+}
+
 struct DeviceInfo {
     std::string mac;
     std::string name;
