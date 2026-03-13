@@ -1,7 +1,5 @@
 #include "ExposureAnalyzer.h"
-#include "../config/constants.h"
-
-static const std::vector<std::string>& roomWords = getRoomWords();
+#include "../globals/globals.h"
 
 static ExposureTier determineExposureTier(const DeviceInfo& dev)
 {

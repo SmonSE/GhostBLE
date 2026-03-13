@@ -57,6 +57,13 @@ String timeInfoService = "";
 
 String lastConnectedDeviceInfo = "Noch kein Gerät verbunden.";
 
+const std::vector<std::string> roomWords = {
+    "wohnzimmer", "küche", "kueche", "bad",
+    "schlafzimmer", "office", "living",
+    "bedroom", "kitchen", "bath",
+    "arbeitszimmer", "gästezimmer", "garage", "büro"
+};
+
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
