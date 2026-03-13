@@ -28,14 +28,14 @@ bool is_connectable = false;
 bool bleScanEnabledWeb = false;
 bool wardrivingEnabled = false;
 
-int susDevice = 0;
-int beaconsFound = 0;
-int targetConnects = 0;
-int allSpottedDevice = 0;
-int leakedCounter = 0;
-int batteryPercent = 0;
-int riskScore = 0;
-int rssi = 0;
+std::atomic<int> susDevice{0};
+std::atomic<int> beaconsFound{0};
+std::atomic<int> targetConnects{0};
+std::atomic<int> allSpottedDevice{0};
+std::atomic<int> leakedCounter{0};
+std::atomic<int> batteryPercent{0};
+std::atomic<int> riskScore{0};
+std::atomic<int> rssi{0};
 
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
