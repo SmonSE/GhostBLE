@@ -4,6 +4,7 @@
 #include "drawOverlay.h"
 #include "showExpression.h"
 #include "../globals/globals.h"
+#include "../config/config.h"
 #include "../images/nibblesFront.h"
 #include "../images/nibblesHappy.h"
 
@@ -91,41 +92,41 @@ void nibblesSpeechBegin() {
 
 void drawThoughtBubble(const char* message, int x0, int y0) {
     int textLen = strlen(message);
-    // Bubble width adapts to text (min 60, max 108 to fit screen)
-    int bubbleW = min(108, max(60, textLen * 6 + 16));
-    int bubbleH = 22;
+    // Bubble width adapts to text
+    int bubbleW = min(BUBBLE_MAX_W, max(BUBBLE_MIN_W, textLen * CHAR_WIDTH_PX + BUBBLE_PADDING_PX));
+    int bubbleH = BUBBLE_RECT_H;
 
     // Draw rounded rect bubble with green theme
-    M5.Lcd.fillRoundRect(x0, y0, bubbleW, bubbleH, 4, 0x2444);  // dark green fill
-    M5.Lcd.drawRoundRect(x0, y0, bubbleW, bubbleH, 4, 0x07E0);  // green border
+    M5.Lcd.fillRoundRect(x0, y0, bubbleW, bubbleH, BUBBLE_CORNER_R, 0x2444);  // dark green fill
+    M5.Lcd.drawRoundRect(x0, y0, bubbleW, bubbleH, BUBBLE_CORNER_R, 0x07E0);  // green border
 
     // Small triangle pointer toward NibBLEs (bottom-left)
-    int triX = x0 + 8;
+    int triX = x0 + BUBBLE_TRI_OFFSET_X;
     int triY = y0 + bubbleH;
-    M5.Lcd.fillTriangle(triX, triY - 1, triX + 6, triY - 1, triX, triY + 4, 0x2444);
-    M5.Lcd.drawLine(triX, triY - 1, triX, triY + 4, 0x07E0);
-    M5.Lcd.drawLine(triX, triY + 4, triX + 6, triY - 1, 0x07E0);
+    M5.Lcd.fillTriangle(triX, triY - 1, triX + BUBBLE_TRI_W, triY - 1, triX, triY + BUBBLE_TRI_H - 1, 0x2444);
+    M5.Lcd.drawLine(triX, triY - 1, triX, triY + BUBBLE_TRI_H - 1, 0x07E0);
+    M5.Lcd.drawLine(triX, triY + BUBBLE_TRI_H - 1, triX + BUBBLE_TRI_W, triY - 1, 0x07E0);
 
     // Draw text
     M5.Lcd.setTextColor(0x07E0);  // green text
     M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(x0 + 6, y0 + 7);
+    M5.Lcd.setCursor(x0 + BUBBLE_TEXT_INSET_X, y0 + BUBBLE_TEXT_INSET_Y);
     M5.Lcd.print(message);
 }
 
 static void clearThoughtBubble() {
     // Redraw the character area to clear the bubble region
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
 
 static void showMumble(const char* message) {
     // Redraw sprite area to clear any previous bubble cleanly
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
 
-    drawThoughtBubble(message, 125, 18);
+    drawThoughtBubble(message, BUBBLE_X, THOUGHT_BUBBLE_Y);
     thoughtVisible = true;
     thoughtShownAt = millis();
     lastSpeechTime = millis();
