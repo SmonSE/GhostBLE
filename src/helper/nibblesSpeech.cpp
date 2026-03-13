@@ -2,6 +2,7 @@
 #include <M5Cardputer.h>
 #include <M5Unified.h>
 #include "drawOverlay.h"
+#include "showExpression.h"
 #include "../globals/globals.h"
 #include "../images/nibblesBubble.h"
 #include "../images/nibblesFront.h"
