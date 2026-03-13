@@ -470,9 +470,13 @@ void scanForDevices() {
             logToSerialAndWeb(String("   Name:    " + localName));
             logToSerialAndWeb(String("   Manuf.:  " + manufacturerName));
             logToSerialAndWeb("   Device Name: ");
+            String logLine;
+            logLine.reserve(64);
             for (const auto& names : nameList) {
               if (!names.empty()) {
-                logToSerialAndWeb(String("     - ") + names.c_str());
+                logLine = "     - ";
+                logLine += names.c_str();
+                logToSerialAndWeb(logLine);
               }
             }
 
