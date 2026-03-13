@@ -112,8 +112,6 @@ void showGlassesExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 15) + "...";
       }
-      // Draw white background for speech bubble (0xFFFF is transparent in drawOverlay)
-      M5.Lcd.fillRoundRect(127, 17, SPEECHBUBBLE_WIDTH - 4, SPEECHBUBBLE_HEIGHT - 4, 4, WHITE);
       drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 125, 15);
       delay(200);
       M5.Lcd.setTextColor(BLACK);
@@ -154,8 +152,6 @@ void showSadExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 15) + "...";
       }
-      // Draw white background for speech bubble (0xFFFF is transparent in drawOverlay)
-      M5.Lcd.fillRoundRect(132, 17, SPEECHBUBBLE_WIDTH - 4, SPEECHBUBBLE_HEIGHT - 4, 4, WHITE);
       drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
       delay(200);
       M5.Lcd.setTextColor(BLACK);
