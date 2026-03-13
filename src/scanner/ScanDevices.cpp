@@ -203,6 +203,228 @@ static const char* tierToString(ExposureTier tier)
     }
 }
 
+// ---------------------------------------------------------------------------
+// Helper: parse advertised device info (address, name, manufacturer, iBeacon)
+// Returns false if the device should be skipped (null or already seen).
+// ---------------------------------------------------------------------------
+static bool parseDeviceInfo(
+    const NimBLEAdvertisedDevice* device,
+    uint16_t& manufacturerId,
+    String& manufacturerName,
+    bool& isIBeacon,
+    IBeaconInfo& beacon,
+    bool& hasCustomService,
+    bool& hasWeakName,
+    bool& isUnknownManufacturer,
+    bool& isSecurityOrTrackingDevice,
+    bool& proprietary)
+{
+  if (device == nullptr) {
+    Serial.println("⚠️ device is null! Skipping.");
+    return false;
+  }
+
+  std::string addrStr = device->getAddress().toString();
+  address = addrStr.c_str();
+  localName = device->haveName() ? String(device->getName().c_str()) : "";
+  rssi = device->getRSSI();
+  is_connectable = device->isConnectable();
+
+  // Dedupe: Insert into seenDevices immediately (before any connect attempt)
+  if (seenDevices.find(addrStr) != seenDevices.end()) {
+    logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
+    return false;
+  }
+  seenDevices.insert(addrStr);
+
+  // Risk factor: Weak/default device name
+  if (localName == "< -- >" || localName == "BLE Device" || localName == "Random") {
+    hasWeakName = true;
+  }
+
+  // Risk factor: Device type (simple heuristic)
+  if (localName.indexOf("Tracker") != -1 || localName.indexOf("Tag") != -1 || localName.indexOf("Medical") != -1 || localName.indexOf("Security") != -1) {
+    isSecurityOrTrackingDevice = true;
+  }
+
+  if (device->haveManufacturerData()) {
+    std::string mfg = device->getManufacturerData();
+    manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
+    manufacturerName = getManufacturerName(manufacturerId);
+    xpManager.awardXP(2);  // +2 XP: manufacturer data decoded
+
+    // Detect iBeacon
+    beacon = parseIBeacon(mfg);
+    if (beacon.valid) {
+      isIBeacon = true;
+      xpManager.awardXP(3);  // +3 XP: iBeacon parsed
+      logToSerialAndWeb("iBeacon detected!");
+      logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
+      logToSerialAndWeb("   Major: " + String(beacon.major));
+      logToSerialAndWeb("   Minor: " + String(beacon.minor));
+      logToSerialAndWeb("   TX:    " + String(beacon.txPower));
+    }
+
+    if (manufacturerName.isEmpty()) {
+      isUnknownManufacturer = true;
+    }
+  }
+
+  // Risk factor: Service UUID (advertised)
+  std::string serviceUuid = device->getServiceUUID().toString();
+  if (!serviceUuid.empty()) {
+    if (serviceUuid.length() > 8 && serviceUuid.find("0000") != 0) {
+      hasCustomService = true;
+    }
+
+    if (hasCustomService) {
+        proprietary = true;
+    }
+  }
+
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: connect to device, discover GATT attributes, read characteristics.
+// Returns true if a target device was detected (caller should break the loop).
+// ---------------------------------------------------------------------------
+static bool connectAndReadGATT(
+    const NimBLEAdvertisedDevice* device,
+    DeviceInfo& dev,
+    bool& hasWritableChar)
+{
+  if (device->haveName()) {
+      dev.advHasName = true;
+  }
+
+  deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+
+  if (!deviceInfoService.isEmpty()) {
+      dev.gattHasName = true;
+  }
+
+  logToSerialAndWeb("🔓 Connected and discovered attributes!");
+  targetConnects++;
+  xpManager.awardXP(5);  // +5 XP: GATT connection success
+
+  if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+    xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
+  }
+
+  // Subscribe to notifications for all characteristics that support it
+  logToSerialAndWeb("Sub to Notifi all Chars");
+  subscribeToAllNotifications(pClient, genericNotifyCallback);
+
+  for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
+    NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
+    std::string serviceUuid = service->getUUID().toString();
+    uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
+
+    for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
+      NimBLERemoteCharacteristic* characteristic = *cIt;
+      std::string charUuid = characteristic->getUUID().toString();
+      uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
+
+      if (charUuid == "2a24") {               // Model Number
+          dev.gattHasModelInfo = true;
+      }
+
+      if (charUuid == "2a29" ||               // Manufacturer Name
+          charUuid == "2a25") {               // Serial Number
+          dev.gattHasIdentityInfo = true;
+      }
+
+      if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
+          hasWritableChar = true;
+      }
+
+      std::string rawValue = characteristic->readValue();
+
+      if (!rawValue.empty())
+      {
+          if (isPrintableText(rawValue))
+          {
+              dev.gattHasName = true;   // ← missing in many cases
+              nameList.push_back(rawValue);
+
+              if (looksLikePersonalName(rawValue))
+              {
+                  dev.gattHasPersonalName = true;
+              }
+
+              if (looksLikeIdentityData(rawValue))
+                  dev.gattHasIdentityInfo = true;
+
+              if (looksLikeEnvironmentName(rawValue))
+                  dev.gattHasEnvironmentName = true;
+          }
+      }
+    }
+
+    if (device != nullptr && !device->getName().empty()) {
+      localName = device->getName().c_str();
+    }
+
+    if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
+      targetFound = true;
+      susDevice++;
+      xpManager.awardXP(20);  // +20 XP: suspicious device found
+      logToSerialAndWeb("Target Message: !!! Target detected !!!");
+      nibblesSpeechShow(SpeechContext::SUSPICIOUS);
+      vTaskDelay(pdMS_TO_TICKS(2000));
+      if (!isAngryTaskRunning) {
+        //logToSerialAndWeb("showAngryExpressionTask");
+        xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1);
+      }
+      isTarget = true;
+      return true;  // target found — caller should break
+    }
+  }
+
+  return false;  // no target — continue normally
+}
+
+// ---------------------------------------------------------------------------
+// Helper: log exposure analysis results and write to SD card, then clear lists.
+// ---------------------------------------------------------------------------
+static void handleExposureResult(
+    const ExposureResult& exposure,
+    bool writeDeviceToSD,
+    String& manufacturerName)
+{
+  logToSerialAndWeb("Uncovering Summary");
+  logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
+  logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
+  logToSerialAndWeb("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
+  logToSerialAndWeb("   Privacy Level: " + String(exposure.privacyLevel.c_str()));
+  logToSerialAndWeb(String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
+
+  logToSerialAndWeb("\n   Reason:");
+  for (auto& r : exposure.reasons) {
+      logToSerialAndWeb("    - " + String(r.c_str()));
+  }
+
+  logToSerialAndWeb("----------------------------------");
+
+  if (writeDeviceToSD) {
+    sdLogger.writeDeviceInfo(
+        address,
+        localName,
+        nameList,
+        deviceInfoService
+    );
+    sdLogger.writeUncovered(exposure);
+  }
+
+  // Clear uuidList / nameList after Stored to SD Card
+  uuidList.clear();
+  nameList.clear();
+  localName.clear();
+  manufacturerName.clear();
+  deviceInfoService.clear();
+}
+
 void scanForDevices() {
 
   DeviceInfo dev;
@@ -223,7 +445,7 @@ void scanForDevices() {
   delay(100);                   // Optional small delay for stability
 
   NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
-  
+
   if (results.getCount() == 0) {
      Serial.println("NO DEVICES FOUND");
   } else {
@@ -233,7 +455,7 @@ void scanForDevices() {
     scanIsRunning = true;
 
     logToSerialAndWeb("📡 Scan Is Running");
-  
+
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
@@ -251,66 +473,10 @@ void scanForDevices() {
       bool isIBeacon = false;
       IBeaconInfo beacon;
 
-      if (device != nullptr) {
-        std::string addrStr = device->getAddress().toString();
-        address = addrStr.c_str();
-        localName = device->haveName() ? String(device->getName().c_str()) : "";
-        rssi = device->getRSSI();
-        is_connectable = device->isConnectable();
-
-        // Dedupe: Insert into seenDevices immediately (before any connect attempt)
-        if (seenDevices.find(addrStr) != seenDevices.end()) {
-          logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
-          continue;
-        }
-        seenDevices.insert(addrStr);
-
-        // Risk factor: Weak/default device name
-        if (localName == "< -- >" || localName == "BLE Device" || localName == "Random") {
-          hasWeakName = true;
-        }
-
-        // Risk factor: Device type (simple heuristic)
-        if (localName.indexOf("Tracker") != -1 || localName.indexOf("Tag") != -1 || localName.indexOf("Medical") != -1 || localName.indexOf("Security") != -1) {
-          isSecurityOrTrackingDevice = true;
-        }
-
-        if (device->haveManufacturerData()) {
-          std::string mfg = device->getManufacturerData();
-          manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
-          manufacturerName = getManufacturerName(manufacturerId);
-          xpManager.awardXP(2);  // +2 XP: manufacturer data decoded
-
-          // Detect iBeacon
-          beacon = parseIBeacon(mfg);
-          if (beacon.valid) {
-            isIBeacon = true;
-            xpManager.awardXP(3);  // +3 XP: iBeacon parsed
-            logToSerialAndWeb("iBeacon detected!");
-            logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
-            logToSerialAndWeb("   Major: " + String(beacon.major));
-            logToSerialAndWeb("   Minor: " + String(beacon.minor));
-            logToSerialAndWeb("   TX:    " + String(beacon.txPower));
-          }
-
-          if (manufacturerName.isEmpty()) {
-            isUnknownManufacturer = true;
-          }
-        }
-
-        // Risk factor: Service UUID (advertised)
-        std::string serviceUuid = device->getServiceUUID().toString();
-        if (!serviceUuid.empty()) {
-          if (serviceUuid.length() > 8 && serviceUuid.find("0000") != 0) {
-            hasCustomService = true;
-          }
-
-          if (hasCustomService) {
-              proprietary = true;
-          }
-        }
-      } else {
-        Serial.println("⚠️ device is null! Skipping.");
+      if (!parseDeviceInfo(device, manufacturerId, manufacturerName,
+                           isIBeacon, beacon, hasCustomService, hasWeakName,
+                           isUnknownManufacturer, isSecurityOrTrackingDevice,
+                           proprietary)) {
         continue;
       }
 
@@ -357,187 +523,75 @@ void scanForDevices() {
       pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
 
       {
-        if (is_connectable && pClient->connect(*device)) {  
+        if (is_connectable && pClient->connect(*device)) {
           if (pClient->discoverAttributes()) {
 
-            if (device->haveName()) {
-                dev.advHasName = true;
-            }
+            bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar);
 
-            deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
-
-            if (!deviceInfoService.isEmpty()) {
-                dev.gattHasName = true;
-            }
-
-            logToSerialAndWeb("🔓 Connected and discovered attributes!");
-            targetConnects++;
-            xpManager.awardXP(5);  // +5 XP: GATT connection success
-
-            if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-              xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
-            }
-
-            // Subscribe to notifications for all characteristics that support it
-            logToSerialAndWeb("Sub to Notifi all Chars");
-            subscribeToAllNotifications(pClient, genericNotifyCallback);
-      
-            for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
-              NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
-              std::string serviceUuid = service->getUUID().toString();
-              uuidList.push_back("Service UUID: " + std::string(serviceUuid.c_str()));
-
-              for (auto cIt = service->getCharacteristics().begin(); cIt != service->getCharacteristics().end(); ++cIt) {
-                NimBLERemoteCharacteristic* characteristic = *cIt;
-                std::string charUuid = characteristic->getUUID().toString();
-                uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
-
-                if (charUuid == "2a24") {               // Model Number
-                    dev.gattHasModelInfo = true;
-                }
-
-                if (charUuid == "2a29" ||               // Manufacturer Name
-                    charUuid == "2a25") {               // Serial Number
-                    dev.gattHasIdentityInfo = true;
-                }
-
-                if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
-                    hasWritableChar = true;
-                }
-                                
-                std::string rawValue = characteristic->readValue();
-
-                if (!rawValue.empty())
-                {
-                    if (isPrintableText(rawValue))
-                    {
-                        dev.gattHasName = true;   // ← missing in many cases
-                        nameList.push_back(rawValue);
-
-                        if (looksLikePersonalName(rawValue))
-                        {
-                            dev.gattHasPersonalName = true;
-                        }
-
-                        if (looksLikeIdentityData(rawValue))
-                            dev.gattHasIdentityInfo = true;
-
-                        if (looksLikeEnvironmentName(rawValue))
-                            dev.gattHasEnvironmentName = true;
-                    }
+            if (!targetDetected) {
+              logToSerialAndWeb("Device Infos");
+              logToSerialAndWeb(String("   Adress:  " + address));
+              logToSerialAndWeb(String("   Name:    " + localName));
+              logToSerialAndWeb(String("   Manuf.:  " + manufacturerName));
+              logToSerialAndWeb("   Device Name: ");
+              String logLine;
+              logLine.reserve(64);
+              for (const auto& names : nameList) {
+                if (!names.empty()) {
+                  logLine = "     - ";
+                  logLine += names.c_str();
+                  logToSerialAndWeb(logLine);
                 }
               }
 
-              if (device != nullptr && !device->getName().empty()) {
-                localName = device->getName().c_str();
+              float distance = pow(10.0f, (float)(DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
+              logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
+              logToSerialAndWeb("     - RSSI: " + String(rssi));
+
+              // iBeacon info
+              if (isIBeacon) {
+                beaconsFound++;
+                logToSerialAndWeb("Beacon Type: iBeacon");
+                logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
+                logToSerialAndWeb("   Major: " + String(beacon.major));
+                logToSerialAndWeb("   Minor: " + String(beacon.minor));
+                float beaconDistance = estimateDistance(beacon.txPower, rssi);
+                logToSerialAndWeb("   Beacon Distance: ~" + String(beaconDistance, 2) + " m");
+
+                sdLogger.writeIBeaconInfo(
+                    String(beacon.uuid.c_str()),
+                    String(beacon.major),
+                    String(beacon.minor),
+                    String(beaconDistance, 2),
+                    manufacturerName,
+                    rssi
+                );
               }
 
-              if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
-                targetFound = true;
-                susDevice++;
-                xpManager.awardXP(20);  // +20 XP: suspicious device found
-                logToSerialAndWeb("Target Message: !!! Target detected !!!");
-                nibblesSpeechShow(SpeechContext::SUSPICIOUS);
-                vTaskDelay(pdMS_TO_TICKS(2000));
-                if (!isAngryTaskRunning) {
-                  //logToSerialAndWeb("showAngryExpressionTask");
-                  xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1);
-                }
-                isTarget = true;
-                break;
-              }
+              // Analyze exposure and log results
+              std::string mac = device->getAddress().toString().c_str();
+
+              MACType macType = getMACType(mac);
+
+              dev.mac = mac;
+              dev.name = localName.c_str();
+              dev.manufacturer = manufacturerName.c_str();
+
+              dev.isConnectable = is_connectable;
+
+              dev.isPublicMac = isUniversallyAdministeredMAC(mac);
+              dev.hasStaticMac = (macType == MACType::StaticRandom);
+              dev.hasRotatingMac = isRotatingMAC(macType);
+
+              dev.hasName = !dev.name.empty();
+              dev.hasManufacturerData = !dev.manufacturer.empty();
+              dev.hasCleartextData = containsCleartext(payloadVec);
+
+              ExposureResult exposure = analyzeExposure(dev);
+
+              // Always write device info to SD for successful GATT connections
+              handleExposureResult(exposure, true, manufacturerName);
             }
-
-            logToSerialAndWeb("Device Infos");
-            logToSerialAndWeb(String("   Adress:  " + address));
-            logToSerialAndWeb(String("   Name:    " + localName));
-            logToSerialAndWeb(String("   Manuf.:  " + manufacturerName));
-            logToSerialAndWeb("   Device Name: ");
-            String logLine;
-            logLine.reserve(64);
-            for (const auto& names : nameList) {
-              if (!names.empty()) {
-                logLine = "     - ";
-                logLine += names.c_str();
-                logToSerialAndWeb(logLine);
-              }
-            }
-
-            float distance = pow(10, (DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-            logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
-            logToSerialAndWeb("     - RSSI: " + String(rssi));
-
-            // iBeacon info
-            if (isIBeacon) {
-              beaconsFound++;
-              logToSerialAndWeb("Beacon Type: iBeacon");
-              logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
-              logToSerialAndWeb("   Major: " + String(beacon.major));
-              logToSerialAndWeb("   Minor: " + String(beacon.minor));
-              float beaconDistance = estimateDistance(beacon.txPower, rssi);
-              logToSerialAndWeb("   Beacon Distance: ~" + String(beaconDistance, 2) + " m");
-
-              sdLogger.writeIBeaconInfo(
-                  String(beacon.uuid.c_str()),
-                  String(beacon.major),
-                  String(beacon.minor),
-                  String(beaconDistance, 2),
-                  manufacturerName,
-                  rssi
-              );
-            }
-
-            // Analyze exposure and log results
-            std::string mac = device->getAddress().toString().c_str();
-
-            MACType macType = getMACType(mac);
-
-            dev.mac = mac;
-            dev.name = localName.c_str();
-            dev.manufacturer = manufacturerName.c_str();
-
-            dev.isConnectable = is_connectable;
-
-            dev.isPublicMac = isUniversallyAdministeredMAC(mac);
-            dev.hasStaticMac = (macType == MACType::StaticRandom);
-            dev.hasRotatingMac = isRotatingMAC(macType);
-
-            dev.hasName = !dev.name.empty();
-            dev.hasManufacturerData = !dev.manufacturer.empty();
-            dev.hasCleartextData = containsCleartext(payloadVec);
-
-            ExposureResult exposure = analyzeExposure(dev);
-
-            // Move to isTargetDevice to log on SD card
-            sdLogger.writeDeviceInfo(
-                address, 
-                localName, 
-                nameList, 
-                deviceInfoService
-            );
-            
-            logToSerialAndWeb("Uncovering Summary");
-            logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
-            logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
-            logToSerialAndWeb("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
-            logToSerialAndWeb("   Privacy Level: " + String(exposure.privacyLevel.c_str()));
-            logToSerialAndWeb(String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
-
-            logToSerialAndWeb("\n   Reason:");
-            for (auto& r : exposure.reasons) {
-                logToSerialAndWeb("    - " + String(r.c_str()));
-            }
-
-            logToSerialAndWeb("----------------------------------");
-
-            sdLogger.writeUncovered(exposure);
-
-            // Clear uuidList / nameList after Stored to SD Card
-            uuidList.clear();
-            nameList.clear();
-            localName.clear();
-            manufacturerName.clear();
-            deviceInfoService.clear();
           }
         } else {
             logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
@@ -546,42 +600,13 @@ void scanForDevices() {
 
             ExposureResult exposure = analyzeExposure(dev);
 
-            logToSerialAndWeb("Uncovering Summary");
-            logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
-            logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
-            logToSerialAndWeb("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
-            logToSerialAndWeb("   Privacy Level: " + String(exposure.privacyLevel.c_str()));
-            logToSerialAndWeb(String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
-
-            logToSerialAndWeb("\n   Reason:");
-            for (auto& r : exposure.reasons) {
-                logToSerialAndWeb("    - " + String(r.c_str()));
+            if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+              //logToSerialAndWeb("showSadExpressionTask");
+              xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1);
             }
 
-            logToSerialAndWeb("----------------------------------");
-          if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-            //logToSerialAndWeb("showSadExpressionTask");
-            xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1);
-          }
-
-          // Move to isTargetDevice to log on SD card
-          if (!localName.isEmpty())
-          {
-            sdLogger.writeDeviceInfo(
-                  address, 
-                  localName, 
-                  nameList, 
-                  deviceInfoService
-            );
-            sdLogger.writeUncovered(exposure);
-          }
-
-          // Clear uuidList / nameList after Stored to SD Card
-          uuidList.clear();
-          nameList.clear();
-          localName.clear();
-          manufacturerName.clear();
-          deviceInfoService.clear();
+            // Only write to SD if device has a name
+            handleExposureResult(exposure, !localName.isEmpty(), manufacturerName);
         }
       }
       // Wardriving: log device with GPS coordinates
