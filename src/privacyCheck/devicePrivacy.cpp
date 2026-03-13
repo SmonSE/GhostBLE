@@ -97,8 +97,6 @@ bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength)
   return printableCount >= minLength;
 }
 
-#include "devicePrivacy.h"
-
 bool isUniversallyAdministeredMAC(const std::string& mac)
 {
     if (mac.length() < 2)
