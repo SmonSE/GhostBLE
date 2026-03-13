@@ -215,26 +215,16 @@ void scanForDevices() {
 
   if (pScan == nullptr) {
     Serial.println("Scan instance creation failed.");
-    return;  // Early exit if pScan is null
+    return;
   }
 
-  if (pScan != nullptr) {
-    pScan->clearResults();        // 1. Clear previous results first
-    pScan->setActiveScan(true);   // 2. Set active scan mode
-    pScan->setInterval(45);       // 3. Set scan interval // old 1000
-    pScan->setWindow(15);         // 4. Set scan window   // old 900
-    delay(100);                   // Optional small delay for stability
-  } else {
-    Serial.println("⚠️ pScan is null!");
-  }
+  pScan->clearResults();        // 1. Clear previous results first
+  pScan->setActiveScan(true);   // 2. Set active scan mode
+  pScan->setInterval(45);       // 3. Set scan interval // old 1000
+  pScan->setWindow(15);         // 4. Set scan window   // old 900
+  delay(100);                   // Optional small delay for stability
 
-  NimBLEScanResults results;
-
-  if (pScan != nullptr) {
-    results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
-  } else {
-    Serial.println("⚠️ pScan is null! Cannot get scan results.");
-  }
+  NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
   
   if (results.getCount() == 0) {
      Serial.println("NO DEVICES FOUND");
@@ -416,33 +406,26 @@ void scanForDevices() {
                     hasWritableChar = true;
                 }
                                 
-                if (characteristic)
-                {
-                    std::string rawValue = characteristic->readValue();
+                std::string rawValue = characteristic->readValue();
 
-                    if (!rawValue.empty())
+                if (!rawValue.empty())
+                {
+                    if (isPrintableText(rawValue))
                     {
-                        if (isPrintableText(rawValue))
+                        dev.gattHasName = true;   // ← missing in many cases
+                        nameList.push_back(rawValue);
+
+                        if (looksLikePersonalName(rawValue))
                         {
-                            dev.gattHasName = true;   // ← missing in many cases
-                            nameList.push_back(rawValue);
-
-                            if (looksLikePersonalName(rawValue))
-                            {
-                                dev.gattHasPersonalName = true;
-                            }
-
-                            if (looksLikeIdentityData(rawValue))
-                                dev.gattHasIdentityInfo = true;
-
-                            if (looksLikeEnvironmentName(rawValue))
-                                dev.gattHasEnvironmentName = true;
+                            dev.gattHasPersonalName = true;
                         }
+
+                        if (looksLikeIdentityData(rawValue))
+                            dev.gattHasIdentityInfo = true;
+
+                        if (looksLikeEnvironmentName(rawValue))
+                            dev.gattHasEnvironmentName = true;
                     }
-                }
-                else
-                {
-                    Serial.println("   Device Name Characteristic not found.");
                 }
               }
 
