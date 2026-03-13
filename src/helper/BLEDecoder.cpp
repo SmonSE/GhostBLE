@@ -9,7 +9,8 @@ extern SDLogger sdLogger;
 
 static String toHex(uint8_t* data, size_t len)
 {
-    String hex = "";
+    String hex;
+    hex.reserve(len * 3);
     for (size_t i = 0; i < len; i++)
     {
         if (data[i] < 16) hex += "0";
@@ -23,7 +24,8 @@ static String toHex(uint8_t* data, size_t len)
 
 static String toASCII(uint8_t* data, size_t len)
 {
-    String ascii = "";
+    String ascii;
+    ascii.reserve(len);
 
     for (size_t i = 0; i < len; i++)
     {
@@ -95,7 +97,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     if (length % 2 == 0 && length <= 16)
     {
         xpManager.awardXP(10);  // +10 XP: UINT payload decoded
-        String values = "";
+        String values;
+        values.reserve(length * 3);
 
         for (size_t i = 0; i < length; i += 2)
         {
@@ -113,7 +116,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     // ---- UINT32 detection ----
     if (length % 4 == 0 && length <= 16)
     {
-        String values = "";
+        String values;
+        values.reserve(length * 3);
 
         for (size_t i = 0; i < length; i += 4)
         {

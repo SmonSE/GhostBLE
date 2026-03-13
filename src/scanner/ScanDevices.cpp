@@ -35,7 +35,8 @@ SDLogger sdLogger;
 // Subscribe to all notifiable characteristics on a connected device
 template<typename Callback>
 void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) {
-  String logSubs = "Subscribing: " ;
+  String logSubs;
+  logSubs.reserve(256);
     if (!client) return;
     auto services = client->getServices(); // returns std::vector<NimBLERemoteService*>
     for (auto* service : services) {
@@ -181,6 +182,7 @@ bool isPrintableText(const std::string& s)
 String bytesToHexString(const std::string& data)
 {
     String out;
+    out.reserve(data.length() * 3);
 
     for (uint8_t b : data)
     {
