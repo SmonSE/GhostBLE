@@ -1,8 +1,5 @@
 #include "devicePrivacy.h"
 #include "../globals/globals.h"
-#include "../sdCard/SDLogger.h"
-
-extern SDLogger sdLogger; // -> not nice impl, but for logging in this file we need access to the SDLogger instance
 
 #include <map>
 #include <vector>

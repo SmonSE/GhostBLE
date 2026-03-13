@@ -28,8 +28,6 @@ extern WigleLogger wigleLogger;
 
 NimBLEClient *pClient = nullptr;
 
-// Forward declarations of required services/classes
-class SDLogger;
 SDLogger sdLogger;
 
 // Subscribe to all notifiable characteristics on a connected device
@@ -87,7 +85,7 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
     NimBLEUUID charUUID = pChar->getUUID();
 
     // Forward everything to the decoder
-    decodeBLEData(charUUID.toString(), data, length);
+    decodeBLEData(charUUID.toString(), data, length, sdLogger);
 }
 
 bool isTarget = false;
