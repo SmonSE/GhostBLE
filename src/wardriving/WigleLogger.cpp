@@ -3,15 +3,15 @@
 WigleLogger::WigleLogger() : initialized(false), loggedCount(0) {}
 
 String WigleLogger::generateFilename() {
-    // Find next available filename: /wigle_0001.csv, /wigle_0002.csv, ...
+    // Find next available filename in /GhostBLE/ folder
     for (int i = 1; i <= 9999; i++) {
-        char buf[24];
-        snprintf(buf, sizeof(buf), "/wigle_%04d.csv", i);
+        char buf[34];
+        snprintf(buf, sizeof(buf), "/GhostBLE/wigle_%04d.csv", i);
         if (!SD.exists(buf)) {
             return String(buf);
         }
     }
-    return "/wigle_overflow.csv";
+    return "/GhostBLE/wigle_overflow.csv";
 }
 
 bool WigleLogger::begin() {
