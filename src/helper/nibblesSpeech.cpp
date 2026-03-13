@@ -13,7 +13,7 @@ static const char* idleMessages[] = {
     "Hmm...",
     "Anyone here?",
     "Still scanning",
-    "Listening...",
+    "Press BtnG0",
     "Where is everyone",
     "So quiet...",
     "Zzz...",

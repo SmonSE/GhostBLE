@@ -107,7 +107,7 @@ void setup() {
   M5.Lcd.setRotation(1);
   #endif
 
-  M5.Lcd.fillScreen(BLACK);
+  M5.Lcd.fillScreen(0x00C4);
   delay(250);
 
   NimBLEDevice::init("bleDefender");
