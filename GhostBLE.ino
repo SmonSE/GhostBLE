@@ -135,7 +135,7 @@ void setup() {
   drawThoughtBubble("HI I'M NIBBLES", 125, 18);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
-  isWebLogActive = true; 
+  isWebLogActive = true;
   startWebLogServer();
 
   ws.textAll("BLE_SCAN_READY");
@@ -165,8 +165,8 @@ void loop() {
 
       if (status.enter) {
         Serial.println("ENTER pressed");
-      } 
-      if (status.fn) {    
+      }
+      if (status.fn) {
         Serial.println("FN pressed");
         toggleWiFi();
       }
@@ -222,7 +222,9 @@ void loop() {
   if (currentTimeDevice - startTimeDevice >= timerDurationDevice) {
     Serial.println("60 Minuten sind vorbei!");
     if (!seenDevices.empty()) {
-      seenDevices.clear();
+      // Swap with empty set to free memory instantly via pointer swap,
+      // avoiding per-node deallocation blocking the main loop
+      std::set<std::string>().swap(seenDevices);
       Serial.println("CLEAR SEEN DEVICES");
     } else {
       Serial.println("SEEN DEVICES STILL EMPTY");
@@ -250,7 +252,7 @@ void onLongPress() {
     ws.textAll("BLE_SCAN_OFF");
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice); 
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
     stopBleScan();   // THIS is the important part
   }
 }
@@ -278,7 +280,7 @@ void toggleWiFi() {
 void stopWebLogServer() {
   ws.closeAll();       // disconnect Clients
   server.end();        // stop server
-  delay(50); 
+  delay(50);
   WiFi.softAPdisconnect(true);  // Access Point beenden
   delay(50);
 
@@ -304,7 +306,7 @@ void startWebLogServer() {
   // Setup WebSocket events and handlers BEFORE starting the server
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
-  
+
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send_P(200, "text/html", index_html);
   });
@@ -354,4 +356,3 @@ void switchGPSSource() {
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
-
