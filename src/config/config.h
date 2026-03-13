@@ -74,6 +74,8 @@ extern const char* CATHACK_SERVICE_UUID_3;
 #define NIBBLES_FRONT_Y        0
 #define NIBBLES_HAPPY_X        83
 #define NIBBLES_HAPPY_Y        60
+#define NIBBLES_SLEEP_X        83
+#define NIBBLES_SLEEP_Y        60
 
 // Speech/thought bubble geometry
 #define BUBBLE_X               125
