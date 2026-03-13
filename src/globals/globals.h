@@ -28,6 +28,7 @@ extern std::atomic<bool> isThugLifeTaskRunning;
 extern TaskHandle_t glassesTaskHandle;
 extern TaskHandle_t angryTaskHandle;
 extern TaskHandle_t sadTaskHandle;
+extern SemaphoreHandle_t taskMutex;
 extern bool isWebLogActive;
 extern bool is_connectable;
 extern bool bleScanEnabledWeb;
