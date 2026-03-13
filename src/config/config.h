@@ -47,6 +47,10 @@ extern const char* CATHACK_SERVICE_UUID_3;
 // ===== Time Intervals =====
 #define FACE_UPDATE_INTERVAL_MS 1000
 
+// ===== Seen Devices Limits =====
+#define MAX_SEEN_DEVICES 200
+#define MIN_FREE_HEAP_BYTES 20000
+
 // ===== Constants =====
 #define RSSI_CONSTANT 20
 #define DISTANCE_CONSTANT -69
