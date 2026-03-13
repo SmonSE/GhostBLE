@@ -1,5 +1,4 @@
-#ifndef SCANDEVICES_H
-#define SCANDEVICES_H
+#pragma once
 
 #include <Arduino.h>
 #include "../config/config.h"
@@ -20,5 +19,3 @@ void showGlassesExpressionTask(void* parameter);
 void showAngryExpressionTask(void* parameter);
 void showSadExpressionTask(void* parameter);
 void showFindingCounter(int sniffed, int susDevice, int spotted);
-
-#endif // SCANDEVICES_H

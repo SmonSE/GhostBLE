@@ -1,5 +1,4 @@
-#ifndef SHOW_EXPRESSION_H
-#define SHOW_EXPRESSION_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -9,5 +8,3 @@ void showSadExpressionTask(void* parameter);
 void showThugLifeExpressionTask(void* parameter);
 void showHappyExpressionTask(void* parameter);
 void showFindingCounter(int sniffed, int susDevice, int spotted);
-
-#endif

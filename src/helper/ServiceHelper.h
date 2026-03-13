@@ -1,8 +1,5 @@
-#ifndef SERVICE_HELPER_H
-#define SERVICE_HELPER_H
+#pragma once
 
 #include <Arduino.h>
 
 String getServiceName(const String& serviceUuid);
-
-#endif

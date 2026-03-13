@@ -1,5 +1,4 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
@@ -9,5 +8,3 @@ extern SemaphoreHandle_t logMutex;
 
 void initLogger();
 void logToSerialAndWeb(const String& msg);
-
-#endif // LOGGER_H

@@ -1,5 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -51,5 +50,3 @@ extern const char* CATHACK_SERVICE_UUID_3;
 // ===== Constants =====
 #define RSSI_CONSTANT 20
 #define DISTANCE_CONSTANT -69
-
-#endif // CONFIG_H

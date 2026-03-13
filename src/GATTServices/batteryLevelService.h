@@ -1,5 +1,4 @@
-#ifndef BATTERY_LEVEL_SERVICE_H
-#define BATTERY_LEVEL_SERVICE_H
+#pragma once
 
 #include <NimBLEClient.h>
 #include <Arduino.h>
@@ -9,5 +8,3 @@ public:
     // Reads battery level from connected client (0x180F service)
     static String readBatteryLevel(NimBLEClient* pClient);
 };
-
-#endif // BATTERY_LEVEL_SERVICE_H

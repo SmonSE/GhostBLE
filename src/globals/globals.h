@@ -1,6 +1,3 @@
-#ifndef GLOBALS_H
-#define GLOBALS_H
-
 #pragma once
 #include <set>
 #include <string>
@@ -68,6 +65,3 @@ extern String timeInfoService;
 extern String lastConnectedDeviceInfo;
 
 extern const char index_html[] PROGMEM;
-
-
-#endif // GLOBALS_H
