@@ -27,21 +27,21 @@ static float parseIEEE11073Float(const uint8_t* data) {
 }
 
 String TemperatureServiceHandler::readTemperature(NimBLEClient* pClient) {
-    Serial.println("   🌡️ Temperature Service");
+    logToSerialAndWeb("   🌡️ Temperature Service");
 
     if (!pClient) return "";
 
     NimBLERemoteService* tempService = pClient->getService("1809");
     if (!tempService) {
-        Serial.println("     Temperature Service not found (0x1809)");
+        logToSerialAndWeb("     Temperature Service not found (0x1809)");
         return "";
     }
 
-    Serial.println("     Temperature Service found (0x1809)");
+    logToSerialAndWeb("     Temperature Service found (0x1809)");
 
     NimBLERemoteCharacteristic* pChar = tempService->getCharacteristic("2A1C");
     if (!pChar) {
-        Serial.println("     Temperature Measurement Characteristic not found (0x2A1C)");
+        logToSerialAndWeb("     Temperature Measurement Characteristic not found (0x2A1C)");
         return "";
     }
 
@@ -69,10 +69,10 @@ String TemperatureServiceHandler::readTemperature(NimBLEClient* pClient) {
             }
         );
 
-        Serial.println("     Subscribed to temperature notifications");
+        logToSerialAndWeb("     Subscribed to temperature notifications");
     }
     else if (!pChar->canNotify()) {
-        Serial.println("     Temperature characteristic does NOT support notify");
+        logToSerialAndWeb("     Temperature characteristic does NOT support notify");
     }
 
     return "";

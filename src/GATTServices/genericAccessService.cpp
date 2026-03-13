@@ -10,11 +10,11 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
 
     NimBLERemoteService* gapService = pClient->getService("1800");
     if (!gapService) {
-        Serial.println("   Generic Access Service not found (0x1800)");
+        logToSerialAndWeb("   Generic Access Service not found (0x1800)");
         return accessInfoString;
     }
 
-    Serial.println("   Generic Access Service found (0x1800)");
+    logToSerialAndWeb("   Generic Access Service found (0x1800)");
 
     const char* charUUIDs[] = {"2A00", "2A01", "2A04", "2AA6"};
     const char* charNames[] = {
@@ -24,7 +24,7 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
         "Central Address Resolution"
     };
 
-    Serial.println("     Read value of generic access info");
+    logToSerialAndWeb("     Read value of generic access info");
     
     for (int i = 0; i < 4; i++) {
         NimBLERemoteCharacteristic* pChar = gapService->getCharacteristic(charUUIDs[i]);
