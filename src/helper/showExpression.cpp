@@ -14,6 +14,7 @@
 #include "../images/nibblesHeartRight.h"
 #include "../images/nibblesThugLife.h"
 #include "src/images/nibblesBubble.h"
+#include "../gps/GPSManager.h"
 
 static float smoothedVoltage = 0;
 static int displayedPercent = 100;
@@ -207,6 +208,19 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
     M5.Lcd.setTextSize(1);
     M5.Lcd.setCursor(5, 20);
     M5.Lcd.print("WD:ON");
+  }
+
+  // GPS status line (shown when wardriving is active)
+  if (wardrivingEnabled) {
+    extern GPSManager gpsManager;
+    bool hasFix = gpsManager.isValid();
+    M5.Lcd.setTextSize(1);
+    M5.Lcd.setCursor(55, 20);
+    M5.Lcd.setTextColor(hasFix ? GREEN : RED);
+    M5.Lcd.printf("GPS:%s %s SAT:%u",
+        gpsManager.getSourceName(),
+        hasFix ? "FIX" : "NO FIX",
+        gpsManager.getSatellites());
   }
 
   // XP Level and progress bar
