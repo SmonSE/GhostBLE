@@ -228,7 +228,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
     drawWifiIcon(5, 2, isWebLogActive);
     drawScanIcon(20, 4, bleScanEnabledWeb);
   }
-  drawBatteryIcon(218, 2, displayedPercent, charging);
+  drawBatteryIcon(215, 2, displayedPercent, charging);
 
   // ---- STATS — LEFT SIDE (x=5) ----
   M5.Lcd.setTextColor(WHITE);
