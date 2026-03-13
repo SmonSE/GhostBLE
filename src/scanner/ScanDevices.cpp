@@ -190,17 +190,6 @@ String bytesToHexString(const std::string& data)
     return out;
 }
 
-static const char* tierToString(ExposureTier tier)
-{
-    switch(tier)
-    {
-        case ExposureTier::Passive: return "PASSIVE";
-        case ExposureTier::Active:  return "ACTIVE";
-        case ExposureTier::Consent: return "CONSENT";
-        default: return "NONE";
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Helper: parse advertised device info (address, name, manufacturer, iBeacon)
 // Returns false if the device should be skipped (null or already seen).
