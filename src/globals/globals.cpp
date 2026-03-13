@@ -22,6 +22,7 @@ std::atomic<bool> isThugLifeTaskRunning{false};
 TaskHandle_t glassesTaskHandle = NULL;
 TaskHandle_t angryTaskHandle = NULL;
 TaskHandle_t sadTaskHandle = NULL;
+SemaphoreHandle_t taskMutex = NULL;
 
 bool isWebLogActive = false;
 bool is_connectable = false;
@@ -36,6 +37,8 @@ std::atomic<int> leakedCounter{0};
 std::atomic<int> batteryPercent{0};
 std::atomic<int> riskScore{0};
 std::atomic<int> rssi{0};
+
+std::string addrStr = "";
 
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;

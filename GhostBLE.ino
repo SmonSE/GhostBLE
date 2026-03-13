@@ -102,6 +102,7 @@ void setup() {
   Serial.println("GhostBLE starting...");
 
   initLogger();
+  taskMutex = xSemaphoreCreateMutex();
 
   #if defined(CARDPUTER)
   M5.Lcd.setRotation(1);

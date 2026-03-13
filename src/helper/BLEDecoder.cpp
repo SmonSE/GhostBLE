@@ -4,9 +4,6 @@
 #include "../globals/globals.h"
 #include <string>
 
-// Forward declarations of required services/classes
-extern SDLogger sdLogger;
-
 static String toHex(uint8_t* data, size_t len)
 {
     String hex;
@@ -38,7 +35,7 @@ static String toASCII(uint8_t* data, size_t len)
     return ascii;
 }
 
-void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
+void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogger& sdLogger)
 {
     String uuidStr = String(uuid.c_str());
 

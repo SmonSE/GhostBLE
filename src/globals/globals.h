@@ -28,6 +28,7 @@ extern std::atomic<bool> isThugLifeTaskRunning;
 extern TaskHandle_t glassesTaskHandle;
 extern TaskHandle_t angryTaskHandle;
 extern TaskHandle_t sadTaskHandle;
+extern SemaphoreHandle_t taskMutex;
 extern bool isWebLogActive;
 extern bool is_connectable;
 extern bool bleScanEnabledWeb;
@@ -41,6 +42,8 @@ extern std::atomic<int> leakedCounter;
 extern std::atomic<int> batteryPercent;
 extern std::atomic<int> riskScore;
 extern std::atomic<int> rssi;
+
+extern std::string addrStr;
 
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;

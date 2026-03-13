@@ -13,6 +13,7 @@
 #include "../images/nibblesHeartLeft.h"
 #include "../images/nibblesHeartRight.h"
 #include "../images/nibblesThugLife.h"
+#include "../images/nibblesSleep.h"
 #include "../gps/GPSManager.h"
 
 static float smoothedVoltage = 0;
@@ -210,6 +211,57 @@ void showThugLifeExpressionTask(void* parameter) {
   vTaskDelete(NULL);  // Task selbst beenden
 }
 
+// --- HUD sub-functions (extracted from showFindingCounter) ---
+
+static void drawStatusIcons(int x, int y) {
+  if (wardrivingEnabled) {
+    extern GPSManager gpsManager;
+    bool hasFix = gpsManager.isValid();
+    drawGPSIcon(x, y, hasFix);
+    uint16_t gpsColor = hasFix ? GREEN : RED;
+    M5.Lcd.setTextColor(gpsColor);
+    M5.Lcd.setCursor(x + 13, y + 2);
+    M5.Lcd.printf("SAT:%u %s", gpsManager.getSatellites(), hasFix ? "FIX" : "NO FIX");
+  } else {
+    drawWifiIcon(x, y, isWebLogActive);
+    drawScanIcon(x + 15, y + 2, bleScanEnabledWeb);
+  }
+}
+
+static void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
+  M5.Lcd.setTextColor(WHITE);
+  M5.Lcd.setCursor(x, y);
+  M5.Lcd.printf("Spotted %d", spotted);
+  M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);
+  M5.Lcd.printf("Sniffed %d", sniffed);
+  M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 2);
+  M5.Lcd.printf("Beacons %d", beaconsFound.load());
+  M5.Lcd.setTextColor(RED);
+  M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3);
+  M5.Lcd.printf("Sus     %d", susDevice);
+}
+
+static void drawXPBar(int x, int y) {
+  M5.Lcd.setTextColor(GREEN);
+  M5.Lcd.setCursor(x, y);
+  M5.Lcd.printf("LV%u", xpManager.getLevel());
+
+  // Progress bar
+  M5.Lcd.drawRect(XP_BAR_X, y, XP_BAR_W, XP_BAR_H, GREEN);
+  int fillW = (XP_BAR_W - 2) * xpManager.getProgressPercent() / 100;
+  if (fillW > 0) {
+    M5.Lcd.fillRect(XP_BAR_X + 1, y + 1, fillW, XP_BAR_H - 2, GREEN);
+  }
+  if (fillW < XP_BAR_W - 2) {
+    M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
+  }
+
+  // Nibbles title
+  M5.Lcd.setTextColor(GREEN);
+  M5.Lcd.setCursor(TITLE_TEXT_X, y);
+  M5.Lcd.print(xpManager.getTitle());
+}
+
 void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
   updateBatteryState();
@@ -217,49 +269,12 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   M5.Lcd.setTextSize(1);
 
   // ---- TOP BAR ----
-  if (wardrivingEnabled) {
-    extern GPSManager gpsManager;
-    bool hasFix = gpsManager.isValid();
-    drawGPSIcon(STATUS_ICON_X, STATUS_BAR_Y, hasFix);
-    uint16_t gpsColor = hasFix ? GREEN : RED;
-    M5.Lcd.setTextColor(gpsColor);
-    M5.Lcd.setCursor(18, 4);
-    M5.Lcd.printf("SAT:%u %s", gpsManager.getSatellites(), hasFix ? "FIX" : "NO FIX");
-  } else {
-    drawWifiIcon(STATUS_ICON_X, STATUS_BAR_Y, isWebLogActive);
-    drawScanIcon(20, 4, bleScanEnabledWeb);
-  }
+  drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
   drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, charging);
 
   // ---- STATS — LEFT SIDE ----
-  M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.setCursor(STATS_X, STATS_Y_START);
-  M5.Lcd.printf("Spotted %d", spotted);
-  M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT);
-  M5.Lcd.printf("Sniffed %d", sniffed);
-  M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 2);
-  M5.Lcd.printf("Beacons %d", beaconsFound);
-  M5.Lcd.setTextColor(RED);
-  M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 3);
-  M5.Lcd.printf("Sus     %d", susDevice);
+  drawStats(sniffed, susDevice, spotted, STATS_X, STATS_Y_START);
 
   // ---- BOTTOM BAR — Level/XP ----
-  M5.Lcd.setTextColor(GREEN);
-  M5.Lcd.setCursor(LEVEL_TEXT_X, BOTTOM_BAR_Y);
-  M5.Lcd.printf("LV%u", xpManager.getLevel());
-
-  // Progress bar
-  M5.Lcd.drawRect(XP_BAR_X, BOTTOM_BAR_Y, XP_BAR_W, XP_BAR_H, GREEN);
-  int fillW = (XP_BAR_W - 2) * xpManager.getProgressPercent() / 100;
-  if (fillW > 0) {
-    M5.Lcd.fillRect(XP_BAR_X + 1, BOTTOM_BAR_Y + 1, fillW, XP_BAR_H - 2, GREEN);
-  }
-  if (fillW < XP_BAR_W - 2) {
-    M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, BOTTOM_BAR_Y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
-  }
-
-  // Nibbles title
-  M5.Lcd.setTextColor(GREEN);
-  M5.Lcd.setCursor(TITLE_TEXT_X, BOTTOM_BAR_Y);
-  M5.Lcd.print(xpManager.getTitle());
+  drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y);
 }
