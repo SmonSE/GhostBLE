@@ -21,6 +21,82 @@ static int displayedPercent = 100;
 static bool lastChargingState = false;
 static unsigned long usbDisconnectTime = 0;
 
+static int voltageToPercent(int mv) {
+  if (mv >= 4200) return 100;
+  if (mv >= 4100) return 90;
+  if (mv >= 4000) return 80;
+  if (mv >= 3950) return 70;
+  if (mv >= 3900) return 60;
+  if (mv >= 3850) return 50;
+  if (mv >= 3800) return 40;
+  if (mv >= 3750) return 30;
+  if (mv >= 3700) return 20;
+  if (mv >= 3600) return 10;
+  if (mv >= 3500) return 5;
+  return 0;
+}
+
+// --- Icon drawing functions ---
+
+static void drawWifiIcon(int x, int y, bool active) {
+  uint16_t color = active ? GREEN : 0x4208;
+  M5.Lcd.fillRect(x,     y + 6, 2, 3, color);
+  M5.Lcd.fillRect(x + 3, y + 3, 2, 6, color);
+  M5.Lcd.fillRect(x + 6, y,     2, 9, color);
+}
+
+static void drawScanIcon(int x, int y, bool active) {
+  uint16_t color = active ? GREEN : 0x4208;
+  M5.Lcd.fillRect(x + 2, y,     1, 1, color);
+  M5.Lcd.fillRect(x + 1, y + 1, 3, 1, color);
+  M5.Lcd.fillRect(x,     y + 2, 5, 1, color);
+  M5.Lcd.fillRect(x + 1, y + 3, 3, 1, color);
+  M5.Lcd.fillRect(x + 2, y + 4, 1, 1, color);
+}
+
+static void drawGPSIcon(int x, int y, bool hasFix) {
+  uint16_t color = hasFix ? GREEN : RED;
+  M5.Lcd.drawCircle(x + 4, y + 4, 4, color);
+  M5.Lcd.drawLine(x + 4, y, x + 4, y + 8, color);
+  M5.Lcd.drawLine(x, y + 4, x + 8, y + 4, color);
+  if (hasFix) M5.Lcd.fillCircle(x + 4, y + 4, 1, color);
+}
+
+static void drawBatteryIcon(int x, int y, int percent, bool charging) {
+  M5.Lcd.drawRect(x, y, 16, 8, WHITE);
+  M5.Lcd.fillRect(x + 16, y + 2, 2, 4, WHITE);
+  uint16_t fillColor = charging ? YELLOW : (percent < 20 ? RED : GREEN);
+  int fillW = 14 * percent / 100;
+  if (fillW > 0) M5.Lcd.fillRect(x + 1, y + 1, fillW, 6, fillColor);
+  if (fillW < 14) M5.Lcd.fillRect(x + 1 + fillW, y + 1, 14 - fillW, 6, BLACK);
+}
+
+static void updateBatteryState() {
+  int rawVoltage = M5.Power.getBatteryVoltage();
+  bool charging = M5.Power.isCharging();
+
+  if (smoothedVoltage == 0) {
+    smoothedVoltage = rawVoltage;
+  }
+
+  smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;
+
+  if (lastChargingState && !charging) {
+    usbDisconnectTime = millis();
+  }
+
+  lastChargingState = charging;
+
+  if (!charging && (millis() - usbDisconnectTime < 2000)) {
+    // keep old percent value during USB disconnect settling
+  } else {
+    int newPercent = voltageToPercent((int)smoothedVoltage);
+    if (newPercent > displayedPercent)
+      displayedPercent++;
+    else if (newPercent < displayedPercent)
+      displayedPercent--;
+  }
+}
 
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
@@ -123,147 +199,57 @@ void showThugLifeExpressionTask(void* parameter) {
   vTaskDelete(NULL);  // Task selbst beenden
 }
 
-int voltageToPercent(int mv) {
-
-  if (mv >= 4200) return 100;
-  if (mv >= 4100) return 90;
-  if (mv >= 4000) return 80;
-  if (mv >= 3950) return 70;
-  if (mv >= 3900) return 60;
-  if (mv >= 3850) return 50;
-  if (mv >= 3800) return 40;
-  if (mv >= 3750) return 30;
-  if (mv >= 3700) return 20;
-  if (mv >= 3600) return 10;
-  if (mv >= 3500) return 5;
-
-  return 0;
-}
-
-void showBatteryState() {
-
-  int rawVoltage = M5.Power.getBatteryVoltage(); // mV
-  bool charging = M5.Power.isCharging();
-
-  // ---- 1. Spannung glätten ----
-  if (smoothedVoltage == 0) {
-    smoothedVoltage = rawVoltage; // Initialisieren
-  }
-
-  // Exponentielle Glättung (ruhig aber noch responsiv)
-  smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;
-
-  // ---- 2. USB Disconnect erkennen ----
-  if (lastChargingState && !charging) {
-    usbDisconnectTime = millis();   // Zeitpunkt merken
-  }
-
-  lastChargingState = charging;
-
-  // 2 Sekunden nach USB-Abziehen Anzeige einfrieren
-  if (!charging && (millis() - usbDisconnectTime < 2000)) {
-    // nichts tun → alten Prozentwert behalten
-  } else {
-    int newPercent = voltageToPercent((int)smoothedVoltage);
-
-    // ---- 3. Langsame Prozent-Annäherung (Anti-Sprung) ----
-    if (newPercent > displayedPercent)
-      displayedPercent++;
-    else if (newPercent < displayedPercent)
-      displayedPercent--;
-  }
-
-  // ---- Anzeige ----
-  M5.Lcd.setCursor(210, 5);
-  M5.Lcd.setTextSize(1);
-
-  if (charging) {
-    M5.Lcd.setTextColor(YELLOW);
-    M5.Lcd.printf("%d%%", displayedPercent);
-  } else {
-    M5.Lcd.setTextColor(WHITE);
-    M5.Lcd.printf("%d%%", displayedPercent);
-  }
-}
-  
 void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
-  M5.Lcd.setTextColor(WHITE); 
-  M5.Lcd.setTextSize(1); 
-  M5.Lcd.setCursor(5, 5);
-  M5.Lcd.print("Wifi:");
-  M5.Lcd.println(isWebLogActive ? "ON" : "OFF");
+  updateBatteryState();
+  bool charging = M5.Power.isCharging();
+  M5.Lcd.setTextSize(1);
 
-  M5.Lcd.setTextColor(WHITE); 
-  M5.Lcd.setTextSize(1); 
-  M5.Lcd.setCursor(100, 5);
-  M5.Lcd.print("Scan:");
-  M5.Lcd.println(bleScanEnabledWeb ? "ON" : "OFF");
-
-  showBatteryState();
-
-  // Wardriving status line
-  if (wardrivingEnabled) {
-    M5.Lcd.setTextColor(GREEN);
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(5, 20);
-    M5.Lcd.print("WD:ON");
-  }
-
-  // GPS status line (shown when wardriving is active)
+  // ---- TOP BAR (y=2) ----
   if (wardrivingEnabled) {
     extern GPSManager gpsManager;
     bool hasFix = gpsManager.isValid();
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(55, 20);
-    M5.Lcd.setTextColor(hasFix ? GREEN : RED);
-    M5.Lcd.printf("GPS:%s %s SAT:%u",
-        gpsManager.getSourceName(),
-        hasFix ? "FIX" : "NO FIX",
-        gpsManager.getSatellites());
+    drawGPSIcon(5, 2, hasFix);
+    uint16_t gpsColor = hasFix ? GREEN : RED;
+    M5.Lcd.setTextColor(gpsColor, BLACK);
+    M5.Lcd.setCursor(18, 4);
+    M5.Lcd.printf("SAT:%u %s", gpsManager.getSatellites(), hasFix ? "FIX" : "NO FIX");
+  } else {
+    drawWifiIcon(5, 2, isWebLogActive);
+    drawScanIcon(20, 4, bleScanEnabledWeb);
   }
+  drawBatteryIcon(218, 2, displayedPercent, charging);
 
-  // XP Level and progress bar
-  M5.Lcd.setTextColor(GREEN);
-  M5.Lcd.setTextSize(1);
-  M5.Lcd.setCursor(5, 94);
-  M5.Lcd.printf("LVL:%u", xpManager.getLevel());
+  // ---- STATS — LEFT SIDE (x=5) ----
+  M5.Lcd.setTextColor(WHITE, BLACK);
+  M5.Lcd.setCursor(5, 62);
+  M5.Lcd.printf("Spotted %d", spotted);
+  M5.Lcd.setCursor(5, 74);
+  M5.Lcd.printf("Sniffed %d", sniffed);
+  M5.Lcd.setCursor(5, 86);
+  M5.Lcd.printf("Beacons %d", beaconsFound);
+  M5.Lcd.setTextColor(RED, BLACK);
+  M5.Lcd.setCursor(5, 98);
+  M5.Lcd.printf("Sus     %d", susDevice);
 
-  // Progress bar outline
-  int barX = 55, barY = 94, barW = 60, barH = 7;
+  // ---- BOTTOM BAR — Level/XP (y=122) ----
+  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setCursor(5, 122);
+  M5.Lcd.printf("LV%u", xpManager.getLevel());
+
+  // Progress bar
+  int barX = 30, barY = 122, barW = 130, barH = 7;
   M5.Lcd.drawRect(barX, barY, barW, barH, GREEN);
-  // Progress bar fill
   int fillW = (barW - 2) * xpManager.getProgressPercent() / 100;
   if (fillW > 0) {
     M5.Lcd.fillRect(barX + 1, barY + 1, fillW, barH - 2, GREEN);
   }
+  if (fillW < barW - 2) {
+    M5.Lcd.fillRect(barX + 1 + fillW, barY + 1, barW - 2 - fillW, barH - 2, BLACK);
+  }
 
   // Nibbles title
-  M5.Lcd.setTextColor(GREEN);
-  M5.Lcd.setCursor(120, 94);
+  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setCursor(165, 122);
   M5.Lcd.print(xpManager.getTitle());
-
-  M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.setTextSize(1);
-  M5.Lcd.setCursor(5, 104);
-  M5.Lcd.print("Beacons:");
-  M5.Lcd.println(beaconsFound);
-
-  M5.Lcd.setTextColor(WHITE); 
-  M5.Lcd.setTextSize(1); 
-  M5.Lcd.setCursor(5, 124);
-  M5.Lcd.print("Sniffed:");
-  M5.Lcd.println(sniffed);
-  
-  M5.Lcd.setTextColor(WHITE); 
-  M5.Lcd.setTextSize(1); 
-  M5.Lcd.setCursor(100, 124);
-  M5.Lcd.print("Spotted:");
-  M5.Lcd.println(spotted);
-  
-  M5.Lcd.setTextColor(RED);
-  M5.Lcd.setTextSize(1);
-  M5.Lcd.setCursor(190, 124);
-  M5.Lcd.print("Sus:");
-  M5.Lcd.println(susDevice);
 }
