@@ -22,6 +22,7 @@ std::atomic<bool> isThugLifeTaskRunning{false};
 TaskHandle_t glassesTaskHandle = NULL;
 TaskHandle_t angryTaskHandle = NULL;
 TaskHandle_t sadTaskHandle = NULL;
+SemaphoreHandle_t taskMutex = NULL;
 
 bool isWebLogActive = false;
 bool is_connectable = false;

@@ -308,8 +308,12 @@ static bool connectAndReadGATT(
   targetConnects++;
   xpManager.awardXP(5);  // +5 XP: GATT connection success
 
-  if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-    xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
+  if (xSemaphoreTake(taskMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+    if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+      isGlassesTaskRunning = true;
+      xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
+    }
+    xSemaphoreGive(taskMutex);
   }
 
   // Subscribe to notifications for all characteristics that support it
@@ -373,9 +377,12 @@ static bool connectAndReadGATT(
       logToSerialAndWeb("Target Message: !!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
       vTaskDelay(pdMS_TO_TICKS(2000));
-      if (!isAngryTaskRunning) {
-        //logToSerialAndWeb("showAngryExpressionTask");
-        xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1);
+      if (xSemaphoreTake(taskMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+        if (!isAngryTaskRunning) {
+          isAngryTaskRunning = true;
+          xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1);
+        }
+        xSemaphoreGive(taskMutex);
       }
       isTarget = true;
       return true;  // target found — caller should break
@@ -600,9 +607,12 @@ void scanForDevices() {
 
             ExposureResult exposure = analyzeExposure(dev);
 
-            if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-              //logToSerialAndWeb("showSadExpressionTask");
-              xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1);
+            if (xSemaphoreTake(taskMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
+              if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+                isSadTaskRunning = true;
+                xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1);
+              }
+              xSemaphoreGive(taskMutex);
             }
 
             // Only write to SD if device has a name
