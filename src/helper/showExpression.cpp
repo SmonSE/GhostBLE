@@ -211,7 +211,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
     bool hasFix = gpsManager.isValid();
     drawGPSIcon(5, 2, hasFix);
     uint16_t gpsColor = hasFix ? GREEN : RED;
-    M5.Lcd.setTextColor(gpsColor, BLACK);
+    M5.Lcd.setTextColor(gpsColor);
     M5.Lcd.setCursor(18, 4);
     M5.Lcd.printf("SAT:%u %s", gpsManager.getSatellites(), hasFix ? "FIX" : "NO FIX");
   } else {
@@ -221,19 +221,19 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   drawBatteryIcon(218, 2, displayedPercent, charging);
 
   // ---- STATS — LEFT SIDE (x=5) ----
-  M5.Lcd.setTextColor(WHITE, BLACK);
+  M5.Lcd.setTextColor(WHITE);
   M5.Lcd.setCursor(5, 62);
   M5.Lcd.printf("Spotted %d", spotted);
   M5.Lcd.setCursor(5, 74);
   M5.Lcd.printf("Sniffed %d", sniffed);
   M5.Lcd.setCursor(5, 86);
   M5.Lcd.printf("Beacons %d", beaconsFound);
-  M5.Lcd.setTextColor(RED, BLACK);
+  M5.Lcd.setTextColor(RED);
   M5.Lcd.setCursor(5, 98);
   M5.Lcd.printf("Sus     %d", susDevice);
 
   // ---- BOTTOM BAR — Level/XP (y=122) ----
-  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setTextColor(GREEN);
   M5.Lcd.setCursor(5, 122);
   M5.Lcd.printf("LV%u", xpManager.getLevel());
 
@@ -249,7 +249,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   }
 
   // Nibbles title
-  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setTextColor(GREEN);
   M5.Lcd.setCursor(165, 122);
   M5.Lcd.print(xpManager.getTitle());
 }
