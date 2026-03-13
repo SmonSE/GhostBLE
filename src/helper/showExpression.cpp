@@ -20,19 +20,16 @@ static int displayedPercent = 100;
 static bool lastChargingState = false;
 static unsigned long usbDisconnectTime = 0;
 
+static const struct { int mv; int percent; } batteryLevels[] = {
+    {4200, 100}, {4100, 90}, {4000, 80}, {3900, 70},
+    {3800, 60}, {3700, 50}, {3600, 30}, {3500, 20}, {3400, 10}
+};
+
 static int voltageToPercent(int mv) {
-  if (mv >= 4200) return 100;
-  if (mv >= 4100) return 90;
-  if (mv >= 4000) return 80;
-  if (mv >= 3950) return 70;
-  if (mv >= 3900) return 60;
-  if (mv >= 3850) return 50;
-  if (mv >= 3800) return 40;
-  if (mv >= 3750) return 30;
-  if (mv >= 3700) return 20;
-  if (mv >= 3600) return 10;
-  if (mv >= 3500) return 5;
-  return 0;
+    for (const auto& level : batteryLevels) {
+        if (mv >= level.mv) return level.percent;
+    }
+    return 5;
 }
 
 // --- Icon drawing functions ---
