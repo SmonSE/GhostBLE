@@ -248,7 +248,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   M5.Lcd.printf("LV%u", xpManager.getLevel());
 
   // Progress bar
-  int barX = 28, barY = 127, barW = 80, barH = 7;
+  int barX = 38, barY = 127, barW = 70, barH = 7;
   M5.Lcd.drawRect(barX, barY, barW, barH, GREEN);
   int fillW = (barW - 2) * xpManager.getProgressPercent() / 100;
   if (fillW > 0) {
