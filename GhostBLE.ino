@@ -118,7 +118,6 @@ void setup() {
   drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 125, 15);
   delay(200);
 
-
   // Deselect LoRa chip to free shared SPI bus for SD card
   #if defined(LORA_CS_PIN) && (LORA_CS_PIN >= 0)
   pinMode(LORA_CS_PIN, OUTPUT);
@@ -139,10 +138,9 @@ void setup() {
   M5.Lcd.setTextSize(1); 
   M5.Lcd.setCursor(136, 27);
   M5.Lcd.println("HI I'M NIBBLES");
-  vTaskDelay(pdMS_TO_TICKS(2000));  // 3 Sekunden
+  vTaskDelay(pdMS_TO_TICKS(2000));
 
-  // **Hier den Webserver und AP direkt starten**
-  isWebLogActive = true;     // Status anpassen
+  isWebLogActive = true; 
   startWebLogServer();
 
   ws.textAll("BLE_SCAN_READY");
@@ -160,7 +158,7 @@ void setup() {
 
 
 void loop() {
-  ws.cleanupClients();  // Wichtig für WebSocket-Verbindungen
+  ws.cleanupClients();  // Important for websocket memory management
   M5Cardputer.update();
   unsigned long currentTime = millis();
 
@@ -251,7 +249,7 @@ void onLongPress() {
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice); 
-    stopBleScan();   // 👈 THIS is the important part
+    stopBleScan();   // THIS is the important part
   }
 }
 
@@ -276,14 +274,14 @@ void toggleWiFi() {
 }
 
 void stopWebLogServer() {
-  ws.closeAll();       // alle Clients trennen
-  server.end();        // Server stoppen
+  ws.closeAll();       // disconnect Clients
+  server.end();        // stop server
   delay(50); 
   WiFi.softAPdisconnect(true);  // Access Point beenden
   delay(50);
 
   WiFi.mode(WIFI_OFF);
-  delay(100);                   // 👈 THIS is critical
+  delay(100);                   // THIS is critical
 
   wifiStarted    = false;
   isWebLogActive = false;
