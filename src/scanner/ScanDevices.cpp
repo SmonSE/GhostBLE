@@ -98,12 +98,6 @@ struct IBeaconInfo {
   int8_t txPower = 0;
 };
 
-static const std::vector<std::string> roomWords = {
-    "wohnzimmer", "küche", "kueche", "bad",
-    "schlafzimmer", "office", "living",
-    "bedroom", "kitchen", "bath"
-};
-
 struct DeviceAssessment {
   bool hackable = false;
 

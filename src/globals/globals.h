@@ -66,3 +66,6 @@ extern String timeInfoService;
 extern String lastConnectedDeviceInfo;
 
 extern const char index_html[] PROGMEM;
+
+// Shared room words for environment name detection
+extern const std::vector<std::string> roomWords;
