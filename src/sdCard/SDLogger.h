@@ -31,4 +31,5 @@ public:
 private:
     File dataFile;
     bool initialized;
+    void migrateToFolder();
 };

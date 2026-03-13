@@ -32,6 +32,33 @@ void SDLogger::end() {
     }
 }
 
+void SDLogger::migrateToFolder() {
+    // Migrate legacy root-level files into /GhostBLE/ folder.
+    // Only called when /GhostBLE/ doesn't exist yet.
+    SD.mkdir("/GhostBLE");
+    Serial.println("#SDLogger# Created /GhostBLE folder, migrating legacy files...");
+
+    if (SD.exists("/device_info.txt")) {
+        SD.rename("/device_info.txt", "/GhostBLE/device_info.txt");
+        Serial.println("#SDLogger# Migrated /device_info.txt");
+    }
+
+    for (int i = 1; i <= 9999; i++) {
+        char oldPath[24];
+        snprintf(oldPath, sizeof(oldPath), "/wigle_%04d.csv", i);
+        if (!SD.exists(oldPath)) break;
+        char newPath[34];
+        snprintf(newPath, sizeof(newPath), "/GhostBLE/wigle_%04d.csv", i);
+        SD.rename(oldPath, newPath);
+        Serial.printf("#SDLogger# Migrated %s\n", oldPath);
+    }
+
+    if (SD.exists("/wigle_overflow.csv")) {
+        SD.rename("/wigle_overflow.csv", "/GhostBLE/wigle_overflow.csv");
+        Serial.println("#SDLogger# Migrated /wigle_overflow.csv");
+    }
+}
+
 bool SDLogger::begin(int csPin) {
     // Initialize SD card with the correct chip select pin
     if (csPin != -1) {
@@ -46,15 +73,20 @@ bool SDLogger::begin(int csPin) {
         }
     }
 
+    // Create folder and migrate legacy files on first run
+    if (!SD.exists("/GhostBLE")) {
+        migrateToFolder();
+    }
+
     // Try opening the file with a check for success
-    dataFile = SD.open("/device_info.txt", FILE_APPEND);  // Try without leading "/"
+    dataFile = SD.open("/GhostBLE/device_info.txt", FILE_APPEND);
     if (!dataFile) {
-        Serial.println("#SDLogger# Error opening /device_info.txt for writing.");
+        Serial.println("#SDLogger# Error opening /GhostBLE/device_info.txt for writing.");
         return false;
     }
 
     // Log success and set initialization flag
-    Serial.println("#SDLogger# /device_info.txt opened successfully.");
+    Serial.println("#SDLogger# /GhostBLE/device_info.txt opened successfully.");
     initialized = true;
     return true;
 }
