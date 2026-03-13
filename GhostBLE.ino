@@ -220,7 +220,7 @@ void loop() {
   // Timer every 60 minutes
   unsigned long currentTimeDevice = millis();
   if (currentTimeDevice - startTimeDevice >= timerDurationDevice) {
-    Serial.println("60 Minuten sind vorbei!");
+    Serial.println("Timer: periodic seenDevices reset");
     if (!seenDevices.empty()) {
       // Swap with empty set to free memory instantly via pointer swap,
       // avoiding per-node deallocation blocking the main loop
@@ -229,7 +229,6 @@ void loop() {
     } else {
       Serial.println("SEEN DEVICES STILL EMPTY");
     }
-    Serial.println("Update Batterie State");
     startTimeDevice = millis();
   }
   // Let system handle BLE, GPIO, etc.

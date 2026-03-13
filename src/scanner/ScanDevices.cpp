@@ -90,8 +90,7 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
 
 bool isTarget = false;
 
-#define MAX_SEEN_DEVICES 500
-#define MIN_FREE_HEAP_BYTES 20000
+// MAX_SEEN_DEVICES and MIN_FREE_HEAP_BYTES defined in config.h
 
 struct IBeaconInfo {
   bool valid = false;
