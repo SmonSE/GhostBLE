@@ -10,21 +10,21 @@
 
 
 String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
-    Serial.println("   Heart Rate Service");
+    logToSerialAndWeb("   Heart Rate Service");
 
     if (!pClient) return "";
 
     NimBLERemoteService* hrService = pClient->getService("180D");
     if (!hrService) {
-        Serial.println("     Heart Rate Service not found");
+        logToSerialAndWeb("     Heart Rate Service not found");
         return "";
     }
 
-    Serial.println("     Heart Rate Service found (0x180D)");
+    logToSerialAndWeb("     Heart Rate Service found (0x180D)");
 
     NimBLERemoteCharacteristic* pChar = hrService->getCharacteristic("2A37");
     if (!pChar) {
-        Serial.println("     Heart Rate Measurement Characteristic not found");
+        logToSerialAndWeb("     Heart Rate Measurement Characteristic not found");
         return "";
     }
 
@@ -52,7 +52,7 @@ String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {
             }
         );
 
-        Serial.println("     Subscribed to Heart Rate notifications");
+        logToSerialAndWeb("     Subscribed to Heart Rate notifications");
     }
 
     return "";
