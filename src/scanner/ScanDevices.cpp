@@ -44,10 +44,13 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
           if (!characteristic) continue;
           if (characteristic->canNotify()) 
           {
-            if (characteristic->canNotify())
+            if (characteristic->canNotify()) {
                 characteristic->subscribe(true, notifyCallback);
-            else if (characteristic->canIndicate())
+                xpManager.awardXP(10);  // +10 XP: characteristic subscription
+            } else if (characteristic->canIndicate()) {
                 characteristic->subscribe(false, notifyCallback);
+                xpManager.awardXP(10);  // +10 XP: characteristic subscription
+            }
             if (characteristic->canRead()) {
                 std::string val = characteristic->readValue();
                 logToSerialAndWeb(("   Read value length: " + String(val.length())).c_str());
@@ -284,11 +287,13 @@ void scanForDevices() {
           std::string mfg = device->getManufacturerData();
           manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
           manufacturerName = getManufacturerName(manufacturerId);
+          xpManager.awardXP(2);  // +2 XP: manufacturer data decoded
 
           // Detect iBeacon
           beacon = parseIBeacon(mfg);
           if (beacon.valid) {
             isIBeacon = true;
+            xpManager.awardXP(3);  // +3 XP: iBeacon parsed
             logToSerialAndWeb("iBeacon detected!");
             logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
             logToSerialAndWeb("   Major: " + String(beacon.major));
@@ -336,6 +341,7 @@ void scanForDevices() {
 
       isTarget = false;
       allSpottedDevice++;
+      xpManager.awardXP(1);  // +1 XP: new device discovered
 
       // Print device connectability
       if (!is_connectable) {
@@ -374,6 +380,7 @@ void scanForDevices() {
 
             logToSerialAndWeb("🔓 Connected and discovered attributes!");
             targetConnects++;
+            xpManager.awardXP(5);  // +5 XP: GATT connection success
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning) {
               xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
@@ -443,6 +450,7 @@ void scanForDevices() {
               if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
                 targetFound = true;
                 susDevice++;
+                xpManager.awardXP(20);  // +20 XP: suspicious device found
                 logToSerialAndWeb("Target Message: !!! Target detected !!!");
                 vTaskDelay(pdMS_TO_TICKS(2000));
                 if (!isAngryTaskRunning) {
@@ -618,6 +626,7 @@ void scanForDevices() {
     }
     logToSerialAndWeb("##########################\n");
 
+    xpManager.save();
     scanIsRunning = false;
   }
 }

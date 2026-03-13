@@ -1,6 +1,7 @@
 #include "BLEDecoder.h"
 #include "../logToSerialAndWeb/logger.h"
 #include "../sdCard/SDLogger.h"
+#include "../globals/globals.h"
 #include <string>
 
 // Forward declarations of required services/classes
@@ -42,6 +43,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     String hexString   = toHex(data, length);
     String asciiString = toASCII(data, length);
 
+    xpManager.awardXP(15);  // +15 XP: notify data received
+
     // ---- Pretty Output (Serial/Web) ----
     logToSerialAndWeb("BLE Notify");
     logToSerialAndWeb("   UUID : " + uuidStr);
@@ -61,6 +64,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     // ---- Known BLE characteristics ----
     if (uuidStr.endsWith("2a19") && length >= 1)
     {
+        xpManager.awardXP(25);  // +25 XP: known char decoded (battery)
         String battery = String(data[0]) + "%";
 
         logToSerialAndWeb("   Battery Level: " + battery);
@@ -79,6 +83,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
 
     if (uuidStr.endsWith("2a00"))
     {
+        xpManager.awardXP(25);  // +25 XP: known char decoded (name)
         String name = asciiString;
 
         logToSerialAndWeb("   Device Name: " + name);
@@ -89,6 +94,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     // ---- UINT16 detection ----
     if (length % 2 == 0 && length <= 16)
     {
+        xpManager.awardXP(10);  // +10 XP: UINT payload decoded
         String values = "";
 
         for (size_t i = 0; i < length; i += 2)
@@ -130,6 +136,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     // ---- FLOAT32 detection ----
     if (length == 4)
     {
+        xpManager.awardXP(10);  // +10 XP: FLOAT payload decoded
         float f;
         memcpy(&f, data, 4);
 

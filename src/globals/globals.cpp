@@ -4,6 +4,8 @@
 #include <vector>
 #include <atomic>
 
+XPManager xpManager;
+
 std::set<std::string> seenDevices;
 std::vector<std::string> uuidList;
 std::vector<std::string> nameList;
