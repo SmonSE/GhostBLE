@@ -1,5 +1,4 @@
-#ifndef XP_MANAGER_H
-#define XP_MANAGER_H
+#pragma once
 
 #include <Arduino.h>
 #include <SD.h>
@@ -33,5 +32,3 @@ private:
     uint32_t xpForLevel(uint16_t level);
     void recalculateLevel();
 };
-
-#endif

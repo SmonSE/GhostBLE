@@ -1,5 +1,4 @@
-#ifndef DEVICE_PRIVACY_H
-#define DEVICE_PRIVACY_H
+#pragma once
 
 #include <Arduino.h>
 #include <string>
@@ -48,5 +47,3 @@ String payloadToHexString(const String& payload);
 
 // Logging (defined elsewhere)
 void logToSerialAndWeb(const String& line);
-
-#endif // DEVICE_PRIVACY_H

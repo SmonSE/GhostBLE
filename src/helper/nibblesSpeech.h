@@ -1,5 +1,4 @@
-#ifndef NIBBLES_SPEECH_H
-#define NIBBLES_SPEECH_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -26,5 +25,3 @@ void nibblesSpeechShow(SpeechContext context);
 
 // Draw a thought bubble (green tint) with the given message
 void drawThoughtBubble(const char* message, int x0, int y0);
-
-#endif // NIBBLES_SPEECH_H

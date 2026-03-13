@@ -1,5 +1,4 @@
-#ifndef DRAW_OVERLAY_H
-#define DRAW_OVERLAY_H
+#pragma once
 
 #include <M5Cardputer.h>
 
@@ -11,5 +10,3 @@
 // - x0: x-coordinate to start drawing
 // - y0: y-coordinate to start drawing
 void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0);
-
-#endif // DRAW_OVERLAY_H

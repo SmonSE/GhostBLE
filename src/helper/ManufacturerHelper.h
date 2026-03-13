@@ -1,8 +1,5 @@
-#ifndef MANUFACTURER_HELPER_H
-#define MANUFACTURER_HELPER_H
+#pragma once
 
 #include <Arduino.h>
 
 String getManufacturerName(uint16_t manufacturerId);
-
-#endif
