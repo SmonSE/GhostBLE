@@ -306,12 +306,11 @@ static bool connectAndReadGATT(
   targetConnects++;
   xpManager.awardXP(5);  // +5 XP: GATT connection success
 
-  if (xSemaphoreTake(taskMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
-    if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-      isGlassesTaskRunning = true;
-      xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
+  if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+    if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1) != pdPASS) {
+      Serial.println("Failed to create BLEGlasses task");
+      isGlassesTaskRunning = false;
     }
-    xSemaphoreGive(taskMutex);
   }
 
   // Subscribe to notifications for all characteristics that support it
@@ -375,12 +374,12 @@ static bool connectAndReadGATT(
       logToSerialAndWeb("Target Message: !!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
       vTaskDelay(pdMS_TO_TICKS(2000));
-      if (xSemaphoreTake(taskMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
-        if (!isAngryTaskRunning) {
-          isAngryTaskRunning = true;
-          xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1);
+      if (!isAngryTaskRunning) {
+        //logToSerialAndWeb("showAngryExpressionTask");
+        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1) != pdPASS) {
+          Serial.println("Failed to create AngryFace task");
+          isAngryTaskRunning = false;
         }
-        xSemaphoreGive(taskMutex);
       }
       isTarget = true;
       return true;  // target found — caller should break
@@ -605,12 +604,12 @@ void scanForDevices() {
 
             ExposureResult exposure = analyzeExposure(dev);
 
-            if (xSemaphoreTake(taskMutex, pdMS_TO_TICKS(50)) == pdTRUE) {
-              if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-                isSadTaskRunning = true;
-                xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1);
+            if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+              //logToSerialAndWeb("showSadExpressionTask");
+              if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1) != pdPASS) {
+                Serial.println("Failed to create SadFace task");
+                isSadTaskRunning = false;
               }
-              xSemaphoreGive(taskMutex);
             }
 
             // Only write to SD if device has a name
