@@ -10,3 +10,7 @@
 // - x0: x-coordinate to start drawing
 // - y0: y-coordinate to start drawing
 void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0);
+
+// Draw a speech bubble with a triangle pointer at the given position.
+void drawBubble(const char* message, int x0, int y0,
+                uint16_t fillColor, uint16_t borderColor, uint16_t textColor);

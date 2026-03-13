@@ -91,27 +91,7 @@ void nibblesSpeechBegin() {
 }
 
 void drawThoughtBubble(const char* message, int x0, int y0) {
-    int textLen = strlen(message);
-    // Bubble width adapts to text
-    int bubbleW = min(BUBBLE_MAX_W, max(BUBBLE_MIN_W, textLen * CHAR_WIDTH_PX + BUBBLE_PADDING_PX));
-    int bubbleH = BUBBLE_RECT_H;
-
-    // Draw rounded rect bubble with green theme
-    M5.Lcd.fillRoundRect(x0, y0, bubbleW, bubbleH, BUBBLE_CORNER_R, 0x2444);  // dark green fill
-    M5.Lcd.drawRoundRect(x0, y0, bubbleW, bubbleH, BUBBLE_CORNER_R, 0x07E0);  // green border
-
-    // Small triangle pointer toward NibBLEs (bottom-left)
-    int triX = x0 + BUBBLE_TRI_OFFSET_X;
-    int triY = y0 + bubbleH;
-    M5.Lcd.fillTriangle(triX, triY - 1, triX + BUBBLE_TRI_W, triY - 1, triX, triY + BUBBLE_TRI_H - 1, 0x2444);
-    M5.Lcd.drawLine(triX, triY - 1, triX, triY + BUBBLE_TRI_H - 1, 0x07E0);
-    M5.Lcd.drawLine(triX, triY + BUBBLE_TRI_H - 1, triX + BUBBLE_TRI_W, triY - 1, 0x07E0);
-
-    // Draw text
-    M5.Lcd.setTextColor(0x07E0);  // green text
-    M5.Lcd.setTextSize(1);
-    M5.Lcd.setCursor(x0 + BUBBLE_TEXT_INSET_X, y0 + BUBBLE_TEXT_INSET_Y);
-    M5.Lcd.print(message);
+    drawBubble(message, x0, y0, 0x2444, 0x07E0, 0x07E0);  // dark green fill, green border, green text
 }
 
 static void clearThoughtBubble() {
