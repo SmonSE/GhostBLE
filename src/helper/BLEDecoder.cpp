@@ -1,4 +1,5 @@
 #include "BLEDecoder.h"
+#include "../config/config.h"
 #include "../logToSerialAndWeb/logger.h"
 #include "../sdCard/SDLogger.h"
 #include "../globals/globals.h"
@@ -61,7 +62,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogg
     logLine += asciiString;
 
     // ---- Known BLE characteristics ----
-    if (uuidStr.endsWith("2a19") && length >= 1)
+    if (uuidStr.endsWith(UUID_BATTERY_LEVEL) && length >= 1)
     {
         xpManager.awardXP(25);  // +25 XP: known char decoded (battery)
         String battery = String(data[0]) + "%";
@@ -72,7 +73,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogg
         logLine += "%";
     }
 
-    if (uuidStr == "2a19" && length == 1) {
+    if (uuidStr == UUID_BATTERY_LEVEL && length == 1) {
         uint8_t battery = data[0];
         Serial.printf("Battery Level: %d%%\n", battery);
         logLine += " | Battery Level=";
@@ -80,7 +81,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogg
         logLine += "%";
     }
 
-    if (uuidStr.endsWith("2a00"))
+    if (uuidStr.endsWith(UUID_DEVICE_NAME))
     {
         xpManager.awardXP(25);  // +25 XP: known char decoded (name)
         String name = asciiString;
