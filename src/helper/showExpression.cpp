@@ -109,7 +109,7 @@ void showGlassesExpressionTask(void* parameter) {
 
     if (localName.length() > 0) {
       if(localName.length() > 14) {
-        localName = localName.substring(0, 15) + "...";
+        localName = localName.substring(0, 11) + "...";
       }
       M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
       M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
@@ -155,7 +155,7 @@ void showSadExpressionTask(void* parameter) {
 
     if (localName.length() > 0) {
       if(localName.length() > 14) {
-        localName = localName.substring(0, 15) + "...";
+        localName = localName.substring(0, 11) + "...";
       }
       M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
       M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
