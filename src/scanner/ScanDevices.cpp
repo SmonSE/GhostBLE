@@ -19,6 +19,7 @@
 #include "../helper/BLEDecoder.h"
 #include "../gps/GPSManager.h"
 #include "../wardriving/WigleLogger.h"
+#include "../helper/nibblesSpeech.h"
 
 // Wardriving instances (defined in GhostBLE.ino)
 extern GPSManager gpsManager;
@@ -235,6 +236,7 @@ void scanForDevices() {
      Serial.println("NO DEVICES FOUND");
   } else {
     logToSerialAndWeb("📲 DEVICES FOUND: " + String(results.getCount()));
+    nibblesSpeechNotifyEvent();
 
     scanIsRunning = true;
 
@@ -444,6 +446,7 @@ void scanForDevices() {
                 targetFound = true;
                 susDevice++;
                 logToSerialAndWeb("Target Message: !!! Target detected !!!");
+                nibblesSpeechShow(SpeechContext::SUSPICIOUS);
                 vTaskDelay(pdMS_TO_TICKS(2000));
                 if (!isAngryTaskRunning) {
                   //logToSerialAndWeb("showAngryExpressionTask");

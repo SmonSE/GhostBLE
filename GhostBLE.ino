@@ -26,6 +26,7 @@
 #include "src/logToSerialAndWeb/logger.h"
 #include "src/gps/GPSManager.h"
 #include "src/wardriving/WigleLogger.h"
+#include "src/helper/nibblesSpeech.h"
 
 #include <WiFi.h>
 #include <AsyncTCP.h>
@@ -145,6 +146,8 @@ void setup() {
 
   ws.textAll("BLE_SCAN_READY");
 
+  nibblesSpeechBegin();
+
   startTimeDevice = millis();
   scanIsRunning = false;
 
@@ -204,10 +207,14 @@ void loop() {
     gpsManager.update();
   }
 
+  // NibBLEs speech system (idle mumbling)
+  nibblesSpeechUpdate(currentTime);
+
   // BLE scan loop
   if (bleScanEnabledWeb) {
     if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
       if (!targetFound && !scanIsRunning) {
+        nibblesSpeechNotifyEvent();
         scanForDevices();
       } else {
         targetFound = false;
@@ -241,8 +248,9 @@ void onLongPress() {
     ws.textAll("BLE_SCAN_ON");
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice); 
-  } 
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    nibblesSpeechShow(SpeechContext::SCAN_START);
+  }
   else {
     logToSerialAndWeb("⏹️ BLE Scan DISABLED");
     ws.textAll("BLE_SCAN_OFF");
@@ -335,6 +343,9 @@ void toggleWardriving() {
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+  if (wardrivingEnabled) {
+    nibblesSpeechShow(SpeechContext::WARDRIVING);
+  }
 }
 
 void switchGPSSource() {
