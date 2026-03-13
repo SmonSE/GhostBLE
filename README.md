@@ -22,7 +22,6 @@ A friendly mascot named **Nibbles** guides you through the scanning process on t
   - SD card file logging (`/device_info.txt`)
   - Web-based real-time logging via WiFi AP and WebSocket
 - **Interactive UI** – Nibbles mascot with animated expressions reacts to scan events on the LCD display
-- **Audio Feedback** – Boot melody and notification tones via built-in speaker
 
 ---
 
@@ -31,7 +30,6 @@ A friendly mascot named **Nibbles** guides you through the scanning process on t
 - **M5Stack Cardputer** (primary target)
   - ESP32-S3 with built-in keyboard, 1.14" LCD display, speaker, and USB-C
   - **microSD card required** – the device halts on boot without one
-- Stick C Plus 2 is partially supported (toggle in `src/config/config.h`)
 
 ---
 
