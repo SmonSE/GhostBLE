@@ -10,8 +10,6 @@
 // ===== SD Card Pin =====
 #if defined(CARDPUTER)
   #define SD_CS_PIN 12
-#elif defined(STICK_C_PLUS2)
-  #define SD_CS_PIN 14
 #else
   #error "No hardware platform defined. Define CARDPUTER or STICK_C_PLUS2."
 #endif
@@ -32,31 +30,17 @@ extern const char* CATHACK_SERVICE_UUID_3;
 
 // ===== GPS Pins =====
 // Grove port GPS (e.g. M5Stack GPS Unit on Grove UART)
-#if defined(CARDPUTER)
-  #define GPS_GROVE_RX 1
-  #define GPS_GROVE_TX 2
-#elif defined(STICK_C_PLUS2)
-  #define GPS_GROVE_RX 33
-  #define GPS_GROVE_TX 32
-#endif
+#define GPS_GROVE_RX 1
+#define GPS_GROVE_TX 2
 
 // LoRa cap GPS (e.g. LoRa + GPS cap module with ATGM336H)
-#if defined(CARDPUTER)
-  #define GPS_LORA_RX 15
-  #define GPS_LORA_TX 13
-#elif defined(STICK_C_PLUS2)
-  #define GPS_LORA_RX 36
-  #define GPS_LORA_TX 26
-#endif
+#define GPS_LORA_RX 15
+#define GPS_LORA_TX 13
 
 // LoRa SX1262 chip select (shared SPI bus with SD card)
-#if defined(CARDPUTER)
-  #define LORA_CS_PIN 5
-#elif defined(STICK_C_PLUS2)
-  #define LORA_CS_PIN -1
-#endif
+#define LORA_CS_PIN 5
 
-#define GPS_BAUD_RATE 9600
+#define GPS_BAUD_RATE 115200
 
 // ===== WiFi AP Settings =====
 #define WIFI_AP_SSID "GhostBLE"
