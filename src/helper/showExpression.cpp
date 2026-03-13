@@ -13,7 +13,6 @@
 #include "../images/nibblesHeartLeft.h"
 #include "../images/nibblesHeartRight.h"
 #include "../images/nibblesThugLife.h"
-#include "src/images/nibblesBubble.h"
 #include "../gps/GPSManager.h"
 
 static float smoothedVoltage = 0;
@@ -112,11 +111,17 @@ void showGlassesExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 15) + "...";
       }
-      drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 125, 15);
+      M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
+      M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
+      // Small triangle pointer toward NibBLEs
+      int triX = 133, triY = 37;
+      M5.Lcd.fillTriangle(triX, triY - 1, triX + 6, triY - 1, triX, triY + 4, WHITE);
+      M5.Lcd.drawLine(triX, triY - 1, triX, triY + 4, 0x2104);
+      M5.Lcd.drawLine(triX, triY + 4, triX + 6, triY - 1, 0x2104);
       delay(200);
       M5.Lcd.setTextColor(BLACK);
       M5.Lcd.setTextSize(1);
-      M5.Lcd.setCursor(136, 27);
+      M5.Lcd.setCursor(131, 22);
       M5.Lcd.println(localName.c_str());
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
     }
@@ -152,11 +157,16 @@ void showSadExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 15) + "...";
       }
-      drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 130, 15);
+      M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
+      M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
+      int triX2 = 133, triY2 = 37;
+      M5.Lcd.fillTriangle(triX2, triY2 - 1, triX2 + 6, triY2 - 1, triX2, triY2 + 4, WHITE);
+      M5.Lcd.drawLine(triX2, triY2 - 1, triX2, triY2 + 4, 0x2104);
+      M5.Lcd.drawLine(triX2, triY2 + 4, triX2 + 6, triY2 - 1, 0x2104);
       delay(200);
       M5.Lcd.setTextColor(BLACK);
       M5.Lcd.setTextSize(1);
-      M5.Lcd.setCursor(140, 27);
+      M5.Lcd.setCursor(131, 22);
       M5.Lcd.println(localName.c_str());
     }
 

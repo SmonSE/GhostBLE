@@ -21,7 +21,6 @@
 #include "src/images/nibblesHeartRight.h"
 #include "src/images/nibblesHappy.h"
 #include "src/images/nibblesThugLife.h"
-#include "src/images/nibblesBubble.h"
 
 #include "src/logToSerialAndWeb/logger.h"
 #include "src/gps/GPSManager.h"
@@ -116,7 +115,12 @@ void setup() {
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  drawOverlay(speechBubble, SPEECHBUBBLE_WIDTH, SPEECHBUBBLE_HEIGHT, 125, 15);
+  M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
+  M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
+  int triX = 133, triY = 37;
+  M5.Lcd.fillTriangle(triX, triY - 1, triX + 6, triY - 1, triX, triY + 4, WHITE);
+  M5.Lcd.drawLine(triX, triY - 1, triX, triY + 4, 0x2104);
+  M5.Lcd.drawLine(triX, triY + 4, triX + 6, triY - 1, 0x2104);
   delay(200);
 
   // Deselect LoRa chip to free shared SPI bus for SD card

@@ -4,7 +4,6 @@
 #include "drawOverlay.h"
 #include "showExpression.h"
 #include "../globals/globals.h"
-#include "../images/nibblesBubble.h"
 #include "../images/nibblesFront.h"
 #include "../images/nibblesHappy.h"
 
