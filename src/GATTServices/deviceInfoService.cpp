@@ -20,9 +20,7 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
           }
       
           if (pChar->canRead()) {
-              std::string value = pChar->readValue();
-              String val = String(value.c_str());
-              deviceInfoString += String(charNames[i]) + ": " + val + "\n";
+              deviceInfoString += String(charNames[i]) + ": " + pChar->readValue().c_str() + "\n";
               //logToSerialAndWeb("     " + String(charNames[i]) + ": " + val);
           }
         }
