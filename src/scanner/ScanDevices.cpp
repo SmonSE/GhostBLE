@@ -309,7 +309,10 @@ static bool connectAndReadGATT(
   xpManager.awardXP(5);  // +5 XP: GATT connection success
 
   if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-    xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1);
+    if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1) != pdPASS) {
+      Serial.println("Failed to create BLEGlasses task");
+      isGlassesTaskRunning = false;
+    }
   }
 
   // Subscribe to notifications for all characteristics that support it
@@ -375,7 +378,10 @@ static bool connectAndReadGATT(
       vTaskDelay(pdMS_TO_TICKS(2000));
       if (!isAngryTaskRunning) {
         //logToSerialAndWeb("showAngryExpressionTask");
-        xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1);
+        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1) != pdPASS) {
+          Serial.println("Failed to create AngryFace task");
+          isAngryTaskRunning = false;
+        }
       }
       isTarget = true;
       return true;  // target found — caller should break
@@ -602,7 +608,10 @@ void scanForDevices() {
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
               //logToSerialAndWeb("showSadExpressionTask");
-              xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1);
+              if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1) != pdPASS) {
+                Serial.println("Failed to create SadFace task");
+                isSadTaskRunning = false;
+              }
             }
 
             // Only write to SD if device has a name
