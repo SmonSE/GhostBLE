@@ -115,12 +115,6 @@ void setup() {
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
-  M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
-  int triX = 133, triY = 37;
-  M5.Lcd.fillTriangle(triX, triY - 1, triX + 6, triY - 1, triX, triY + 4, WHITE);
-  M5.Lcd.drawLine(triX, triY - 1, triX, triY + 4, 0x2104);
-  M5.Lcd.drawLine(triX, triY + 4, triX + 6, triY - 1, 0x2104);
   delay(200);
 
   // Deselect LoRa chip to free shared SPI bus for SD card
@@ -131,20 +125,14 @@ void setup() {
 
   #if defined(CARDPUTER)
   if (!sdLogger.begin(SD_CS_PIN)) {
-    M5.Lcd.setTextColor(BLACK); 
-    M5.Lcd.setTextSize(1); 
-    M5.Lcd.setCursor(136, 27);
-    M5.Lcd.println("  NO SD CARD! ");
+    drawThoughtBubble("NO SD CARD!", 125, 18);
     while (1);
   }
   #endif
 
   xpManager.begin();
 
-  M5.Lcd.setTextColor(BLACK);
-  M5.Lcd.setTextSize(1);
-  M5.Lcd.setCursor(136, 27);
-  M5.Lcd.println("HI I'M NIBBLES");
+  drawThoughtBubble("HI I'M NIBBLES", 125, 18);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   isWebLogActive = true; 
