@@ -8,14 +8,16 @@ void initLogger() {
 }
 
 void logToSerialAndWeb(const String& msg) {
-  if (logMutex != NULL && xSemaphoreTake(logMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-    Serial.println(msg);
-    if (ws.count() > 0) {
+  if (logMutex != NULL && xSemaphoreTake(logMutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+    if (Serial.availableForWrite() > 0) {
+      Serial.println(msg);
+    }
+    if (ws.count() > 0 && ws.availableForWriteAll()) {
       ws.textAll(msg);
     }
     xSemaphoreGive(logMutex);
   } else {
-    // Fallback: at least write to serial if mutex unavailable
+    // Fallback: write to serial without mutex if timeout exceeded
     Serial.println(msg);
   }
 }
