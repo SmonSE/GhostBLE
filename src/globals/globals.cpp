@@ -37,6 +37,8 @@ std::atomic<int> batteryPercent{0};
 std::atomic<int> riskScore{0};
 std::atomic<int> rssi{0};
 
+std::string addrStr = "";
+
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
 

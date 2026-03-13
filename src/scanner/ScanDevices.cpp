@@ -224,7 +224,7 @@ static bool parseDeviceInfo(
     return false;
   }
 
-  std::string addrStr = device->getAddress().toString();
+  addrStr = device->getAddress().toString();
   address = addrStr.c_str();
   localName = device->haveName() ? String(device->getName().c_str()) : "";
   rssi = device->getRSSI();

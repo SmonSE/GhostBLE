@@ -7,6 +7,7 @@
 #include "../config/config.h"
 #include "../images/nibblesFront.h"
 #include "../images/nibblesHappy.h"
+#include "../images/nibblesSleep.h"
 
 // --- Message pools ---
 
@@ -124,7 +125,7 @@ static void clearThoughtBubble() {
 static void showMumble(const char* message) {
     // Redraw sprite area to clear any previous bubble cleanly
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    drawOverlay(nibblesSleep, NIBBLESSLEEP_WIDTH, NIBBLESSLEEP_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
 
     drawThoughtBubble(message, BUBBLE_X, THOUGHT_BUBBLE_Y);
     thoughtVisible = true;

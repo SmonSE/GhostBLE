@@ -13,6 +13,7 @@
 #include "../images/nibblesHeartLeft.h"
 #include "../images/nibblesHeartRight.h"
 #include "../images/nibblesThugLife.h"
+#include "../images/nibblesSleep.h"
 #include "../gps/GPSManager.h"
 
 static float smoothedVoltage = 0;
@@ -238,7 +239,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT);
   M5.Lcd.printf("Sniffed %d", sniffed);
   M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 2);
-  M5.Lcd.printf("Beacons %d", beaconsFound);
+  M5.Lcd.printf("Beacons %d", beaconsFound.load());
   M5.Lcd.setTextColor(RED);
   M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 3);
   M5.Lcd.printf("Sus     %d", susDevice);

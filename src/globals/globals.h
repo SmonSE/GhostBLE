@@ -42,6 +42,8 @@ extern std::atomic<int> batteryPercent;
 extern std::atomic<int> riskScore;
 extern std::atomic<int> rssi;
 
+extern std::string addrStr;
+
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;
 
