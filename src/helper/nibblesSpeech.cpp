@@ -122,9 +122,9 @@ static void clearThoughtBubble() {
 }
 
 static void showMumble(const char* message) {
-    // Clear any previous bubble area first
-    // The bubble sits at top-right area above the character
-    M5.Lcd.fillRect(125, 15, 112, 45, BLACK);
+    // Redraw sprite area to clear any previous bubble cleanly
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
 
     drawThoughtBubble(message, 125, 18);
     thoughtVisible = true;
