@@ -14,14 +14,14 @@
 static const char* idleMessages[] = {
     "Hmm...",
     "Anyone here?",
-    "Still scanning",
+    "Nothing to do...",
     "Press BtnG0",
     "Where is everyone",
     "So quiet...",
     "Zzz...",
     "Hello?",
     "*yawn*",
-    "Bored..."
+    "So Bored..."
 };
 static const int idleMessageCount = sizeof(idleMessages) / sizeof(idleMessages[0]);
 
