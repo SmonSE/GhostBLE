@@ -109,20 +109,7 @@ void showGlassesExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
-      int bubbleTextY = BUBBLE_RECT_Y + BUBBLE_TEXT_INSET_Y;
-      M5.Lcd.fillRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, WHITE);
-      M5.Lcd.drawRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, BUBBLE_BORDER_COLOR);
-      // Small triangle pointer toward NibBLEs
-      int triX = BUBBLE_X + BUBBLE_TRI_OFFSET_X;
-      int triY = BUBBLE_RECT_Y + BUBBLE_RECT_H;
-      M5.Lcd.fillTriangle(triX, triY - 1, triX + BUBBLE_TRI_W, triY - 1, triX, triY + BUBBLE_TRI_H - 1, WHITE);
-      M5.Lcd.drawLine(triX, triY - 1, triX, triY + BUBBLE_TRI_H - 1, BUBBLE_BORDER_COLOR);
-      M5.Lcd.drawLine(triX, triY + BUBBLE_TRI_H - 1, triX + BUBBLE_TRI_W, triY - 1, BUBBLE_BORDER_COLOR);
-      delay(200);
-      M5.Lcd.setTextColor(BLACK);
-      M5.Lcd.setTextSize(1);
-      M5.Lcd.setCursor(BUBBLE_X + BUBBLE_TEXT_INSET_X, bubbleTextY);
-      M5.Lcd.println(localName.c_str());
+      drawBubble(localName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
     }
 
@@ -157,19 +144,7 @@ void showSadExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
-      int bubbleTextY = BUBBLE_RECT_Y + BUBBLE_TEXT_INSET_Y;
-      M5.Lcd.fillRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, WHITE);
-      M5.Lcd.drawRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, BUBBLE_BORDER_COLOR);
-      int triX2 = BUBBLE_X + BUBBLE_TRI_OFFSET_X;
-      int triY2 = BUBBLE_RECT_Y + BUBBLE_RECT_H;
-      M5.Lcd.fillTriangle(triX2, triY2 - 1, triX2 + BUBBLE_TRI_W, triY2 - 1, triX2, triY2 + BUBBLE_TRI_H - 1, WHITE);
-      M5.Lcd.drawLine(triX2, triY2 - 1, triX2, triY2 + BUBBLE_TRI_H - 1, BUBBLE_BORDER_COLOR);
-      M5.Lcd.drawLine(triX2, triY2 + BUBBLE_TRI_H - 1, triX2 + BUBBLE_TRI_W, triY2 - 1, BUBBLE_BORDER_COLOR);
-      delay(200);
-      M5.Lcd.setTextColor(BLACK);
-      M5.Lcd.setTextSize(1);
-      M5.Lcd.setCursor(BUBBLE_X + BUBBLE_TEXT_INSET_X, bubbleTextY);
-      M5.Lcd.println(localName.c_str());
+      drawBubble(localName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
     }
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
