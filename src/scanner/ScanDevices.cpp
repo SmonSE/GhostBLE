@@ -43,31 +43,30 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
         auto characteristics = service->getCharacteristics(true); // returns std::vector<NimBLERemoteCharacteristic*>
         for (auto* characteristic : characteristics) {
           if (!characteristic) continue;
-          if (characteristic->canNotify()) 
-          {
-            if (characteristic->canNotify()) {
-                characteristic->subscribe(true, notifyCallback);
-                xpManager.awardXP(10);  // +10 XP: characteristic subscription
-            } else if (characteristic->canIndicate()) {
-                characteristic->subscribe(false, notifyCallback);
-                xpManager.awardXP(10);  // +10 XP: characteristic subscription
-            }
-            if (characteristic->canRead()) {
-                std::string val = characteristic->readValue();
-                logToSerialAndWeb(("   Read value length: " + String(val.length())).c_str());
-                logSubs += "   Read value length: " + String(val.length());
-            }
-            logToSerialAndWeb(
-                String("   Subscribed to notifis for char ") +
-                characteristic->getUUID().toString().c_str() +
-                " in service " +
-                service->getUUID().toString().c_str()
-            );
-            logSubs += String("   Subscribed to notifis for char ") + 
-                characteristic->getUUID().toString().c_str() +
-                " in service " +
-                service->getUUID().toString().c_str();
+          if (characteristic->canNotify()) {
+              characteristic->subscribe(true, notifyCallback);
+              xpManager.awardXP(10);  // +10 XP: characteristic subscription
+          } else if (characteristic->canIndicate()) {
+              characteristic->subscribe(false, notifyCallback);
+              xpManager.awardXP(10);  // +10 XP: characteristic subscription
+          } else {
+              continue;
           }
+          if (characteristic->canRead()) {
+              std::string val = characteristic->readValue();
+              logToSerialAndWeb(("   Read value length: " + String(val.length())).c_str());
+              logSubs += "   Read value length: " + String(val.length());
+          }
+          logToSerialAndWeb(
+              String("   Subscribed to notifis for char ") +
+              characteristic->getUUID().toString().c_str() +
+              " in service " +
+              service->getUUID().toString().c_str()
+          );
+          logSubs += String("   Subscribed to notifis for char ") +
+              characteristic->getUUID().toString().c_str() +
+              " in service " +
+              service->getUUID().toString().c_str();
           if (logSubs.length() > 0) {
             sdLogger.writeCategory(logSubs);
           }
