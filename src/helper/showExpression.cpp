@@ -100,78 +100,82 @@ void showGlassesExpressionTask(void* parameter) {
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     if (localName.length() > 0) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
-      M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
-      M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
+      int bubbleTextY = BUBBLE_RECT_Y + BUBBLE_TEXT_INSET_Y;
+      M5.Lcd.fillRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, WHITE);
+      M5.Lcd.drawRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, BUBBLE_BORDER_COLOR);
       // Small triangle pointer toward NibBLEs
-      int triX = 133, triY = 37;
-      M5.Lcd.fillTriangle(triX, triY - 1, triX + 6, triY - 1, triX, triY + 4, WHITE);
-      M5.Lcd.drawLine(triX, triY - 1, triX, triY + 4, 0x2104);
-      M5.Lcd.drawLine(triX, triY + 4, triX + 6, triY - 1, 0x2104);
+      int triX = BUBBLE_X + BUBBLE_TRI_OFFSET_X;
+      int triY = BUBBLE_RECT_Y + BUBBLE_RECT_H;
+      M5.Lcd.fillTriangle(triX, triY - 1, triX + BUBBLE_TRI_W, triY - 1, triX, triY + BUBBLE_TRI_H - 1, WHITE);
+      M5.Lcd.drawLine(triX, triY - 1, triX, triY + BUBBLE_TRI_H - 1, BUBBLE_BORDER_COLOR);
+      M5.Lcd.drawLine(triX, triY + BUBBLE_TRI_H - 1, triX + BUBBLE_TRI_W, triY - 1, BUBBLE_BORDER_COLOR);
       delay(200);
       M5.Lcd.setTextColor(BLACK);
       M5.Lcd.setTextSize(1);
-      M5.Lcd.setCursor(131, 22);
+      M5.Lcd.setCursor(BUBBLE_X + BUBBLE_TEXT_INSET_X, bubbleTextY);
       M5.Lcd.println(localName.c_str());
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
     }
-  
+
     isGlassesTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
 
-  
+
 void showAngryExpressionTask(void* parameter) {
     isAngryTaskRunning = true;
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
     drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
-  
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+
     isAngryTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
-  
-  
+
+
 void showSadExpressionTask(void* parameter) {
     isSadTaskRunning = true;
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
     drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     if (localName.length() > 0) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
-      M5.Lcd.fillRoundRect(125, 15, 108, 22, 4, WHITE);
-      M5.Lcd.drawRoundRect(125, 15, 108, 22, 4, 0x2104);
-      int triX2 = 133, triY2 = 37;
-      M5.Lcd.fillTriangle(triX2, triY2 - 1, triX2 + 6, triY2 - 1, triX2, triY2 + 4, WHITE);
-      M5.Lcd.drawLine(triX2, triY2 - 1, triX2, triY2 + 4, 0x2104);
-      M5.Lcd.drawLine(triX2, triY2 + 4, triX2 + 6, triY2 - 1, 0x2104);
+      int bubbleTextY = BUBBLE_RECT_Y + BUBBLE_TEXT_INSET_Y;
+      M5.Lcd.fillRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, WHITE);
+      M5.Lcd.drawRoundRect(BUBBLE_X, BUBBLE_RECT_Y, BUBBLE_RECT_W, BUBBLE_RECT_H, BUBBLE_CORNER_R, BUBBLE_BORDER_COLOR);
+      int triX2 = BUBBLE_X + BUBBLE_TRI_OFFSET_X;
+      int triY2 = BUBBLE_RECT_Y + BUBBLE_RECT_H;
+      M5.Lcd.fillTriangle(triX2, triY2 - 1, triX2 + BUBBLE_TRI_W, triY2 - 1, triX2, triY2 + BUBBLE_TRI_H - 1, WHITE);
+      M5.Lcd.drawLine(triX2, triY2 - 1, triX2, triY2 + BUBBLE_TRI_H - 1, BUBBLE_BORDER_COLOR);
+      M5.Lcd.drawLine(triX2, triY2 + BUBBLE_TRI_H - 1, triX2 + BUBBLE_TRI_W, triY2 - 1, BUBBLE_BORDER_COLOR);
       delay(200);
       M5.Lcd.setTextColor(BLACK);
       M5.Lcd.setTextSize(1);
-      M5.Lcd.setCursor(131, 22);
+      M5.Lcd.setCursor(BUBBLE_X + BUBBLE_TEXT_INSET_X, bubbleTextY);
       M5.Lcd.println(localName.c_str());
     }
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     isSadTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
@@ -180,27 +184,27 @@ void showSadExpressionTask(void* parameter) {
 void showHappyExpressionTask(void* parameter) {
     isHappyTaskRunning = true;
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     vTaskDelay(pdMS_TO_TICKS(4000));  // 4 Sekunden
 
     isHappyTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 }
-  
-  
+
+
 void showThugLifeExpressionTask(void* parameter) {
   isThugLifeTaskRunning = true;
-  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
   drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
 
   vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  showFindingCounter(targetConnects, susDevice, allSpottedDevice);  
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
   isThugLifeTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
@@ -212,51 +216,50 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
   bool charging = M5.Power.isCharging();
   M5.Lcd.setTextSize(1);
 
-  // ---- TOP BAR (y=2) ----
+  // ---- TOP BAR ----
   if (wardrivingEnabled) {
     extern GPSManager gpsManager;
     bool hasFix = gpsManager.isValid();
-    drawGPSIcon(5, 2, hasFix);
+    drawGPSIcon(STATUS_ICON_X, STATUS_BAR_Y, hasFix);
     uint16_t gpsColor = hasFix ? GREEN : RED;
     M5.Lcd.setTextColor(gpsColor);
     M5.Lcd.setCursor(18, 4);
     M5.Lcd.printf("SAT:%u %s", gpsManager.getSatellites(), hasFix ? "FIX" : "NO FIX");
   } else {
-    drawWifiIcon(5, 2, isWebLogActive);
+    drawWifiIcon(STATUS_ICON_X, STATUS_BAR_Y, isWebLogActive);
     drawScanIcon(20, 4, bleScanEnabledWeb);
   }
-  drawBatteryIcon(215, 2, displayedPercent, charging);
+  drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, charging);
 
-  // ---- STATS — LEFT SIDE (x=5) ----
+  // ---- STATS — LEFT SIDE ----
   M5.Lcd.setTextColor(WHITE);
-  M5.Lcd.setCursor(5, 62);
+  M5.Lcd.setCursor(STATS_X, STATS_Y_START);
   M5.Lcd.printf("Spotted %d", spotted);
-  M5.Lcd.setCursor(5, 74);
+  M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT);
   M5.Lcd.printf("Sniffed %d", sniffed);
-  M5.Lcd.setCursor(5, 86);
+  M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 2);
   M5.Lcd.printf("Beacons %d", beaconsFound);
   M5.Lcd.setTextColor(RED);
-  M5.Lcd.setCursor(5, 98);
+  M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 3);
   M5.Lcd.printf("Sus     %d", susDevice);
 
-  // ---- BOTTOM BAR — Level/XP (y=127) ----
+  // ---- BOTTOM BAR — Level/XP ----
   M5.Lcd.setTextColor(GREEN);
-  M5.Lcd.setCursor(5, 127);
+  M5.Lcd.setCursor(LEVEL_TEXT_X, BOTTOM_BAR_Y);
   M5.Lcd.printf("LV%u", xpManager.getLevel());
 
   // Progress bar
-  int barX = 38, barY = 127, barW = 70, barH = 7;
-  M5.Lcd.drawRect(barX, barY, barW, barH, GREEN);
-  int fillW = (barW - 2) * xpManager.getProgressPercent() / 100;
+  M5.Lcd.drawRect(XP_BAR_X, BOTTOM_BAR_Y, XP_BAR_W, XP_BAR_H, GREEN);
+  int fillW = (XP_BAR_W - 2) * xpManager.getProgressPercent() / 100;
   if (fillW > 0) {
-    M5.Lcd.fillRect(barX + 1, barY + 1, fillW, barH - 2, GREEN);
+    M5.Lcd.fillRect(XP_BAR_X + 1, BOTTOM_BAR_Y + 1, fillW, XP_BAR_H - 2, GREEN);
   }
-  if (fillW < barW - 2) {
-    M5.Lcd.fillRect(barX + 1 + fillW, barY + 1, barW - 2 - fillW, barH - 2, BLACK);
+  if (fillW < XP_BAR_W - 2) {
+    M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, BOTTOM_BAR_Y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
   }
 
   // Nibbles title
   M5.Lcd.setTextColor(GREEN);
-  M5.Lcd.setCursor(112, 127);
+  M5.Lcd.setCursor(TITLE_TEXT_X, BOTTOM_BAR_Y);
   M5.Lcd.print(xpManager.getTitle());
 }
