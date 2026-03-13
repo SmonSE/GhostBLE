@@ -134,8 +134,10 @@ void setup() {
   }
   #endif
 
-  M5.Lcd.setTextColor(BLACK); 
-  M5.Lcd.setTextSize(1); 
+  xpManager.begin();
+
+  M5.Lcd.setTextColor(BLACK);
+  M5.Lcd.setTextSize(1);
   M5.Lcd.setCursor(136, 27);
   M5.Lcd.println("HI I'M NIBBLES");
   vTaskDelay(pdMS_TO_TICKS(2000));

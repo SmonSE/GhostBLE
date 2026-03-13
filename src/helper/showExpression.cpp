@@ -209,6 +209,26 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
     M5.Lcd.print("WD:ON");
   }
 
+  // XP Level and progress bar
+  M5.Lcd.setTextColor(GREEN);
+  M5.Lcd.setTextSize(1);
+  M5.Lcd.setCursor(5, 94);
+  M5.Lcd.printf("LVL:%u", xpManager.getLevel());
+
+  // Progress bar outline
+  int barX = 55, barY = 94, barW = 60, barH = 7;
+  M5.Lcd.drawRect(barX, barY, barW, barH, GREEN);
+  // Progress bar fill
+  int fillW = (barW - 2) * xpManager.getProgressPercent() / 100;
+  if (fillW > 0) {
+    M5.Lcd.fillRect(barX + 1, barY + 1, fillW, barH - 2, GREEN);
+  }
+
+  // Nibbles title
+  M5.Lcd.setTextColor(GREEN);
+  M5.Lcd.setCursor(120, 94);
+  M5.Lcd.print(xpManager.getTitle());
+
   M5.Lcd.setTextColor(WHITE);
   M5.Lcd.setTextSize(1);
   M5.Lcd.setCursor(5, 104);

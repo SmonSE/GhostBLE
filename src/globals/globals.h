@@ -8,6 +8,10 @@
 #include <vector>
 #include <atomic>
 
+#include "../xp/XPManager.h"
+
+extern XPManager xpManager;
+
 // ScanDevices seenDevices
 extern std::set<std::string> seenDevices;
 extern std::vector<std::string> uuidList;
