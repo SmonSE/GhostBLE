@@ -253,17 +253,18 @@ void scanForDevices() {
       IBeaconInfo beacon;
 
       if (device != nullptr) {
-        address = device->getAddress().toString().c_str();
+        std::string addrStr = device->getAddress().toString();
+        address = addrStr.c_str();
         localName = device->haveName() ? String(device->getName().c_str()) : "";
         rssi = device->getRSSI();
         is_connectable = device->isConnectable();
 
         // Dedupe: Insert into seenDevices immediately (before any connect attempt)
-        if (seenDevices.find(std::string(address.c_str())) != seenDevices.end()) {
+        if (seenDevices.find(addrStr) != seenDevices.end()) {
           logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
           continue;
         }
-        seenDevices.insert(std::string(address.c_str()));
+        seenDevices.insert(addrStr);
 
         // Risk factor: Weak/default device name
         if (localName == "< -- >" || localName == "BLE Device" || localName == "Random") {
@@ -320,7 +321,7 @@ void scanForDevices() {
 
       handleDevicePrivacy(
           std::string(localName.c_str()),
-          std::string(address.c_str()),
+          addrStr,
           advData,
           payloadVec,
           is_connectable,
