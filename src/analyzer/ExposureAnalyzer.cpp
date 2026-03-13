@@ -1,10 +1,7 @@
 #include "ExposureAnalyzer.h"
+#include "../config/constants.h"
 
-static const std::vector<std::string> roomWords = {
-    "wohnzimmer", "küche", "kueche", "bad",
-    "schlafzimmer", "office", "living",
-    "bedroom", "kitchen", "bath"
-};
+static const std::vector<std::string>& roomWords = getRoomWords();
 
 static ExposureTier determineExposureTier(const DeviceInfo& dev)
 {

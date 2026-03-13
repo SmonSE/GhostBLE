@@ -1,4 +1,5 @@
 #include "ExposureClassifier.h"
+#include "../config/constants.h"
 #include <algorithm>
 #include <cctype>
 #include <vector>
@@ -56,13 +57,7 @@ bool looksLikeEnvironmentName(const std::string& name)
     std::string lower = name;
     std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
-    static const std::vector<std::string> roomWords = {
-        "wohnzimmer", "küche", "kueche",
-        "bad", "schlafzimmer",
-        "office", "living",
-        "bedroom", "kitchen", "bath",
-        "Arbeitszimmer", "Gästezimmer", "Garage", "Büro"
-    };
+    const std::vector<std::string>& roomWords = getRoomWords();
 
     for (const auto& word : roomWords)
     {

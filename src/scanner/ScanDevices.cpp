@@ -12,6 +12,7 @@
 #include "../helper/showExpression.h"
 #include "../logToSerialAndWeb/logger.h"
 #include "../privacyCheck/devicePrivacy.h"
+#include "../config/constants.h"
 #include "../analyzer/ExposureAnalyzer.h"
 #include "../models/DeviceInfo.h"
 #include "../privacyCheck/ExposureClassifier.h"
@@ -100,11 +101,7 @@ struct IBeaconInfo {
   int8_t txPower = 0;
 };
 
-static const std::vector<std::string> roomWords = {
-    "wohnzimmer", "küche", "kueche", "bad",
-    "schlafzimmer", "office", "living",
-    "bedroom", "kitchen", "bath"
-};
+static const std::vector<std::string>& roomWords = getRoomWords();
 
 struct DeviceAssessment {
   bool hackable = false;
