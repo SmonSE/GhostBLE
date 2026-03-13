@@ -38,14 +38,14 @@ extern bool is_connectable;
 extern bool bleScanEnabledWeb;
 extern bool wardrivingEnabled;
 
-extern int susDevice;
-extern int beaconsFound;
-extern int targetConnects;
-extern int allSpottedDevice;
-extern int leakedCounter;
-extern int batteryPercent;
-extern int riskScore;
-extern int rssi;
+extern std::atomic<int> susDevice;
+extern std::atomic<int> beaconsFound;
+extern std::atomic<int> targetConnects;
+extern std::atomic<int> allSpottedDevice;
+extern std::atomic<int> leakedCounter;
+extern std::atomic<int> batteryPercent;
+extern std::atomic<int> riskScore;
+extern std::atomic<int> rssi;
 
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;
