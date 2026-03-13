@@ -21,8 +21,6 @@ extern bool scanIsRunning;
 
 // Global flags and strings
 extern bool targetFound;
-extern bool hasManuData;
-extern bool skipLogging;
 extern std::atomic<bool> isGlassesTaskRunning;
 extern std::atomic<bool> isAngryTaskRunning;
 extern std::atomic<bool> isSadTaskRunning;

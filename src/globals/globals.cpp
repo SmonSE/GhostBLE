@@ -13,8 +13,6 @@ std::vector<std::string> nameList;
 bool scanIsRunning = false;
 
 bool targetFound = false;
-bool hasManuData = false;
-bool skipLogging = false;
 std::atomic<bool> isGlassesTaskRunning{false};
 std::atomic<bool> isAngryTaskRunning{false};
 std::atomic<bool> isSadTaskRunning{false};
