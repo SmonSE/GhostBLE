@@ -321,13 +321,9 @@ void toggleWardriving() {
 
   if (wardrivingEnabled) {
     gpsManager.begin(GPSSource::GROVE);
-    if (wigleLogger.begin()) {
-      logToSerialAndWeb("Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
-      logToSerialAndWeb("  File: " + wigleLogger.getFilename());
-    } else {
-      logToSerialAndWeb("Wardriving: SD write failed!");
-      wardrivingEnabled = false;
-    }
+    wigleLogger.begin();
+    logToSerialAndWeb("Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
+    logToSerialAndWeb("  File: " + wigleLogger.getFilename());
   } else {
     wigleLogger.end();
     logToSerialAndWeb("Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");

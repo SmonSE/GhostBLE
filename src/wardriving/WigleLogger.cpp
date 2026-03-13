@@ -1,6 +1,6 @@
 #include "WigleLogger.h"
 
-WigleLogger::WigleLogger() : initialized(false), loggedCount(0) {}
+WigleLogger::WigleLogger() : active(false), initialized(false), loggedCount(0) {}
 
 String WigleLogger::generateFilename() {
     // Find next available filename in /GhostBLE/ folder
@@ -14,7 +14,13 @@ String WigleLogger::generateFilename() {
     return "/GhostBLE/wigle_overflow.csv";
 }
 
-bool WigleLogger::begin() {
+void WigleLogger::begin() {
+    active = true;
+    loggedCount = 0;
+    Serial.println("WigleLogger: Ready (file created on first GPS fix)");
+}
+
+bool WigleLogger::openFile() {
     if (initialized) return true;
 
     filename = generateFilename();
@@ -26,7 +32,6 @@ bool WigleLogger::begin() {
 
     writeHeader();
     initialized = true;
-    loggedCount = 0;
     Serial.println("WigleLogger: Logging to " + filename);
     return true;
 }
@@ -51,7 +56,10 @@ String WigleLogger::escapeCSV(const String& value) {
 void WigleLogger::logDevice(const String& mac, const String& name, int rssi,
                             double lat, double lon, double alt, float hdop,
                             const String& timestamp) {
-    if (!initialized || !file) return;
+    if (!active) return;
+
+    // Lazily create the file on first device log (only when GPS is valid)
+    if (!initialized && !openFile()) return;
 
     // Estimate accuracy from HDOP (rough: HDOP * 5 meters)
     float accuracy = hdop * 5.0f;
@@ -96,15 +104,20 @@ void WigleLogger::end() {
     if (initialized && file) {
         file.flush();
         file.close();
-        initialized = false;
         Serial.println("WigleLogger: Closed " + filename + " (" + String(loggedCount) + " entries)");
     }
+    initialized = false;
+    active = false;
 }
 
 String WigleLogger::getFilename() const {
-    return filename;
+    return initialized ? filename : "(waiting for GPS)";
 }
 
 uint32_t WigleLogger::getLoggedCount() const {
     return loggedCount;
+}
+
+bool WigleLogger::isReady() const {
+    return active;
 }
