@@ -326,12 +326,12 @@ static bool connectAndReadGATT(
       std::string charUuid = characteristic->getUUID().toString();
       uuidList.push_back("Characteristic UUID: " + std::string(charUuid.c_str()));
 
-      if (charUuid == "2a24") {               // Model Number
+      if (charUuid == UUID_MODEL_NUMBER) {     // Model Number
           dev.gattHasModelInfo = true;
       }
 
-      if (charUuid == "2a29" ||               // Manufacturer Name
-          charUuid == "2a25") {               // Serial Number
+      if (charUuid == UUID_MANUFACTURER_NAME || // Manufacturer Name
+          charUuid == UUID_SERIAL_NUMBER) {    // Serial Number
           dev.gattHasIdentityInfo = true;
       }
 
@@ -440,8 +440,8 @@ void scanForDevices() {
 
   pScan->clearResults();        // 1. Clear previous results first
   pScan->setActiveScan(true);   // 2. Set active scan mode
-  pScan->setInterval(45);       // 3. Set scan interval // old 1000
-  pScan->setWindow(15);         // 4. Set scan window   // old 900
+  pScan->setInterval(BLE_SCAN_INTERVAL);
+  pScan->setWindow(BLE_SCAN_WINDOW);
   delay(100);                   // Optional small delay for stability
 
   NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan

@@ -1,14 +1,15 @@
 #include "genericAccessService.h"
 #include <Arduino.h>
-#include <NimBLEDevice.h> 
+#include <NimBLEDevice.h>
 
+#include "../config/config.h"
 #include "../logToSerialAndWeb/logger.h"
 
 
 String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient) {
     String accessInfoString = "";
 
-    NimBLERemoteService* gapService = pClient->getService("1800");
+    NimBLERemoteService* gapService = pClient->getService(UUID_GENERIC_ACCESS);
     if (!gapService) {
         logToSerialAndWeb("   Generic Access Service not found (0x1800)");
         return accessInfoString;

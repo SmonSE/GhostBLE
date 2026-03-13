@@ -3,6 +3,7 @@
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
 
+#include "../config/config.h"
 #include "../globals/globals.h"
 #include "../logToSerialAndWeb/logger.h"
 
@@ -31,7 +32,7 @@ String TemperatureServiceHandler::readTemperature(NimBLEClient* pClient) {
 
     if (!pClient) return "";
 
-    NimBLERemoteService* tempService = pClient->getService("1809");
+    NimBLERemoteService* tempService = pClient->getService(UUID_HEALTH_THERMOMETER);
     if (!tempService) {
         logToSerialAndWeb("     Temperature Service not found (0x1809)");
         return "";
