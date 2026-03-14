@@ -693,8 +693,6 @@ void scanForDevices() {
                 PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
 
                 LOG(LOG_BEACON, "   RSSI:     " + String(rssi));
-
-                sdLogger.writePwnBeaconInfo(pwnBeacon, rssi);
               }
 
               // -------- Security Analysis --------
