@@ -50,5 +50,3 @@ void logDisableCategory(LogCategory category);
 // Unified log: writes to configured targets based on category
 void LOG(LogCategory category, const String& msg);
 
-// Convenience: log without category (uses LOG_SYSTEM)
-void logToSerialAndWeb(const String& msg);

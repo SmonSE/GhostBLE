@@ -17,7 +17,7 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
         return timeStr;
     }
 
-    logToSerialAndWeb("     Current Time Service detected (0x1805)");
+    LOG(LOG_GATT,"     Current Time Service detected (0x1805)");
 
     // Current Time Characteristic (0x2A2B)
     NimBLERemoteCharacteristic* pChar = timeService->getCharacteristic("2A2B");
@@ -43,7 +43,7 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
              year, month, day, hours, minutes, seconds);
 
     timeStr = "Device Time: " + String(timeBuf) + "\n";
-    logToSerialAndWeb("     Device Time: " + String(timeBuf));
+    LOG(LOG_GATT,"     Device Time: " + String(timeBuf));
 
     // Day of Week (0x2A09) if available
     NimBLERemoteCharacteristic* pDow = timeService->getCharacteristic("2A09");
@@ -55,7 +55,7 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
             uint8_t dow = dowRaw[0];
             if (dow >= 1 && dow <= 7) {
                 timeStr += "Day of Week: " + String(days[dow]) + "\n";
-                logToSerialAndWeb("     Day of Week: " + String(days[dow]));
+                LOG(LOG_GATT,"     Day of Week: " + String(days[dow]));
             }
         }
     }

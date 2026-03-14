@@ -1,4 +1,5 @@
 #include "WigleLogger.h"
+#include "../logger/logger.h"
 
 WigleLogger::WigleLogger() : active(false), initialized(false), loggedCount(0) {}
 
@@ -17,7 +18,7 @@ String WigleLogger::generateFilename() {
 void WigleLogger::begin() {
     active = true;
     loggedCount = 0;
-    Serial.println("WigleLogger: Ready (file created on first GPS fix)");
+    LOG(LOG_SYSTEM, "WigleLogger: Ready (file created on first GPS fix)");
 }
 
 bool WigleLogger::openFile() {
@@ -26,13 +27,13 @@ bool WigleLogger::openFile() {
     filename = generateFilename();
     file = SD.open(filename.c_str(), FILE_WRITE);
     if (!file) {
-        Serial.println("WigleLogger: Failed to create " + filename);
+        LOG(LOG_SYSTEM, "WigleLogger: Failed to create " + filename);
         return false;
     }
 
     writeHeader();
     initialized = true;
-    Serial.println("WigleLogger: Logging to " + filename);
+    LOG(LOG_SYSTEM, "WigleLogger: Logging to " + filename);
     return true;
 }
 
@@ -104,7 +105,7 @@ void WigleLogger::end() {
     if (initialized && file) {
         file.flush();
         file.close();
-        Serial.println("WigleLogger: Closed " + filename + " (" + String(loggedCount) + " entries)");
+        LOG(LOG_SYSTEM, "WigleLogger: Closed " + filename + " (" + String(loggedCount) + " entries)");
     }
     initialized = false;
     active = false;

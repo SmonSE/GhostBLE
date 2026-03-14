@@ -61,10 +61,10 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
           }
           if (characteristic->canRead()) {
               std::string val = characteristic->readValue();
-              logToSerialAndWeb(("   Read value length: " + String(val.length())).c_str());
+              LOG(LOG_GATT, "   Read value length: " + String(val.length()));
               logSubs += "   Read value length: " + String(val.length());
           }
-          logToSerialAndWeb(
+          LOG(LOG_GATT,
               String("   Subscribed to notifis for char ") +
               characteristic->getUUID().toString().c_str() +
               " in service " +
@@ -107,6 +107,16 @@ struct IBeaconInfo {
   int8_t txPower = 0;
 };
 
+struct PwnBeaconInfo {
+  bool valid = false;
+  uint8_t version = 0;
+  uint8_t flags = 0;
+  uint16_t pwnd_run = 0;
+  uint16_t pwnd_tot = 0;
+  uint8_t fingerprint[PWNBEACON_FINGERPRINT_LEN] = {0};
+  String name;
+};
+
 struct DeviceAssessment {
   bool hackable = false;
 
@@ -146,6 +156,33 @@ IBeaconInfo parseIBeacon(const std::string& mfg) {
   return info;
 }
 
+// Parse PwnBeacon service data from advertisement
+PwnBeaconInfo parsePwnBeacon(const uint8_t* data, size_t len) {
+  PwnBeaconInfo info;
+
+  // Minimum size: version(1) + flags(1) + pwnd_run(2) + pwnd_tot(2) + fingerprint(6) + name_len(1) = 13
+  if (len < 13) return info;
+
+  if (data[0] != PWNBEACON_PROTOCOL_VERSION) return info;
+
+  info.version  = data[0];
+  info.flags    = data[1];
+  info.pwnd_run = data[2] | (data[3] << 8);  // little-endian
+  info.pwnd_tot = data[4] | (data[5] << 8);  // little-endian
+  memcpy(info.fingerprint, &data[6], PWNBEACON_FINGERPRINT_LEN);
+
+  uint8_t name_len = data[12];
+  if (name_len > PWNBEACON_ADV_MAX_NAME_LEN) {
+    name_len = PWNBEACON_ADV_MAX_NAME_LEN;
+  }
+  if (len >= (size_t)(13 + name_len)) {
+    info.name = String((const char*)&data[13]).substring(0, name_len);
+  }
+
+  info.valid = true;
+  return info;
+}
+
 float estimateDistance(int txPower, int rssi) {
   if (rssi == 0) return -1.0;
   float ratio = rssi * 1.0 / txPower;
@@ -154,12 +191,12 @@ float estimateDistance(int txPower, int rssi) {
 }
 
 void startBleScan() {
-  Serial.println("▶️ Starting BLE scan...");
+  LOG(LOG_SCAN, "▶️ Starting BLE scan...");
   scanIsRunning = false;   // allow scanForDevices() to trigger
 }
 
 void stopBleScan() {
-  Serial.println("🛑 Stopping BLE scan...");
+  LOG(LOG_SCAN, "🛑 Stopping BLE scan...");
   NimBLEDevice::getScan()->stop();
   scanIsRunning = false;
 }
@@ -203,6 +240,8 @@ static bool parseDeviceInfo(
     String& manufacturerName,
     bool& isIBeacon,
     IBeaconInfo& beacon,
+    bool& isPwnBeacon,
+    PwnBeaconInfo& pwnBeacon,
     bool& hasCustomService,
     bool& hasWeakName,
     bool& isUnknownManufacturer,
@@ -210,7 +249,7 @@ static bool parseDeviceInfo(
     bool& proprietary)
 {
   if (device == nullptr) {
-    Serial.println("⚠️ device is null! Skipping.");
+    LOG(LOG_SYSTEM, "⚠️ device is null! Skipping.");
     return false;
   }
 
@@ -222,7 +261,7 @@ static bool parseDeviceInfo(
 
   // Dedupe: Insert into seenDevices immediately (before any connect attempt)
   if (seenDevices.find(addrStr) != seenDevices.end()) {
-    logToSerialAndWeb(String("🛑 Already seen: ") + address.c_str() + "\n");
+    LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
     return false;
   }
   seenDevices.insert(addrStr);
@@ -251,11 +290,11 @@ static bool parseDeviceInfo(
     if (beacon.valid) {
       isIBeacon = true;
       xpManager.awardXP(3);  // +3 XP: iBeacon parsed
-      logToSerialAndWeb("iBeacon detected!");
-      logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
-      logToSerialAndWeb("   Major: " + String(beacon.major));
-      logToSerialAndWeb("   Minor: " + String(beacon.minor));
-      logToSerialAndWeb("   TX:    " + String(beacon.txPower));
+      LOG(LOG_BEACON, "iBeacon detected!");
+      LOG(LOG_BEACON, "   UUID:  " + String(beacon.uuid.c_str()));
+      LOG(LOG_BEACON, "   Major: " + String(beacon.major));
+      LOG(LOG_BEACON, "   Minor: " + String(beacon.minor));
+      LOG(LOG_BEACON, "   TX:    " + String(beacon.txPower));
     }
 
     if (manufacturerName.isEmpty()) {
@@ -278,7 +317,7 @@ static bool parseDeviceInfo(
   // -------- Advertisement Service UUIDs --------
   int svcCount = device->getServiceUUIDCount();
   if (svcCount > 0) {
-    logToSerialAndWeb("   Advertised Services (" + String(svcCount) + "):");
+    LOG(LOG_SCAN, "   Advertised Services (" + String(svcCount) + "):");
     for (int s = 0; s < svcCount; s++) {
       NimBLEUUID svcUUID = device->getServiceUUID(s);
       std::string uuidStr = svcUUID.toString();
@@ -288,24 +327,24 @@ static bool parseDeviceInfo(
         shortUUID = shortUUID.substring(2);
       }
       String svcName = getServiceName(shortUUID);
-      logToSerialAndWeb("     - " + shortUUID + " (" + svcName + ")");
+      LOG(LOG_SCAN, "     - " + shortUUID + " (" + svcName + ")");
     }
   }
 
   // -------- Advertisement TX Power --------
   if (device->haveTXPower()) {
     int8_t advTxPower = device->getTXPower();
-    logToSerialAndWeb("   Adv TX Power: " + String(advTxPower) + " dBm");
+    LOG(LOG_SCAN, "   Adv TX Power: " + String(advTxPower) + " dBm");
     float estDist = estimateDistance(advTxPower, device->getRSSI());
     if (estDist >= 0) {
-      logToSerialAndWeb("   Est. Distance (TX): ~" + String(estDist, 2) + " m");
+      LOG(LOG_SCAN, "   Est. Distance (TX): ~" + String(estDist, 2) + " m");
     }
   }
 
   // -------- Advertisement Service Data (AD Type 0x16) --------
   int svcDataCount = device->getServiceDataCount();
   if (svcDataCount > 0) {
-    logToSerialAndWeb("   Service Data (" + String(svcDataCount) + "):");
+    LOG(LOG_SCAN, "   Service Data (" + String(svcDataCount) + "):");
     for (int sd = 0; sd < svcDataCount; sd++) {
       NimBLEUUID svcDataUUID = device->getServiceDataUUID(sd);
       std::string svcData = device->getServiceData(sd);
@@ -317,8 +356,27 @@ static bool parseDeviceInfo(
       String svcName = getServiceName(shortUUID);
 
       String hexData = bytesToHexString(svcData);
-      logToSerialAndWeb("     - UUID: " + shortUUID + " (" + svcName + ")");
-      logToSerialAndWeb("       Data: " + hexData);
+      LOG(LOG_SCAN, "     - UUID: " + shortUUID + " (" + svcName + ")");
+      LOG(LOG_SCAN, "       Data: " + hexData);
+
+      // Detect PwnBeacon service data
+      if (svcDataUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
+        pwnBeacon = parsePwnBeacon((const uint8_t*)svcData.data(), svcData.length());
+        if (pwnBeacon.valid) {
+          isPwnBeacon = true;
+          xpManager.awardXP(10);  // +10 XP: PwnBeacon detected
+          LOG(LOG_BEACON, "👾 PwnBeacon detected!");
+          LOG(LOG_BEACON, "   Name:     " + pwnBeacon.name);
+          LOG(LOG_BEACON, "   Pwnd run: " + String(pwnBeacon.pwnd_run));
+          LOG(LOG_BEACON, "   Pwnd tot: " + String(pwnBeacon.pwnd_tot));
+          char fpStr[18];
+          snprintf(fpStr, sizeof(fpStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+                   pwnBeacon.fingerprint[0], pwnBeacon.fingerprint[1],
+                   pwnBeacon.fingerprint[2], pwnBeacon.fingerprint[3],
+                   pwnBeacon.fingerprint[4], pwnBeacon.fingerprint[5]);
+          LOG(LOG_BEACON, "   FP:       " + String(fpStr));
+        }
+      }
     }
   }
 
@@ -352,38 +410,38 @@ static bool connectAndReadGATT(
 
   String txPowerInfo = TxPowerServiceHandler::readTxPowerLevel(pClient);
   if (!txPowerInfo.isEmpty()) {
-      logToSerialAndWeb(txPowerInfo);
+      LOG(LOG_GATT, txPowerInfo);
   }
 
   // Read additional optional GATT services
   String timeInfo = CurrentTimeServiceHandler::readCurrentTime(pClient);
   if (!timeInfo.isEmpty()) {
-      logToSerialAndWeb(timeInfo);
+      LOG(LOG_GATT, timeInfo);
   }
 
   String alertInfo = ImmediateAlertServiceHandler::readImmediateAlert(pClient);
   if (!alertInfo.isEmpty()) {
-      logToSerialAndWeb(alertInfo);
+      LOG(LOG_GATT, alertInfo);
   }
 
   String linkLossInfo = LinkLossServiceHandler::readLinkLoss(pClient);
   if (!linkLossInfo.isEmpty()) {
-      logToSerialAndWeb(linkLossInfo);
+      LOG(LOG_GATT, linkLossInfo);
   }
 
-  logToSerialAndWeb("🔓 Connected and discovered attributes!");
+  LOG(LOG_GATT, "🔓 Connected and discovered attributes!");
   targetConnects++;
   xpManager.awardXP(5);  // +5 XP: GATT connection success
 
   if (!isGlassesTaskRunning && !isAngryTaskRunning) {
     if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1) != pdPASS) {
-      Serial.println("Failed to create BLEGlasses task");
+      LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
       isGlassesTaskRunning = false;
     }
   }
 
   // Subscribe to notifications for all characteristics that support it
-  logToSerialAndWeb("Sub to Notifi all Chars");
+  LOG(LOG_GATT, "Sub to Notifi all Chars");
   subscribeToAllNotifications(pClient, genericNotifyCallback);
 
   for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
@@ -414,7 +472,7 @@ static bool connectAndReadGATT(
       if (userDesc) {
           std::string descValue = userDesc->readValue();
           if (!descValue.empty() && isPrintableText(descValue)) {
-              logToSerialAndWeb("     Descriptor [" + String(charUuid.c_str()) + "]: " + String(descValue.c_str()));
+              LOG(LOG_GATT, "     Descriptor [" + String(charUuid.c_str()) + "]: " + String(descValue.c_str()));
               nameList.push_back(descValue);
           }
       }
@@ -450,13 +508,13 @@ static bool connectAndReadGATT(
       targetFound = true;
       susDevice++;
       xpManager.awardXP(20);  // +20 XP: suspicious device found
-      logToSerialAndWeb("Target Message: !!! Target detected !!!");
+      LOG(LOG_TARGET, "Target Message: !!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
       vTaskDelay(pdMS_TO_TICKS(2000));
       if (!isAngryTaskRunning) {
-        //logToSerialAndWeb("showAngryExpressionTask");
+        //LOG(LOG_SYSTEM, "showAngryExpressionTask");
         if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1) != pdPASS) {
-          Serial.println("Failed to create AngryFace task");
+          LOG(LOG_SYSTEM, "Failed to create AngryFace task");
           isAngryTaskRunning = false;
         }
       }
@@ -476,19 +534,19 @@ static void handleExposureResult(
     bool writeDeviceToSD,
     String& manufacturerName)
 {
-  logToSerialAndWeb("Uncovering Summary");
-  logToSerialAndWeb("   Device Type: " + String(exposure.deviceType.c_str()));
-  logToSerialAndWeb("   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
-  logToSerialAndWeb("   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
-  logToSerialAndWeb("   Privacy Level: " + String(exposure.privacyLevel.c_str()));
-  logToSerialAndWeb(String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
+  LOG(LOG_PRIVACY, "Uncovering Summary");
+  LOG(LOG_PRIVACY, "   Device Type: " + String(exposure.deviceType.c_str()));
+  LOG(LOG_PRIVACY, "   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
+  LOG(LOG_PRIVACY, "   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
+  LOG(LOG_PRIVACY, "   Privacy Level: " + String(exposure.privacyLevel.c_str()));
+  LOG(LOG_PRIVACY, String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
 
-  logToSerialAndWeb("\n   Reason:");
+  LOG(LOG_PRIVACY, "\n   Reason:");
   for (auto& r : exposure.reasons) {
-      logToSerialAndWeb("    - " + String(r.c_str()));
+      LOG(LOG_PRIVACY, "    - " + String(r.c_str()));
   }
 
-  logToSerialAndWeb("----------------------------------");
+  LOG(LOG_PRIVACY, "----------------------------------");
 
   if (writeDeviceToSD) {
     sdLogger.writeDeviceInfo(
@@ -517,7 +575,7 @@ void scanForDevices() {
   NimBLEScan* pScan = NimBLEDevice::getScan();
 
   if (pScan == nullptr) {
-    Serial.println("Scan instance creation failed.");
+    LOG(LOG_SYSTEM, "Scan instance creation failed.");
     return;
   }
 
@@ -530,14 +588,14 @@ void scanForDevices() {
   NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
 
   if (results.getCount() == 0) {
-     Serial.println("NO DEVICES FOUND");
+     LOG(LOG_SCAN, "NO DEVICES FOUND");
   } else {
-    logToSerialAndWeb("📲 DEVICES FOUND: " + String(results.getCount()));
+    LOG(LOG_SCAN, "📲 DEVICES FOUND: " + String(results.getCount()));
     nibblesSpeechNotifyEvent();
 
     scanIsRunning = true;
 
-    logToSerialAndWeb("📡 Scan Is Running");
+    LOG(LOG_SCAN, "📡 Scan Is Running");
 
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
@@ -555,9 +613,12 @@ void scanForDevices() {
 
       bool isIBeacon = false;
       IBeaconInfo beacon;
+      bool isPwnBeaconDevice = false;
+      PwnBeaconInfo pwnBeacon;
 
       if (!parseDeviceInfo(device, manufacturerId, manufacturerName,
-                           isIBeacon, beacon, hasCustomService, hasWeakName,
+                           isIBeacon, beacon, isPwnBeaconDevice, pwnBeacon,
+                           hasCustomService, hasWeakName,
                            isUnknownManufacturer, isSecurityOrTrackingDevice,
                            proprietary)) {
         continue;
@@ -571,7 +632,7 @@ void scanForDevices() {
       std::vector<SecurityFinding> advFindings;
       analyzeAdvFlags(payloadVec, dev, advFindings);
       for (auto& f : advFindings) {
-        logToSerialAndWeb("   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
+        LOG(LOG_SECURITY, "   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
       }
 
       handleDevicePrivacy(
@@ -593,19 +654,19 @@ void scanForDevices() {
 
       // Print device connectability
       if (!is_connectable) {
-        logToSerialAndWeb("   Device is not connectable");
+        LOG(LOG_SCAN, "   Device is not connectable");
       }
 
       pClient = NimBLEDevice::createClient();
       vTaskDelay(pdMS_TO_TICKS(200));
 
       if (!pClient) { // Make sure the client was created
-        Serial.println("⚠️ Failed to create BLE client, skipping device.");
+        LOG(LOG_SYSTEM, "⚠️ Failed to create BLE client, skipping device.");
         continue;
       }
 
       if (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES) {
-        Serial.println("Clearing seenDevices (size: " + String(seenDevices.size()) +
+        LOG(LOG_SYSTEM, "Clearing seenDevices (size: " + String(seenDevices.size()) +
                         ", free heap: " + String(ESP.getFreeHeap()) + ")");
         seenDevices.clear();
       }
@@ -619,34 +680,34 @@ void scanForDevices() {
             bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar);
 
             if (!targetDetected) {
-              logToSerialAndWeb("Device Infos");
-              logToSerialAndWeb(String("   Adress:  " + address));
-              logToSerialAndWeb(String("   Name:    " + localName));
-              logToSerialAndWeb(String("   Manuf.:  " + manufacturerName));
-              logToSerialAndWeb("   Device Name: ");
+              LOG(LOG_SCAN, "Device Infos");
+              LOG(LOG_SCAN, String("   Adress:  " + address));
+              LOG(LOG_SCAN, String("   Name:    " + localName));
+              LOG(LOG_SCAN, String("   Manuf.:  " + manufacturerName));
+              LOG(LOG_SCAN, "   Device Name: ");
               String logLine;
               logLine.reserve(64);
               for (const auto& names : nameList) {
                 if (!names.empty()) {
                   logLine = "     - ";
                   logLine += names.c_str();
-                  logToSerialAndWeb(logLine);
+                  LOG(LOG_SCAN, logLine);
                 }
               }
 
               float distance = pow(10.0f, (float)(DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-              logToSerialAndWeb("Distance: " + String(distance, 2) + " m");
-              logToSerialAndWeb("     - RSSI: " + String(rssi));
+              LOG(LOG_SCAN, "Distance: " + String(distance, 2) + " m");
+              LOG(LOG_SCAN, "     - RSSI: " + String(rssi));
 
               // iBeacon info
               if (isIBeacon) {
                 beaconsFound++;
-                logToSerialAndWeb("Beacon Type: iBeacon");
-                logToSerialAndWeb("   UUID:  " + String(beacon.uuid.c_str()));
-                logToSerialAndWeb("   Major: " + String(beacon.major));
-                logToSerialAndWeb("   Minor: " + String(beacon.minor));
+                LOG(LOG_BEACON, "Beacon Type: iBeacon");
+                LOG(LOG_BEACON, "   UUID:  " + String(beacon.uuid.c_str()));
+                LOG(LOG_BEACON, "   Major: " + String(beacon.major));
+                LOG(LOG_BEACON, "   Minor: " + String(beacon.minor));
                 float beaconDistance = estimateDistance(beacon.txPower, rssi);
-                logToSerialAndWeb("   Beacon Distance: ~" + String(beaconDistance, 2) + " m");
+                LOG(LOG_BEACON, "   Beacon Distance: ~" + String(beaconDistance, 2) + " m");
 
                 sdLogger.writeIBeaconInfo(
                     String(beacon.uuid.c_str()),
@@ -656,6 +717,45 @@ void scanForDevices() {
                     manufacturerName,
                     rssi
                 );
+              }
+
+              // PwnBeacon info + GATT read
+              if (isPwnBeaconDevice) {
+                pwnbeaconsFound++;
+                beaconsFound++;
+
+                char fpStr[18];
+                snprintf(fpStr, sizeof(fpStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+                         pwnBeacon.fingerprint[0], pwnBeacon.fingerprint[1],
+                         pwnBeacon.fingerprint[2], pwnBeacon.fingerprint[3],
+                         pwnBeacon.fingerprint[4], pwnBeacon.fingerprint[5]);
+
+                LOG(LOG_BEACON, "Beacon Type: PwnBeacon (PwnGrid/BLE)");
+                LOG(LOG_BEACON, "   Name:     " + pwnBeacon.name);
+                LOG(LOG_BEACON, "   Pwnd run: " + String(pwnBeacon.pwnd_run));
+                LOG(LOG_BEACON, "   Pwnd tot: " + String(pwnBeacon.pwnd_tot));
+                LOG(LOG_BEACON, "   FP:       " + String(fpStr));
+
+                // Read full identity and face via GATT
+                String pwnFace = "";
+                String pwnIdentity = "";
+
+                NimBLERemoteService* pwnSvc = pClient->getService(PWNBEACON_SERVICE_UUID);
+                if (pwnSvc) {
+                  NimBLERemoteCharacteristic* faceChr = pwnSvc->getCharacteristic(PWNBEACON_FACE_CHAR_UUID);
+                  if (faceChr && faceChr->canRead()) {
+                    pwnFace = faceChr->readValue().c_str();
+                    LOG(LOG_BEACON, "   Face:     " + pwnFace);
+                  }
+
+                  NimBLERemoteCharacteristic* identChr = pwnSvc->getCharacteristic(PWNBEACON_IDENTITY_CHAR_UUID);
+                  if (identChr && identChr->canRead()) {
+                    pwnIdentity = identChr->readValue().c_str();
+                    LOG(LOG_BEACON, "   Identity JSON: " + pwnIdentity);
+                  }
+                }
+
+                LOG(LOG_BEACON, "   RSSI:     " + String(rssi));
               }
 
               // -------- Security Analysis --------
@@ -670,14 +770,14 @@ void scanForDevices() {
               dev.deviceFingerprint = secResult.deviceFingerprint;
 
               if (!secResult.findings.empty()) {
-                logToSerialAndWeb("Security Findings:");
+                LOG(LOG_SECURITY, "Security Findings:");
                 for (auto& f : secResult.findings) {
-                  logToSerialAndWeb("   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
+                  LOG(LOG_SECURITY, "   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
                 }
               }
 
               if (!secResult.deviceFingerprint.empty()) {
-                logToSerialAndWeb("   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str()));
+                LOG(LOG_SECURITY, "   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str()));
               }
 
               // Analyze exposure and log results
@@ -706,16 +806,16 @@ void scanForDevices() {
             }
           }
         } else {
-            logToSerialAndWeb("🔒 Attribute discovery failed: " + address);
+            LOG(LOG_GATT, "🔒 Attribute discovery failed: " + address);
 
             dev.isConnectable = false;
 
             ExposureResult exposure = analyzeExposure(dev);
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-              //logToSerialAndWeb("showSadExpressionTask");
+              //LOG(LOG_SYSTEM, "showSadExpressionTask");
               if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1) != pdPASS) {
-                Serial.println("Failed to create SadFace task");
+                LOG(LOG_SYSTEM, "Failed to create SadFace task");
                 isSadTaskRunning = false;
               }
             }
@@ -744,17 +844,18 @@ void scanForDevices() {
       NimBLEDevice::deleteClient(pClient);
       pClient = nullptr;
     }
-    logToSerialAndWeb("##########################");
-    logToSerialAndWeb("Scan Summary:");
-    logToSerialAndWeb("Sniffed:    " + String(targetConnects));
-    logToSerialAndWeb("Spotted:    " + String(allSpottedDevice));
-    logToSerialAndWeb("Suspicious: " + String(susDevice));
-    logToSerialAndWeb("Beacons:    " + String(beaconsFound));
+    LOG(LOG_SCAN, "##########################");
+    LOG(LOG_SCAN, "Scan Summary:");
+    LOG(LOG_SCAN, "Sniffed:    " + String(targetConnects));
+    LOG(LOG_SCAN, "Spotted:    " + String(allSpottedDevice));
+    LOG(LOG_SCAN, "Suspicious: " + String(susDevice));
+    LOG(LOG_SCAN, "Beacons:    " + String(beaconsFound));
+    LOG(LOG_SCAN, "PwnBeacons: " + String(pwnbeaconsFound));
     if (wardrivingEnabled) {
-      logToSerialAndWeb("WiGLE log:  " + String(wigleLogger.getLoggedCount()));
+      LOG(LOG_SCAN, "WiGLE log:  " + String(wigleLogger.getLoggedCount()));
       wigleLogger.flush();
     }
-    logToSerialAndWeb("##########################\n");
+    LOG(LOG_SCAN, "##########################\n");
 
     xpManager.save();
     scanIsRunning = false;

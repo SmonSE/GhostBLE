@@ -1,5 +1,6 @@
 #include "GPSManager.h"
 #include "../config/config.h"
+#include "../logger/logger.h"
 
 GPSManager::GPSManager() : currentSource(GPSSource::GROVE), gpsSerial(1) {}
 
@@ -35,7 +36,7 @@ void GPSManager::initSerial(GPSSource source) {
     }
 
     gpsSerial.begin(GPS_BAUD_RATE, SERIAL_8N1, rxPin, txPin);
-    Serial.printf("GPS: %s (RX=%d, TX=%d)\n", getSourceName(), rxPin, txPin);
+    LOG(LOG_GPS, "GPS: " + String(getSourceName()) + " (RX=" + String(rxPin) + ", TX=" + String(txPin) + ")");
 }
 
 void GPSManager::update() {

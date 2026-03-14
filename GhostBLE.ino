@@ -44,7 +44,7 @@ auto keys = M5Cardputer.Keyboard.keysState();
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len) {
   if (type == WS_EVT_CONNECT) {
-    Serial.printf("WebSocket client connected: %u\n", client->id());
+    LOG(LOG_SYSTEM, "WebSocket client connected: " + String(client->id()));
   }
 }
 
@@ -101,7 +101,7 @@ void setup() {
 
   M5.Lcd.setSwapBytes(true);
 
-  Serial.println("GhostBLE starting...");
+  LOG(LOG_SYSTEM, "GhostBLE starting...");
 
   initLogger();
   taskMutex = xSemaphoreCreateMutex();
@@ -114,7 +114,7 @@ void setup() {
   delay(250);
 
   NimBLEDevice::init("bleDefender");
-  Serial.println("BLE initialized successfully.");
+  LOG(LOG_SYSTEM, "BLE initialized successfully.");
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
@@ -168,18 +168,18 @@ void loop() {
       auto status = M5Cardputer.Keyboard.keysState();
 
       if (status.enter) {
-        Serial.println("ENTER pressed");
+        LOG(LOG_CONTROL, "ENTER pressed");
       }
       if (status.fn) {
-        Serial.println("FN pressed");
+        LOG(LOG_CONTROL, "FN pressed");
         toggleWiFi();
       }
       if (status.tab){
-        Serial.println("TAB pressed");
+        LOG(LOG_CONTROL, "TAB pressed");
         toggleWardriving();
       }
       if (status.del){
-        Serial.println("DEL pressed");
+        LOG(LOG_CONTROL, "DEL pressed");
         switchGPSSource();
       }
     }
@@ -224,14 +224,14 @@ void loop() {
   // Timer every 60 minutes
   unsigned long currentTimeDevice = millis();
   if (currentTimeDevice - startTimeDevice >= timerDurationDevice) {
-    Serial.println("Timer: periodic seenDevices reset");
+    LOG(LOG_SYSTEM, "Timer: periodic seenDevices reset");
     if (!seenDevices.empty()) {
       // Swap with empty set to free memory instantly via pointer swap,
       // avoiding per-node deallocation blocking the main loop
       std::set<std::string>().swap(seenDevices);
-      Serial.println("CLEAR SEEN DEVICES");
+      LOG(LOG_SYSTEM, "CLEAR SEEN DEVICES");
     } else {
-      Serial.println("SEEN DEVICES STILL EMPTY");
+      LOG(LOG_SYSTEM, "SEEN DEVICES STILL EMPTY");
     }
     startTimeDevice = millis();
   }
@@ -255,7 +255,7 @@ void onLongPress() {
   bleScanEnabledWeb = !bleScanEnabledWeb;
 
   if (bleScanEnabledWeb) {
-    logToSerialAndWeb("▶️ BLE Scan ENABLED");
+    LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
     ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
@@ -263,7 +263,7 @@ void onLongPress() {
     nibblesSpeechShow(SpeechContext::SCAN_START);
   }
   else {
-    logToSerialAndWeb("⏹️ BLE Scan DISABLED");
+    LOG(LOG_CONTROL,"⏹️ BLE Scan DISABLED");
     ws.textAll("BLE_SCAN_OFF");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
@@ -274,7 +274,7 @@ void onLongPress() {
 
 void toggleWiFi() {
   if (wifiStarted) {
-    logToSerialAndWeb("WIFI / WEB SERVER OFF");
+    LOG(LOG_CONTROL,"WIFI / WEB SERVER OFF");
     stopWebLogServer();
     wifiStarted = false;
     isWebLogActive = false;
@@ -283,7 +283,7 @@ void toggleWiFi() {
                   nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon OFF
   } else {
-    logToSerialAndWeb("WIFI / WEB SERVER ON");
+    LOG(LOG_CONTROL,"WIFI / WEB SERVER ON");
     startWebLogServer();
     isWebLogActive = true;
     logEnableTarget(TARGET_WEB);
@@ -307,18 +307,17 @@ void stopWebLogServer() {
   wifiStarted    = false;
   isWebLogActive = false;
 
-  Serial.println("WiFi fully stopped");
+  LOG(LOG_CONTROL, "WiFi fully stopped");
 }
 
 
 void startWebLogServer() {
-  logToSerialAndWeb("WEB SERVER");
+  LOG(LOG_CONTROL,"WEB SERVER");
   if (wifiStarted) return;  // Don't start twice
   WiFi.mode(WIFI_AP);
-  Serial.print("   - SoftAP started? YES\n");
+  LOG(LOG_CONTROL, "   - SoftAP started? YES");
   WiFi.softAP(ap_ssid, ap_password);
-  Serial.print("   - Access Point IP: ");
-  Serial.println(WiFi.softAPIP());
+  LOG(LOG_CONTROL, "   - Access Point IP: " + WiFi.softAPIP().toString());
 
   // Setup WebSocket events and handlers BEFORE starting the server
   ws.onEvent(onWsEvent);
@@ -329,10 +328,10 @@ void startWebLogServer() {
   });
 
   server.begin();
-  logToSerialAndWeb("   - Web server started.");
+  LOG(LOG_CONTROL,"   - Web server started.");
   wifiStarted = true;
 
-  logToSerialAndWeb("Pres BtnG0 to TOGGLE BLE Scan");
+  LOG(LOG_CONTROL,"Pres BtnG0 to TOGGLE BLE Scan");
 }
 
 void toggleWardriving() {
@@ -341,11 +340,11 @@ void toggleWardriving() {
   if (wardrivingEnabled) {
     gpsManager.begin(GPSSource::GROVE);
     wigleLogger.begin();
-    logToSerialAndWeb("Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
-    logToSerialAndWeb("  File: " + wigleLogger.getFilename());
+    LOG(LOG_CONTROL,"Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
+    LOG(LOG_CONTROL,"  File: " + wigleLogger.getFilename());
   } else {
     wigleLogger.end();
-    logToSerialAndWeb("Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");
+    LOG(LOG_CONTROL,"Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");
   }
 
   ws.textAll(wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
@@ -359,7 +358,7 @@ void toggleWardriving() {
 
 void switchGPSSource() {
   if (!wardrivingEnabled) {
-    logToSerialAndWeb("Enable wardriving first (TAB)");
+    LOG(LOG_CONTROL,"Enable wardriving first (TAB)");
     return;
   }
 
@@ -367,7 +366,7 @@ void switchGPSSource() {
                    ? GPSSource::LORA_CAP
                    : GPSSource::GROVE;
   gpsManager.switchSource(next);
-  logToSerialAndWeb("GPS: " + String(gpsManager.getSourceName()));
+  LOG(LOG_CONTROL,"GPS: " + String(gpsManager.getSourceName()));
 
   drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                 nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);

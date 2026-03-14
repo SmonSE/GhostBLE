@@ -31,6 +31,7 @@ bool wardrivingEnabled = false;
 
 std::atomic<int> susDevice{0};
 std::atomic<int> beaconsFound{0};
+std::atomic<int> pwnbeaconsFound{0};
 std::atomic<int> targetConnects{0};
 std::atomic<int> allSpottedDevice{0};
 std::atomic<int> leakedCounter{0};

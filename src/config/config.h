@@ -26,6 +26,17 @@ extern const char* CATHACK_SERVICE_UUID_1;
 extern const char* CATHACK_SERVICE_UUID_2;
 extern const char* CATHACK_SERVICE_UUID_3;
 
+// ===== PwnBeacon UUIDs =====
+extern const char* PWNBEACON_SERVICE_UUID;
+extern const char* PWNBEACON_IDENTITY_CHAR_UUID;
+extern const char* PWNBEACON_FACE_CHAR_UUID;
+extern const char* PWNBEACON_NAME_CHAR_UUID;
+
+// ===== PwnBeacon Protocol Constants =====
+#define PWNBEACON_PROTOCOL_VERSION  0x01
+#define PWNBEACON_ADV_MAX_NAME_LEN  8
+#define PWNBEACON_FINGERPRINT_LEN   6
+
 // ===== GPS Pins =====
 // Grove port GPS (e.g. M5Stack GPS Unit on Grove UART)
 #define GPS_GROVE_RX 1

@@ -1,5 +1,6 @@
 #include "devicePrivacy.h"
 #include "../globals/globals.h"
+#include "../logger/logger.h"
 
 #include <map>
 #include <vector>
@@ -180,7 +181,7 @@ void handleDevicePrivacy(
         std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
         info.mac_change_count++;
         info.seen_macs.push_back(mac);
-        logToSerialAndWeb("   MAC rotation detected for device (" +
+        LOG(LOG_PRIVACY,"   MAC rotation detected for device (" +
             String(info.mac_change_count) + " changes, " +
             String(info.seen_macs.size()) + " unique MACs)");
     } else if (info.seen_macs.empty()) {
@@ -240,7 +241,7 @@ void handleDevicePrivacy(
         "   Cleartext data:   " + (adv_contains_cleartext ? " YES" : " NO") + "\n" +
         "   Connectable:      " + (is_connectable ? " YES" : " NO");
 
-    logToSerialAndWeb(logLineWebSocket);
+    LOG(LOG_PRIVACY,logLineWebSocket);
 
     // ---- Risk score ----
     if (weakName) riskScore += 3;

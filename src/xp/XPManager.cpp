@@ -1,5 +1,6 @@
 #include "XPManager.h"
 #include <math.h>
+#include "../logger/logger.h"
 
 static const char* XP_FILE = "/GhostBLE/xp.dat";
 
@@ -10,13 +11,13 @@ void XPManager::begin() {
         if (f.read((uint8_t*)&data, sizeof(data)) == sizeof(data) && data.magic == XP_MAGIC) {
             totalXP = data.totalXP;
             currentLevel = data.currentLevel;
-            Serial.printf("XP loaded: %u XP, LVL %u\n", totalXP, currentLevel);
+            LOG(LOG_SYSTEM, "XP loaded: " + String(totalXP) + " XP, LVL " + String(currentLevel));
         } else {
-            Serial.println("XP file invalid, starting fresh");
+            LOG(LOG_SYSTEM, "XP file invalid, starting fresh");
         }
         f.close();
     } else {
-        Serial.println("No XP file found, starting at LVL 1");
+        LOG(LOG_SYSTEM, "No XP file found, starting at LVL 1");
     }
     recalculateLevel();
     lastSaveTime = millis();
@@ -30,7 +31,7 @@ void XPManager::awardXP(uint16_t amount) {
     recalculateLevel();
 
     if (currentLevel > oldLevel) {
-        Serial.printf("LEVEL UP! LVL %u -> %u (XP: %u)\n", oldLevel, currentLevel, totalXP);
+        LOG(LOG_SYSTEM, "LEVEL UP! LVL " + String(oldLevel) + " -> " + String(currentLevel) + " (XP: " + String(totalXP) + ")");
         save();  // Force save on level-up
     }
 }
@@ -52,7 +53,7 @@ void XPManager::save() {
         f.close();
         dirty = false;
         lastSaveTime = now;
-        Serial.printf("XP saved: %u XP, LVL %u\n", totalXP, currentLevel);
+        LOG(LOG_SYSTEM, "XP saved: " + String(totalXP) + " XP, LVL " + String(currentLevel));
     }
 }
 

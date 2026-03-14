@@ -27,9 +27,7 @@ bool isRotatingMAC(MACType type);
 // === Functions ===
 
 // MAC privacy
-bool isRandomMAC(const std::string& mac);
 bool isUniversallyAdministeredMAC(const std::string& mac);
-String getMACPrivacyLabel(const std::string& mac);
 
 bool containsCleartext(const std::vector<uint8_t>& payload);
 
@@ -44,6 +42,3 @@ bool isLikelyCleartextBytes(const std::vector<uint8_t>& bytes, size_t minLength 
 
 // Utility
 String payloadToHexString(const String& payload);
-
-// Logging (defined elsewhere)
-void logToSerialAndWeb(const String& line);

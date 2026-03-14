@@ -12,11 +12,11 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
 
     NimBLERemoteService* gapService = pClient->getService(UUID_GENERIC_ACCESS);
     if (!gapService) {
-        logToSerialAndWeb("   Generic Access Service not found (0x1800)");
+        LOG(LOG_GATT,"   Generic Access Service not found (0x1800)");
         return accessInfoString;
     }
 
-    logToSerialAndWeb("   Generic Access Service found (0x1800)");
+    LOG(LOG_GATT,"   Generic Access Service found (0x1800)");
 
     const char* charUUIDs[] = {"2A00", "2A01", "2A04", "2AA6"};
     const char* charNames[] = {
@@ -26,12 +26,12 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
         "Central Address Resolution"
     };
 
-    logToSerialAndWeb("     Read value of generic access info");
+    LOG(LOG_GATT,"     Read value of generic access info");
     
     for (int i = 0; i < 4; i++) {
         NimBLERemoteCharacteristic* pChar = gapService->getCharacteristic(charUUIDs[i]);
         if (!pChar) {
-            Serial.printf("     Characteristic %s not found.\n", charUUIDs[i]);
+            LOG(LOG_GATT, "     Characteristic " + String(charUUIDs[i]) + " not found.");
             continue;
         }
 
@@ -44,7 +44,7 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                     memcpy(&appearance, value.data(), sizeof(appearance));
                     String appearanceName = getAppearanceName(appearance);
                     accessInfoString += "Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")\n";
-                    Serial.println("     Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")");
+                    LOG(LOG_GATT, "     Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")");
                 }
             } else if (strcmp(charUUIDs[i], "2A04") == 0) {
                 if (value.length() >= 8) {
@@ -60,17 +60,16 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                     accessInfoString += "  Latency: " + String(latency) + "\n";
                     accessInfoString += "  Timeout: " + String(timeout) + "\n";
 
-                    Serial.printf("     PPCP - Min: %d, Max: %d, Latency: %d, Timeout: %d\n",
-                        minInterval, maxInterval, latency, timeout);
+                    LOG(LOG_GATT, "     PPCP - Min: " + String(minInterval) + ", Max: " + String(maxInterval) + ", Latency: " + String(latency) + ", Timeout: " + String(timeout));
                 }
             } else if (strcmp(charUUIDs[i], "2AA6") == 0 && !value.empty()) {
                 uint8_t support = value[0];
                 accessInfoString += "Central Address Resolution: " + String(support == 1 ? "Supported" : "Not Supported") + "\n";
-                Serial.printf("     Central Address Resolution: %s\n", support == 1 ? "Supported" : "Not Supported");
+                LOG(LOG_GATT, String("     Central Address Resolution: ") + (support == 1 ? "Supported" : "Not Supported"));
             } else {
                 String val = String(value.c_str());
                 accessInfoString += String(charNames[i]) + ": " + val + "\n";
-                Serial.printf("     %s: %s\n", charNames[i], val.c_str());
+                LOG(LOG_GATT, "     " + String(charNames[i]) + ": " + val);
             }
         }
     }

@@ -17,7 +17,7 @@ String LinkLossServiceHandler::readLinkLoss(NimBLEClient* pClient) {
         return lossStr;
     }
 
-    logToSerialAndWeb("     Link Loss Service detected (0x1803)");
+    LOG(LOG_GATT,"     Link Loss Service detected (0x1803)");
 
     // Alert Level Characteristic (0x2A06)
     NimBLERemoteCharacteristic* pChar = lossService->getCharacteristic("2A06");
@@ -32,7 +32,7 @@ String LinkLossServiceHandler::readLinkLoss(NimBLEClient* pClient) {
             const char* levels[] = {"No Alert", "Mild Alert", "High Alert"};
             const char* levelStr = (level <= 2) ? levels[level] : "Unknown";
             lossStr = "Link Loss Alert Level: " + String(levelStr) + "\n";
-            logToSerialAndWeb("     Link Loss Alert Level: " + String(levelStr));
+            LOG(LOG_GATT,"     Link Loss Alert Level: " + String(levelStr));
         }
     }
 

@@ -36,6 +36,7 @@ extern bool wardrivingEnabled;
 
 extern std::atomic<int> susDevice;
 extern std::atomic<int> beaconsFound;
+extern std::atomic<int> pwnbeaconsFound;
 extern std::atomic<int> targetConnects;
 extern std::atomic<int> allSpottedDevice;
 extern std::atomic<int> leakedCounter;

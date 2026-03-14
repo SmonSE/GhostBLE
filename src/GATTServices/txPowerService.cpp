@@ -19,7 +19,7 @@ String TxPowerServiceHandler::readTxPowerLevel(NimBLEClient* pClient) {
         return txPowerStr;
     }
 
-    logToSerialAndWeb("     Tx Power Service detected (0x1804)");
+    LOG(LOG_GATT, "     Tx Power Service detected (0x1804)");
 
     // Tx Power Level Characteristic (0x2A07)
     NimBLERemoteCharacteristic* pChar = txPowerService->getCharacteristic("2A07");
@@ -35,7 +35,7 @@ String TxPowerServiceHandler::readTxPowerLevel(NimBLEClient* pClient) {
     int8_t txPower = static_cast<int8_t>(raw[0]);
 
     txPowerStr = "Tx Power Level: " + String(txPower) + " dBm\n";
-    logToSerialAndWeb("     Tx Power Level: " + String(txPower) + " dBm");
+    LOG(LOG_GATT, "     Tx Power Level: " + String(txPower) + " dBm");
 
     return txPowerStr;
 }

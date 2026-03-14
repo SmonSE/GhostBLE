@@ -105,8 +105,3 @@ void LOG(LogCategory category, const String& msg) {
         }
     }
 }
-
-// Backward-compatible wrapper
-void logToSerialAndWeb(const String& msg) {
-    LOG(LOG_SYSTEM, msg);
-}

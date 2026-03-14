@@ -17,7 +17,7 @@ String ImmediateAlertServiceHandler::readImmediateAlert(NimBLEClient* pClient) {
         return alertStr;
     }
 
-    logToSerialAndWeb("     Immediate Alert Service detected (0x1802)");
+    LOG(LOG_GATT,"     Immediate Alert Service detected (0x1802)");
 
     // Alert Level Characteristic (0x2A06)
     NimBLERemoteCharacteristic* pChar = alertService->getCharacteristic("2A06");
@@ -30,7 +30,7 @@ String ImmediateAlertServiceHandler::readImmediateAlert(NimBLEClient* pClient) {
         alertStr += " (writable)";
     }
     alertStr += "\n";
-    logToSerialAndWeb("     " + alertStr);
+    LOG(LOG_GATT,"     " + alertStr);
 
     return alertStr;
 }

@@ -4,6 +4,7 @@
 #include <vector>
 #include "../analyzer/ExposureAnalyzer.h"
 #include "../helper/ServiceHelper.h"  // Assuming you still need service name mapping
+#include "../logger/logger.h"
 
 
 SDLogger::SDLogger() : initialized(false) {}
@@ -17,7 +18,7 @@ void SDLogger::end() {
         dataFile.flush();
         dataFile.close();
         initialized = false;
-        Serial.println("#SDLogger# File closed.");
+        LOG(LOG_SYSTEM, "#SDLogger# File closed.");
     }
 }
 
@@ -25,11 +26,11 @@ void SDLogger::migrateToFolder() {
     // Migrate legacy root-level files into /GhostBLE/ folder.
     // Only called when /GhostBLE/ doesn't exist yet.
     SD.mkdir("/GhostBLE");
-    Serial.println("#SDLogger# Created /GhostBLE folder, migrating legacy files...");
+    LOG(LOG_SYSTEM, "#SDLogger# Created /GhostBLE folder, migrating legacy files...");
 
     if (SD.exists("/device_info.txt")) {
         SD.rename("/device_info.txt", "/GhostBLE/device_info.txt");
-        Serial.println("#SDLogger# Migrated /device_info.txt");
+        LOG(LOG_SYSTEM, "#SDLogger# Migrated /device_info.txt");
     }
 
     for (int i = 1; i <= 9999; i++) {
@@ -39,12 +40,12 @@ void SDLogger::migrateToFolder() {
         char newPath[34];
         snprintf(newPath, sizeof(newPath), "/GhostBLE/wigle_%04d.csv", i);
         SD.rename(oldPath, newPath);
-        Serial.printf("#SDLogger# Migrated %s\n", oldPath);
+        LOG(LOG_SYSTEM, "#SDLogger# Migrated " + String(oldPath));
     }
 
     if (SD.exists("/wigle_overflow.csv")) {
         SD.rename("/wigle_overflow.csv", "/GhostBLE/wigle_overflow.csv");
-        Serial.println("#SDLogger# Migrated /wigle_overflow.csv");
+        LOG(LOG_SYSTEM, "#SDLogger# Migrated /wigle_overflow.csv");
     }
 }
 
@@ -52,12 +53,12 @@ bool SDLogger::begin(int csPin) {
     // Initialize SD card with the correct chip select pin
     if (csPin != -1) {
         if (!SD.begin(csPin)) {
-            Serial.println("#SDLogger# SD card initialization failed!");
+            LOG(LOG_SYSTEM, "#SDLogger# SD card initialization failed!");
             return false;
         }
     } else {
         if (!SD.begin()) {
-            Serial.println("#SDLogger# SD card initialization failed!");
+            LOG(LOG_SYSTEM, "#SDLogger# SD card initialization failed!");
             return false;
         }
     }
@@ -70,12 +71,12 @@ bool SDLogger::begin(int csPin) {
     // Try opening the file with a check for success
     dataFile = SD.open("/GhostBLE/device_info.txt", FILE_APPEND);
     if (!dataFile) {
-        Serial.println("#SDLogger# Error opening /GhostBLE/device_info.txt for writing.");
+        LOG(LOG_SYSTEM, "#SDLogger# Error opening /GhostBLE/device_info.txt for writing.");
         return false;
     }
 
     // Log success and set initialization flag
-    Serial.println("#SDLogger# /GhostBLE/device_info.txt opened successfully.");
+    LOG(LOG_SYSTEM, "#SDLogger# /GhostBLE/device_info.txt opened successfully.");
     initialized = true;
     return true;
 }

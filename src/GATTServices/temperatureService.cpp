@@ -28,21 +28,21 @@ static float parseIEEE11073Float(const uint8_t* data) {
 }
 
 String TemperatureServiceHandler::readTemperature(NimBLEClient* pClient) {
-    logToSerialAndWeb("   🌡️ Temperature Service");
+    LOG(LOG_GATT,"   🌡️ Temperature Service");
 
     if (!pClient) return "";
 
     NimBLERemoteService* tempService = pClient->getService(UUID_HEALTH_THERMOMETER);
     if (!tempService) {
-        logToSerialAndWeb("     Temperature Service not found (0x1809)");
+        LOG(LOG_GATT,"     Temperature Service not found (0x1809)");
         return "";
     }
 
-    logToSerialAndWeb("     Temperature Service found (0x1809)");
+    LOG(LOG_GATT,"     Temperature Service found (0x1809)");
 
     NimBLERemoteCharacteristic* pChar = tempService->getCharacteristic("2A1C");
     if (!pChar) {
-        logToSerialAndWeb("     Temperature Measurement Characteristic not found (0x2A1C)");
+        LOG(LOG_GATT,"     Temperature Measurement Characteristic not found (0x2A1C)");
         return "";
     }
 
@@ -61,19 +61,18 @@ String TemperatureServiceHandler::readTemperature(NimBLEClient* pClient) {
 
                 String unit = (flags & 0x01) ? "F" : "C";
 
-                Serial.printf("     🌡️ Temperature: %.2f °%s\n",
-                              temperature, unit.c_str());
+                LOG(LOG_GATT, "     🌡️ Temperature: " + String(temperature, 2) + " °" + unit);
 
-                logToSerialAndWeb(
+                LOG(LOG_GATT,
                     "🌡️ Temperature: " + String(temperature, 2) + " °" + unit
                 );
             }
         );
 
-        logToSerialAndWeb("     Subscribed to temperature notifications");
+        LOG(LOG_GATT,"     Subscribed to temperature notifications");
     }
     else if (!pChar->canNotify()) {
-        logToSerialAndWeb("     Temperature characteristic does NOT support notify");
+        LOG(LOG_GATT,"     Temperature characteristic does NOT support notify");
     }
 
     return "";
