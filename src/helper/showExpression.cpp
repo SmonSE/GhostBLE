@@ -206,14 +206,14 @@ static void drawStatusIcons(int x, int y) {
 static void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
   M5.Lcd.setTextColor(WHITE);
   M5.Lcd.setCursor(x, y);
-  M5.Lcd.printf("Spotted %-4d", spotted);
+  M5.Lcd.printf("Spt %d", spotted);
   M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);
-  M5.Lcd.printf("Sniffed %-4d", sniffed);
+  M5.Lcd.printf("Snf %d", sniffed);
   M5.Lcd.setCursor(STATS_X, STATS_Y_START + STATS_LINE_HEIGHT * 2);
-  M5.Lcd.printf("Beacons %-4d", beaconsFound.load());
+  M5.Lcd.printf("Bcn %d", beaconsFound.load());
   M5.Lcd.setTextColor(RED);
   M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3);
-  M5.Lcd.printf("Sus     %-4d", susDevice);
+  M5.Lcd.printf("Sus %d", susDevice);
 }
 
 static void drawXPBar(int x, int y) {
