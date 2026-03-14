@@ -1,9 +1,15 @@
 #include "drawOverlay.h"
 #include <M5Unified.h>
-#include "../config/config.h"
 
 void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0) {
-    M5.Lcd.pushImage(x0, y0, w, h, img, (uint16_t)0xFFFF);
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        uint16_t color = img[y * w + x];
+        if (color != 0xFFFF) {
+          M5.Lcd.drawPixel(x0 + x, y0 + y, color);
+        }
+      }
+    }
   }
 
 // Union bounding box of all Nibbles expressions:
@@ -17,13 +23,6 @@ static const int EXPR_REGION_H = 38;   // 90  - 52
 void drawComposite(const uint16_t* base, int baseW, int baseX, int baseY,
                    const uint16_t* overlay, int overlayW, int overlayH,
                    int overlayX, int overlayY) {
-    // Clear areas outside the expression region that may have been
-    // dirtied by speech/device-name bubbles or HUD text
-    M5.Lcd.fillRect(BUBBLE_X, BUBBLE_RECT_Y - 3,
-                    BUBBLE_RECT_W + 4, BUBBLE_RECT_H + BUBBLE_TRI_H + 6, 0x00C4);
-    M5.Lcd.fillRect(STATS_X, STATS_Y_START,
-                    70, STATS_LINE_HEIGHT * 4, 0x00C4);
-
     // Sprite-composite the expression region
     M5Canvas canvas(&M5.Lcd);
     if (!canvas.createSprite(EXPR_REGION_W, EXPR_REGION_H)) return;
