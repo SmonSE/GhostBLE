@@ -73,8 +73,13 @@ void playNotificationPro() {
   }
 }
 
-// Forward declaration
+// Forward declarations
 void onLongPress();
+void toggleWiFi();
+void toggleWardriving();
+void switchGPSSource();
+void startWebLogServer();
+void stopWebLogServer();
 
 // Button long press tracking
 unsigned long buttonPressStart = 0;
