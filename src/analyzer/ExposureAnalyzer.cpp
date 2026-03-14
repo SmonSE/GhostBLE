@@ -133,6 +133,32 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
     if (isApple)
         score -= 20;
 
+    // -------- Security vulnerability factors --------
+    if (dev.hasDFUService) {
+        score += 20;
+        result.reasons.push_back("firmware update service exposed (DFU)");
+    }
+
+    if (dev.hasUARTService) {
+        score += 15;
+        result.reasons.push_back("serial/UART service exposed");
+    }
+
+    if (dev.hasWritableChars && !dev.connectionEncrypted) {
+        score += 15;
+        result.reasons.push_back("writable characteristics without encryption");
+    }
+
+    if (dev.hasSensitiveUnencrypted) {
+        score += 20;
+        result.reasons.push_back("sensitive service without encryption");
+    }
+
+    if (dev.supportsBrEdr) {
+        score += 5;
+        result.reasons.push_back("dual-mode device (BLE + Classic)");
+    }
+
     // -------- Minimal information mitigation --------
     // A public/static MAC alone enables tracking but reveals little about
     // the device or its owner.  Reduce the score when no other identifying

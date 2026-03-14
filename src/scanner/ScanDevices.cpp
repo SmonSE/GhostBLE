@@ -24,6 +24,7 @@
 #include "../GATTServices/currentTimeService.h"
 #include "../GATTServices/immediateAlertService.h"
 #include "../GATTServices/linkLossService.h"
+#include "../analyzer/SecurityAnalyzer.h"
 #include "../gps/GPSManager.h"
 #include "../wardriving/WigleLogger.h"
 #include "../helper/nibblesSpeech.h"
@@ -227,7 +228,10 @@ static bool parseDeviceInfo(
   seenDevices.insert(addrStr);
 
   // Risk factor: Weak/default device name
-  if (localName == "< -- >" || localName == "BLE Device" || localName == "Random") {
+  if (localName == "< -- >" || localName == "BLE Device" || localName == "Random" ||
+      localName.startsWith("ESP_") || localName.startsWith("ESP32") ||
+      localName.startsWith("Arduino") || localName.startsWith("HM") ||
+      localName.startsWith("HC-") || localName.startsWith("BLE")) {
     hasWeakName = true;
   }
 
@@ -563,6 +567,13 @@ void scanForDevices() {
       std::vector<uint8_t> payloadVec = device->getPayload();
       std::string advData(payloadVec.begin(), payloadVec.end());
 
+      // -------- Advertisement Flags Analysis (AD Type 0x01) --------
+      std::vector<SecurityFinding> advFindings;
+      analyzeAdvFlags(payloadVec, dev, advFindings);
+      for (auto& f : advFindings) {
+        logToSerialAndWeb("   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
+      }
+
       handleDevicePrivacy(
           std::string(localName.c_str()),
           addrStr,
@@ -645,6 +656,28 @@ void scanForDevices() {
                     manufacturerName,
                     rssi
                 );
+              }
+
+              // -------- Security Analysis --------
+              SecurityResult secResult = analyzeDeviceSecurity(pClient, dev);
+
+              dev.connectionEncrypted = secResult.connectionEncrypted;
+              dev.hasWritableChars = (secResult.writableCharCount > 0);
+              dev.writableCharCount = secResult.writableCharCount;
+              dev.hasDFUService = secResult.hasDFUService;
+              dev.hasUARTService = secResult.hasUARTService;
+              dev.hasSensitiveUnencrypted = secResult.hasSensitiveServiceUnencrypted;
+              dev.deviceFingerprint = secResult.deviceFingerprint;
+
+              if (!secResult.findings.empty()) {
+                logToSerialAndWeb("Security Findings:");
+                for (auto& f : secResult.findings) {
+                  logToSerialAndWeb("   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
+                }
+              }
+
+              if (!secResult.deviceFingerprint.empty()) {
+                logToSerialAndWeb("   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str()));
               }
 
               // Analyze exposure and log results
