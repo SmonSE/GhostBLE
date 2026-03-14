@@ -44,7 +44,8 @@ SecurityResult analyzeDeviceSecurity(NimBLEClient* pClient, const DeviceInfo& de
     if (!pClient || !pClient->isConnected()) return result;
 
     // -------- 1. Connection encryption check --------
-    result.connectionEncrypted = pClient->isEncrypted();
+    NimBLEConnInfo connInfo = pClient->getConnInfo();
+    result.connectionEncrypted = connInfo.isEncrypted();
 
     if (!result.connectionEncrypted) {
         result.findings.push_back({
