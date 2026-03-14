@@ -4,6 +4,7 @@
 
 #include "../config/config.h"
 #include "../logToSerialAndWeb/logger.h"
+#include "../helper/AppearanceHelper.h"
 
 
 String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient) {
@@ -41,8 +42,9 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                 if (value.size() >= 2) {
                     uint16_t appearance;
                     memcpy(&appearance, value.data(), sizeof(appearance));
-                    accessInfoString += "Appearance: 0x" + String(appearance, HEX) + "\n";
-                    Serial.println("     Appearance: 0x" + String(appearance, HEX));
+                    String appearanceName = getAppearanceName(appearance);
+                    accessInfoString += "Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")\n";
+                    Serial.println("     Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")");
                 }
             } else if (strcmp(charUUIDs[i], "2A04") == 0) {
                 if (value.length() >= 8) {
