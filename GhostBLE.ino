@@ -21,6 +21,7 @@
 #include "src/images/nibblesThugLife.h"
 
 #include "src/logger/logger.h"
+#include "src/GATTServices/pwnBeaconService.h"
 #include "src/gps/GPSManager.h"
 #include "src/wardriving/WigleLogger.h"
 #include "src/helper/nibblesSpeech.h"
@@ -109,8 +110,11 @@ void setup() {
   M5.Lcd.fillScreen(0x00C4);
   delay(250);
 
-  NimBLEDevice::init("bleDefender");
+  NimBLEDevice::init(DEVICE_NAME);
   LOG(LOG_SYSTEM, "BLE initialized successfully.");
+
+  // Start PwnBeacon advertising so other devices can discover us
+  PwnBeaconServiceHandler::startAdvertising(DEVICE_NAME, DEVICE_FACE);
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);

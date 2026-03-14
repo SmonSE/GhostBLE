@@ -51,6 +51,10 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 
 #define GPS_BAUD_RATE 115200
 
+// ===== Device Name =====
+#define DEVICE_NAME "NibBLEs"
+#define DEVICE_FACE "(◕‿◕)"
+
 // ===== WiFi AP Settings =====
 #define WIFI_AP_SSID "GhostBLE"
 #define WIFI_AP_PASSWORD "ghostble123!"
