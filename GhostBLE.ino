@@ -99,6 +99,8 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
+  M5.Lcd.setSwapBytes(true);
+
   Serial.println("GhostBLE starting...");
 
   initLogger();
