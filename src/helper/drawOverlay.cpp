@@ -2,14 +2,38 @@
 #include <M5Unified.h>
 
 void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0) {
-    for (int y = 0; y < h; y++) {
-      for (int x = 0; x < w; x++) {
-        uint16_t color = img[y * w + x];
-        if (color != 0xFFFF) {  // 0xFFFF = transparent
-          M5.Lcd.drawPixel(x0 + x, y0 + y, color);
-        }
-      }
+    M5.Lcd.pushImage(x0, y0, w, h, img, (uint16_t)0xFFFF);
+  }
+
+// Union bounding box of all Nibbles expressions:
+//   Happy(83,60,72,26) Angry(83,60,72,30) Sad(83,56,72,30)
+//   Glasses(76,52,86,27) ThugLife(80,52,80,36) Sleep(83,60,72,26)
+static const int EXPR_REGION_X = 76;
+static const int EXPR_REGION_Y = 52;
+static const int EXPR_REGION_W = 86;   // 162 - 76
+static const int EXPR_REGION_H = 38;   // 90  - 52
+
+void drawComposite(const uint16_t* base, int baseW, int baseX, int baseY,
+                   const uint16_t* overlay, int overlayW, int overlayH,
+                   int overlayX, int overlayY) {
+    M5Canvas canvas(&M5.Lcd);
+    if (!canvas.createSprite(EXPR_REGION_W, EXPR_REGION_H)) return;
+
+    // Fill entire expression region from base image (row-by-row sub-region copy)
+    int bOffX = EXPR_REGION_X - baseX;
+    int bOffY = EXPR_REGION_Y - baseY;
+    for (int row = 0; row < EXPR_REGION_H; row++) {
+        canvas.pushImage(0, row, EXPR_REGION_W, 1,
+            &base[(bOffY + row) * baseW + bOffX]);
     }
+
+    // Composite overlay at its relative position within the region
+    canvas.pushImage(overlayX - EXPR_REGION_X, overlayY - EXPR_REGION_Y,
+                     overlayW, overlayH, overlay, (uint16_t)0xFFFF);
+
+    // Single SPI transfer to LCD
+    canvas.pushSprite(EXPR_REGION_X, EXPR_REGION_Y);
+    canvas.deleteSprite();
   }
 
 void drawBubble(const char* message, int x0, int y0,

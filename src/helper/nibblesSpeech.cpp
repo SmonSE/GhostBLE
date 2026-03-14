@@ -96,16 +96,18 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
 }
 
 static void clearThoughtBubble() {
-    // Redraw the character area to clear the bubble region
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    // Clear bubble region and restore expression
+    M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 30, 0x00C4);
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
 
 static void showMumble(const char* message) {
-    // Redraw sprite area to clear any previous bubble cleanly
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
-    drawOverlay(nibblesSleep, NIBBLESSLEEP_WIDTH, NIBBLESSLEEP_HEIGHT, NIBBLES_SLEEP_X, NIBBLES_SLEEP_Y);
+    // Clear any previous bubble and draw sleep expression
+    M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 30, 0x00C4);
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                  nibblesSleep, NIBBLESSLEEP_WIDTH, NIBBLESSLEEP_HEIGHT, NIBBLES_SLEEP_X, NIBBLES_SLEEP_Y);
 
     drawThoughtBubble(message, BUBBLE_X, THOUGHT_BUBBLE_Y);
     thoughtVisible = true;
