@@ -11,15 +11,19 @@ static uint8_t categoryTargets[16];
 // Global category enable mask
 static uint16_t enabledCategories = LOG_ALL;
 
-// SD card log file handle (managed externally by SDLogger for structured
-// writes, but the unified logger can append raw lines too)
+// Global target enable mask — controls which outputs are active
+// Default: SD always on, Serial off (debug only), Web off (follows WiFi)
+static uint8_t enabledTargets = TARGET_SD;
+
+// SD card log file handle
 static File logFile;
 static bool sdReady = false;
 
 void initLogger() {
     logMutex = xSemaphoreCreateMutex();
 
-    // Default: all categories write to all targets
+    // Default: all categories route to all targets
+    // (actual output filtered by enabledTargets)
     for (int i = 0; i < 16; i++) {
         categoryTargets[i] = TARGET_ALL;
     }
@@ -31,6 +35,14 @@ void logSetTargets(LogCategory category, uint8_t targets) {
             categoryTargets[i] = targets;
         }
     }
+}
+
+void logEnableTarget(uint8_t target) {
+    enabledTargets |= target;
+}
+
+void logDisableTarget(uint8_t target) {
+    enabledTargets &= ~target;
 }
 
 void logEnableCategory(LogCategory category) {
@@ -45,13 +57,17 @@ void logDisableCategory(LogCategory category) {
 static uint8_t getTargets(LogCategory category) {
     if (!(enabledCategories & (uint16_t)category)) return TARGET_NONE;
 
-    // Find the first matching bit and return its target config
+    // Find the first matching bit and get its per-category config
+    uint8_t catTargets = TARGET_ALL;
     for (int i = 0; i < 16; i++) {
         if (category & (1 << i)) {
-            return categoryTargets[i];
+            catTargets = categoryTargets[i];
+            break;
         }
     }
-    return TARGET_ALL;
+
+    // Intersect with globally enabled targets
+    return catTargets & enabledTargets;
 }
 
 // Internal: open SD log file if not already open
@@ -83,11 +99,14 @@ void LOG(LogCategory category, const String& msg) {
         }
         xSemaphoreGive(logMutex);
     } else {
-        Serial.println(msg);
+        // Fallback: serial only if mutex unavailable
+        if (enabledTargets & TARGET_SERIAL) {
+            Serial.println(msg);
+        }
     }
 }
 
-// Backward-compatible: existing code calls this without a category
+// Backward-compatible wrapper
 void logToSerialAndWeb(const String& msg) {
     LOG(LOG_SYSTEM, msg);
 }

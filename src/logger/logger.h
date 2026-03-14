@@ -35,8 +35,11 @@ enum LogTarget : uint8_t {
 void initLogger();
 
 // Set which categories are enabled for each target
-// Default: all categories → all targets
 void logSetTargets(LogCategory category, uint8_t targets);
+
+// Enable/disable individual targets globally
+void logEnableTarget(uint8_t target);
+void logDisableTarget(uint8_t target);
 
 // Enable/disable a category globally
 void logEnableCategory(LogCategory category);
@@ -47,5 +50,5 @@ void logDisableCategory(LogCategory category);
 // Unified log: writes to configured targets based on category
 void LOG(LogCategory category, const String& msg);
 
-// Convenience: log without category (uses LOG_SYSTEM, all targets)
+// Convenience: log without category (uses LOG_SYSTEM)
 void logToSerialAndWeb(const String& msg);

@@ -140,6 +140,7 @@ void setup() {
 
   isWebLogActive = true;
   startWebLogServer();
+  logEnableTarget(TARGET_WEB);
 
   ws.textAll("BLE_SCAN_READY");
 
@@ -265,6 +266,7 @@ void toggleWiFi() {
     stopWebLogServer();
     wifiStarted = false;
     isWebLogActive = false;
+    logDisableTarget(TARGET_WEB);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon OFF
@@ -272,6 +274,7 @@ void toggleWiFi() {
     logToSerialAndWeb("WIFI / WEB SERVER ON");
     startWebLogServer();
     isWebLogActive = true;
+    logEnableTarget(TARGET_WEB);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
