@@ -18,6 +18,7 @@ void drawComposite(const uint16_t* base, int baseW, int baseX, int baseY,
                    int overlayX, int overlayY) {
     M5Canvas canvas(&M5.Lcd);
     if (!canvas.createSprite(EXPR_REGION_W, EXPR_REGION_H)) return;
+    canvas.setSwapBytes(true);
 
     // Fill entire expression region from base image (row-by-row sub-region copy)
     int bOffX = EXPR_REGION_X - baseX;
