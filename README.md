@@ -1,5 +1,7 @@
 # GhostBLE – BLE Privacy Scanner
 
+> **Disclaimer:** GhostBLE is a BLE privacy analysis and security research tool. It is intended for legal and authorized security testing, education, and privacy research purposes only. Use of this software for any malicious or unauthorized activities is strictly prohibited. By downloading, installing, or using GhostBLE, you agree to comply with all applicable laws and regulations. This software is provided free of charge, and we do not accept payments for copies or modifications. The developers of GhostBLE assume no liability for any misuse of the software. Use at your own risk.
+
 GhostBLE is a Bluetooth Low Energy (BLE) privacy scanner built for the **M5Stack Cardputer**. It discovers nearby BLE devices, analyzes their privacy posture, and flags potential security concerns. Ideal for **security researchers, tinkerers, and educators** interested in BLE privacy, device fingerprinting, and wireless reconnaissance.
 
 A friendly mascot named **Nibbles** guides you through the scanning process on the built-in display.
