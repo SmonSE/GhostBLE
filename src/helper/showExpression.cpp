@@ -260,7 +260,7 @@ static void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
 }
 
 static void drawXPBar(int x, int y) {
-  M5.Lcd.setTextColor(GREEN);
+  M5.Lcd.setTextColor(GREEN, 0x00C4);
   M5.Lcd.setCursor(x, y);
   M5.Lcd.printf("LV%u", xpManager.getLevel());
 
