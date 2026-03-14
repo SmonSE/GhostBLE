@@ -23,22 +23,31 @@ static const int EXPR_REGION_H = 38;   // 90  - 52
 void drawComposite(const uint16_t* base, int baseW, int baseX, int baseY,
                    const uint16_t* overlay, int overlayW, int overlayH,
                    int overlayX, int overlayY) {
-    // Sprite-composite the expression region
+    // Sprite-composite the expression region (all RAM ops, single SPI push)
     M5Canvas canvas(&M5.Lcd);
     if (!canvas.createSprite(EXPR_REGION_W, EXPR_REGION_H)) return;
-    canvas.setSwapBytes(true);
 
-    // Fill entire expression region from base image (row-by-row sub-region copy)
+    // Fill entire expression region from base image using drawPixel
+    // (handles RGB565 byte order correctly, same as drawOverlay)
     int bOffX = EXPR_REGION_X - baseX;
     int bOffY = EXPR_REGION_Y - baseY;
     for (int row = 0; row < EXPR_REGION_H; row++) {
-        canvas.pushImage(0, row, EXPR_REGION_W, 1,
-            &base[(bOffY + row) * baseW + bOffX]);
+        for (int col = 0; col < EXPR_REGION_W; col++) {
+            canvas.drawPixel(col, row, base[(bOffY + row) * baseW + bOffX + col]);
+        }
     }
 
-    // Composite overlay at its relative position within the region
-    canvas.pushImage(overlayX - EXPR_REGION_X, overlayY - EXPR_REGION_Y,
-                     overlayW, overlayH, overlay, (uint16_t)0xFFFF);
+    // Overlay expression with manual transparency (skip 0xFFFF pixels)
+    int relX = overlayX - EXPR_REGION_X;
+    int relY = overlayY - EXPR_REGION_Y;
+    for (int y = 0; y < overlayH; y++) {
+        for (int x = 0; x < overlayW; x++) {
+            uint16_t color = overlay[y * overlayW + x];
+            if (color != 0xFFFF) {
+                canvas.drawPixel(relX + x, relY + y, color);
+            }
+        }
+    }
 
     // Single SPI transfer to LCD
     canvas.pushSprite(EXPR_REGION_X, EXPR_REGION_Y);
