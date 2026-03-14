@@ -242,16 +242,16 @@ void onLongPress() {
   if (bleScanEnabledWeb) {
     logToSerialAndWeb("▶️ BLE Scan ENABLED");
     ws.textAll("BLE_SCAN_ON");
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                  nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
     nibblesSpeechShow(SpeechContext::SCAN_START);
   }
   else {
     logToSerialAndWeb("⏹️ BLE Scan DISABLED");
     ws.textAll("BLE_SCAN_OFF");
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                  nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
     stopBleScan();   // THIS is the important part
   }
@@ -263,15 +263,15 @@ void toggleWiFi() {
     stopWebLogServer();
     wifiStarted = false;
     isWebLogActive = false;
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon OFF
   } else {
     logToSerialAndWeb("WIFI / WEB SERVER ON");
     startWebLogServer();
     isWebLogActive = true;
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   }
 
@@ -332,8 +332,8 @@ void toggleWardriving() {
   }
 
   ws.textAll(wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
-  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);
   if (wardrivingEnabled) {
     nibblesSpeechShow(SpeechContext::WARDRIVING);
@@ -352,7 +352,7 @@ void switchGPSSource() {
   gpsManager.switchSource(next);
   logToSerialAndWeb("GPS: " + String(gpsManager.getSourceName()));
 
-  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+  drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
