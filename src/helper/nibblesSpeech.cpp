@@ -96,10 +96,32 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
 }
 
 static void clearThoughtBubble() {
-    // Clear bubble region and restore expression
-    M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 30, 0x00C4);
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+
+    // Hintergrund unter der Bubble wiederherstellen
+    for (int row = 0; row < 30; row++) {
+        M5.Lcd.pushImage(
+            BUBBLE_X,
+            THOUGHT_BUBBLE_Y + row,
+            BUBBLE_MAX_W,
+            1,
+            &nibblesFront[(THOUGHT_BUBBLE_Y + row) * NIBBLESFRONT_WIDTH + BUBBLE_X]
+        );
+    }
+
+    // Gesicht wieder korrekt zusammensetzen
+    drawComposite(
+        nibblesFront,
+        NIBBLESFRONT_WIDTH,
+        NIBBLES_FRONT_X,
+        NIBBLES_FRONT_Y,
+        nibblesHappy,
+        NIBBLESHAPPY_WIDTH,
+        NIBBLESHAPPY_HEIGHT,
+        NIBBLES_HAPPY_X,
+        NIBBLES_HAPPY_Y
+    );
+
+    // Stats neu zeichnen
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 }
 
