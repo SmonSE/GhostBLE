@@ -175,4 +175,40 @@ void SDLogger::writeIBeaconInfo(
     dataFile.flush();
 }
 
+void SDLogger::writePwnBeaconInfo(const PwnBeaconInfo& info, int rssi)
+{
+    if (!initialized || !dataFile) return;
+
+    dataFile.println("\n---------- PwnBeacon ----------");
+
+    dataFile.print("Name: ");
+    dataFile.println(info.gattName.length() > 0 ? info.gattName : info.name);
+
+    dataFile.print("FP: ");
+    dataFile.println(PwnBeaconServiceHandler::fingerprintToString(info.fingerprint));
+
+    dataFile.print("Pwnd run: ");
+    dataFile.println(info.pwnd_run);
+
+    dataFile.print("Pwnd tot: ");
+    dataFile.println(info.pwnd_tot);
+
+    dataFile.print("RSSI: ");
+    dataFile.println(rssi);
+
+    if (info.face.length() > 0) {
+        dataFile.print("Face: ");
+        dataFile.println(info.face);
+    }
+
+    if (info.identity.length() > 0) {
+        dataFile.print("Identity: ");
+        dataFile.println(info.identity);
+    }
+
+    dataFile.println("-------------------------------");
+
+    dataFile.flush();
+}
+
 

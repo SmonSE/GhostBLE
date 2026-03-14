@@ -4,6 +4,7 @@
 #include <SD.h>
 #include <vector>
 #include "../analyzer/ExposureAnalyzer.h"
+#include "../GATTServices/pwnBeaconService.h"
 
 class SDLogger {
 public:
@@ -25,6 +26,8 @@ public:
         int rssi);
 
     void writeUncovered(const ExposureResult& exposure);
+
+    void writePwnBeaconInfo(const PwnBeaconInfo& info, int rssi);
 
     void writeCategory(const String& category);
 
