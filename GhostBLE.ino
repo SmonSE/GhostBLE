@@ -235,6 +235,18 @@ void loop() {
     }
     startTimeDevice = millis();
   }
+  // Auto-enable serial logging when USB host is connected
+  static bool lastUsbState = false;
+  bool usbConnected = Serial;
+  if (usbConnected != lastUsbState) {
+    if (usbConnected) {
+      logEnableTarget(TARGET_SERIAL);
+    } else {
+      logDisableTarget(TARGET_SERIAL);
+    }
+    lastUsbState = usbConnected;
+  }
+
   // Let system handle BLE, GPIO, etc.
   yield();
 }
