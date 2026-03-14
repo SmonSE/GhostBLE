@@ -16,6 +16,14 @@
 #include "../models/DeviceInfo.h"
 #include "../privacyCheck/ExposureClassifier.h"
 #include "../helper/BLEDecoder.h"
+#include "../GATTServices/genericAccessService.h"
+#include "../GATTServices/batteryLevelService.h"
+#include "../GATTServices/heartRateService.h"
+#include "../GATTServices/temperatureService.h"
+#include "../GATTServices/txPowerService.h"
+#include "../GATTServices/currentTimeService.h"
+#include "../GATTServices/immediateAlertService.h"
+#include "../GATTServices/linkLossService.h"
 #include "../gps/GPSManager.h"
 #include "../wardriving/WigleLogger.h"
 #include "../helper/nibblesSpeech.h"
@@ -263,6 +271,53 @@ static bool parseDeviceInfo(
     }
   }
 
+  // -------- Advertisement Service UUIDs --------
+  int svcCount = device->getServiceUUIDCount();
+  if (svcCount > 0) {
+    logToSerialAndWeb("   Advertised Services (" + String(svcCount) + "):");
+    for (int s = 0; s < svcCount; s++) {
+      NimBLEUUID svcUUID = device->getServiceUUID(s);
+      std::string uuidStr = svcUUID.toString();
+      // NimBLE returns "0x1800" for 16-bit UUIDs — strip the "0x" prefix
+      String shortUUID = uuidStr.c_str();
+      if (shortUUID.startsWith("0x")) {
+        shortUUID = shortUUID.substring(2);
+      }
+      String svcName = getServiceName(shortUUID);
+      logToSerialAndWeb("     - " + shortUUID + " (" + svcName + ")");
+    }
+  }
+
+  // -------- Advertisement TX Power --------
+  if (device->haveTXPower()) {
+    int8_t advTxPower = device->getTXPower();
+    logToSerialAndWeb("   Adv TX Power: " + String(advTxPower) + " dBm");
+    float estDist = estimateDistance(advTxPower, device->getRSSI());
+    if (estDist >= 0) {
+      logToSerialAndWeb("   Est. Distance (TX): ~" + String(estDist, 2) + " m");
+    }
+  }
+
+  // -------- Advertisement Service Data (AD Type 0x16) --------
+  int svcDataCount = device->getServiceDataCount();
+  if (svcDataCount > 0) {
+    logToSerialAndWeb("   Service Data (" + String(svcDataCount) + "):");
+    for (int sd = 0; sd < svcDataCount; sd++) {
+      NimBLEUUID svcDataUUID = device->getServiceDataUUID(sd);
+      std::string svcData = device->getServiceData(sd);
+
+      String shortUUID = svcDataUUID.toString().c_str();
+      if (shortUUID.startsWith("0x")) {
+        shortUUID = shortUUID.substring(2);
+      }
+      String svcName = getServiceName(shortUUID);
+
+      String hexData = bytesToHexString(svcData);
+      logToSerialAndWeb("     - UUID: " + shortUUID + " (" + svcName + ")");
+      logToSerialAndWeb("       Data: " + hexData);
+    }
+  }
+
   return true;
 }
 
@@ -283,6 +338,33 @@ static bool connectAndReadGATT(
 
   if (!deviceInfoService.isEmpty()) {
       dev.gattHasName = true;
+  }
+
+  // Read additional standard GATT services
+  genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
+  batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
+  heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
+  temperatureService = TemperatureServiceHandler::readTemperature(pClient);
+
+  String txPowerInfo = TxPowerServiceHandler::readTxPowerLevel(pClient);
+  if (!txPowerInfo.isEmpty()) {
+      logToSerialAndWeb(txPowerInfo);
+  }
+
+  // Read additional optional GATT services
+  String timeInfo = CurrentTimeServiceHandler::readCurrentTime(pClient);
+  if (!timeInfo.isEmpty()) {
+      logToSerialAndWeb(timeInfo);
+  }
+
+  String alertInfo = ImmediateAlertServiceHandler::readImmediateAlert(pClient);
+  if (!alertInfo.isEmpty()) {
+      logToSerialAndWeb(alertInfo);
+  }
+
+  String linkLossInfo = LinkLossServiceHandler::readLinkLoss(pClient);
+  if (!linkLossInfo.isEmpty()) {
+      logToSerialAndWeb(linkLossInfo);
   }
 
   logToSerialAndWeb("🔓 Connected and discovered attributes!");
@@ -321,6 +403,16 @@ static bool connectAndReadGATT(
 
       if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
           hasWritableChar = true;
+      }
+
+      // Read Characteristic User Description descriptor (0x2901)
+      NimBLERemoteDescriptor* userDesc = characteristic->getDescriptor(NimBLEUUID("2901"));
+      if (userDesc) {
+          std::string descValue = userDesc->readValue();
+          if (!descValue.empty() && isPrintableText(descValue)) {
+              logToSerialAndWeb("     Descriptor [" + String(charUuid.c_str()) + "]: " + String(descValue.c_str()));
+              nameList.push_back(descValue);
+          }
       }
 
       std::string rawValue = characteristic->readValue();

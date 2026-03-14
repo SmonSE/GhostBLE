@@ -171,6 +171,9 @@ void handleDevicePrivacy(
         std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
         info.mac_change_count++;
         info.seen_macs.push_back(mac);
+        logToSerialAndWeb("   MAC rotation detected for device (" +
+            String(info.mac_change_count) + " changes, " +
+            String(info.seen_macs.size()) + " unique MACs)");
     } else if (info.seen_macs.empty()) {
         info.seen_macs.push_back(mac);
     }
