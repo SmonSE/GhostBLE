@@ -101,8 +101,8 @@ void showGlassesExpressionTask(void* parameter) {
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     if (localName.length() > 0) {
@@ -120,13 +120,13 @@ void showGlassesExpressionTask(void* parameter) {
 
 void showAngryExpressionTask(void* parameter) {
     isAngryTaskRunning = true;
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     isAngryTaskRunning = false;
@@ -136,8 +136,8 @@ void showAngryExpressionTask(void* parameter) {
 
 void showSadExpressionTask(void* parameter) {
     isSadTaskRunning = true;
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     if (localName.length() > 0) {
@@ -149,8 +149,8 @@ void showSadExpressionTask(void* parameter) {
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     isSadTaskRunning = false;
@@ -160,8 +160,8 @@ void showSadExpressionTask(void* parameter) {
 void showHappyExpressionTask(void* parameter) {
     isHappyTaskRunning = true;
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     vTaskDelay(pdMS_TO_TICKS(4000));  // 4 Sekunden
@@ -173,13 +173,13 @@ void showHappyExpressionTask(void* parameter) {
 
 void showThugLifeExpressionTask(void* parameter) {
   isThugLifeTaskRunning = true;
-  drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+  drawOverlay(nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
 
   vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
-  drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+  drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
   showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
   isThugLifeTaskRunning = false;
@@ -204,8 +204,6 @@ static void drawStatusIcons(int x, int y) {
 }
 
 static void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
-  // Clear stats area so old longer numbers don't bleed through
-  M5.Lcd.fillRect(x, y, 70, STATS_LINE_HEIGHT * 4, 0x00C4);
   M5.Lcd.setTextColor(WHITE);
   M5.Lcd.setCursor(x, y);
   M5.Lcd.printf("Spotted %d", spotted);
