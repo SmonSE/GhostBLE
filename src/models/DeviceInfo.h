@@ -42,4 +42,14 @@ struct DeviceInfo {
     bool hasName = false;
     bool hasManufacturerData = false;
     bool hasCleartextData = false;
+
+    // Security analysis flags
+    bool hasWritableChars = false;
+    bool hasDFUService = false;
+    bool hasUARTService = false;
+    bool connectionEncrypted = false;
+    bool hasSensitiveUnencrypted = false;
+    bool supportsBrEdr = false;
+    int writableCharCount = 0;
+    std::string deviceFingerprint;
 };

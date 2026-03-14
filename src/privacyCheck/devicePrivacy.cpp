@@ -7,7 +7,16 @@
 
 std::map<std::string, DeviceInfo> mac_history;
 std::map<std::string, DevicePrivacyInfo> device_identity_history;
-std::vector<std::string> weakNames = {"<NoName>", "BLE_Device", "Unknown", "SensorTag", "ESP32"};
+std::vector<std::string> weakNames = {
+    "<NoName>", "BLE_Device", "Unknown", "SensorTag", "ESP32",
+    "BLE Device", "Arduino", "OBDII", "OBD2", "MLT-BT05",
+    "HC-05", "HC-06", "HC-08", "HMSoft", "JDY-08", "JDY-10",
+    "AT-09", "BT05", "CC2541", "CC2640", "nRF5x", "DSD TECH",
+    "Espressif", "ESP_GATTS_DEMO", "LYWSD03MMC", "Mi Band",
+    "MI_SCALE", "Flower care", "iBBQ", "BBQ", "LED", "ELM327",
+    "SimpleBLE", "BLE5-PERIPH", "Bluefruit52", "Adafruit",
+    "MyDevice", "Test", "test", "Device", "BLE", "Peripheral"
+};
 std::vector<std::string> emptyNames = {"", "< -- >"};
 
 enum class DeviceCategory {
