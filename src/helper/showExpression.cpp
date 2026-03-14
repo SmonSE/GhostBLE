@@ -95,6 +95,40 @@ static void updateBatteryState() {
   }
 }
 
+
+static void clearSpeechBubble() {
+
+    int srcX = BUBBLE_X - NIBBLES_FRONT_X;
+    int srcY = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
+
+    int restoreH = BUBBLE_RECT_H + BUBBLE_TRI_H + 2;
+
+    for (int row = 0; row < restoreH; row++) {
+        M5.Lcd.pushImage(
+            BUBBLE_X,
+            BUBBLE_RECT_Y + row,
+            BUBBLE_MAX_W,
+            1,
+            &nibblesFront[(srcY + row) * NIBBLESFRONT_WIDTH + srcX]
+        );
+    }
+
+    drawComposite(
+        nibblesFront,
+        NIBBLESFRONT_WIDTH,
+        NIBBLES_FRONT_X,
+        NIBBLES_FRONT_Y,
+        nibblesHappy,
+        NIBBLESHAPPY_WIDTH,
+        NIBBLESHAPPY_HEIGHT,
+        NIBBLES_HAPPY_X,
+        NIBBLES_HAPPY_Y
+    );
+
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+}
+
+
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
@@ -109,8 +143,12 @@ void showGlassesExpressionTask(void* parameter) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
+
       drawBubble(localName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+
+      clearSpeechBubble();
     }
 
     isGlassesTaskRunning = false;
