@@ -98,13 +98,16 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
 static void clearThoughtBubble() {
 
     // Hintergrund unter der Bubble wiederherstellen
+    int srcX = BUBBLE_X - NIBBLES_FRONT_X;
+    int srcY = THOUGHT_BUBBLE_Y - NIBBLES_FRONT_Y;
+
     for (int row = 0; row < 30; row++) {
         M5.Lcd.pushImage(
             BUBBLE_X,
             THOUGHT_BUBBLE_Y + row,
             BUBBLE_MAX_W,
             1,
-            &nibblesFront[(THOUGHT_BUBBLE_Y + row) * NIBBLESFRONT_WIDTH + BUBBLE_X]
+            &nibblesFront[(srcY + row) * NIBBLESFRONT_WIDTH + srcX]
         );
     }
 
