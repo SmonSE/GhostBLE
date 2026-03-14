@@ -32,7 +32,7 @@ enum LogTarget : uint8_t {
 };
 
 // ===== Configuration =====
-void initLogger();
+bool initLogger(int sdCsPin = -1);
 
 // Set which categories are enabled for each target
 void logSetTargets(LogCategory category, uint8_t targets);

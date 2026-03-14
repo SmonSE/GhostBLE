@@ -1,7 +1,6 @@
 #include "BLEDecoder.h"
 #include "../config/config.h"
 #include "../logger/logger.h"
-#include "../sdCard/SDLogger.h"
 #include "../globals/globals.h"
 #include <string>
 
@@ -36,7 +35,7 @@ static String toASCII(uint8_t* data, size_t len)
     return ascii;
 }
 
-void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogger& sdLogger)
+void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
 {
     String uuidStr = String(uuid.c_str());
 
@@ -45,50 +44,28 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogg
 
     xpManager.awardXP(15);  // +15 XP: notify data received
 
-    // ---- Pretty Output (Serial/Web) ----
-    LOG(LOG_NOTIFY,"BLE Notify");
-    LOG(LOG_NOTIFY,"   UUID : " + uuidStr);
-    LOG(LOG_NOTIFY,"   HEX  : " + hexString);
-    LOG(LOG_NOTIFY,"   ASCII: " + asciiString);
-
-    // ---- Compact LogLine (SD Card) ----
-    String logLine;
-    logLine.reserve(200);
-    logLine += "BLE Notify: UUID=";
-    logLine += uuidStr;
-    logLine += " | HEX=";
-    logLine += hexString;
-    logLine += " | ASCII=";
-    logLine += asciiString;
+    LOG(LOG_NOTIFY, "BLE Notify");
+    LOG(LOG_NOTIFY, "   UUID : " + uuidStr);
+    LOG(LOG_NOTIFY, "   HEX  : " + hexString);
+    LOG(LOG_NOTIFY, "   ASCII: " + asciiString);
 
     // ---- Known BLE characteristics ----
     if (uuidStr.endsWith(UUID_BATTERY_LEVEL) && length >= 1)
     {
         xpManager.awardXP(25);  // +25 XP: known char decoded (battery)
         String battery = String(data[0]) + "%";
-
-        LOG(LOG_NOTIFY,"   Battery Level: " + battery);
-        logLine += " | Battery=";
-        logLine += battery;
-        logLine += "%";
+        LOG(LOG_NOTIFY, "   Battery Level: " + battery);
     }
 
     if (uuidStr == UUID_BATTERY_LEVEL && length == 1) {
         uint8_t battery = data[0];
         LOG(LOG_NOTIFY, "Battery Level: " + String(battery) + "%");
-        logLine += " | Battery Level=";
-        logLine += String(battery);
-        logLine += "%";
     }
 
     if (uuidStr.endsWith(UUID_DEVICE_NAME))
     {
         xpManager.awardXP(25);  // +25 XP: known char decoded (name)
-        String name = asciiString;
-
-        LOG(LOG_NOTIFY,"   Device Name: " + name);
-        logLine += " | Name=";
-        logLine += name;
+        LOG(LOG_NOTIFY, "   Device Name: " + asciiString);
     }
 
     // ---- UINT16 detection ----
@@ -105,10 +82,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogg
         }
 
         values.trim();
-
-        LOG(LOG_NOTIFY,"   UINT16: " + values);
-        logLine += " | UINT16=";
-        logLine += values;
+        LOG(LOG_NOTIFY, "   UINT16: " + values);
     }
 
     // ---- UINT32 detection ----
@@ -129,10 +103,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogg
         }
 
         values.trim();
-
-        LOG(LOG_NOTIFY,"   UINT32: " + values);
-        logLine += " | UINT32=";
-        logLine += values;
+        LOG(LOG_NOTIFY, "   UINT32: " + values);
     }
 
     // ---- FLOAT32 detection ----
@@ -143,14 +114,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length, SDLogg
         memcpy(&f, data, 4);
 
         String value = String(f, 6);
-
-        LOG(LOG_NOTIFY,"   FLOAT32: " + value);
-        logLine += " | FLOAT32=";
-        logLine += value;
+        LOG(LOG_NOTIFY, "   FLOAT32: " + value);
     }
 
-    LOG(LOG_NOTIFY,"");
-
-    // ---- Write ONE compact line to SD ----
-    sdLogger.writeCategory(logLine);
+    LOG(LOG_NOTIFY, "");
 }

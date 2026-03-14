@@ -1,13 +1,11 @@
 #include <M5Cardputer.h>
 #include <M5Unified.h>
-#include <SD.h>
 #include <SPI.h>
 #include <vector>
 #include <NimBLEDevice.h>
 
 #include "src/globals/globals.h"
 #include "src/config/config.h"
-#include "src/sdCard/SDLogger.h"
 #include "src/scanner/ScanDevices.h"
 #include "src/helper/drawOverlay.h"
 #include "src/helper/showExpression.h"
@@ -83,15 +81,9 @@ unsigned long buttonPressStart = 0;
 bool buttonHeld = false;
 bool wifiStarted = false;
 
-// External global instances
-extern SDLogger sdLogger;
-
 // GPS and wardriving
 GPSManager gpsManager;
 WigleLogger wigleLogger;
-
-File dataFile;
-std::vector<String> serviceUuids;
 
 void setup() {
   M5.Power.begin();
@@ -103,7 +95,6 @@ void setup() {
 
   LOG(LOG_SYSTEM, "GhostBLE starting...");
 
-  initLogger();
   taskMutex = xSemaphoreCreateMutex();
 
   #if defined(CARDPUTER)
@@ -127,7 +118,7 @@ void setup() {
   #endif
 
   #if defined(CARDPUTER)
-  if (!sdLogger.begin(SD_CS_PIN)) {
+  if (!initLogger(SD_CS_PIN)) {
     drawThoughtBubble("NO SD CARD!", 125, 18);
     while (1);
   }

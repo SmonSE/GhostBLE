@@ -37,18 +37,14 @@ extern WigleLogger wigleLogger;
 
 NimBLEClient *pClient = nullptr;
 
-SDLogger sdLogger;
-
 // Subscribe to all notifiable characteristics on a connected device
 template<typename Callback>
 void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) {
-  String logSubs;
-  logSubs.reserve(256);
     if (!client) return;
-    auto services = client->getServices(); // returns std::vector<NimBLERemoteService*>
+    auto services = client->getServices();
     for (auto* service : services) {
         if (!service) continue;
-        auto characteristics = service->getCharacteristics(true); // returns std::vector<NimBLERemoteCharacteristic*>
+        auto characteristics = service->getCharacteristics(true);
         for (auto* characteristic : characteristics) {
           if (!characteristic) continue;
           if (characteristic->canNotify()) {
@@ -63,7 +59,6 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
           if (characteristic->canRead()) {
               std::string val = characteristic->readValue();
               LOG(LOG_GATT, "   Read value length: " + String(val.length()));
-              logSubs += "   Read value length: " + String(val.length());
           }
           LOG(LOG_GATT,
               String("   Subscribed to notifis for char ") +
@@ -71,14 +66,6 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
               " in service " +
               service->getUUID().toString().c_str()
           );
-          logSubs += String("   Subscribed to notifis for char ") +
-              characteristic->getUUID().toString().c_str() +
-              " in service " +
-              service->getUUID().toString().c_str();
-          if (logSubs.length() > 0) {
-            sdLogger.writeCategory(logSubs);
-          }
-          logSubs = "";
         }
     }
 }
@@ -93,7 +80,7 @@ void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
     NimBLEUUID charUUID = pChar->getUUID();
 
     // Forward everything to the decoder
-    decodeBLEData(charUUID.toString(), data, length, sdLogger);
+    decodeBLEData(charUUID.toString(), data, length);
 }
 
 bool isTarget = false;
@@ -486,11 +473,10 @@ static bool connectAndReadGATT(
 }
 
 // ---------------------------------------------------------------------------
-// Helper: log exposure analysis results and write to SD card, then clear lists.
+// Helper: log exposure analysis results, then clear lists.
 // ---------------------------------------------------------------------------
 static void handleExposureResult(
     const ExposureResult& exposure,
-    bool writeDeviceToSD,
     String& manufacturerName)
 {
   LOG(LOG_PRIVACY, "Uncovering Summary");
@@ -507,17 +493,7 @@ static void handleExposureResult(
 
   LOG(LOG_PRIVACY, "----------------------------------");
 
-  if (writeDeviceToSD) {
-    sdLogger.writeDeviceInfo(
-        address,
-        localName,
-        nameList,
-        deviceInfoService
-    );
-    sdLogger.writeUncovered(exposure);
-  }
-
-  // Clear uuidList / nameList after Stored to SD Card
+  // Clear lists
   uuidList.clear();
   nameList.clear();
   localName.clear();
@@ -667,15 +643,8 @@ void scanForDevices() {
                 LOG(LOG_BEACON, "   Minor: " + String(beacon.minor));
                 float beaconDistance = estimateDistance(beacon.txPower, rssi);
                 LOG(LOG_BEACON, "   Beacon Distance: ~" + String(beaconDistance, 2) + " m");
-
-                sdLogger.writeIBeaconInfo(
-                    String(beacon.uuid.c_str()),
-                    String(beacon.major),
-                    String(beacon.minor),
-                    String(beaconDistance, 2),
-                    manufacturerName,
-                    rssi
-                );
+                LOG(LOG_BEACON, "   RSSI: " + String(rssi));
+                LOG(LOG_BEACON, "   Manufacturer: " + manufacturerName);
               }
 
               // PwnBeacon info + GATT read
@@ -738,8 +707,7 @@ void scanForDevices() {
 
               ExposureResult exposure = analyzeExposure(dev);
 
-              // Always write device info to SD for successful GATT connections
-              handleExposureResult(exposure, true, manufacturerName);
+              handleExposureResult(exposure, manufacturerName);
             }
           }
         } else {
@@ -757,8 +725,7 @@ void scanForDevices() {
               }
             }
 
-            // Only write to SD if device has a name
-            handleExposureResult(exposure, !localName.isEmpty(), manufacturerName);
+            handleExposureResult(exposure, manufacturerName);
         }
       }
       // Wardriving: log device with GPS coordinates

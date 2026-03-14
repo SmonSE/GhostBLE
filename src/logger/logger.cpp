@@ -15,11 +15,59 @@ static uint16_t enabledCategories = LOG_ALL;
 // Default: SD always on, Serial off (debug only), Web off (follows WiFi)
 static uint8_t enabledTargets = TARGET_SD;
 
-// SD card log file handle
-static File logFile;
-static bool sdReady = false;
+// Per-category SD log files (lazy-opened)
+static File catFiles[16];
+static bool catFileReady[16] = {false};
 
-void initLogger() {
+// Category index → filename mapping
+static const char* catFileNames[] = {
+    "/GhostBLE/scan.log",       // 0  LOG_SCAN
+    "/GhostBLE/gatt.log",       // 1  LOG_GATT
+    "/GhostBLE/privacy.log",    // 2  LOG_PRIVACY
+    "/GhostBLE/security.log",   // 3  LOG_SECURITY
+    "/GhostBLE/beacon.log",     // 4  LOG_BEACON
+    "/GhostBLE/control.log",    // 5  LOG_CONTROL
+    "/GhostBLE/gps.log",        // 6  LOG_GPS
+    "/GhostBLE/system.log",     // 7  LOG_SYSTEM
+    "/GhostBLE/target.log",     // 8  LOG_TARGET
+    "/GhostBLE/notify.log",     // 9  LOG_NOTIFY
+    "/GhostBLE/misc.log",       // 10 (unused)
+    "/GhostBLE/misc.log",       // 11
+    "/GhostBLE/misc.log",       // 12
+    "/GhostBLE/misc.log",       // 13
+    "/GhostBLE/misc.log",       // 14
+    "/GhostBLE/misc.log",       // 15
+};
+
+static void migrateToFolder() {
+    SD.mkdir("/GhostBLE");
+    Serial.println("#Logger# Created /GhostBLE folder, migrating legacy files...");
+
+    if (SD.exists("/device_info.txt")) {
+        SD.rename("/device_info.txt", "/GhostBLE/device_info.txt");
+        Serial.println("#Logger# Migrated /device_info.txt");
+    }
+
+    for (int i = 1; i <= 9999; i++) {
+        char oldPath[24];
+        snprintf(oldPath, sizeof(oldPath), "/wigle_%04d.csv", i);
+        if (!SD.exists(oldPath)) break;
+        char newPath[34];
+        snprintf(newPath, sizeof(newPath), "/GhostBLE/wigle_%04d.csv", i);
+        SD.rename(oldPath, newPath);
+    }
+
+    if (SD.exists("/wigle_overflow.csv")) {
+        SD.rename("/wigle_overflow.csv", "/GhostBLE/wigle_overflow.csv");
+    }
+
+    // Remove legacy single log file
+    if (SD.exists("/GhostBLE/log.txt")) {
+        SD.remove("/GhostBLE/log.txt");
+    }
+}
+
+bool initLogger(int sdCsPin) {
     logMutex = xSemaphoreCreateMutex();
 
     // Default: all categories route to all targets
@@ -27,6 +75,21 @@ void initLogger() {
     for (int i = 0; i < 16; i++) {
         categoryTargets[i] = TARGET_ALL;
     }
+
+    // Initialize SD card
+    bool sdOk = (sdCsPin != -1) ? SD.begin(sdCsPin) : SD.begin();
+    if (!sdOk) {
+        Serial.println("#Logger# SD card initialization failed!");
+        return false;
+    }
+
+    // Create folder and migrate legacy files on first run
+    if (!SD.exists("/GhostBLE")) {
+        migrateToFolder();
+    }
+
+    Serial.println("#Logger# SD card ready.");
+    return true;
 }
 
 void logSetTargets(LogCategory category, uint8_t targets) {
@@ -70,13 +133,21 @@ static uint8_t getTargets(LogCategory category) {
     return catTargets & enabledTargets;
 }
 
-// Internal: open SD log file if not already open
-static void ensureSDLog() {
-    if (sdReady) return;
-    if (SD.exists("/GhostBLE")) {
-        logFile = SD.open("/GhostBLE/log.txt", FILE_APPEND);
-        sdReady = logFile ? true : false;
+// Internal: get category bit index (0-15)
+static int getCatIndex(LogCategory category) {
+    for (int i = 0; i < 16; i++) {
+        if (category & (1 << i)) return i;
     }
+    return 7; // fallback to LOG_SYSTEM index
+}
+
+// Internal: open per-category SD log file if not already open
+static File& ensureCatFile(int idx) {
+    if (!catFileReady[idx] && SD.exists("/GhostBLE")) {
+        catFiles[idx] = SD.open(catFileNames[idx], FILE_APPEND);
+        catFileReady[idx] = catFiles[idx] ? true : false;
+    }
+    return catFiles[idx];
 }
 
 void LOG(LogCategory category, const String& msg) {
@@ -91,10 +162,11 @@ void LOG(LogCategory category, const String& msg) {
             ws.textAll(msg);
         }
         if (targets & TARGET_SD) {
-            ensureSDLog();
-            if (sdReady && logFile) {
-                logFile.println(msg);
-                logFile.flush();
+            int idx = getCatIndex(category);
+            File& f = ensureCatFile(idx);
+            if (catFileReady[idx] && f) {
+                f.println(msg);
+                f.flush();
             }
         }
         xSemaphoreGive(logMutex);

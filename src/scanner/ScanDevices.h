@@ -7,7 +7,6 @@
 #include "../gattServices/heartRateService.h"
 #include "../gattServices/temperatureService.h"
 #include "../gattServices/genericAccessService.h"
-#include "../sdCard/SDLogger.h"
 #include "../target/TargetDevice.h"
 
 #include <NimBLEDevice.h>
