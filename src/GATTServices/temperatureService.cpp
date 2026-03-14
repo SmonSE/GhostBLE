@@ -5,7 +5,7 @@
 
 #include "../config/config.h"
 #include "../globals/globals.h"
-#include "../logToSerialAndWeb/logger.h"
+#include "../logger/logger.h"
 
 static bool tempSubscribed = false;
 

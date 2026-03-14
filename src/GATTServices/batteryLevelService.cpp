@@ -6,7 +6,7 @@
 
 #include "../globals/globals.h"
 #include "../helper/showExpression.h"
-#include "../logToSerialAndWeb/logger.h"
+#include "../logger/logger.h"
 
 String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   String batteryStr = "";

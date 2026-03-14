@@ -10,7 +10,7 @@
 #include "../helper/ServiceHelper.h"
 #include "../helper/drawOverlay.h"
 #include "../helper/showExpression.h"
-#include "../logToSerialAndWeb/logger.h"
+#include "../logger/logger.h"
 #include "../privacyCheck/devicePrivacy.h"
 #include "../analyzer/ExposureAnalyzer.h"
 #include "../models/DeviceInfo.h"

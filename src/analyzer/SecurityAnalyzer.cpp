@@ -1,6 +1,6 @@
 #include "SecurityAnalyzer.h"
 #include <NimBLEDevice.h>
-#include "../logToSerialAndWeb/logger.h"
+#include "../logger/logger.h"
 
 // Well-known sensitive service UUIDs
 static bool isSensitiveService(const std::string& uuid) {

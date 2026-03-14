@@ -156,7 +156,7 @@ GhostBLE/
     ├── globals/               # Global state variables
     ├── helper/                # BLE decoder, manufacturer lookup, UI drawing
     ├── images/                # Embedded sprite assets for Nibbles mascot
-    ├── logToSerialAndWeb/     # Serial + WebSocket logging
+    ├── logger/                # Unified logging (Serial, WebSocket, SD card)
     ├── models/                # Data structures (DeviceInfo)
     ├── privacyCheck/          # MAC type detection, cleartext analysis
     ├── scanner/               # Core BLE scanning and GATT operations

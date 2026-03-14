@@ -3,7 +3,7 @@
 #include <NimBLEDevice.h>
 
 #include "../config/config.h"
-#include "../logToSerialAndWeb/logger.h"
+#include "../logger/logger.h"
 #include "../helper/AppearanceHelper.h"
 
 

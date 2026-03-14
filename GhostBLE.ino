@@ -22,7 +22,7 @@
 #include "src/images/nibblesHappy.h"
 #include "src/images/nibblesThugLife.h"
 
-#include "src/logToSerialAndWeb/logger.h"
+#include "src/logger/logger.h"
 #include "src/gps/GPSManager.h"
 #include "src/wardriving/WigleLogger.h"
 #include "src/helper/nibblesSpeech.h"
