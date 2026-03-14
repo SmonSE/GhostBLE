@@ -3,6 +3,7 @@
 #include "../config/config.h"
 
 void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0) {
+    M5.Lcd.setSwapBytes(true);
     M5.Lcd.pushImage(x0, y0, w, h, img, (uint16_t)0xFFFF);
   }
 
