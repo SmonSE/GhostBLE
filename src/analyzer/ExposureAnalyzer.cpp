@@ -133,6 +133,21 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
     if (isApple)
         score -= 20;
 
+    // -------- Minimal information mitigation --------
+    // A public/static MAC alone enables tracking but reveals little about
+    // the device or its owner.  Reduce the score when no other identifying
+    // information is available so the rating reflects actual exposure.
+    bool hasMinimalInfo = !dev.hasName && !dev.hasManufacturerData &&
+                          !dev.advHasName && !dev.gattHasName &&
+                          !dev.gattHasNameIdentityData && !dev.gattHasPersonalName &&
+                          !dev.gattHasModelInfo && !dev.gattHasIdentityInfo &&
+                          !dev.gattHasEnvironmentName;
+
+    if (hasMinimalInfo && (dev.isPublicMac || dev.hasStaticMac)) {
+        score -= 15;
+        result.reasons.push_back("limited exposure (MAC only, no identifying data)");
+    }
+
     // -------- Identity Exposure --------
     if (score > 60)
         result.identityExposure = "HIGH";
@@ -144,8 +159,10 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
     // -------- Tracking Risk --------
     if (dev.hasRotatingMac)
         result.trackingRisk = "LOW";
-    else if (dev.hasStaticMac || dev.isPublicMac)
+    else if ((dev.hasStaticMac || dev.isPublicMac) && !hasMinimalInfo)
         result.trackingRisk = "HIGH";
+    else if (dev.hasStaticMac || dev.isPublicMac)
+        result.trackingRisk = "MEDIUM";
     else
         result.trackingRisk = "MEDIUM";
 
