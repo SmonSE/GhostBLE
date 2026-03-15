@@ -229,6 +229,7 @@ void loop() {
       // Swap with empty set to free memory instantly via pointer swap,
       // avoiding per-node deallocation blocking the main loop
       std::set<std::string>().swap(seenDevices);
+      deviceSessionMap.clear();
       LOG(LOG_SYSTEM, "CLEAR SEEN DEVICES");
     } else {
       LOG(LOG_SYSTEM, "SEEN DEVICES STILL EMPTY");

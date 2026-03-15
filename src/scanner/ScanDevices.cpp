@@ -197,7 +197,8 @@ static bool parseDeviceInfo(
     bool& hasWeakName,
     bool& isUnknownManufacturer,
     bool& isSecurityOrTrackingDevice,
-    bool& proprietary)
+    bool& proprietary,
+    int& outDeviceSessionId)
 {
   if (device == nullptr) {
     LOG(LOG_SYSTEM, "⚠️ device is null! Skipping.");
@@ -221,6 +222,10 @@ static bool parseDeviceInfo(
     return false;
   }
   seenDevices.insert(addrStr);
+
+  // Assign incremental session ID for cross-log correlation
+  outDeviceSessionId = getOrAssignDeviceId(addrStr);
+  String devTag = "[#" + String(outDeviceSessionId) + "] ";
 
   // Risk factor: Weak/default device name
   if (localName == "< -- >" || localName == "BLE Device" || localName == "Random" ||
@@ -246,11 +251,11 @@ static bool parseDeviceInfo(
     if (beacon.valid) {
       isIBeacon = true;
       xpManager.awardXP(3);  // +3 XP: iBeacon parsed
-      LOG(LOG_BEACON, "iBeacon detected!");
-      LOG(LOG_BEACON, "   UUID:  " + String(beacon.uuid.c_str()));
-      LOG(LOG_BEACON, "   Major: " + String(beacon.major));
-      LOG(LOG_BEACON, "   Minor: " + String(beacon.minor));
-      LOG(LOG_BEACON, "   TX:    " + String(beacon.txPower));
+      LOG(LOG_BEACON, devTag + "iBeacon detected!\n"
+          "   UUID:  " + String(beacon.uuid.c_str()) + "\n"
+          "   Major: " + String(beacon.major) + "\n"
+          "   Minor: " + String(beacon.minor) + "\n"
+          "   TX:    " + String(beacon.txPower));
     }
 
     if (manufacturerName.isEmpty()) {
@@ -273,7 +278,7 @@ static bool parseDeviceInfo(
   // -------- Advertisement Service UUIDs --------
   int svcCount = device->getServiceUUIDCount();
   if (svcCount > 0) {
-    LOG(LOG_SCAN, "   Advertised Services (" + String(svcCount) + "):");
+    String svcLog = devTag + "Advertised Services (" + String(svcCount) + "):";
     for (int s = 0; s < svcCount; s++) {
       NimBLEUUID svcUUID = device->getServiceUUID(s);
       std::string uuidStr = svcUUID.toString();
@@ -283,30 +288,32 @@ static bool parseDeviceInfo(
         shortUUID = shortUUID.substring(2);
       }
       String svcName = getServiceName(shortUUID);
-      LOG(LOG_SCAN, "     - " + shortUUID + " (" + svcName + ")");
+      svcLog += "\n     - " + shortUUID + " (" + svcName + ")";
 
       // Detect PwnBeacon by advertised service UUID
       if (svcUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
         isPwnBeacon = true;
-        LOG(LOG_BEACON, "👾 PwnBeacon detected (service UUID)!");
+        LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected (service UUID)!");
       }
     }
+    LOG(LOG_SCAN, svcLog);
   }
 
   // -------- Advertisement TX Power --------
   if (device->haveTXPower()) {
     int8_t advTxPower = device->getTXPower();
-    LOG(LOG_SCAN, "   Adv TX Power: " + String(advTxPower) + " dBm");
+    String txLog = devTag + "Adv TX Power: " + String(advTxPower) + " dBm";
     float estDist = estimateDistance(advTxPower, device->getRSSI());
     if (estDist >= 0) {
-      LOG(LOG_SCAN, "   Est. Distance (TX): ~" + String(estDist, 2) + " m");
+      txLog += "\n   Est. Distance (TX): ~" + String(estDist, 2) + " m";
     }
+    LOG(LOG_SCAN, txLog);
   }
 
   // -------- Advertisement Service Data (AD Type 0x16) --------
   int svcDataCount = device->getServiceDataCount();
   if (svcDataCount > 0) {
-    LOG(LOG_SCAN, "   Service Data (" + String(svcDataCount) + "):");
+    String sdLog = devTag + "Service Data (" + String(svcDataCount) + "):";
     for (int sd = 0; sd < svcDataCount; sd++) {
       NimBLEUUID svcDataUUID = device->getServiceDataUUID(sd);
       std::string svcData = device->getServiceData(sd);
@@ -318,8 +325,8 @@ static bool parseDeviceInfo(
       String svcName = getServiceName(shortUUID);
 
       String hexData = bytesToHexString(svcData);
-      LOG(LOG_SCAN, "     - UUID: " + shortUUID + " (" + svcName + ")");
-      LOG(LOG_SCAN, "       Data: " + hexData);
+      sdLog += "\n     - UUID: " + shortUUID + " (" + svcName + ")";
+      sdLog += "\n       Data: " + hexData;
 
       // Detect PwnBeacon service data
       if (svcDataUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
@@ -327,14 +334,15 @@ static bool parseDeviceInfo(
         if (pwnBeacon.valid) {
           isPwnBeacon = true;
           xpManager.awardXP(10);  // +10 XP: PwnBeacon detected
-          LOG(LOG_BEACON, "👾 PwnBeacon detected!");
-          LOG(LOG_BEACON, "   Name:     " + pwnBeacon.name);
-          LOG(LOG_BEACON, "   Pwnd run: " + String(pwnBeacon.pwnd_run));
-          LOG(LOG_BEACON, "   Pwnd tot: " + String(pwnBeacon.pwnd_tot));
-          LOG(LOG_BEACON, "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint));
+          LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected!\n"
+              "   Name:     " + pwnBeacon.name + "\n"
+              "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
+              "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
+              "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint));
         }
       }
     }
+    LOG(LOG_SCAN, sdLog);
   }
 
   return true;
@@ -347,7 +355,8 @@ static bool parseDeviceInfo(
 static bool connectAndReadGATT(
     const NimBLEAdvertisedDevice* device,
     DeviceInfo& dev,
-    bool& hasWritableChar)
+    bool& hasWritableChar,
+    const String& devTag)
 {
   if (device->haveName()) {
       dev.advHasName = true;
@@ -366,27 +375,16 @@ static bool connectAndReadGATT(
   temperatureService = TemperatureServiceHandler::readTemperature(pClient);
 
   String txPowerInfo = TxPowerServiceHandler::readTxPowerLevel(pClient);
-  if (!txPowerInfo.isEmpty()) {
-      LOG(LOG_GATT, txPowerInfo);
-  }
-
-  // Read additional optional GATT services
   String timeInfo = CurrentTimeServiceHandler::readCurrentTime(pClient);
-  if (!timeInfo.isEmpty()) {
-      LOG(LOG_GATT, timeInfo);
-  }
-
   String alertInfo = ImmediateAlertServiceHandler::readImmediateAlert(pClient);
-  if (!alertInfo.isEmpty()) {
-      LOG(LOG_GATT, alertInfo);
-  }
-
   String linkLossInfo = LinkLossServiceHandler::readLinkLoss(pClient);
-  if (!linkLossInfo.isEmpty()) {
-      LOG(LOG_GATT, linkLossInfo);
-  }
 
-  LOG(LOG_GATT, "🔓 Connected and discovered attributes!");
+  String gattLog = devTag + "🔓 Connected and discovered attributes!";
+  if (!txPowerInfo.isEmpty()) gattLog += "\n" + txPowerInfo;
+  if (!timeInfo.isEmpty()) gattLog += "\n" + timeInfo;
+  if (!alertInfo.isEmpty()) gattLog += "\n" + alertInfo;
+  if (!linkLossInfo.isEmpty()) gattLog += "\n" + linkLossInfo;
+  LOG(LOG_GATT, gattLog);
   targetConnects++;
   xpManager.awardXP(5);  // +5 XP: GATT connection success
 
@@ -398,7 +396,7 @@ static bool connectAndReadGATT(
   }
 
   // Subscribe to notifications for all characteristics that support it
-  LOG(LOG_GATT, "Sub to Notifi all Chars");
+  LOG(LOG_GATT, devTag + "Sub to Notifi all Chars");
   subscribeToAllNotifications(pClient, genericNotifyCallback);
 
   for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
@@ -429,7 +427,7 @@ static bool connectAndReadGATT(
       if (userDesc) {
           std::string descValue = userDesc->readValue();
           if (!descValue.empty() && isPrintableText(descValue)) {
-              LOG(LOG_GATT, "     Descriptor [" + String(charUuid.c_str()) + "]: " + String(descValue.c_str()));
+              LOG(LOG_GATT, devTag + "Descriptor [" + String(charUuid.c_str()) + "]: " + String(descValue.c_str()));
               nameList.push_back(descValue);
           }
       }
@@ -465,7 +463,7 @@ static bool connectAndReadGATT(
       targetFound = true;
       susDevice++;
       xpManager.awardXP(20);  // +20 XP: suspicious device found
-      LOG(LOG_TARGET, "Target Message: !!! Target detected !!!");
+      LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
       vTaskDelay(pdMS_TO_TICKS(2000));
       if (!isAngryTaskRunning) {
@@ -488,21 +486,21 @@ static bool connectAndReadGATT(
 // ---------------------------------------------------------------------------
 static void handleExposureResult(
     const ExposureResult& exposure,
-    String& manufacturerName)
+    String& manufacturerName,
+    const String& devTag)
 {
-  LOG(LOG_PRIVACY, "Uncovering Summary");
-  LOG(LOG_PRIVACY, "   Device Type: " + String(exposure.deviceType.c_str()));
-  LOG(LOG_PRIVACY, "   Identity Uncovering: " + String(exposure.identityExposure.c_str()));
-  LOG(LOG_PRIVACY, "   Tracking Risk: " + String(exposure.trackingRisk.c_str()));
-  LOG(LOG_PRIVACY, "   Privacy Level: " + String(exposure.privacyLevel.c_str()));
-  LOG(LOG_PRIVACY, String("   Uncovering Tier: ") + tierToString(exposure.exposureTier));
-
-  LOG(LOG_PRIVACY, "\n   Reason:");
+  String privLog = devTag + "Uncovering Summary\n"
+      "   Device Type: " + String(exposure.deviceType.c_str()) + "\n"
+      "   Identity Uncovering: " + String(exposure.identityExposure.c_str()) + "\n"
+      "   Tracking Risk: " + String(exposure.trackingRisk.c_str()) + "\n"
+      "   Privacy Level: " + String(exposure.privacyLevel.c_str()) + "\n"
+      "   Uncovering Tier: " + tierToString(exposure.exposureTier) + "\n"
+      "   Reason:";
   for (auto& r : exposure.reasons) {
-      LOG(LOG_PRIVACY, "    - " + String(r.c_str()));
+      privLog += "\n    - " + String(r.c_str());
   }
-
-  LOG(LOG_PRIVACY, "----------------------------------");
+  privLog += "\n----------------------------------";
+  LOG(LOG_PRIVACY, privLog);
 
   // Clear lists
   uuidList.clear();
@@ -567,14 +565,17 @@ void scanForDevices() {
       IBeaconInfo beacon;
       bool isPwnBeaconDevice = false;
       PwnBeaconInfo pwnBeacon;
+      int devSessionId = 0;
 
       if (!parseDeviceInfo(device, manufacturerId, manufacturerName,
                            isIBeacon, beacon, isPwnBeaconDevice, pwnBeacon,
                            hasCustomService, hasWeakName,
                            isUnknownManufacturer, isSecurityOrTrackingDevice,
-                           proprietary)) {
+                           proprietary, devSessionId)) {
         continue;
       }
+
+      String devTag = "[#" + String(devSessionId) + "] ";
 
       // --- Payload direkt holen ---
       std::vector<uint8_t> payloadVec = device->getPayload();
@@ -583,8 +584,12 @@ void scanForDevices() {
       // -------- Advertisement Flags Analysis (AD Type 0x01) --------
       std::vector<SecurityFinding> advFindings;
       analyzeAdvFlags(payloadVec, dev, advFindings);
-      for (auto& f : advFindings) {
-        LOG(LOG_SECURITY, "   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
+      if (!advFindings.empty()) {
+        String advSecLog = devTag + "Adv Security Flags:";
+        for (auto& f : advFindings) {
+          advSecLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
+        }
+        LOG(LOG_SECURITY, advSecLog);
       }
 
       handleDevicePrivacy(
@@ -593,7 +598,8 @@ void scanForDevices() {
           advData,
           payloadVec,
           is_connectable,
-          dev
+          dev,
+          devTag
       );
 
       // for else ExposureAnalyzer
@@ -606,7 +612,7 @@ void scanForDevices() {
 
       // Print device connectability
       if (!is_connectable) {
-        LOG(LOG_SCAN, "   Device is not connectable");
+        LOG(LOG_SCAN, devTag + "Device is not connectable");
       }
 
       pClient = NimBLEDevice::createClient();
@@ -621,6 +627,7 @@ void scanForDevices() {
         LOG(LOG_SYSTEM, "Clearing seenDevices (size: " + String(seenDevices.size()) +
                         ", free heap: " + String(ESP.getFreeHeap()) + ")");
         seenDevices.clear();
+        deviceSessionMap.clear();
       }
 
       pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
@@ -629,39 +636,36 @@ void scanForDevices() {
         if (is_connectable && pClient->connect(*device)) {
           if (pClient->discoverAttributes()) {
 
-            bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar);
+            bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag);
 
             if (!targetDetected) {
-              LOG(LOG_SCAN, "Device Infos");
-              LOG(LOG_SCAN, String("   Adress:  " + address));
-              LOG(LOG_SCAN, String("   Name:    " + localName));
-              LOG(LOG_SCAN, String("   Manuf.:  " + manufacturerName));
-              LOG(LOG_SCAN, "   Device Name: ");
-              String logLine;
-              logLine.reserve(64);
+              String infoLog = devTag + "Device Infos\n"
+                  "   Adress:  " + address + "\n"
+                  "   Name:    " + localName + "\n"
+                  "   Manuf.:  " + manufacturerName + "\n"
+                  "   Device Name: ";
               for (const auto& names : nameList) {
                 if (!names.empty()) {
-                  logLine = "     - ";
-                  logLine += names.c_str();
-                  LOG(LOG_SCAN, logLine);
+                  infoLog += "\n     - ";
+                  infoLog += names.c_str();
                 }
               }
-
               float distance = pow(10.0f, (float)(DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
-              LOG(LOG_SCAN, "Distance: " + String(distance, 2) + " m");
-              LOG(LOG_SCAN, "     - RSSI: " + String(rssi));
+              infoLog += "\n   Distance: " + String(distance, 2) + " m";
+              infoLog += "\n   RSSI: " + String(rssi);
+              LOG(LOG_SCAN, infoLog);
 
               // iBeacon info
               if (isIBeacon) {
                 beaconsFound++;
-                LOG(LOG_BEACON, "Beacon Type: iBeacon");
-                LOG(LOG_BEACON, "   UUID:  " + String(beacon.uuid.c_str()));
-                LOG(LOG_BEACON, "   Major: " + String(beacon.major));
-                LOG(LOG_BEACON, "   Minor: " + String(beacon.minor));
                 float beaconDistance = estimateDistance(beacon.txPower, rssi);
-                LOG(LOG_BEACON, "   Beacon Distance: ~" + String(beaconDistance, 2) + " m");
-                LOG(LOG_BEACON, "   RSSI: " + String(rssi));
-                LOG(LOG_BEACON, "   Manufacturer: " + manufacturerName);
+                LOG(LOG_BEACON, devTag + "Beacon Type: iBeacon\n"
+                    "   UUID:  " + String(beacon.uuid.c_str()) + "\n"
+                    "   Major: " + String(beacon.major) + "\n"
+                    "   Minor: " + String(beacon.minor) + "\n"
+                    "   Beacon Distance: ~" + String(beaconDistance, 2) + " m\n"
+                    "   RSSI: " + String(rssi) + "\n"
+                    "   Manufacturer: " + manufacturerName);
               }
 
               // PwnBeacon info + GATT read
@@ -669,16 +673,15 @@ void scanForDevices() {
                 pwnbeaconsFound++;
                 beaconsFound++;
 
-                LOG(LOG_BEACON, "Beacon Type: PwnBeacon (PwnGrid/BLE)");
-                LOG(LOG_BEACON, "   Name:     " + pwnBeacon.name);
-                LOG(LOG_BEACON, "   Pwnd run: " + String(pwnBeacon.pwnd_run));
-                LOG(LOG_BEACON, "   Pwnd tot: " + String(pwnBeacon.pwnd_tot));
-                LOG(LOG_BEACON, "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint));
-
                 // Read full identity, face, and name via GATT
                 PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
 
-                LOG(LOG_BEACON, "   RSSI:     " + String(rssi));
+                LOG(LOG_BEACON, devTag + "Beacon Type: PwnBeacon (PwnGrid/BLE)\n"
+                    "   Name:     " + pwnBeacon.name + "\n"
+                    "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
+                    "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
+                    "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
+                    "   RSSI:     " + String(rssi));
               }
 
               // -------- Security Analysis --------
@@ -692,15 +695,15 @@ void scanForDevices() {
               dev.hasSensitiveUnencrypted = secResult.hasSensitiveServiceUnencrypted;
               dev.deviceFingerprint = secResult.deviceFingerprint;
 
-              if (!secResult.findings.empty()) {
-                LOG(LOG_SECURITY, "Security Findings:");
+              if (!secResult.findings.empty() || !secResult.deviceFingerprint.empty()) {
+                String secLog = devTag + "Security Findings:";
                 for (auto& f : secResult.findings) {
-                  LOG(LOG_SECURITY, "   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str()));
+                  secLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
                 }
-              }
-
-              if (!secResult.deviceFingerprint.empty()) {
-                LOG(LOG_SECURITY, "   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str()));
+                if (!secResult.deviceFingerprint.empty()) {
+                  secLog += "\n   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str());
+                }
+                LOG(LOG_SECURITY, secLog);
               }
 
               // Analyze exposure and log results
@@ -724,11 +727,11 @@ void scanForDevices() {
 
               ExposureResult exposure = analyzeExposure(dev);
 
-              handleExposureResult(exposure, manufacturerName);
+              handleExposureResult(exposure, manufacturerName, devTag);
             }
           }
         } else {
-            LOG(LOG_GATT, "🔒 Attribute discovery failed: " + address);
+            LOG(LOG_GATT, devTag + "🔒 Attribute discovery failed: " + address);
 
             dev.isConnectable = false;
 
@@ -742,7 +745,7 @@ void scanForDevices() {
               }
             }
 
-            handleExposureResult(exposure, manufacturerName);
+            handleExposureResult(exposure, manufacturerName, devTag);
         }
       }
       // Wardriving: log device with GPS coordinates

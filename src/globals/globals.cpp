@@ -1,5 +1,6 @@
 #include "globals.h"
 #include <set>
+#include <map>
 #include <string>
 #include <vector>
 #include <atomic>
@@ -7,6 +8,17 @@
 XPManager xpManager;
 
 std::set<std::string> seenDevices;
+
+std::atomic<int> nextDeviceSessionId{1};
+std::map<std::string, int> deviceSessionMap;
+
+int getOrAssignDeviceId(const std::string& mac) {
+    auto it = deviceSessionMap.find(mac);
+    if (it != deviceSessionMap.end()) return it->second;
+    int id = nextDeviceSessionId++;
+    deviceSessionMap[mac] = id;
+    return id;
+}
 std::vector<std::string> uuidList;
 std::vector<std::string> nameList;
 

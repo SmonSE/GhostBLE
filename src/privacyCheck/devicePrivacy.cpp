@@ -172,7 +172,8 @@ void handleDevicePrivacy(
     const std::string& adv_data,
     const std::vector<uint8_t>& payloadVec,
     bool is_connectable,
-    DeviceInfo& dev)
+    DeviceInfo& dev,
+    const String& devTag)
 {
     std::string identityKey = getIdentityFingerprint(name, adv_data);
     auto& info = device_identity_history[identityKey];
@@ -181,7 +182,7 @@ void handleDevicePrivacy(
         std::find(info.seen_macs.begin(), info.seen_macs.end(), mac) == info.seen_macs.end()) {
         info.mac_change_count++;
         info.seen_macs.push_back(mac);
-        LOG(LOG_PRIVACY,"   MAC rotation detected for device (" +
+        LOG(LOG_PRIVACY, devTag + "MAC rotation detected for device (" +
             String(info.mac_change_count) + " changes, " +
             String(info.seen_macs.size()) + " unique MACs)");
     } else if (info.seen_macs.empty()) {
@@ -232,7 +233,7 @@ void handleDevicePrivacy(
     String categoryStr = categoryToString(category);
 
     String logLineWebSocket =
-        "\nName: " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
+        devTag + "Name: " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
         "   Category:          " + categoryStr + "\n" +
         "   MAC Type:          " + macPrivacyLabel + "\n" +
         "   Has rotating MAC: " + (rotating_mac ? " YES" : " NO") + "\n" +

@@ -1,5 +1,6 @@
 #pragma once
 #include <set>
+#include <map>
 #include <string>
 #include <Arduino.h>
 #include <vector>
@@ -11,6 +12,11 @@ extern XPManager xpManager;
 
 // ScanDevices seenDevices
 extern std::set<std::string> seenDevices;
+
+// Device session ID tracking (MAC → incremental session ID)
+extern std::atomic<int> nextDeviceSessionId;
+extern std::map<std::string, int> deviceSessionMap;
+int getOrAssignDeviceId(const std::string& mac);
 extern std::vector<std::string> uuidList;
 extern std::vector<std::string> nameList;
 
