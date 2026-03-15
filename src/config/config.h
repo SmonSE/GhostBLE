@@ -61,6 +61,7 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 
 // ===== Time Intervals =====
 #define FACE_UPDATE_INTERVAL_MS 1000
+#define ADV_WINDOW_MS           5000   // Advertise for 5s between scan cycles
 
 // ===== Seen Devices Limits =====
 #define MAX_SEEN_DEVICES 200

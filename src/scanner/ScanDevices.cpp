@@ -204,6 +204,11 @@ static bool parseDeviceInfo(
     return false;
   }
 
+  // Skip our own advertisement
+  if (device->getAddress().equals(NimBLEDevice::getAddress())) {
+    return false;
+  }
+
   addrStr = device->getAddress().toString();
   address = addrStr.c_str();
   localName = device->haveName() ? String(device->getName().c_str()) : "";
@@ -279,6 +284,12 @@ static bool parseDeviceInfo(
       }
       String svcName = getServiceName(shortUUID);
       LOG(LOG_SCAN, "     - " + shortUUID + " (" + svcName + ")");
+
+      // Detect PwnBeacon by advertised service UUID
+      if (svcUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
+        isPwnBeacon = true;
+        LOG(LOG_BEACON, "👾 PwnBeacon detected (service UUID)!");
+      }
     }
   }
 
@@ -521,6 +532,12 @@ void scanForDevices() {
   delay(100);                   // Optional small delay for stability
 
   NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
+
+  // Restart PwnBeacon advertising (scanning stops it)
+  PwnBeaconServiceHandler::updateCounters(targetConnects, allSpottedDevice);
+
+  // Let other devices discover us before processing results
+  vTaskDelay(pdMS_TO_TICKS(ADV_WINDOW_MS));
 
   if (results.getCount() == 0) {
      LOG(LOG_SCAN, "NO DEVICES FOUND");

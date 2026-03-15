@@ -6,6 +6,56 @@
 
 #include "../logger/logger.h"
 
+// === Server state ===
+static NimBLEServer* pServer = nullptr;
+static NimBLEService* pwnService = nullptr;
+static NimBLECharacteristic* faceChr = nullptr;
+static NimBLECharacteristic* identChr = nullptr;
+static NimBLECharacteristic* nameChr = nullptr;
+
+static String advDeviceName;
+static uint16_t advPwndRun = 0;
+static uint16_t advPwndTot = 0;
+
+// Generate a stable 6-byte fingerprint from the BLE MAC address
+static void generateFingerprint(uint8_t fp[PWNBEACON_FINGERPRINT_LEN]) {
+    NimBLEAddress addr = NimBLEDevice::getAddress();
+    std::string addrStr = addr.toString();
+    // Parse "aa:bb:cc:dd:ee:ff" into 6 bytes
+    for (int i = 0; i < PWNBEACON_FINGERPRINT_LEN; i++) {
+        fp[i] = (uint8_t)strtoul(addrStr.c_str() + (i * 3), nullptr, 16);
+    }
+}
+
+// Build the advertisement service data payload
+static std::string buildAdvPayload() {
+    uint8_t fp[PWNBEACON_FINGERPRINT_LEN];
+    generateFingerprint(fp);
+
+    uint8_t nameLen = advDeviceName.length();
+    if (nameLen > PWNBEACON_ADV_MAX_NAME_LEN) {
+        nameLen = PWNBEACON_ADV_MAX_NAME_LEN;
+    }
+
+    // version(1) + flags(1) + pwnd_run(2) + pwnd_tot(2) + fingerprint(6) + name_len(1) + name
+    size_t payloadLen = 13 + nameLen;
+    uint8_t payload[13 + PWNBEACON_ADV_MAX_NAME_LEN];
+
+    payload[0] = PWNBEACON_PROTOCOL_VERSION;
+    payload[1] = 0x00;  // flags
+    payload[2] = advPwndRun & 0xFF;         // little-endian
+    payload[3] = (advPwndRun >> 8) & 0xFF;
+    payload[4] = advPwndTot & 0xFF;         // little-endian
+    payload[5] = (advPwndTot >> 8) & 0xFF;
+    memcpy(&payload[6], fp, PWNBEACON_FINGERPRINT_LEN);
+    payload[12] = nameLen;
+    memcpy(&payload[13], advDeviceName.c_str(), nameLen);
+
+    return std::string((char*)payload, payloadLen);
+}
+
+// === Client (scanning) ===
+
 PwnBeaconInfo PwnBeaconServiceHandler::parseAdvertisement(const uint8_t* data, size_t len) {
     PwnBeaconInfo info;
 
@@ -38,23 +88,23 @@ void PwnBeaconServiceHandler::readGATT(NimBLEClient* pClient, PwnBeaconInfo& inf
     if (!pwnSvc) return;
 
     // Read face
-    NimBLERemoteCharacteristic* faceChr = pwnSvc->getCharacteristic(PWNBEACON_FACE_CHAR_UUID);
-    if (faceChr && faceChr->canRead()) {
-        info.face = faceChr->readValue().c_str();
+    NimBLERemoteCharacteristic* rFaceChr = pwnSvc->getCharacteristic(PWNBEACON_FACE_CHAR_UUID);
+    if (rFaceChr && rFaceChr->canRead()) {
+        info.face = rFaceChr->readValue().c_str();
         LOG(LOG_BEACON, "   Face:     " + info.face);
     }
 
     // Read identity JSON
-    NimBLERemoteCharacteristic* identChr = pwnSvc->getCharacteristic(PWNBEACON_IDENTITY_CHAR_UUID);
-    if (identChr && identChr->canRead()) {
-        info.identity = identChr->readValue().c_str();
+    NimBLERemoteCharacteristic* rIdentChr = pwnSvc->getCharacteristic(PWNBEACON_IDENTITY_CHAR_UUID);
+    if (rIdentChr && rIdentChr->canRead()) {
+        info.identity = rIdentChr->readValue().c_str();
         LOG(LOG_BEACON, "   Identity: " + info.identity);
     }
 
     // Read full name (may differ from advertised short name)
-    NimBLERemoteCharacteristic* nameChr = pwnSvc->getCharacteristic(PWNBEACON_NAME_CHAR_UUID);
-    if (nameChr && nameChr->canRead()) {
-        info.gattName = nameChr->readValue().c_str();
+    NimBLERemoteCharacteristic* rNameChr = pwnSvc->getCharacteristic(PWNBEACON_NAME_CHAR_UUID);
+    if (rNameChr && rNameChr->canRead()) {
+        info.gattName = rNameChr->readValue().c_str();
         if (info.gattName.length() > 0) {
             LOG(LOG_BEACON, "   Name:     " + info.gattName);
         }
@@ -68,4 +118,84 @@ String PwnBeaconServiceHandler::fingerprintToString(const uint8_t fingerprint[PW
              fingerprint[2], fingerprint[3],
              fingerprint[4], fingerprint[5]);
     return String(fpStr);
+}
+
+// === Server (advertising) ===
+
+void PwnBeaconServiceHandler::startAdvertising(const String& deviceName, const String& face) {
+    advDeviceName = deviceName;
+
+    // Create GATT server
+    pServer = NimBLEDevice::createServer();
+
+    // Create PwnBeacon service
+    pwnService = pServer->createService(PWNBEACON_SERVICE_UUID);
+
+    // Face characteristic (readable)
+    faceChr = pwnService->createCharacteristic(
+        PWNBEACON_FACE_CHAR_UUID,
+        NIMBLE_PROPERTY::READ
+    );
+    faceChr->setValue(face.c_str());
+
+    // Identity JSON characteristic (readable)
+    identChr = pwnService->createCharacteristic(
+        PWNBEACON_IDENTITY_CHAR_UUID,
+        NIMBLE_PROPERTY::READ
+    );
+    String identity = "{\"name\":\"" + deviceName + "\",\"type\":\"GhostBLE\"}";
+    identChr->setValue(identity.c_str());
+
+    // Name characteristic (readable)
+    nameChr = pwnService->createCharacteristic(
+        PWNBEACON_NAME_CHAR_UUID,
+        NIMBLE_PROPERTY::READ
+    );
+    nameChr->setValue(deviceName.c_str());
+
+    pwnService->start();
+
+    // Configure advertisement
+    // NimBLE builds main adv from addServiceUUID (flags + UUID)
+    // We only set scan response manually for the service data payload
+    NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+    pAdvertising->addServiceUUID(NimBLEUUID(PWNBEACON_SERVICE_UUID));
+    pAdvertising->setName(deviceName.c_str());
+
+    // Scan response: service data with PwnBeacon payload
+    std::string payload = buildAdvPayload();
+    if (payload.length() > 10) payload.resize(10);
+
+    NimBLEAdvertisementData scanResp;
+    scanResp.setServiceData(NimBLEUUID(PWNBEACON_SERVICE_UUID), payload);
+    pAdvertising->setScanResponseData(scanResp);
+
+    pAdvertising->start();
+
+    LOG(LOG_BEACON, "👾 PwnBeacon advertising started: " + deviceName);
+}
+
+void PwnBeaconServiceHandler::updateCounters(uint16_t pwndRun, uint16_t pwndTot) {
+    advPwndRun = pwndRun;
+    advPwndTot = pwndTot;
+
+    // Restart advertising with updated counters
+    NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+    pAdvertising->stop();
+
+    // Update scan response with new payload
+    std::string payload = buildAdvPayload();
+    if (payload.length() > 10) payload.resize(10);
+
+    NimBLEAdvertisementData scanResp;
+    scanResp.setServiceData(NimBLEUUID(PWNBEACON_SERVICE_UUID), payload);
+    pAdvertising->setScanResponseData(scanResp);
+
+    pAdvertising->start();
+}
+
+void PwnBeaconServiceHandler::stopAdvertising() {
+    NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
+    pAdvertising->stop();
+    LOG(LOG_BEACON, "👾 PwnBeacon advertising stopped");
 }
