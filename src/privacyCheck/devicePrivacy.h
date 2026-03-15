@@ -32,7 +32,7 @@ bool isUniversallyAdministeredMAC(const std::string& mac);
 bool containsCleartext(const std::vector<uint8_t>& payload);
 
 // Privacy analysis
-void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable, DeviceInfo& dev);
+void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable, DeviceInfo& dev, const String& devTag = "");
 
 // Fingerprinting
 std::string getIdentityFingerprint(const std::string& name, const std::string& adv_data);
