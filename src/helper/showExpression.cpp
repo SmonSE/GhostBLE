@@ -147,9 +147,9 @@ void showGlassesExpressionTask(void* parameter) {
       drawBubble(localName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
 
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
-
-      clearSpeechBubble();
     }
+
+    clearSpeechBubble();
 
     isGlassesTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
@@ -169,6 +169,8 @@ void showAngryExpressionTask(void* parameter) {
 
     isAngryTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
+
+    clearSpeechBubble();
 }
 
 
@@ -193,6 +195,8 @@ void showSadExpressionTask(void* parameter) {
 
     isSadTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
+
+    clearSpeechBubble();
 }
 
 void showHappyExpressionTask(void* parameter) {
@@ -206,6 +210,8 @@ void showHappyExpressionTask(void* parameter) {
 
     isHappyTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
+
+    clearSpeechBubble();
 }
 
 
