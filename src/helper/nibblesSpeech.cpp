@@ -95,6 +95,40 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
     drawBubble(message, x0, y0, 0x2444, 0x07E0, 0x07E0);  // dark green fill, green border, green text
 }
 
+void drawHeart(int x, int y, uint16_t color) {
+
+    int s = 2; // pixel size (scaling)
+
+    M5.Display.fillRect(x+2*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+3*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+6*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+7*s, y+0*s, s, s, color);
+
+    M5.Display.fillRect(x+1*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+4*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+5*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+8*s, y+1*s, s, s, color);
+
+    M5.Display.fillRect(x+0*s, y+2*s, s, s, color);
+    M5.Display.fillRect(x+9*s, y+2*s, s, s, color);
+
+    M5.Display.fillRect(x+1*s, y+3*s, s, s, color);
+    M5.Display.fillRect(x+8*s, y+3*s, s, s, color);
+
+    M5.Display.fillRect(x+2*s, y+4*s, s, s, color);
+    M5.Display.fillRect(x+7*s, y+4*s, s, s, color);
+
+    M5.Display.fillRect(x+3*s, y+5*s, s, s, color);
+    M5.Display.fillRect(x+6*s, y+5*s, s, s, color);
+
+    M5.Display.fillRect(x+4*s, y+6*s, s, s, color);
+    M5.Display.fillRect(x+5*s, y+6*s, s, s, color);
+}
+
+void clearHearts() {
+    M5.Display.fillRect(25, 24, 40, 30, 0x00C4);
+}
+
 static void clearThoughtBubble() {
 
     // Hintergrund unter der Bubble wiederherstellen
@@ -138,6 +172,12 @@ static void showMumble(const char* message) {
     thoughtVisible = true;
     thoughtShownAt = millis();
     lastSpeechTime = millis();
+
+    // For testing purposes, you can uncomment the following line to keep the thought bubble on screen indefinitely:
+    //drawHeart(30, 30, TFT_RED);
+    //drawHeart(45, 40, TFT_RED);
+    //delay(3000);
+    //clearHearts();
 }
 
 void nibblesSpeechNotifyEvent() {
