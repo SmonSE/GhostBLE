@@ -380,11 +380,16 @@ static bool connectAndReadGATT(
   if (!linkLossInfo.isEmpty()) gattLog += "\n" + linkLossInfo;
   LOG(LOG_GATT, gattLog);
 
+  // Subscribe to notifications for all characteristics that support it
+  LOG(LOG_GATT, devTag + "Sub to Notifi all Chars");
+  subscribeToAllNotifications(pClient, genericNotifyCallback);
+
   // Read additional standard GATT services
   genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
   batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
   heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
   temperatureService = TemperatureServiceHandler::readTemperature(pClient);
+  currentTimeService = CurrentTimeServiceHandler::readCurrentTime(pClient);
 
   targetConnects++;
   xpManager.awardXP(5);  // +5 XP: GATT connection success
@@ -395,10 +400,6 @@ static bool connectAndReadGATT(
       isGlassesTaskRunning = false;
     }
   }
-
-  // Subscribe to notifications for all characteristics that support it
-  LOG(LOG_GATT, devTag + "Sub to Notifi all Chars");
-  subscribeToAllNotifications(pClient, genericNotifyCallback);
 
   for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
     NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
