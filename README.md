@@ -1,53 +1,119 @@
-# GhostBLE – BLE Privacy Scanner
+# GhostBLE
 
-> **Disclaimer:** GhostBLE is a BLE privacy analysis and security research tool. It is intended for legal and authorized security testing, education, and privacy research purposes only. Use of this software for any malicious or unauthorized activities is strictly prohibited. By downloading, installing, or using GhostBLE, you agree to comply with all applicable laws and regulations. This software is provided free of charge, and we do not accept payments for copies or modifications. The developers of GhostBLE assume no liability for any misuse of the software. Use at your own risk.
+**A BLE privacy scanner for the M5Stack Cardputer**
 
-GhostBLE is a Bluetooth Low Energy (BLE) privacy scanner built for the **M5Stack Cardputer**. It discovers nearby BLE devices, analyzes their privacy posture, and flags potential security concerns. Ideal for **security researchers, tinkerers, and educators** interested in BLE privacy, device fingerprinting, and wireless reconnaissance.
+GhostBLE discovers nearby Bluetooth Low Energy devices, analyzes their privacy posture, and flags potential security concerns. Built for security researchers, tinkerers, and educators interested in BLE privacy, device fingerprinting, and wireless reconnaissance.
 
 A friendly mascot named **Nibbles** guides you through the scanning process on the built-in display.
+
+> **Disclaimer:** GhostBLE is intended for legal and authorized security testing, education, and privacy research only. Use of this software for any malicious or unauthorized activities is strictly prohibited. The developers assume no liability for misuse. Use at your own risk.
+
+---
+
+## Quick Start
+
+1. Insert a **microSD card** (required — the device halts without one)
+2. Flash the firmware (see [Building & Flashing](#building--flashing))
+3. Power on — Nibbles greets you on the display
+4. **Long press BtnA** (1 second) to start scanning
+5. Watch devices appear on the display and in the logs
 
 ---
 
 ## Features
 
-- **Passive BLE Scanning** – Discovers nearby BLE devices with signal strength (RSSI) and estimated distance
-- **Device Info Extraction** – Retrieves local name, advertised service UUIDs, and manufacturer-specific data
-- **Privacy Heuristics**
-  - **Rotating MAC detection** – Flags devices using Resolvable Private Addresses (RPA)
-  - **Cleartext detection** – Flags devices leaking unencrypted identifiers
-- **Exposure Analysis** – Classifies devices into exposure tiers (None, Passive, Active, Consent) with a privacy score
-- **GATT Connection Attempts** – Optionally connects to devices and reads standard BLE services (Device Info, Battery, Heart Rate, Temperature, Generic Access)
-- **Known Device Detection** – Identifies Flipper Zero, CatHack/Apple Juice, and LightBlue devices by UUID
-- **Manufacturer Identification** – Decodes manufacturer data for Apple, Google, Samsung, Epson, and more
-- **Multi-Channel Logging**
-  - Serial output (115200 baud)
-  - SD card file logging (`/device_info.txt`)
-  - Web-based real-time logging via WiFi AP and WebSocket
-- **Interactive UI** – Nibbles mascot with animated expressions reacts to scan events on the LCD display
+### BLE Scanning & Analysis
+
+- **Passive BLE scanning** — discovers nearby devices with signal strength (RSSI) and estimated distance
+- **Device info extraction** — retrieves names, service UUIDs, and manufacturer-specific data
+- **GATT connections** — optionally connects to devices and reads standard BLE services (Device Info, Battery, Heart Rate, Temperature, Generic Access, TX Power, and more)
+
+### Privacy Heuristics
+
+- **Rotating MAC detection** — flags devices using Resolvable Private Addresses (RPA), which is a good privacy practice
+- **Cleartext detection** — flags devices leaking unencrypted identifiers, which is a privacy risk
+- **Exposure classification** — rates devices into tiers (None, Passive, Active, Consent) with a privacy score
+
+### Security Analysis
+
+- Detects **writable characteristics** (potential for unauthorized writes)
+- Identifies **DFU** and **UART** services (expanded attack surface)
+- Checks for **encryption** on sensitive services
+- Builds **device fingerprints** from advertised UUIDs and GATT profiles
+
+### Known Device Detection
+
+- **Flipper Zero** — detected by known service UUIDs
+- **CatHack / Apple Juice** — BLE spam tool detection
+- **LightBlue** — app-based BLE testing tool
+- **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters)
+
+### Manufacturer Identification
+
+Decodes manufacturer data for Apple, Google, Samsung, Epson, and more. Also parses **iBeacon** advertisements (UUID, major, minor, TX power, distance).
+
+### GPS & Wardriving
+
+- **Dual GPS support** — Grove UART and LoRa cap GPS
+- **WiGLE CSV export** — log devices with location for mapping and analysis
+
+### Logging
+
+All findings are logged to three channels simultaneously:
+
+| Channel | Details |
+|---------|---------|
+| **Serial** | 115200 baud, structured output |
+| **SD card** | Per-category log files |
+| **Web dashboard** | Real-time via WiFi AP and WebSocket |
+
+Logs are organized into categories: Scan, GATT, Privacy, Security, Beacon, Control, GPS, System, Target, and Notify. Each device gets a **session ID** for cross-log correlation.
+
+### XP System
+
+GhostBLE gamifies the scanning process with experience points:
+
+| Event | XP |
+|-------|-----|
+| Device discovered | +1 |
+| Manufacturer data decoded | +2 |
+| iBeacon parsed | +3 |
+| GATT connection success | +5 |
+| Characteristic subscription | +10 |
+| PwnBeacon detected | +10 |
+| Suspicious target found | +20 |
+
+XP is persisted to the SD card and shown on the display.
+
+---
+
+## Controls
+
+| Input | Action |
+|-------|--------|
+| **Long press BtnA** (1s) | Toggle BLE scanning on/off |
+| **FN** | Toggle WiFi AP and web server |
+| **Tab** | Toggle wardriving mode |
+| **Del** | Switch GPS source (Grove / LoRa) |
+
+### Web Interface
+
+1. Press **FN** to enable WiFi
+2. Connect to WiFi AP **`GhostBLE`** (password: **`ghostble123!`**)
+3. Open **`192.168.4.1`** in a browser
+4. View real-time device discovery logs via WebSocket
+
+### Display
+
+The LCD shows Nibbles with context-sensitive expressions (happy when scanning, sad on connection failures, thug life on suspicious finds) along with device counters and a WiFi status indicator.
 
 ---
 
 ## Hardware Requirements
 
-- **M5Stack Cardputer** (primary target)
-  - ESP32-S3 with built-in keyboard, 1.14" LCD display, speaker, and USB-C
-  - **microSD card required** – the device halts on boot without one
-
----
-
-## Dependencies
-
-Install these libraries via Arduino IDE Library Manager or PlatformIO:
-
-| Library | Purpose |
-|---------|---------|
-| **M5Cardputer** | Hardware abstraction for M5Stack Cardputer |
-| **M5Unified** | Unified M5Stack API |
-| **NimBLE-Arduino** | BLE stack (scanning, GATT client) |
-| **ESPAsyncWebServer** | Web-based log viewer |
-| **AsyncTCP** | Async TCP transport for web server |
-| **SD** (built-in) | SD card logging |
-| **SPI** (built-in) | SPI communication |
+- **M5Stack Cardputer** (ESP32-S3, built-in keyboard, 1.14" LCD, speaker, USB-C)
+- **microSD card** (required for logging and XP persistence)
+- **GPS module** (optional — Grove UART or LoRa cap for wardriving)
 
 ---
 
@@ -55,76 +121,33 @@ Install these libraries via Arduino IDE Library Manager or PlatformIO:
 
 ### Arduino IDE
 
-1. Install the **M5Stack board package** in Arduino IDE (Board Manager)
+1. Install the **M5Stack board package** via Board Manager
 2. Select board: **M5Stack Cardputer**
-3. Install the libraries listed above via Library Manager
-4. Open `GhostBLE.ino`
-5. Compile and upload
+3. Install the required libraries via Library Manager:
+   - `M5Cardputer`, `M5Unified` — hardware abstraction
+   - `NimBLE-Arduino` — BLE stack
+   - `ESPAsyncWebServer`, `AsyncTCP` — web dashboard
+   - `TinyGPSPlus` — GPS parsing
+4. Open `GhostBLE.ino`, compile, and upload
+
+### PlatformIO
+
+```bash
+pio run -t upload
+```
+
+The project includes a custom board definition for the Cardputer in `boards/`.
 
 ### Pre-built Binaries
 
-Pre-compiled firmware is available in the `build/m5stack.esp32.m5stack_cardputer/` directory:
-
-- `GhostBLE.ino.merged.bin` – Complete firmware image (flash at offset 0x0)
-- `GhostBLE.ino.bootloader.bin` – Bootloader
-- `GhostBLE.ino.partitions.bin` – Partition table
-- `GhostBLE.ino.bin` – Application binary
-
-Flash the merged binary with esptool:
+Pre-compiled firmware is available in `build/m5stack.esp32.m5stack_cardputer/`:
 
 ```bash
-esptool.py --chip esp32s3 --port /dev/ttyUSB0 write_flash 0x0 build/m5stack.esp32.m5stack_cardputer/GhostBLE.ino.merged.bin
+esptool.py --chip esp32s3 --port /dev/ttyUSB0 \
+  write_flash 0x0 build/m5stack.esp32.m5stack_cardputer/GhostBLE.ino.merged.bin
 ```
 
----
-
-## Usage
-
-### Controls
-
-| Input | Action |
-|-------|--------|
-| **Long press BtnA** (1s) | Toggle BLE scanning on/off |
-| **FN key** | Toggle WiFi AP and web server |
-
-### Workflow
-
-1. **Boot** – Insert SD card, power on. Nibbles greets you on the display
-2. **Start Scan** – Long press BtnA to begin BLE scanning
-3. **Monitor** – Watch the display for device counts, or connect to the web interface for detailed logs
-4. **Web Interface** – Connect to WiFi AP `ESP32-Log` (password: `12345678`), then open `192.168.4.1` in a browser
-5. **Review** – Logs are saved to `/device_info.txt` on the SD card
-
-### Display
-
-The LCD shows:
-- Nibbles mascot with context-sensitive expressions (happy when scanning, sad on connection failures, thug life when active)
-- Device counters: targets connected, suspicious devices, and devices with data leakage
-- WiFi status indicator
-
----
-
-## Privacy Heuristics
-
-| Check | Flag | Meaning |
-|-------|------|---------|
-| **Rotating** | Yes | Device uses MAC address randomization (RPA) – good privacy practice |
-| **Cleartext** | Yes | Device advertises personal info in plain text – privacy risk |
-
-### Rotating MAC Addresses
-
-- **Rotating**: The device uses a randomized private address that changes periodically, preventing persistent tracking
-- **Not Rotating**: The device uses a static or fixed MAC address that can be tracked over time
-
-### Cleartext Data
-
-- **Cleartext**: The advertising payload contains unencrypted, readable data (device name, services, identifiers)
-- **Not Cleartext**: The advertising data is encrypted or obfuscated
-
-### Why It Matters
-
-- **Rotating MAC addresses** help prevent persistent tracking of devices, enhancing privacy
-- **Cleartext advertising** can leak sensitive information and metadata, while **encrypted/obfuscated advertising** increases security and user privacy
+On macOS, the port is typically `/dev/cu.usbmodem*` instead of `/dev/ttyUSB0`.
 
 ---
 
@@ -147,21 +170,25 @@ Scan Summary:
 
 ```
 GhostBLE/
-├── GhostBLE.ino              # Main sketch (setup/loop, WiFi, controls)
-├── build/                     # Pre-compiled binaries
+├── GhostBLE.ino              # Main sketch (setup, loop, WiFi, controls)
+├── platformio.ini             # PlatformIO build configuration
+├── boards/                    # Custom Cardputer board definition
 └── src/
-    ├── analyzer/              # Exposure analysis & risk scoring
+    ├── analyzer/              # Exposure analysis & security scoring
     ├── config/                # Hardware config, known device UUIDs
-    ├── GATTServices/          # BLE service readers (battery, device info, etc.)
-    ├── globals/               # Global state variables
-    ├── helper/                # BLE decoder, manufacturer lookup, UI drawing
-    ├── images/                # Embedded sprite assets for Nibbles mascot
-    ├── logger/                # Unified logging (Serial, WebSocket, SD card)
+    ├── GATTServices/          # BLE service readers (11 services)
+    ├── globals/               # Shared state variables
+    ├── gps/                   # GPS manager (Grove + LoRa cap)
+    ├── helper/                # BLE decoders, manufacturer lookup, UI
+    ├── images/                # Sprite assets for Nibbles mascot
+    ├── logger/                # Unified multi-target logging
     ├── models/                # Data structures (DeviceInfo)
     ├── privacyCheck/          # MAC type detection, cleartext analysis
     ├── scanner/               # Core BLE scanning and GATT operations
     ├── sdCard/                # SD card file logging
-    └── target/                # Target device handling
+    ├── target/                # Known device detection
+    ├── wardriving/            # WiGLE CSV export
+    └── xp/                    # Experience points system
 ```
 
 ---
@@ -169,8 +196,6 @@ GhostBLE/
 ## Contributing
 
 PRs and suggestions welcome! This is a learning-focused BLE project, and your ideas are appreciated.
-
----
 
 ## License
 
