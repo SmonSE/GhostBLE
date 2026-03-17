@@ -10,8 +10,6 @@
 String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient) {
     String accessInfoString = "";
 
-    LOG(LOG_GATT,"----------------------------------------");
-
     NimBLERemoteService* gapService = pClient->getService(UUID_GENERIC_ACCESS);
     if (!gapService) {
         LOG(LOG_GATT,"   Generic Access Service not found (0x1800)");
