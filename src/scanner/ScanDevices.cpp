@@ -368,23 +368,24 @@ static bool connectAndReadGATT(
       dev.gattHasName = true;
   }
 
+  String txPowerInfo = TxPowerServiceHandler::readTxPowerLevel(pClient);
+  String timeInfo = CurrentTimeServiceHandler::readCurrentTime(pClient);
+  String alertInfo = ImmediateAlertServiceHandler::readImmediateAlert(pClient);
+  String linkLossInfo = LinkLossServiceHandler::readLinkLoss(pClient);
+
+  String gattLog = devTag + "🔓 Connected and discovered attributes: "  + address;
+  if (!txPowerInfo.isEmpty()) gattLog += "\n" + txPowerInfo;
+  if (!timeInfo.isEmpty()) gattLog += "\n" + timeInfo;
+  if (!alertInfo.isEmpty()) gattLog += "\n" + alertInfo;
+  if (!linkLossInfo.isEmpty()) gattLog += "\n" + linkLossInfo;
+  LOG(LOG_GATT, gattLog);
+
   // Read additional standard GATT services
   genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
   batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
   heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
   temperatureService = TemperatureServiceHandler::readTemperature(pClient);
 
-  String txPowerInfo = TxPowerServiceHandler::readTxPowerLevel(pClient);
-  String timeInfo = CurrentTimeServiceHandler::readCurrentTime(pClient);
-  String alertInfo = ImmediateAlertServiceHandler::readImmediateAlert(pClient);
-  String linkLossInfo = LinkLossServiceHandler::readLinkLoss(pClient);
-
-  String gattLog = devTag + "🔓 Connected and discovered attributes!";
-  if (!txPowerInfo.isEmpty()) gattLog += "\n" + txPowerInfo;
-  if (!timeInfo.isEmpty()) gattLog += "\n" + timeInfo;
-  if (!alertInfo.isEmpty()) gattLog += "\n" + alertInfo;
-  if (!linkLossInfo.isEmpty()) gattLog += "\n" + linkLossInfo;
-  LOG(LOG_GATT, gattLog);
   targetConnects++;
   xpManager.awardXP(5);  // +5 XP: GATT connection success
 
