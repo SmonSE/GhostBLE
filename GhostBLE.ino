@@ -18,6 +18,7 @@
 #include "src/images/nibblesHeartLeft.h"
 #include "src/images/nibblesHeartRight.h"
 #include "src/images/nibblesHappy.h"
+#include "src/images/nibblesHappyLeft.h"
 #include "src/images/nibblesThugLife.h"
 
 #include "src/logger/logger.h"
@@ -281,16 +282,26 @@ void toggleWiFi() {
     wifiStarted = false;
     isWebLogActive = false;
     logDisableTarget(TARGET_WEB);
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon OFF
+    if (random(2) == 0) {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+    } else {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    }
+    showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   } else {
     LOG(LOG_CONTROL,"WIFI / WEB SERVER ON");
     startWebLogServer();
     isWebLogActive = true;
     logEnableTarget(TARGET_WEB);
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    if (random(2) == 0) {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+    } else {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    }
     showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
   }
 

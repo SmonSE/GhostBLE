@@ -7,6 +7,7 @@
 #include "../config/config.h"
 #include "../images/nibblesFront.h"
 #include "../images/nibblesHappy.h"
+#include "../images/nibblesHappyLeft.h"
 #include "../images/nibblesSleep.h"
 
 // --- Message pools ---
@@ -146,17 +147,13 @@ static void clearThoughtBubble() {
     }
 
     // Gesicht wieder korrekt zusammensetzen
-    drawComposite(
-        nibblesFront,
-        NIBBLESFRONT_WIDTH,
-        NIBBLES_FRONT_X,
-        NIBBLES_FRONT_Y,
-        nibblesHappy,
-        NIBBLESHAPPY_WIDTH,
-        NIBBLESHAPPY_HEIGHT,
-        NIBBLES_HAPPY_X,
-        NIBBLES_HAPPY_Y
-    );
+    if (random(2) == 0) {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    }
 
     // Stats neu zeichnen
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
