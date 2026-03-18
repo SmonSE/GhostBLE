@@ -1,5 +1,5 @@
 #pragma once
-#include <set>
+#include <unordered_set>
 #include <map>
 #include <string>
 #include <Arduino.h>
@@ -10,8 +10,8 @@
 
 extern XPManager xpManager;
 
-// ScanDevices seenDevices
-extern std::set<std::string> seenDevices;
+// ScanDevices seenDevices (unordered_set for O(1) lookups instead of O(log n))
+extern std::unordered_set<std::string> seenDevices;
 
 // Device session ID tracking (MAC → incremental session ID)
 extern std::atomic<int> nextDeviceSessionId;

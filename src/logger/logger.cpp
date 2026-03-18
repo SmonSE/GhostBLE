@@ -144,7 +144,7 @@ void LOG(LogCategory category, const String& msg) {
     uint8_t targets = getTargets(category);
     if (targets == TARGET_NONE) return;
 
-    if (logMutex != NULL && xSemaphoreTake(logMutex, pdMS_TO_TICKS(500)) == pdTRUE) {
+    if (logMutex != NULL && xSemaphoreTake(logMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
         if ((targets & TARGET_SERIAL) && Serial.availableForWrite() > 0) {
             Serial.println(msg);
         }

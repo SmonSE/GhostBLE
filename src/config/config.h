@@ -72,8 +72,10 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 #define MIN_FREE_HEAP_BYTES 20000
 
 // ===== BLE Scan Parameters =====
+// Higher window/interval ratio = more advertisements captured per cycle.
+// 40/45 ≈ 89% duty cycle (vs prior 15/45 = 33%). Fine for USB-powered Cardputer.
 #define BLE_SCAN_INTERVAL 45
-#define BLE_SCAN_WINDOW   15
+#define BLE_SCAN_WINDOW   40
 
 // ===== BLE GATT UUIDs =====
 #define UUID_GENERIC_ACCESS       "1800"

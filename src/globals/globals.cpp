@@ -1,5 +1,5 @@
 #include "globals.h"
-#include <set>
+#include <unordered_set>
 #include <map>
 #include <string>
 #include <vector>
@@ -7,7 +7,7 @@
 
 XPManager xpManager;
 
-std::set<std::string> seenDevices;
+std::unordered_set<std::string> seenDevices;
 
 std::atomic<int> nextDeviceSessionId{1};
 std::map<std::string, int> deviceSessionMap;
