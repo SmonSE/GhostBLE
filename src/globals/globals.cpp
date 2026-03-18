@@ -49,6 +49,10 @@ std::atomic<int> allSpottedDevice{0};
 std::atomic<int> leakedCounter{0};
 std::atomic<int> batteryPercent{0};
 std::atomic<int> riskScore{0};
+
+std::atomic<int> highFindingsCount{0};
+std::atomic<int> unencryptedSensitiveCount{0};
+std::atomic<int> writableNoAuthCount{0};
 std::atomic<int> rssi{0};
 
 std::string addrStr = "";

@@ -135,10 +135,17 @@ IBeaconInfo parseIBeacon(const std::string& mfg) {
 }
 
 float estimateDistance(int txPower, int rssi) {
-  if (rssi == 0) return -1.0;
+  if (rssi == 0 || txPower == 0) return -1.0;
   float ratio = rssi * 1.0 / txPower;
-  if (ratio < 1.0) return pow(ratio, 10);
-  return 0.89976 * pow(ratio, 7.7095) + 0.111;
+  float distance;
+  if (ratio < 1.0)
+    distance = pow(ratio, 10);
+  else
+    distance = 0.89976 * pow(ratio, 7.7095) + 0.111;
+  // Discard unrealistic values (negative, NaN, infinity, >1000m)
+  if (distance < 0 || distance > 1000.0 || isnan(distance) || isinf(distance))
+    return -1.0;
+  return distance;
 }
 
 void startBleScan() {
@@ -701,6 +708,9 @@ void scanForDevices() {
                 String secLog = devTag + "Security Findings:";
                 for (auto& f : secResult.findings) {
                   secLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
+                  if (f.severity == "HIGH") highFindingsCount++;
+                  if (f.category == "SENSITIVE_UNENCRYPTED") unencryptedSensitiveCount++;
+                  if (f.category == "WRITABLE_NO_AUTH") writableNoAuthCount++;
                 }
                 if (!secResult.deviceFingerprint.empty()) {
                   secLog += "\n   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str());
@@ -719,8 +729,8 @@ void scanForDevices() {
 
               dev.isConnectable = is_connectable;
 
-              dev.isPublicMac = isUniversallyAdministeredMAC(mac);
-              dev.hasStaticMac = (macType == MACType::StaticRandom);
+              dev.isPublicMac = (macType == MACType::Public);
+              dev.hasStaticMac = (macType == MACType::Public || macType == MACType::StaticRandom);
               dev.hasRotatingMac = isRotatingMAC(macType);
 
               dev.hasName = !dev.name.empty();
@@ -777,6 +787,12 @@ void scanForDevices() {
     LOG(LOG_SCAN, "Suspicious: " + String(susDevice));
     LOG(LOG_SCAN, "Beacons:    " + String(beaconsFound));
     LOG(LOG_SCAN, "PwnBeacons: " + String(pwnbeaconsFound));
+    if (highFindingsCount > 0 || unencryptedSensitiveCount > 0 || writableNoAuthCount > 0) {
+      LOG(LOG_SCAN, "--- Security ---");
+      LOG(LOG_SCAN, "HIGH findings:   " + String((int)highFindingsCount));
+      LOG(LOG_SCAN, "Sensitive unenc: " + String((int)unencryptedSensitiveCount));
+      LOG(LOG_SCAN, "Writable noAuth: " + String((int)writableNoAuthCount));
+    }
     if (wardrivingEnabled) {
       LOG(LOG_SCAN, "WiGLE log:  " + String(wigleLogger.getLoggedCount()));
       wigleLogger.flush();

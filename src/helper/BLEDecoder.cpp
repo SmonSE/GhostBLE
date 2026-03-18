@@ -35,6 +35,44 @@ static String toASCII(uint8_t* data, size_t len)
     return ascii;
 }
 
+// Try to decode a 128-bit vendor UUID as ASCII text.
+// Many vendors encode their company name directly into the UUID bytes,
+// e.g. "65786365-6c70-6f69-6e74-2e636f6d0000" → "excelpoint.com"
+static String decodeVendorUUID(const std::string& uuid)
+{
+    // Only attempt for full 128-bit UUIDs (36 chars with dashes)
+    if (uuid.length() != 36) return "";
+
+    // Strip dashes and decode hex pairs
+    String stripped;
+    for (size_t i = 0; i < uuid.length(); i++) {
+        if (uuid[i] != '-') stripped += uuid[i];
+    }
+    if (stripped.length() != 32) return "";
+
+    String decoded;
+    int printable = 0;
+    int total = 0;
+    for (size_t i = 0; i < stripped.length(); i += 2) {
+        char hexPair[3] = { stripped[i], stripped[i + 1], '\0' };
+        uint8_t byte = (uint8_t)strtol(hexPair, nullptr, 16);
+        total++;
+        if (byte >= 32 && byte <= 126) {
+            decoded += (char)byte;
+            printable++;
+        } else if (byte == 0) {
+            // trailing nulls are OK
+        } else {
+            return ""; // non-printable, non-null → not a text UUID
+        }
+    }
+
+    // At least 6 printable chars to be meaningful
+    if (printable >= 6)
+        return decoded;
+    return "";
+}
+
 void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
 {
     String uuidStr = String(uuid.c_str());
@@ -45,7 +83,13 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     xpManager.awardXP(15);  // +15 XP: notify data received
 
     LOG(LOG_NOTIFY, "BLE Notify");
-    LOG(LOG_NOTIFY, "   UUID : " + uuidStr);
+
+    // Show decoded vendor name if the UUID contains ASCII text
+    String vendorName = decodeVendorUUID(uuid);
+    if (vendorName.length() > 0)
+        LOG(LOG_NOTIFY, "   UUID : " + uuidStr + " [" + vendorName + "]");
+    else
+        LOG(LOG_NOTIFY, "   UUID : " + uuidStr);
     LOG(LOG_NOTIFY, "   HEX  : " + hexString);
     LOG(LOG_NOTIFY, "   ASCII: " + asciiString);
 
