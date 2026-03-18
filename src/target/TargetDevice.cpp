@@ -1,4 +1,4 @@
-#include "targetDevice.h"
+#include "TargetDevice.h"
 #include "../config/config.h"
 #include "../logger/logger.h"
 
