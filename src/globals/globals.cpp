@@ -69,12 +69,6 @@ String hexPayload = "";
 String spacedPayload = "";
 
 String deviceInfoService = "";
-String heartRateService = "";
-String temperatureService = "";
-String currentTimeService = "";
-String batteryLevelService = "";
-String genericAccessService = "";
-String timeInfoService = "";
 
 String lastConnectedDeviceInfo = "Noch kein Gerät verbunden.";
 

@@ -23,6 +23,7 @@
 
 #include "src/logger/logger.h"
 #include "src/GATTServices/pwnBeaconService.h"
+#include "src/GATTServices/GATTServiceInit.h"
 #include "src/gps/GPSManager.h"
 #include "src/wardriving/WigleLogger.h"
 #include "src/helper/nibblesSpeech.h"
@@ -112,6 +113,7 @@ void setup() {
   delay(250);
 
   NimBLEDevice::init(DEVICE_NAME);
+  registerGATTServiceHandlers();
   LOG(LOG_SYSTEM, "BLE initialized successfully.");
 
   // Start PwnBeacon advertising so other devices can discover us

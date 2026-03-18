@@ -2,12 +2,7 @@
 
 #include <Arduino.h>
 #include "../config/config.h"
-#include "../GATTServices/batteryLevelService.h"
-#include "../GATTServices/deviceInfoService.h"
-#include "../GATTServices/heartRateService.h"
-#include "../GATTServices/temperatureService.h"
-#include "../GATTServices/genericAccessService.h"
-#include "../GATTServices/currentTimeService.h"
+#include "../GATTServices/GATTServiceRegistry.h"
 #include "../target/TargetDevice.h"
 
 #include <NimBLEDevice.h>
