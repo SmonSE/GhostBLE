@@ -2,6 +2,7 @@
 #include <M5Unified.h>
 #include <SPI.h>
 #include <vector>
+#include <unordered_set>
 #include <NimBLEDevice.h>
 
 #include "src/globals/globals.h"
@@ -32,8 +33,7 @@
 #include <AsyncTCP.h>
 
 
-unsigned long startTimeDevice;
-const unsigned long timerDurationDevice = 30 * 60 * 1000; // 30 minutes in milliseconds
+// Reactive memory cleanup uses heap threshold + set size (see loop)
 
 const char* ap_ssid = WIFI_AP_SSID;
 const char* ap_password = WIFI_AP_PASSWORD;
@@ -149,7 +149,6 @@ void setup() {
 
   nibblesSpeechBegin();
 
-  startTimeDevice = millis();
   scanIsRunning = false;
 
   delay(3000);
@@ -224,20 +223,16 @@ void loop() {
     }
   }
 
-  // Timer every 60 minutes
-  unsigned long currentTimeDevice = millis();
-  if (currentTimeDevice - startTimeDevice >= timerDurationDevice) {
-    LOG(LOG_SYSTEM, "Timer: periodic seenDevices reset");
-    if (!seenDevices.empty()) {
-      // Swap with empty set to free memory instantly via pointer swap,
-      // avoiding per-node deallocation blocking the main loop
-      std::set<std::string>().swap(seenDevices);
-      deviceSessionMap.clear();
-      LOG(LOG_SYSTEM, "CLEAR SEEN DEVICES");
-    } else {
-      LOG(LOG_SYSTEM, "SEEN DEVICES STILL EMPTY");
-    }
-    startTimeDevice = millis();
+  // Reactive memory cleanup: clear seenDevices when heap runs low or set grows too large,
+  // rather than on a fixed timer. This avoids both premature clearing (losing dedup)
+  // and late clearing (OOM risk).
+  if (!seenDevices.empty() &&
+      (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES)) {
+    LOG(LOG_SYSTEM, "Reactive cleanup (size: " + String(seenDevices.size()) +
+                    ", free heap: " + String(ESP.getFreeHeap()) + ")");
+    std::unordered_set<std::string>().swap(seenDevices);
+    deviceSessionMap.clear();
+    LOG(LOG_SYSTEM, "CLEAR SEEN DEVICES");
   }
   // Auto-enable serial logging when USB host is connected
   static bool lastUsbState = false;

@@ -1,6 +1,6 @@
 #include <NimBLEDevice.h>
 #include <M5Cardputer.h>
-#include <set>
+#include <unordered_set>
 #include <vector>
 #include <algorithm>
 
@@ -128,16 +128,16 @@ IBeaconInfo parseIBeacon(const std::string& mfg) {
 }
 
 float estimateDistance(int txPower, int rssi) {
-  if (rssi == 0 || txPower == 0) return -1.0;
-  float ratio = rssi * 1.0 / txPower;
+  if (rssi == 0 || txPower == 0) return -1.0f;
+  float ratio = (float)rssi / (float)txPower;
   float distance;
-  if (ratio < 1.0)
-    distance = pow(ratio, 10);
+  if (ratio < 1.0f)
+    distance = powf(ratio, 10.0f);
   else
-    distance = 0.89976 * pow(ratio, 7.7095) + 0.111;
+    distance = 0.89976f * powf(ratio, 7.7095f) + 0.111f;
   // Discard unrealistic values (negative, NaN, infinity, >1000m)
-  if (distance < 0 || distance > 1000.0 || isnan(distance) || isinf(distance))
-    return -1.0;
+  if (distance < 0.0f || distance > 1000.0f || isnan(distance) || isinf(distance))
+    return -1.0f;
   return distance;
 }
 
@@ -463,6 +463,7 @@ static bool connectAndReadGATT(
     if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
       targetFound = true;
       susDevice++;
+      // Only award target XP on first discovery (dedup via seenDevices)
       xpManager.awardXP(20);  // +20 XP: suspicious device found
       LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
@@ -661,7 +662,7 @@ void scanForDevices() {
                   infoLog += names.c_str();
                 }
               }
-              float distance = pow(10.0f, (float)(DISTANCE_CONSTANT - rssi) / RSSI_CONSTANT);
+              float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - rssi) / (float)RSSI_CONSTANT);
               infoLog += "\n   Distance: " + String(distance, 2) + " m";
               infoLog += "\n   RSSI: " + String(rssi);
               LOG(LOG_SCAN, infoLog);

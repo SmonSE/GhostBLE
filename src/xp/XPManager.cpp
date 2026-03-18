@@ -76,7 +76,7 @@ uint8_t XPManager::getProgressPercent() {
 
 uint32_t XPManager::xpForLevel(uint16_t level) {
     if (level <= 1) return 0;
-    return (uint32_t)floor(16.67 * pow((double)level, 1.477));
+    return (uint32_t)floorf(16.67f * powf((float)level, 1.477f));
 }
 
 void XPManager::recalculateLevel() {
