@@ -18,3 +18,9 @@ jobs:
 
       - name: Build
         run: pio run
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghostble-firmware
+          path: .pio/build/ghostble/firmware.bin
