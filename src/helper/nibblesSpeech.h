@@ -23,5 +23,8 @@ void nibblesSpeechNotifyEvent();
 // Show a context-aware speech bubble immediately (with cooldown check)
 void nibblesSpeechShow(SpeechContext context);
 
+// Show a custom message in the speech bubble (bypasses pool selection)
+void nibblesSpeechShowCustom(const char* message);
+
 // Draw a thought bubble (green tint) with the given message
 void drawThoughtBubble(const char* message, int x0, int y0);

@@ -1,4 +1,5 @@
 #include "ServiceHelper.h"
+#include "../config/config.h"
 
 String getServiceName(const String& uuid) {
     if (uuid == "1800") return "Generic Access Service";
@@ -31,7 +32,8 @@ String getServiceName(const String& uuid) {
     if (uuid == "1837") return "Fitness Machine";
     if (uuid == "1838") return "Health and Fitness Measurement";
     if (uuid == "1814") return "Running Speed and Cadence Service (RSCS)";
-    if (uuid == "b34c0000-0000-0000-1337-000000000001") return "PwnBeacon (PwnGrid/BLE)";
+    if (uuid == PWNBEACON_SERVICE_UUID) return "PwnBeacon (PwnGrid/BLE)";
+    if (uuid == TESLA_BLE_SERVICE_UUID) return "Tesla Vehicle (BLE Key)";
     return "Unknown Service";
   }
   
