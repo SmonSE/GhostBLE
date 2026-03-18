@@ -1,7 +1,20 @@
+name: Build Firmware
+
 on:
   push:
     branches: [ main ]
-  pull_request:
-  release:
-    types: [created]
   workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Build
+        run: pio run
