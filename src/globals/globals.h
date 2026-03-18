@@ -48,6 +48,11 @@ extern std::atomic<int> allSpottedDevice;
 extern std::atomic<int> leakedCounter;
 extern std::atomic<int> batteryPercent;
 extern std::atomic<int> riskScore;
+
+// Security finding counters (reset per scan cycle)
+extern std::atomic<int> highFindingsCount;
+extern std::atomic<int> unencryptedSensitiveCount;
+extern std::atomic<int> writableNoAuthCount;
 extern std::atomic<int> rssi;
 
 extern std::string addrStr;
