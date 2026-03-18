@@ -4,6 +4,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,8 +21,7 @@ jobs:
       - name: Build
         run: pio run
 
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: ghostble-firmware
-          path: .pio/build/
+          files: .pio/build/**/firmware.bin
