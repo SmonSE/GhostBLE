@@ -50,3 +50,36 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
 
   return false;
 }
+
+// --- Tesla vehicle detection ---
+
+static bool isHexChar(char c) {
+  return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+}
+
+bool isTeslaDevice(const String& name, const String& serviceUuid) {
+  // Match by Tesla BLE GATT service UUID
+  if (serviceUuid == TESLA_BLE_SERVICE_UUID) {
+    return true;
+  }
+
+  // Legacy name format: S + 16 hex chars + [C/D/P/R]
+  // e.g. "Sc155040258896e2dC"
+  if (name.length() == 18 && name[0] == 'S') {
+    char suffix = name[17];
+    if (suffix == 'C' || suffix == 'D' || suffix == 'P' || suffix == 'R') {
+      bool allHex = true;
+      for (int i = 1; i < 17; i++) {
+        if (!isHexChar(name[i])) { allHex = false; break; }
+      }
+      if (allHex) return true;
+    }
+  }
+
+  // New name format: "Tesla " + identifier
+  if (name.startsWith("Tesla ") && name.length() > 6) {
+    return true;
+  }
+
+  return false;
+}

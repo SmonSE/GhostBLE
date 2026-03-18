@@ -250,3 +250,16 @@ void nibblesSpeechShow(SpeechContext context) {
         lastEventTime = now;
     }
 }
+
+void nibblesSpeechShowCustom(const char* message) {
+    unsigned long now = millis();
+
+    if (lastSpeechTime > 0 && (now - lastSpeechTime < SPEECH_COOLDOWN_MS)) {
+        return;
+    }
+
+    if (message) {
+        showMumble(message);
+        lastEventTime = now;
+    }
+}

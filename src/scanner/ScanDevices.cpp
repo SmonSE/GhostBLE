@@ -256,6 +256,12 @@ static bool parseDeviceInfo(
           "   Major: " + String(beacon.major) + "\n"
           "   Minor: " + String(beacon.minor) + "\n"
           "   TX:    " + String(beacon.txPower));
+
+      // Tesla vehicles broadcast as iBeacons with a known UUID
+      if (beacon.uuid == TESLA_IBEACON_UUID ||
+          beacon.uuid == "74278BDA-B644-4520-8F0C-720EAF059935") {
+        LOG(LOG_TARGET, devTag + "🚗 Tesla iBeacon detected");
+      }
     }
 
     if (manufacturerName.isEmpty()) {
@@ -461,6 +467,12 @@ static bool connectAndReadGATT(
       localName = device->getName().c_str();
     }
 
+    // Tesla detection via GATT service UUID
+    if (isTeslaDevice("", serviceUuid.c_str())) {
+      LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected via GATT service");
+      nibblesSpeechShowCustom("Tesla found!");
+    }
+
     if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
       targetFound = true;
       susDevice++;
@@ -611,6 +623,16 @@ void scanForDevices() {
       isTarget = false;
       allSpottedDevice++;
       xpManager.awardXP(1);  // +1 XP: new device discovered
+
+      // Tesla detection from advertisement name (no connection needed)
+      if (isTeslaDevice(localName, "")) {
+        LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected: " + localName);
+        String teslaMsg = "Tesla found!";
+        if (localName.startsWith("Tesla ")) {
+          teslaMsg = localName;
+        }
+        nibblesSpeechShowCustom(teslaMsg.c_str());
+      }
 
       // Print device connectability
       if (!is_connectable) {

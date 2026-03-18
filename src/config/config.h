@@ -26,6 +26,10 @@ extern const char* CATHACK_SERVICE_UUID_1;
 extern const char* CATHACK_SERVICE_UUID_2;
 extern const char* CATHACK_SERVICE_UUID_3;
 
+// ===== Tesla BLE UUIDs =====
+extern const char* TESLA_BLE_SERVICE_UUID;
+extern const char* TESLA_IBEACON_UUID;
+
 // ===== PwnBeacon UUIDs =====
 extern const char* PWNBEACON_SERVICE_UUID;
 extern const char* PWNBEACON_IDENTITY_CHAR_UUID;

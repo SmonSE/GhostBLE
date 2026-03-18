@@ -32,6 +32,7 @@ String getServiceName(const String& uuid) {
     if (uuid == "1838") return "Health and Fitness Measurement";
     if (uuid == "1814") return "Running Speed and Cadence Service (RSCS)";
     if (uuid == "b34c0000-0000-0000-1337-000000000001") return "PwnBeacon (PwnGrid/BLE)";
+    if (uuid == "00000211-b2d1-43f0-9b88-960cebf8b91e") return "Tesla Vehicle (BLE Key)";
     return "Unknown Service";
   }
   
