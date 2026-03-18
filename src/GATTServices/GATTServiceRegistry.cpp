@@ -20,14 +20,25 @@ const std::vector<GATTServiceEntry>& GATTServiceRegistry::entries()
     return registry();
 }
 
+std::map<std::string, String>& GATTServiceRegistry::results()
+{
+    static std::map<std::string, String> res;
+    return res;
+}
+
+String GATTServiceRegistry::getLastResult(const std::string& uuid)
+{
+    auto it = results().find(uuid);
+    if (it != results().end()) return it->second;
+    return "";
+}
+
 String GATTServiceRegistry::runDiscoveredHandlers(NimBLEClient* pClient)
 {
     if (!pClient || !pClient->isConnected()) return "";
 
+    results().clear();
     String combined;
-
-    // Collect discovered service UUIDs
-    auto services = pClient->getServices();
 
     for (auto& entry : registry()) {
         // Check if this service UUID is present on the device
@@ -35,6 +46,7 @@ String GATTServiceRegistry::runDiscoveredHandlers(NimBLEClient* pClient)
         if (!svc) continue;
 
         String result = entry.handler(pClient);
+        results()[entry.uuid] = result;
         if (!result.isEmpty()) {
             if (!combined.isEmpty()) combined += "\n";
             combined += result;

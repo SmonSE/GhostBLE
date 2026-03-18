@@ -17,7 +17,6 @@
 #include "../privacyCheck/ExposureClassifier.h"
 #include "../helper/BLEDecoder.h"
 #include "../GATTServices/GATTServiceRegistry.h"
-#include "../GATTServices/deviceInfoService.h"
 #include "../GATTServices/pwnBeaconService.h"
 #include "../analyzer/SecurityAnalyzer.h"
 #include "../gps/GPSManager.h"
@@ -359,8 +358,8 @@ static bool connectAndReadGATT(
   // Run all registered GATT service handlers dynamically
   String serviceOutput = GATTServiceRegistry::runDiscoveredHandlers(pClient);
 
-  // Check Device Information Service result for gattHasName flag
-  deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+  // Get Device Information result from registry (already read above)
+  deviceInfoService = GATTServiceRegistry::getLastResult("180a");
   if (!deviceInfoService.isEmpty()) {
       dev.gattHasName = true;
   }

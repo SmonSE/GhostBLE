@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <vector>
 #include <string>
+#include <map>
 #include <functional>
 
 // A registered GATT service handler: UUID -> reader function
@@ -27,9 +28,14 @@ public:
     // Returns combined log output from all matched handlers.
     static String runDiscoveredHandlers(NimBLEClient* pClient);
 
+    // Get the result of the last handler run for a given UUID.
+    // Returns empty string if the service was not found or not yet run.
+    static String getLastResult(const std::string& uuid);
+
     // Access the registry (e.g. for testing)
     static const std::vector<GATTServiceEntry>& entries();
 
 private:
     static std::vector<GATTServiceEntry>& registry();
+    static std::map<std::string, String>& results();
 };
