@@ -1,9 +1,8 @@
 name: Build Firmware
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -23,4 +22,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ghostble-firmware
-          path: .pio/build/ghostble/firmware.bin
+          path: .pio/build/
