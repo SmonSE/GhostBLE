@@ -16,14 +16,8 @@
 #include "../models/DeviceInfo.h"
 #include "../privacyCheck/ExposureClassifier.h"
 #include "../helper/BLEDecoder.h"
-#include "../GATTServices/genericAccessService.h"
-#include "../GATTServices/batteryLevelService.h"
-#include "../GATTServices/heartRateService.h"
-#include "../GATTServices/temperatureService.h"
-#include "../GATTServices/txPowerService.h"
-#include "../GATTServices/currentTimeService.h"
-#include "../GATTServices/immediateAlertService.h"
-#include "../GATTServices/linkLossService.h"
+#include "../GATTServices/GATTServiceRegistry.h"
+#include "../GATTServices/deviceInfoService.h"
 #include "../GATTServices/pwnBeaconService.h"
 #include "../analyzer/SecurityAnalyzer.h"
 #include "../gps/GPSManager.h"
@@ -362,34 +356,22 @@ static bool connectAndReadGATT(
       dev.advHasName = true;
   }
 
-  deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
+  // Run all registered GATT service handlers dynamically
+  String serviceOutput = GATTServiceRegistry::runDiscoveredHandlers(pClient);
 
+  // Check Device Information Service result for gattHasName flag
+  deviceInfoService = DeviceInfoServiceHandler::readDeviceInfo(pClient);
   if (!deviceInfoService.isEmpty()) {
       dev.gattHasName = true;
   }
 
-  String txPowerInfo = TxPowerServiceHandler::readTxPowerLevel(pClient);
-  String timeInfo = CurrentTimeServiceHandler::readCurrentTime(pClient);
-  String alertInfo = ImmediateAlertServiceHandler::readImmediateAlert(pClient);
-  String linkLossInfo = LinkLossServiceHandler::readLinkLoss(pClient);
-
   String gattLog = devTag + "🔓 Connected and discovered attributes: "  + address;
-  if (!txPowerInfo.isEmpty()) gattLog += "\n" + txPowerInfo;
-  if (!timeInfo.isEmpty()) gattLog += "\n" + timeInfo;
-  if (!alertInfo.isEmpty()) gattLog += "\n" + alertInfo;
-  if (!linkLossInfo.isEmpty()) gattLog += "\n" + linkLossInfo;
+  if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;
   LOG(LOG_GATT, gattLog);
 
   // Subscribe to notifications for all characteristics that support it
   LOG(LOG_GATT, devTag + "Sub to Notifi all Chars");
   subscribeToAllNotifications(pClient, genericNotifyCallback);
-
-  // Read additional standard GATT services
-  genericAccessService = GenericAccessServiceHandler::readGenericAccessInfo(pClient);
-  batteryLevelService = BatteryServiceHandler::readBatteryLevel(pClient);
-  heartRateService = HeartRateServiceHandler::readHeartRate(pClient);
-  temperatureService = TemperatureServiceHandler::readTemperature(pClient);
-  currentTimeService = CurrentTimeServiceHandler::readCurrentTime(pClient);
 
   targetConnects++;
   xpManager.awardXP(5);  // +5 XP: GATT connection success
