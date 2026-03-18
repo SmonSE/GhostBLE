@@ -258,8 +258,7 @@ static bool parseDeviceInfo(
           "   TX:    " + String(beacon.txPower));
 
       // Tesla vehicles broadcast as iBeacons with a known UUID
-      if (beacon.uuid == TESLA_IBEACON_UUID ||
-          beacon.uuid == "74278BDA-B644-4520-8F0C-720EAF059935") {
+      if (String(beacon.uuid.c_str()).equalsIgnoreCase(TESLA_IBEACON_UUID)) {
         LOG(LOG_TARGET, devTag + "🚗 Tesla iBeacon detected");
       }
     }
