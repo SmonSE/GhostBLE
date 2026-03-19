@@ -24,4 +24,4 @@ jobs:
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: .pio/build/**/firmware.bin
+          files: .pio/build/**/GhostBLE-*.bin
