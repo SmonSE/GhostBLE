@@ -312,6 +312,9 @@ static void drawXPBar(int x, int y) {
     M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
   }
 
+  // Clear title area
+  M5.Lcd.fillRect(TITLE_TEXT_X, y, 140, 16, 0x00C4);
+
   // Nibbles title
   M5.Lcd.setTextColor(GREEN);
   M5.Lcd.setCursor(TITLE_TEXT_X, y);
