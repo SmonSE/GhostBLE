@@ -14,15 +14,20 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
 
         for (int i = 0; i < 6; i++) {
           NimBLERemoteCharacteristic* pChar = deviceInfoService->getCharacteristic(deviceChars[i]);
-          if (pChar == nullptr) {
-              //LOG(LOG_GATT, "     Characteristic " + String(deviceChars[i]) + " not found.");
-              continue;
-          }
+            if (pChar == nullptr) {
+                LOG(LOG_GATT, "     Characteristic " + String(deviceChars[i]) + " not found.");
+                continue;
+            }
       
-          if (pChar->canRead()) {
-              deviceInfoString += String(charNames[i]) + ": " + pChar->readValue().c_str() + "\n";
-              //LOG(LOG_GATT, "     " + String(charNames[i]) + ": " + val);
-          }
+            if (pChar->canRead()) {
+                std::string val = pChar->readValue();
+                String valueStr = String(val.c_str());
+
+                String line = String(charNames[i]) + ": " + valueStr;
+
+                deviceInfoString += line + "\n";
+                LOG(LOG_GATT, "     " + line);
+            }
         }
       } 
 

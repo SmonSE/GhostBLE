@@ -131,6 +131,8 @@ void clearHearts() {
 }
 
 static void clearThoughtBubble() {
+    // Clear thought bubble area
+    isSpeechBubbleActive = false;
 
     // Hintergrund unter der Bubble wiederherstellen
     int srcX = BUBBLE_X - NIBBLES_FRONT_X;
@@ -253,6 +255,7 @@ void nibblesSpeechShow(SpeechContext context) {
 
 void nibblesSpeechShowCustom(const char* message) {
     unsigned long now = millis();
+    isSpeechBubbleActive = true;
 
     if (lastSpeechTime > 0 && (now - lastSpeechTime < SPEECH_COOLDOWN_MS)) {
         return;

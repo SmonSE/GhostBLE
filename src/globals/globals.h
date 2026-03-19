@@ -29,6 +29,7 @@ extern std::atomic<bool> isAngryTaskRunning;
 extern std::atomic<bool> isSadTaskRunning;
 extern std::atomic<bool> isHappyTaskRunning;
 extern std::atomic<bool> isThugLifeTaskRunning;
+extern std::atomic<bool> isSpeechBubbleActive;
 
 // FreeRTOS task handles for expression animations
 extern TaskHandle_t glassesTaskHandle;
@@ -60,6 +61,7 @@ extern std::string addrStr;
 extern unsigned long lastScanTime;
 extern unsigned long lastFaceUpdate;
 
+extern String devTag;
 extern String localName;
 extern String address;
 extern String serviceInfo;

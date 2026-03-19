@@ -146,7 +146,7 @@ void showGlassesExpressionTask(void* parameter) {
     }
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    if (localName.length() > 0) {
+    if (localName.length() > 0 && !isSpeechBubbleActive) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }

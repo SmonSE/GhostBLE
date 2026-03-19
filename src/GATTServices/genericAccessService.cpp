@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 
+#include "../globals/globals.h"
 #include "../config/config.h"
 #include "../logger/logger.h"
 #include "../helper/AppearanceHelper.h"
@@ -11,7 +12,7 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
     String accessInfoString = "";
 
     // Add the LOG(LOG_GATT, devTag + "Reading Generic Access Service (0x1800)");
-    LOG(LOG_GATT, "Reading Generic Access Service (0x1800)");
+    LOG(LOG_GATT, devTag + "Reading Generic Access Service (0x1800)");
 
     NimBLERemoteService* gapService = pClient->getService(UUID_GENERIC_ACCESS);
     if (!gapService) {

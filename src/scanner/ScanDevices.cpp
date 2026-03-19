@@ -27,6 +27,13 @@
 extern GPSManager gpsManager;
 extern WigleLogger wigleLogger;
 
+const char* teslaMsgs[] = {
+  "Oh! Tesla!",
+  "Ooo Tesla!",
+  "Tesla!! 👀",
+  "Sniff Tesla!",
+  "Tesla ping!"
+};
 
 NimBLEClient *pClient = nullptr;
 
@@ -225,7 +232,7 @@ static bool parseDeviceInfo(
 
   // Assign incremental session ID for cross-log correlation
   outDeviceSessionId = getOrAssignDeviceId(addrStr);
-  String devTag = "[#" + String(outDeviceSessionId) + "] ";
+  devTag = "[#" + String(outDeviceSessionId) + "] ";
 
   // Risk factor: Weak/default device name
   if (localName == "< -- >" || localName == "BLE Device" || localName == "Random" ||
@@ -377,7 +384,7 @@ static bool connectAndReadGATT(
   }
 
   String gattLog = devTag + "🔓 Connected and discovered attributes: "  + address;
-  if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;
+  //if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;  // make no sense to log this separately since it's all interleaved anyway
   LOG(LOG_GATT, gattLog);
 
   // Subscribe to notifications for all characteristics that support it
@@ -456,8 +463,8 @@ static bool connectAndReadGATT(
 
     // Tesla detection via GATT service UUID
     if (isTeslaDevice("", serviceUuid.c_str())) {
-      LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected via GATT service");
-      nibblesSpeechShowCustom("Tesla found!");
+      //LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected via GATT service");
+      nibblesSpeechShowCustom(teslaMsgs[random(5)]);
     }
 
     if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
