@@ -157,8 +157,6 @@ void setup() {
 
   // To Update Wifi Logo to ON
   showFindingCounter(targetConnects, susDevice, leakedCounter);
-
-  logNewBoot();
 }
 
 
@@ -260,7 +258,9 @@ void onLongPress() {
     ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-    delay(2000);                
+    delay(1500); 
+    logNewBoot();   
+    delay(500);             
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
     nibblesSpeechShow(SpeechContext::SCAN_START);
   }
