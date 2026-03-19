@@ -125,10 +125,10 @@ void logNewBoot() {
         LogCategory cat = (LogCategory)(1 << i);
 
         LOG(cat, "");
-        LOG(cat, "========================================");
+        LOG(cat, "==================================================");
         snprintf(msg, sizeof(msg), "==== [BOOT] NEW BOOT [%s] ====", catFileNames[i]);
         LOG(cat, msg);
-        LOG(cat, "========================================");
+        LOG(cat, "==================================================");
         LOG(cat, "");
     }
 }
