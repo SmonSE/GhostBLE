@@ -22,6 +22,6 @@ jobs:
         run: pio run
 
       - name: Upload to Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v1
         with:
           files: .pio/build/**/firmware.bin
