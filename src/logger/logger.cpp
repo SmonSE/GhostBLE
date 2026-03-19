@@ -115,6 +115,24 @@ void logDisableCategory(LogCategory category) {
     enabledCategories &= ~(uint16_t)category;
 }
 
+void logNewBoot() {
+    char msg[64];
+
+    for (int i = 0; i < 16; i++) {
+        // Skip unused categories (mapped to misc)
+        if (strcmp(catFileNames[i], "/GhostBLE/misc.log") == 0) continue;
+
+        LogCategory cat = (LogCategory)(1 << i);
+
+        LOG(cat, "");
+        LOG(cat, "========================================");
+        snprintf(msg, sizeof(msg), "==== [BOOT] NEW BOOT [%s] ====", catFileNames[i]);
+        LOG(cat, msg);
+        LOG(cat, "========================================");
+        LOG(cat, "");
+    }
+}
+
 // Internal: resolve effective targets for a category
 static uint8_t getTargets(LogCategory category) {
     if (!(enabledCategories & (uint16_t)category)) return TARGET_NONE;
