@@ -21,7 +21,15 @@ jobs:
       - name: Build
         run: pio run
 
+      - name: Rename firmware
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          for file in .pio/build/*/firmware.bin; do
+            BOARD=$(basename $(dirname $file))
+            cp $file GhostBLE-${VERSION}-${BOARD}.bin
+          done
+
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: .pio/build/**/GhostBLE-*.bin
+          files: GhostBLE-*.bin
