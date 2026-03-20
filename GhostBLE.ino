@@ -10,6 +10,7 @@
 #include "src/scanner/ScanDevices.h"
 #include "src/helper/drawOverlay.h"
 #include "src/helper/showExpression.h"
+#include "src/helper/screenshot.h"
 
 #include "src/images/nibblesStartWorking.h"
 #include "src/images/nibblesFront.h"
@@ -99,6 +100,8 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
+  Screenshot::init();
+
   M5.Lcd.setSwapBytes(true);
 
   LOG(LOG_SYSTEM, "GhostBLE starting...");
@@ -163,6 +166,7 @@ void setup() {
 void loop() {
   ws.cleanupClients();  // Important for websocket memory management
   M5Cardputer.update();
+  Screenshot::handle();
   unsigned long currentTime = millis();
 
   if (M5Cardputer.Keyboard.isChange()) {
@@ -171,6 +175,7 @@ void loop() {
 
       if (status.enter) {
         LOG(LOG_CONTROL, "ENTER pressed");
+        Screenshot::capture();
       }
       if (status.fn) {
         LOG(LOG_CONTROL, "FN pressed");
