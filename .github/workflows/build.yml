@@ -40,14 +40,26 @@ jobs:
       # Merge binaries (M5Burner compatible)
       - name: Merge binaries
         run: |
-          python -m esptool --chip esp32s3 merge_bin -o merged.bin \
-            --flash_mode dio \
-            --flash_freq 40m \
-            --flash_size 8MB \
-            0x0 $BUILD_DIR/bootloader.bin \
-            0x8000 $BUILD_DIR/partitions.bin \
-            0xE000 $BUILD_DIR/boot_app0.bin \
-            0x10000 $BUILD_DIR/firmware.bin
+          if [ -f "$BUILD_DIR/boot_app0.bin" ]; then
+            echo "Using boot_app0.bin"
+            python -m esptool --chip esp32s3 merge-bin -o merged.bin \
+              --flash-mode dio \
+              --flash-freq 40m \
+              --flash-size 8MB \
+              0x0 $BUILD_DIR/bootloader.bin \
+              0x8000 $BUILD_DIR/partitions.bin \
+              0xE000 $BUILD_DIR/boot_app0.bin \
+              0x10000 $BUILD_DIR/firmware.bin
+          else
+            echo "boot_app0.bin NOT found → building without it"
+            python -m esptool --chip esp32s3 merge-bin -o merged.bin \
+              --flash-mode dio \
+              --flash-freq 40m \
+              --flash-size 8MB \
+              0x0 $BUILD_DIR/bootloader.bin \
+              0x8000 $BUILD_DIR/partitions.bin \
+              0x10000 $BUILD_DIR/firmware.bin
+          fi
 
       # Rename with version
       - name: Rename merged binary
