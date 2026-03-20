@@ -131,7 +131,7 @@ void clearHearts() {
     M5.Display.fillRect(25, 24, 40, 30, 0x00C4);
 }
 
-static void clearSpeechBubble() {
+void clearSpeechBubble() {
 
     int srcX = BUBBLE_X - NIBBLES_FRONT_X;
     int srcY = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
@@ -227,7 +227,7 @@ void showSadExpressionTask(void* parameter) {
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    if (localName.length() > 0) {
+    if (localName.length() > 0 && !isSpeechBubbleActive) {
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
@@ -295,8 +295,6 @@ void showThugLifeExpressionTask(void* parameter) {
   isThugLifeTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
 }
-
-// --- HUD sub-functions (extracted from showFindingCounter) ---
 
 static void drawStatusIcons(int x, int y) {
   if (wardrivingEnabled) {
