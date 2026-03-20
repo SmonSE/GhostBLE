@@ -12,41 +12,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
+      # Checkout repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Setup Python (needed for PlatformIO + esptool)
+      # Setup Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-      # Install PlatformIO
-      - name: Install PlatformIO
-        run: pip install platformio
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          pip install platformio esptool
 
       # Build firmware
       - name: Build
         run: pio run
 
-      # Merge binaries into one (M5Burner compatible)
+      # Get build folder dynamically (robust)
+      - name: Get build path
+        id: buildpath
+        run: |
+          BUILD_DIR=$(ls -d .pio/build/* | head -n 1)
+          echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
+
+      # Merge binaries (M5Burner compatible)
       - name: Merge binaries
         run: |
-          esptool.py --chip esp32 merge_bin -o merged.bin \
+          python -m esptool --chip esp32 merge_bin -o merged.bin \
             --flash_mode dio \
             --flash_freq 40m \
             --flash_size 4MB \
-            0x1000 .pio/build/*/bootloader.bin \
-            0x8000 .pio/build/*/partitions.bin \
-            0x10000 .pio/build/*/firmware.bin
+            0x1000 $BUILD_DIR/bootloader.bin \
+            0x8000 $BUILD_DIR/partitions.bin \
+            0x10000 $BUILD_DIR/firmware.bin
 
-      # Upload all relevant binaries to the release
+      # Rename with version (optional but nice)
+      - name: Rename merged binary
+        run: |
+          VERSION=${{ github.event.release.tag_name }}
+          mv merged.bin GhostBLE-${VERSION}.bin
+
+      # Upload to GitHub Release
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            merged.bin
-            .pio/build/**/firmware.bin
-            .pio/build/**/bootloader.bin
-            .pio/build/**/partitions.bin
+            GhostBLE-*.bin
+            ${{ env.BUILD_DIR }}/firmware.bin
+            ${{ env.BUILD_DIR }}/bootloader.bin
+            ${{ env.BUILD_DIR }}/partitions.bin
