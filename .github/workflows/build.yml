@@ -12,24 +12,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout repo
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Setup Python (needed for PlatformIO + esptool)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      # Install PlatformIO
       - name: Install PlatformIO
         run: pip install platformio
 
+      # Build firmware
       - name: Build
         run: pio run
 
-      - name: Rename firmware
+      # Merge binaries into one (M5Burner compatible)
+      - name: Merge binaries
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
-          for file in .pio/build/*/firmware.bin; do
-            BOARD=$(basename $(dirname $file))
-            cp $file GhostBLE-${VERSION}-${BOARD}.bin
-          done
+          esptool.py --chip esp32 merge_bin -o merged.bin \
+            --flash_mode dio \
+            --flash_freq 40m \
+            --flash_size 4MB \
+            0x1000 .pio/build/*/bootloader.bin \
+            0x8000 .pio/build/*/partitions.bin \
+            0x10000 .pio/build/*/firmware.bin
 
+      # Upload all relevant binaries to the release
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: GhostBLE-*.bin
+          files: |
+            merged.bin
+            .pio/build/**/firmware.bin
+            .pio/build/**/bootloader.bin
+            .pio/build/**/partitions.bin
