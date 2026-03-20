@@ -345,7 +345,9 @@ static bool parseDeviceInfo(
         pwnBeacon = PwnBeaconServiceHandler::parseAdvertisement((const uint8_t*)svcData.data(), svcData.length());
         if (pwnBeacon.valid) {
           isPwnBeacon = true;
+          pwnbeaconsFound++;
           xpManager.awardXP(1.0);  // +1.0 XP: PwnBeacon detected
+
           LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected!\n"
               "   Name:     " + pwnBeacon.name + "\n"
               "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
@@ -689,9 +691,6 @@ void scanForDevices() {
 
               // PwnBeacon info + GATT read
               if (isPwnBeaconDevice) {
-                pwnbeaconsFound++;
-                beaconsFound++;
-
                 // Read full identity, face, and name via GATT
                 PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
 
