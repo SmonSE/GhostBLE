@@ -305,6 +305,12 @@ static bool parseDeviceInfo(
       // Detect PwnBeacon by advertised service UUID
       if (svcUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
         isPwnBeacon = true;
+        pwnbeaconsFound++;
+        // Add heart emoji here to change expresion of nibBLEs when a PwnBeacon is detected.
+        drawHeart(30, 30, TFT_RED);
+        drawHeart(45, 40, TFT_RED);
+        delay(3000);
+        clearHearts();
         LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected (service UUID)!");
       }
     }
@@ -345,14 +351,6 @@ static bool parseDeviceInfo(
         pwnBeacon = PwnBeaconServiceHandler::parseAdvertisement((const uint8_t*)svcData.data(), svcData.length());
         if (pwnBeacon.valid) {
           isPwnBeacon = true;
-          pwnbeaconsFound++;
-
-          // Add heart emoji here to change expresion of nibBLEs when a PwnBeacon is detected.
-          drawHeart(30, 30, TFT_RED);
-          drawHeart(45, 40, TFT_RED);
-          delay(3000);
-          clearHearts();
-
           xpManager.awardXP(1.0);  // +1.0 XP: PwnBeacon detected
 
           LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected!\n"
