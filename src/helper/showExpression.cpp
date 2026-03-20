@@ -97,6 +97,40 @@ static void updateBatteryState() {
 }
 
 
+void drawHeart(int x, int y, uint16_t color) {
+
+    int s = 2; // pixel size (scaling)
+
+    M5.Display.fillRect(x+2*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+3*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+6*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+7*s, y+0*s, s, s, color);
+
+    M5.Display.fillRect(x+1*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+4*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+5*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+8*s, y+1*s, s, s, color);
+
+    M5.Display.fillRect(x+0*s, y+2*s, s, s, color);
+    M5.Display.fillRect(x+9*s, y+2*s, s, s, color);
+
+    M5.Display.fillRect(x+1*s, y+3*s, s, s, color);
+    M5.Display.fillRect(x+8*s, y+3*s, s, s, color);
+
+    M5.Display.fillRect(x+2*s, y+4*s, s, s, color);
+    M5.Display.fillRect(x+7*s, y+4*s, s, s, color);
+
+    M5.Display.fillRect(x+3*s, y+5*s, s, s, color);
+    M5.Display.fillRect(x+6*s, y+5*s, s, s, color);
+
+    M5.Display.fillRect(x+4*s, y+6*s, s, s, color);
+    M5.Display.fillRect(x+5*s, y+6*s, s, s, color);
+}
+
+void clearHearts() {
+    M5.Display.fillRect(25, 24, 40, 30, 0x00C4);
+}
+
 static void clearSpeechBubble() {
 
     int srcX = BUBBLE_X - NIBBLES_FRONT_X;
