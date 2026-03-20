@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout
+      # Checkout Repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Python
+      # Setup Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -27,34 +27,35 @@ jobs:
         run: |
           pip install platformio esptool
 
-      # Build
+      # Build firmware
       - name: Build
         run: pio run
 
-      # Detect build folder (e.g. ghostble)
+      # Detect build folder dynamically
       - name: Get build path
         run: |
           BUILD_DIR=$(ls -d .pio/build/* | head -n 1)
           echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
 
-      # Merge binaries (FIXED)
+      # Merge binaries (M5Burner compatible)
       - name: Merge binaries
         run: |
           python -m esptool --chip esp32s3 merge_bin -o merged.bin \
             --flash_mode dio \
             --flash_freq 40m \
-            --flash_size 4MB \
+            --flash_size 8MB \
             0x0 $BUILD_DIR/bootloader.bin \
             0x8000 $BUILD_DIR/partitions.bin \
+            0xE000 $BUILD_DIR/boot_app0.bin \
             0x10000 $BUILD_DIR/firmware.bin
 
-      # Rename
-      - name: Rename
+      # Rename with version
+      - name: Rename merged binary
         run: |
           VERSION=${{ github.event.release.tag_name }}
           mv merged.bin GhostBLE-${VERSION}.bin
 
-      # Upload
+      # Upload to GitHub Release
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
@@ -63,3 +64,4 @@ jobs:
             ${{ env.BUILD_DIR }}/firmware.bin
             ${{ env.BUILD_DIR }}/bootloader.bin
             ${{ env.BUILD_DIR }}/partitions.bin
+            ${{ env.BUILD_DIR }}/boot_app0.bin
