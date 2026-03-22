@@ -3,13 +3,15 @@
 #include <Arduino.h>
 
 // ===== Hardware Platform =====
-#define CARDPUTER
+// Platform is defined via build flags in platformio.ini:
+//   -DCARDPUTER, -DM5STICKCPLUS2, or -DM5STICKS3
+#if !defined(CARDPUTER) && !defined(M5STICKCPLUS2) && !defined(M5STICKS3)
+  #error "No hardware platform defined. Set build flag: CARDPUTER, M5STICKCPLUS2, or M5STICKS3"
+#endif
 
 // ===== SD Card Pin =====
 #if defined(CARDPUTER)
   #define SD_CS_PIN 12
-#else
-  #error "No hardware platform defined. Define CARDPUTER"
 #endif
 
 // ===== Flipper Zero UUIDs =====
@@ -42,16 +44,24 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 #define PWNBEACON_FINGERPRINT_LEN   6
 
 // ===== GPS Pins =====
-// Grove port GPS (e.g. M5Stack GPS Unit on Grove UART)
-#define GPS_GROVE_RX 1
-#define GPS_GROVE_TX 2
-
-// LoRa cap GPS (e.g. LoRa + GPS cap module with ATGM336H)
-#define GPS_LORA_RX 15
-#define GPS_LORA_TX 13
-
-// LoRa SX1262 chip select (shared SPI bus with SD card)
-#define LORA_CS_PIN 5
+#if defined(CARDPUTER)
+  // Grove port GPS (e.g. M5Stack GPS Unit on Grove UART)
+  #define GPS_GROVE_RX 1
+  #define GPS_GROVE_TX 2
+  // LoRa cap GPS (e.g. LoRa + GPS cap module with ATGM336H)
+  #define GPS_LORA_RX 15
+  #define GPS_LORA_TX 13
+  // LoRa SX1262 chip select (shared SPI bus with SD card)
+  #define LORA_CS_PIN 5
+#elif defined(M5STICKCPLUS2)
+  // Grove port on M5StickC Plus 2 (GPIO32/33)
+  #define GPS_GROVE_RX 33
+  #define GPS_GROVE_TX 32
+#elif defined(M5STICKS3)
+  // Grove port on M5StickS3 (GPIO1/2)
+  #define GPS_GROVE_RX 1
+  #define GPS_GROVE_TX 2
+#endif
 
 #define GPS_BAUD_RATE 115200
 
@@ -73,7 +83,7 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 
 // ===== BLE Scan Parameters =====
 // Higher window/interval ratio = more advertisements captured per cycle.
-// 40/45 ≈ 89% duty cycle (vs prior 15/45 = 33%). Fine for USB-powered Cardputer.
+// 40/45 ≈ 89% duty cycle (vs prior 15/45 = 33%). Fine for USB-powered devices.
 #define BLE_SCAN_INTERVAL 45
 #define BLE_SCAN_WINDOW   40
 
@@ -90,6 +100,17 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 #define RSSI_CONSTANT 20
 #define DISTANCE_CONSTANT -69
 
+// ===== Screen Dimensions =====
+// Cardputer and M5StickC Plus 2: 240x135 (landscape rotation)
+// M5StickS3: 128x128
+#if defined(M5STICKS3)
+  #define SCREEN_W 128
+  #define SCREEN_H 128
+#else
+  #define SCREEN_W 240
+  #define SCREEN_H 135
+#endif
+
 // ===== UI Layout Constants =====
 // NibBLEs sprite positions
 #define NIBBLES_FRONT_X        5
@@ -100,7 +121,13 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 #define NIBBLES_SLEEP_Y        60
 
 // Speech/thought bubble geometry
-#define BUBBLE_X               125
+#if defined(M5STICKS3)
+  #define BUBBLE_X               80
+  #define BUBBLE_MAX_W           45
+#else
+  #define BUBBLE_X               125
+  #define BUBBLE_MAX_W           108
+#endif
 #define BUBBLE_RECT_Y          15
 #define BUBBLE_RECT_W          108
 #define BUBBLE_RECT_H          22
@@ -111,7 +138,6 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 #define BUBBLE_TEXT_INSET_X    6
 #define BUBBLE_TEXT_INSET_Y    7
 #define BUBBLE_MIN_W           60
-#define BUBBLE_MAX_W           108
 #define THOUGHT_BUBBLE_Y       18
 
 // Font metrics (default font, text size 1)
@@ -128,12 +154,27 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 #define STATS_LINE_HEIGHT      12
 
 // Bottom bar
-#define BOTTOM_BAR_Y           127
+#if defined(M5STICKS3)
+  #define BOTTOM_BAR_Y           120
+  #define XP_BAR_W              50
+#else
+  #define BOTTOM_BAR_Y           127
+  #define XP_BAR_W              70
+#endif
 #define LEVEL_TEXT_X           5
 #define XP_BAR_X              38
-#define XP_BAR_W              70
 #define XP_BAR_H               7
 #define TITLE_TEXT_X           112
 
+// Battery icon position
+#if defined(M5STICKS3)
+  #define BATTERY_ICON_X        105
+#else
+  #define BATTERY_ICON_X        215
+#endif
+
 // Border/outline color for white speech bubbles
 #define BUBBLE_BORDER_COLOR    0x2104
+
+// ===== Button Long Press Threshold =====
+#define LONG_PRESS_MS          1000

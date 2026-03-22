@@ -1,5 +1,6 @@
 #include "WigleLogger.h"
 #include "../logger/logger.h"
+#include "../config/hardware.h"
 
 WigleLogger::WigleLogger() : active(false), initialized(false), loggedCount(0) {}
 
@@ -39,7 +40,14 @@ bool WigleLogger::openFile() {
 
 void WigleLogger::writeHeader() {
     // WiGLE CSV v1.6 header
-    file.println("WigleWifi-1.6,appRelease=GhostBLE,model=M5Cardputer,release=1.0,device=ESP32-S3,display=none,board=ESP32-S3,brand=M5Stack");
+    String header = "WigleWifi-1.6,appRelease=GhostBLE,model=";
+    header += hardwareModelName();
+    header += ",release=1.0,device=";
+    header += hardwareMCU();
+    header += ",display=none,board=";
+    header += hardwareMCU();
+    header += ",brand=M5Stack";
+    file.println(header);
     file.println("MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type");
     file.flush();
 }

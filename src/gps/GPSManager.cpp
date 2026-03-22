@@ -30,10 +30,21 @@ void GPSManager::initSerial(GPSSource source) {
     if (source == GPSSource::GROVE) {
         rxPin = GPS_GROVE_RX;
         txPin = GPS_GROVE_TX;
-    } else {
+    }
+#if defined(GPS_LORA_RX) && defined(GPS_LORA_TX)
+    else {
         rxPin = GPS_LORA_RX;
         txPin = GPS_LORA_TX;
     }
+#else
+    else {
+        // LoRa GPS not available, fall back to Grove
+        currentSource = GPSSource::GROVE;
+        rxPin = GPS_GROVE_RX;
+        txPin = GPS_GROVE_TX;
+        LOG(LOG_GPS, "LoRa GPS not available, using Grove");
+    }
+#endif
 
     gpsSerial.begin(GPS_BAUD_RATE, SERIAL_8N1, rxPin, txPin);
     LOG(LOG_GPS, "GPS: " + String(getSourceName()) + " (RX=" + String(rxPin) + ", TX=" + String(txPin) + ")");

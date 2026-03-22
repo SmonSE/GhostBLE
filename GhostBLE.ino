@@ -1,5 +1,4 @@
-#include <M5Cardputer.h>
-#include <M5Unified.h>
+#include "src/config/hardware.h"
 #include <SPI.h>
 #include <vector>
 #include <unordered_set>
@@ -40,7 +39,9 @@ const char* ap_password = WIFI_AP_PASSWORD;
 
 AsyncWebServer server(80);
 
+#if HAS_KEYBOARD
 auto keys = M5Cardputer.Keyboard.keysState();
+#endif
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -85,17 +86,22 @@ void startWebLogServer();
 void stopWebLogServer();
 
 // Button long press tracking
-unsigned long buttonPressStart = 0;
-bool buttonHeld = false;
+unsigned long buttonAPressStart = 0;
+bool buttonAHeld = false;
 bool wifiStarted = false;
+
+#if HAS_TWO_BUTTONS
+unsigned long buttonBPressStart = 0;
+bool buttonBHeld = false;
+bool buttonBShortHandled = false;
+#endif
 
 // GPS and wardriving
 GPSManager gpsManager;
 WigleLogger wigleLogger;
 
 void setup() {
-  M5.Power.begin();
-  M5Cardputer.begin();
+  hardwareBegin();
   Serial.begin(115200);
   delay(500);
 
@@ -105,9 +111,7 @@ void setup() {
 
   taskMutex = xSemaphoreCreateMutex();
 
-  #if defined(CARDPUTER)
   M5.Lcd.setRotation(1);
-  #endif
 
   M5.Lcd.fillScreen(0x00C4);
   delay(250);
@@ -129,16 +133,19 @@ void setup() {
   digitalWrite(LORA_CS_PIN, HIGH);
   #endif
 
-  #if defined(CARDPUTER)
+  #if HAS_SD_CARD
   if (!initLogger(SD_CS_PIN)) {
     drawThoughtBubble("NO SD CARD!", 125, 18);
     while (1);
   }
+  #else
+  // No SD card on this device — initialize logger without SD
+  initLogger(-1);
   #endif
 
   xpManager.begin();
 
-  drawThoughtBubble("HI I'M NIBBLES", 125, 18);
+  drawThoughtBubble("HI I'M NIBBLES", BUBBLE_X, THOUGHT_BUBBLE_Y);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   isWebLogActive = true;
@@ -162,9 +169,13 @@ void setup() {
 
 void loop() {
   ws.cleanupClients();  // Important for websocket memory management
-  M5Cardputer.update();
+  hardwareUpdate();
   unsigned long currentTime = millis();
 
+  // ===== Input Handling =====
+
+#if HAS_KEYBOARD
+  // Cardputer keyboard input
   if (M5Cardputer.Keyboard.isChange()) {
     if (M5Cardputer.Keyboard.isPressed()) {
       auto status = M5Cardputer.Keyboard.keysState();
@@ -186,21 +197,60 @@ void loop() {
       }
     }
   }
+#endif
 
-  // Long press detection for BtnG0
+  // Button A: long press = toggle BLE scan
+  //           short press = toggle WiFi (on 2-button devices)
+#if defined(CARDPUTER)
   if (M5Cardputer.BtnA.isPressed()) {
-    if (!buttonHeld) {
-      if (buttonPressStart == 0) {
-        buttonPressStart = currentTime;
-      } else if (currentTime - buttonPressStart >= 1000) {  // 1 second
-        buttonHeld = true;
-        onLongPress();  // Call your custom function
+#else
+  if (M5.BtnA.isPressed()) {
+#endif
+    if (!buttonAHeld) {
+      if (buttonAPressStart == 0) {
+        buttonAPressStart = currentTime;
+      } else if (currentTime - buttonAPressStart >= LONG_PRESS_MS) {
+        buttonAHeld = true;
+        onLongPress();
       }
     }
   } else {
-    buttonPressStart = 0;
-    buttonHeld = false;
+#if HAS_TWO_BUTTONS
+    // Short press detection: was pressed but not held long enough
+    if (buttonAPressStart > 0 && !buttonAHeld) {
+      LOG(LOG_CONTROL, "BtnA short press");
+      toggleWiFi();
+    }
+#endif
+    buttonAPressStart = 0;
+    buttonAHeld = false;
   }
+
+#if HAS_TWO_BUTTONS
+  // Button B: long press = switch GPS source
+  //           short press = toggle wardriving
+  if (M5.BtnB.isPressed()) {
+    if (!buttonBHeld) {
+      if (buttonBPressStart == 0) {
+        buttonBPressStart = currentTime;
+      } else if (currentTime - buttonBPressStart >= LONG_PRESS_MS) {
+        buttonBHeld = true;
+        buttonBShortHandled = true;
+        LOG(LOG_CONTROL, "BtnB long press");
+        switchGPSSource();
+      }
+    }
+  } else {
+    // Short press detection: was pressed but not held long enough
+    if (buttonBPressStart > 0 && !buttonBHeld) {
+      LOG(LOG_CONTROL, "BtnB short press");
+      toggleWardriving();
+    }
+    buttonBPressStart = 0;
+    buttonBHeld = false;
+    buttonBShortHandled = false;
+  }
+#endif
 
   // Update GPS if wardriving is active
   if (wardrivingEnabled) {
@@ -258,7 +308,7 @@ void onLongPress() {
     ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-    delay(2000);                
+    delay(2000);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
     nibblesSpeechShow(SpeechContext::SCAN_START);
   }
@@ -341,7 +391,7 @@ void startWebLogServer() {
   LOG(LOG_CONTROL,"   - Web server started.");
   wifiStarted = true;
 
-  LOG(LOG_CONTROL,"Pres BtnG0 to TOGGLE BLE Scan");
+  LOG(LOG_CONTROL,"Press BtnA (long) to TOGGLE BLE Scan");
 }
 
 void toggleWardriving() {
@@ -368,15 +418,19 @@ void toggleWardriving() {
 
 void switchGPSSource() {
   if (!wardrivingEnabled) {
-    LOG(LOG_CONTROL,"Enable wardriving first (TAB)");
+    LOG(LOG_CONTROL,"Enable wardriving first");
     return;
   }
 
+#if defined(LORA_CS_PIN)
   GPSSource next = (gpsManager.getSource() == GPSSource::GROVE)
                    ? GPSSource::LORA_CAP
                    : GPSSource::GROVE;
   gpsManager.switchSource(next);
   LOG(LOG_CONTROL,"GPS: " + String(gpsManager.getSourceName()));
+#else
+  LOG(LOG_CONTROL,"Only Grove GPS available on this device");
+#endif
 
   drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                 nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);

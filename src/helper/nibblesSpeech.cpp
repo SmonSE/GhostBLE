@@ -1,6 +1,5 @@
 #include "nibblesSpeech.h"
-#include <M5Cardputer.h>
-#include <M5Unified.h>
+#include "../config/hardware.h"
 #include "drawOverlay.h"
 #include "showExpression.h"
 #include "../globals/globals.h"

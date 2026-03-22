@@ -74,20 +74,26 @@ bool initLogger(int sdCsPin) {
         categoryTargets[i] = TARGET_ALL;
     }
 
-    // Initialize SD card
-    bool sdOk = (sdCsPin != -1) ? SD.begin(sdCsPin) : SD.begin();
-    if (!sdOk) {
-        Serial.println("#Logger# SD card initialization failed!");
-        return false;
-    }
+    // Initialize SD card (skip on devices without SD slot)
+    if (sdCsPin >= 0) {
+        bool sdOk = SD.begin(sdCsPin);
+        if (!sdOk) {
+            Serial.println("#Logger# SD card initialization failed!");
+            return false;
+        }
 
-    // Create folder and migrate legacy files on first run
-    if (!SD.exists("/GhostBLE")) {
-        migrateToFolder();
-    }
+        // Create folder and migrate legacy files on first run
+        if (!SD.exists("/GhostBLE")) {
+            migrateToFolder();
+        }
 
-    sdInitialized = true;
-    Serial.println("#Logger# SD card ready.");
+        sdInitialized = true;
+        Serial.println("#Logger# SD card ready.");
+    } else {
+        // No SD card — disable SD logging target
+        enabledTargets &= ~TARGET_SD;
+        Serial.println("#Logger# No SD card slot on this device, SD logging disabled.");
+    }
     return true;
 }
 
