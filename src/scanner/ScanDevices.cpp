@@ -1,5 +1,5 @@
 #include <NimBLEDevice.h>
-#include <M5Cardputer.h>
+#include "../config/hardware.h"
 #include <unordered_set>
 #include <vector>
 #include <algorithm>

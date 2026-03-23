@@ -1,5 +1,4 @@
-#include <M5Cardputer.h>
-#include <M5Unified.h>
+#include "../config/hardware.h"
 #include "showExpression.h"
 #include "../globals/globals.h"
 #include "../config/config.h"
@@ -363,7 +362,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
   // ---- TOP BAR ----
   drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
-  drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, charging);
+  drawBatteryIcon(BATTERY_ICON_X, STATUS_BAR_Y, displayedPercent, charging);
 
   // ---- STATS — LEFT SIDE ----
   drawStats(sniffed, susDevice, spotted, STATS_X, STATS_Y_START);

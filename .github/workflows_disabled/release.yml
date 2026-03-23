@@ -20,13 +20,15 @@ jobs:
       - name: Install PlatformIO
         run: pip install platformio
 
-      - name: Build firmware
+      - name: Build all environments
         run: pio run
 
-      - name: Rename binary
+      - name: Rename binaries
         run: |
           VERSION="${GITHUB_REF_NAME}"
-          cp .pio/build/ghostble/firmware.bin "GhostBLE-${VERSION}.bin"
+          cp .pio/build/ghostble/firmware.bin "GhostBLE-Cardputer-${VERSION}.bin"
+          cp .pio/build/ghostble-stickcplus2/firmware.bin "GhostBLE-StickCPlus2-${VERSION}.bin"
+          cp .pio/build/ghostble-sticks3/firmware.bin "GhostBLE-StickS3-${VERSION}.bin"
 
       - name: Upload binary to release
         uses: softprops/action-gh-release@v2

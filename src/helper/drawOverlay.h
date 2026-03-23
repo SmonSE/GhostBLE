@@ -1,6 +1,6 @@
 #pragma once
 
-#include <M5Cardputer.h>
+#include "../config/hardware.h"
 
 // Function to draw an overlay image onto the screen
 // Parameters:

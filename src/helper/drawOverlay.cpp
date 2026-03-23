@@ -1,5 +1,5 @@
 #include "drawOverlay.h"
-#include <M5Unified.h>
+#include "../config/config.h"
 
 void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0) {
     for (int y = 0; y < h; y++) {
@@ -57,8 +57,8 @@ void drawComposite(const uint16_t* base, int baseW, int baseX, int baseY,
 void drawBubble(const char* message, int x0, int y0,
                 uint16_t fillColor, uint16_t borderColor, uint16_t textColor) {
     int textLen = strlen(message);
-    // Bubble width adapts to text (min 60, max 108 to fit screen)
-    int bubbleW = min(108, max(60, textLen * 6 + 16));
+    // Bubble width adapts to text (clamped to screen)
+    int bubbleW = min(BUBBLE_MAX_W, max(BUBBLE_MIN_W, textLen * CHAR_WIDTH_PX + BUBBLE_PADDING_PX));
     int bubbleH = 22;
 
     // Draw rounded rect bubble
