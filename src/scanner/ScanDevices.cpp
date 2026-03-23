@@ -30,7 +30,7 @@ extern WigleLogger wigleLogger;
 const char* teslaMsgs[] = {
   "Oh! Tesla!",
   "Ooo Tesla!",
-  "Tesla!! 👀",
+  "Hey Tesla!",
   "Sniff Tesla!",
   "Tesla ping!"
 };
@@ -222,10 +222,10 @@ static bool parseDeviceInfo(
   localName = device->haveName() ? String(device->getName().c_str()) : "";
   rssi = device->getRSSI();
   is_connectable = device->isConnectable();
-
+  
   // Dedupe: Insert into seenDevices immediately (before any connect attempt)
   if (seenDevices.find(addrStr) != seenDevices.end()) {
-    LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
+    //LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
     return false;
   }
   seenDevices.insert(addrStr);

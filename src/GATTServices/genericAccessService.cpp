@@ -14,6 +14,13 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
     // Add the LOG(LOG_GATT, devTag + "Reading Generic Access Service (0x1800)");
     LOG(LOG_GATT, devTag + "Reading Generic Access Service (0x1800)");
 
+    // For better logging and correlation, show local name if available, otherwise just the address
+    if (localName != "") {
+        LOG(LOG_GATT, "   Device found: " + localName + " [" + address + "]");
+    } else {
+        LOG(LOG_GATT, "   Device found: [" + address + "]");
+    }
+
     NimBLERemoteService* gapService = pClient->getService(UUID_GENERIC_ACCESS);
     if (!gapService) {
         LOG(LOG_GATT,"   Generic Access Service not found (0x1800)");
