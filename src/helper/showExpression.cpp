@@ -362,7 +362,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
   // ---- TOP BAR ----
   drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
-  drawBatteryIcon(BATTERY_ICON_X, STATUS_BAR_Y, displayedPercent, charging);
+  drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, charging);
 
   // ---- STATS — LEFT SIDE ----
   drawStats(sniffed, susDevice, spotted, STATS_X, STATS_Y_START);
