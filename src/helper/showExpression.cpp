@@ -96,7 +96,41 @@ static void updateBatteryState() {
 }
 
 
-static void clearSpeechBubble() {
+void drawHeart(int x, int y, uint16_t color) {
+
+    int s = 2; // pixel size (scaling)
+
+    M5.Display.fillRect(x+2*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+3*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+6*s, y+0*s, s, s, color);
+    M5.Display.fillRect(x+7*s, y+0*s, s, s, color);
+
+    M5.Display.fillRect(x+1*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+4*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+5*s, y+1*s, s, s, color);
+    M5.Display.fillRect(x+8*s, y+1*s, s, s, color);
+
+    M5.Display.fillRect(x+0*s, y+2*s, s, s, color);
+    M5.Display.fillRect(x+9*s, y+2*s, s, s, color);
+
+    M5.Display.fillRect(x+1*s, y+3*s, s, s, color);
+    M5.Display.fillRect(x+8*s, y+3*s, s, s, color);
+
+    M5.Display.fillRect(x+2*s, y+4*s, s, s, color);
+    M5.Display.fillRect(x+7*s, y+4*s, s, s, color);
+
+    M5.Display.fillRect(x+3*s, y+5*s, s, s, color);
+    M5.Display.fillRect(x+6*s, y+5*s, s, s, color);
+
+    M5.Display.fillRect(x+4*s, y+6*s, s, s, color);
+    M5.Display.fillRect(x+5*s, y+6*s, s, s, color);
+}
+
+void clearHearts() {
+    M5.Display.fillRect(25, 24, 40, 30, 0x00C4);
+}
+
+void clearSpeechBubble() {
 
     int srcX = BUBBLE_X - NIBBLES_FRONT_X;
     int srcY = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
@@ -145,7 +179,8 @@ void showGlassesExpressionTask(void* parameter) {
     }
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    if (localName.length() > 0) {
+    if (localName.length() > 0 && !isSpeechBubbleActive) {
+      clearSpeechBubble();
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
@@ -192,7 +227,8 @@ void showSadExpressionTask(void* parameter) {
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    if (localName.length() > 0) {
+    if (localName.length() > 0 && !isSpeechBubbleActive) {
+      clearSpeechBubble();
       if(localName.length() > 14) {
         localName = localName.substring(0, 11) + "...";
       }
@@ -261,8 +297,6 @@ void showThugLifeExpressionTask(void* parameter) {
   vTaskDelete(NULL);  // Task selbst beenden
 }
 
-// --- HUD sub-functions (extracted from showFindingCounter) ---
-
 static void drawStatusIcons(int x, int y) {
   if (wardrivingEnabled) {
     extern GPSManager gpsManager;
@@ -310,6 +344,9 @@ static void drawXPBar(int x, int y) {
   if (fillW < XP_BAR_W - 2) {
     M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
   }
+
+  // Clear title area
+  M5.Lcd.fillRect(TITLE_TEXT_X, y, 140, 16, 0x00C4);
 
   // Nibbles title
   M5.Lcd.setTextColor(GREEN);

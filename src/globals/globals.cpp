@@ -30,6 +30,7 @@ std::atomic<bool> isAngryTaskRunning{false};
 std::atomic<bool> isSadTaskRunning{false};
 std::atomic<bool> isHappyTaskRunning{false};
 std::atomic<bool> isThugLifeTaskRunning{false};
+std::atomic<bool> isSpeechBubbleActive{false};
 
 TaskHandle_t glassesTaskHandle = NULL;
 TaskHandle_t angryTaskHandle = NULL;
@@ -60,6 +61,8 @@ std::string addrStr = "";
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
 
+
+String devTag = "";
 String localName = "";
 String address = "";
 String serviceInfo = "";

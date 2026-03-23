@@ -27,6 +27,13 @@
 extern GPSManager gpsManager;
 extern WigleLogger wigleLogger;
 
+const char* teslaMsgs[] = {
+  "Oh! Tesla!",
+  "Ooo Tesla!",
+  "Tesla!! 👀",
+  "Sniff Tesla!",
+  "Tesla ping!"
+};
 
 NimBLEClient *pClient = nullptr;
 
@@ -42,10 +49,10 @@ void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) 
           if (!characteristic) continue;
           if (characteristic->canNotify()) {
               characteristic->subscribe(true, notifyCallback);
-              xpManager.awardXP(10);  // +10 XP: characteristic subscription
+              xpManager.awardXP(1.0);  // +1.0 XP: characteristic subscription
           } else if (characteristic->canIndicate()) {
               characteristic->subscribe(false, notifyCallback);
-              xpManager.awardXP(10);  // +10 XP: characteristic subscription
+              xpManager.awardXP(1.0);  // +1.0 XP: characteristic subscription
           } else {
               continue;
           }
@@ -225,7 +232,7 @@ static bool parseDeviceInfo(
 
   // Assign incremental session ID for cross-log correlation
   outDeviceSessionId = getOrAssignDeviceId(addrStr);
-  String devTag = "[#" + String(outDeviceSessionId) + "] ";
+  devTag = "[#" + String(outDeviceSessionId) + "] ";
 
   // Risk factor: Weak/default device name
   if (localName == "< -- >" || localName == "BLE Device" || localName == "Random" ||
@@ -244,13 +251,13 @@ static bool parseDeviceInfo(
     std::string mfg = device->getManufacturerData();
     manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
     manufacturerName = getManufacturerName(manufacturerId);
-    xpManager.awardXP(2);  // +2 XP: manufacturer data decoded
+    xpManager.awardXP(2.0);  // +2.0 XP: manufacturer data decoded
 
     // Detect iBeacon
     beacon = parseIBeacon(mfg);
     if (beacon.valid) {
       isIBeacon = true;
-      xpManager.awardXP(3);  // +3 XP: iBeacon parsed
+      xpManager.awardXP(3.0);  // +3.0 XP: iBeacon parsed
       LOG(LOG_BEACON, devTag + "iBeacon detected!\n"
           "   UUID:  " + String(beacon.uuid.c_str()) + "\n"
           "   Major: " + String(beacon.major) + "\n"
@@ -298,6 +305,12 @@ static bool parseDeviceInfo(
       // Detect PwnBeacon by advertised service UUID
       if (svcUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
         isPwnBeacon = true;
+        pwnbeaconsFound++;
+        // Add heart emoji here to change expresion of nibBLEs when a PwnBeacon is detected.
+        drawHeart(30, 30, TFT_RED);
+        drawHeart(45, 40, TFT_RED);
+        delay(3000);
+        clearHearts();
         LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected (service UUID)!");
       }
     }
@@ -338,7 +351,8 @@ static bool parseDeviceInfo(
         pwnBeacon = PwnBeaconServiceHandler::parseAdvertisement((const uint8_t*)svcData.data(), svcData.length());
         if (pwnBeacon.valid) {
           isPwnBeacon = true;
-          xpManager.awardXP(10);  // +10 XP: PwnBeacon detected
+          xpManager.awardXP(1.0);  // +1.0 XP: PwnBeacon detected
+
           LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected!\n"
               "   Name:     " + pwnBeacon.name + "\n"
               "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
@@ -377,7 +391,7 @@ static bool connectAndReadGATT(
   }
 
   String gattLog = devTag + "🔓 Connected and discovered attributes: "  + address;
-  if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;
+  //if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;  // make no sense to log this separately since it's all interleaved anyway
   LOG(LOG_GATT, gattLog);
 
   // Subscribe to notifications for all characteristics that support it
@@ -385,7 +399,7 @@ static bool connectAndReadGATT(
   subscribeToAllNotifications(pClient, genericNotifyCallback);
 
   targetConnects++;
-  xpManager.awardXP(5);  // +5 XP: GATT connection success
+  xpManager.awardXP(0.5);  // +0.5 XP: GATT connection success
 
   if (!isGlassesTaskRunning && !isAngryTaskRunning) {
     if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1) != pdPASS) {
@@ -456,15 +470,15 @@ static bool connectAndReadGATT(
 
     // Tesla detection via GATT service UUID
     if (isTeslaDevice("", serviceUuid.c_str())) {
-      LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected via GATT service");
-      nibblesSpeechShowCustom("Tesla found!");
+      //LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected via GATT service");
+      nibblesSpeechShowCustom(teslaMsgs[random(5)]);
     }
 
     if (isTargetDevice(localName.c_str(), address.c_str(), serviceUuid.c_str(), deviceInfoService.c_str())) {
       targetFound = true;
       susDevice++;
       // Only award target XP on first discovery (dedup via seenDevices)
-      xpManager.awardXP(20);  // +20 XP: suspicious device found
+      xpManager.awardXP(2.0);  // +2.0 XP: suspicious device found
       LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
       vTaskDelay(pdMS_TO_TICKS(2000));
@@ -610,7 +624,7 @@ void scanForDevices() {
 
       isTarget = false;
       allSpottedDevice++;
-      xpManager.awardXP(1);  // +1 XP: new device discovered
+      xpManager.awardXP(0.1);  // +0.1 XP: new device discovered
 
       // Tesla detection from advertisement name (no connection needed)
       if (isTeslaDevice(localName, "")) {
@@ -682,9 +696,6 @@ void scanForDevices() {
 
               // PwnBeacon info + GATT read
               if (isPwnBeaconDevice) {
-                pwnbeaconsFound++;
-                beaconsFound++;
-
                 // Read full identity, face, and name via GATT
                 PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
 
