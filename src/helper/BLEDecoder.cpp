@@ -82,7 +82,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
 
     xpManager.awardXP(1.5);  // +1.5 XP: notify data received
 
-    LOG(LOG_NOTIFY, "BLE Notify");
+    LOG(LOG_NOTIFY, devTag + "BLE Notify");
 
     // Show decoded vendor name if the UUID contains ASCII text
     String vendorName = decodeVendorUUID(uuid);
