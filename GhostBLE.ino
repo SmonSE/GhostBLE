@@ -9,7 +9,6 @@
 #include "src/scanner/ScanDevices.h"
 #include "src/helper/drawOverlay.h"
 #include "src/helper/showExpression.h"
-#include "src/helper/screenshot.h"
 
 #include "src/images/nibblesStartWorking.h"
 #include "src/images/nibblesFront.h"
@@ -106,8 +105,6 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
-  Screenshot::init();
-
   M5.Lcd.setSwapBytes(true);
 
   LOG(LOG_SYSTEM, "GhostBLE starting...");
@@ -185,7 +182,6 @@ void loop() {
 
       if (status.enter) {
         LOG(LOG_CONTROL, "ENTER pressed");
-        Screenshot::capture();
       }
       if (status.fn) {
         LOG(LOG_CONTROL, "FN pressed");
@@ -312,9 +308,7 @@ void onLongPress() {
     ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-    delay(1500); 
-    logNewBoot();   
-    delay(500);             
+    delay(2000);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
     nibblesSpeechShow(SpeechContext::SCAN_START);
   }
@@ -404,6 +398,7 @@ void toggleWardriving() {
   wardrivingEnabled = !wardrivingEnabled;
 
   if (wardrivingEnabled) {
+    logEnableCategory(LOG_GPS);
     gpsManager.begin(GPSSource::GROVE);
     wigleLogger.begin();
     LOG(LOG_CONTROL,"Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
@@ -411,6 +406,7 @@ void toggleWardriving() {
   } else {
     wigleLogger.end();
     LOG(LOG_CONTROL,"Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");
+    logDisableCategory(LOG_GPS);
   }
 
   ws.textAll(wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
