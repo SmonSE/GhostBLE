@@ -1,5 +1,7 @@
 #include "GATTServiceRegistry.h"
 #include "../logger/logger.h"
+#include <NimBLERemoteService.h>
+#include <set>
 
 std::vector<GATTServiceEntry>& GATTServiceRegistry::registry()
 {
@@ -26,6 +28,18 @@ std::map<std::string, String>& GATTServiceRegistry::results()
     return res;
 }
 
+std::function<String(NimBLEClient*, std::string)>& GATTServiceRegistry::fallback()
+{
+    static std::function<String(NimBLEClient*, std::string)> fb;
+    return fb;
+}
+
+void GATTServiceRegistry::registerFallback(
+    std::function<String(NimBLEClient*, std::string)> handler)
+{
+    fallback() = handler;
+}
+
 String GATTServiceRegistry::getLastResult(const std::string& uuid)
 {
     auto it = results().find(uuid);
@@ -40,6 +54,12 @@ String GATTServiceRegistry::runDiscoveredHandlers(NimBLEClient* pClient)
     results().clear();
     String combined;
 
+    // Collect registered UUIDs for fallback exclusion
+    std::set<std::string> registeredUUIDs;
+    for (auto& entry : registry()) {
+        registeredUUIDs.insert(entry.uuid);
+    }
+
     for (auto& entry : registry()) {
         // Check if this service UUID is present on the device
         NimBLERemoteService* svc = pClient->getService(entry.uuid.c_str());
@@ -50,6 +70,32 @@ String GATTServiceRegistry::runDiscoveredHandlers(NimBLEClient* pClient)
         if (!result.isEmpty()) {
             if (!combined.isEmpty()) combined += "\n";
             combined += result;
+        }
+    }
+
+    // Run fallback handler for any unregistered services
+    if (fallback()) {
+        for (auto* svc : pClient->getServices()) {
+            std::string uuid = svc->getUUID().toString();
+
+            // Normalize: strip "0x" prefix if present
+            if (uuid.substr(0, 2) == "0x") {
+                uuid = uuid.substr(2);
+            }
+
+            // Skip already-handled services
+            if (registeredUUIDs.count(uuid)) continue;
+
+            // Also check lowercase variant
+            std::string lower = uuid;
+            for (auto& ch : lower) ch = tolower(ch);
+            if (registeredUUIDs.count(lower)) continue;
+
+            String result = fallback()(pClient, uuid);
+            if (!result.isEmpty()) {
+                if (!combined.isEmpty()) combined += "\n";
+                combined += result;
+            }
         }
     }
 
