@@ -68,6 +68,10 @@ static void migrateToFolder() {
 bool initLogger(int sdCsPin) {
     logMutex = xSemaphoreCreateMutex();
 
+    // Disable not important LOGs to reduce trace load
+    logDisableCategory(LOG_SYSTEM);
+    logDisableCategory(LOG_CONTROL);
+
     // Default: all categories route to all targets
     // (actual output filtered by enabledTargets)
     for (int i = 0; i < 16; i++) {
@@ -129,6 +133,8 @@ void logNewBoot() {
         if (strcmp(catFileNames[i], "/GhostBLE/misc.log") == 0) continue;
 
         LogCategory cat = (LogCategory)(1 << i);
+
+        if (!(enabledCategories & (uint16_t)cat)) continue;
 
         LOG(cat, "");
         LOG(cat, "==================================================");

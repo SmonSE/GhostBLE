@@ -188,6 +188,16 @@ void showGlassesExpressionTask(void* parameter) {
       drawBubble(localName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
 
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+
+    } else if (appearanceName.length() > 0 && !isSpeechBubbleActive && localName.length() == 0) {
+      clearSpeechBubble();
+      if(appearanceName.length() > 14) {
+        appearanceName = appearanceName.substring(0, 11) + "...";
+      } 
+
+      drawBubble(appearanceName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+
+      vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
     }
 
     clearSpeechBubble();

@@ -64,6 +64,7 @@ unsigned long lastFaceUpdate = 0;
 
 String devTag = "";
 String localName = "";
+String appearanceName = "";
 String address = "";
 String serviceInfo = "";
 String manuInfo = "";
