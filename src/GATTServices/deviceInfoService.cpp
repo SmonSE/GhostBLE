@@ -25,7 +25,7 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
 
                 String line = String(charNames[i]) + ": " + valueStr;
 
-                deviceInfoString += line + "\n";
+                //deviceInfoString += line + "\n";
                 LOG(LOG_GATT, "     " + line);
             }
         }
