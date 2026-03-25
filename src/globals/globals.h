@@ -30,6 +30,7 @@ extern std::atomic<bool> isSadTaskRunning;
 extern std::atomic<bool> isHappyTaskRunning;
 extern std::atomic<bool> isThugLifeTaskRunning;
 extern std::atomic<bool> isSpeechBubbleActive;
+extern std::atomic<bool> isChargingState;
 
 // FreeRTOS task handles for expression animations
 extern TaskHandle_t glassesTaskHandle;

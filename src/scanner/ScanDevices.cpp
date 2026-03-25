@@ -757,10 +757,17 @@ void scanForDevices() {
             }
           }
         } else {
-            LOG(LOG_GATT, devTag + "🔒 Attribute discovery failed: " + address);
+            String reason;
+            if (rssi <= -85) {
+                reason = "📡 Too far / weak signal";
+            } else if (rssi <= -75) {
+                reason = "📡 Weak signal or unstable";
+            } else {
+                reason = "🔒 Likely protected (pairing required)";
+            }
+            LOG(LOG_GATT, devTag + reason + ": " + address + " (" + String(rssi) + " dBm)");
 
             dev.isConnectable = false;
-
             ExposureResult exposure = analyzeExposure(dev);
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {

@@ -70,24 +70,33 @@ static void drawBatteryIcon(int x, int y, int percent, bool charging) {
 
 static void updateBatteryState() {
   int rawVoltage = M5.Power.getBatteryVoltage();
-  bool charging = M5.Power.isCharging();
 
+  bool chargingNow = M5.Power.isCharging();
+  bool usbConnected = (rawVoltage > 4200);
+
+  if (!chargingNow && rawVoltage > 4200) {
+    chargingNow = true;
+  }
+
+  // Smooth Voltage
   if (smoothedVoltage == 0) {
     smoothedVoltage = rawVoltage;
   }
 
   smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;
 
-  if (lastChargingState && !charging) {
+  // USB Disconnect Delay Fix
+  if (isChargingState && !chargingNow) {
     usbDisconnectTime = millis();
   }
 
-  lastChargingState = charging;
+  isChargingState = chargingNow || usbConnected;
 
-  if (!charging && (millis() - usbDisconnectTime < 2000)) {
-    // keep old percent value during USB disconnect settling
+  if (!chargingNow && (millis() - usbDisconnectTime < 2000)) {
+    // keep value
   } else {
     int newPercent = voltageToPercent((int)smoothedVoltage);
+
     if (newPercent > displayedPercent)
       displayedPercent++;
     else if (newPercent < displayedPercent)
@@ -372,7 +381,7 @@ void showFindingCounter(int sniffed, int susDevice, int spotted) {
 
   // ---- TOP BAR ----
   drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
-  drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, charging);
+  drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, isChargingState);
 
   // ---- STATS — LEFT SIDE ----
   drawStats(sniffed, susDevice, spotted, STATS_X, STATS_Y_START);
