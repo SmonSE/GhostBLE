@@ -312,9 +312,9 @@ void onLongPress() {
     ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-    delay(1500); 
-    logNewBoot();   
-    delay(500);             
+    delay(1500);
+    logNewBoot();
+    delay(500);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
     nibblesSpeechShow(SpeechContext::SCAN_START);
   }
@@ -404,6 +404,7 @@ void toggleWardriving() {
   wardrivingEnabled = !wardrivingEnabled;
 
   if (wardrivingEnabled) {
+    logEnableCategory(LOG_GPS);
     gpsManager.begin(GPSSource::GROVE);
     wigleLogger.begin();
     LOG(LOG_CONTROL,"Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
@@ -411,6 +412,7 @@ void toggleWardriving() {
   } else {
     wigleLogger.end();
     LOG(LOG_CONTROL,"Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");
+    logDisableCategory(LOG_GPS);
   }
 
   ws.textAll(wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");

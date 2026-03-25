@@ -9,7 +9,14 @@ SemaphoreHandle_t logMutex = NULL;
 static uint8_t categoryTargets[16];
 
 // Global category enable mask
+// Default: disable verbose categories (system, control, GPS) to reduce SD writes.
+// GPS logging is enabled dynamically when wardriving starts.
+// Build with -DVERBOSE_LOGGING to enable all categories.
+#ifdef VERBOSE_LOGGING
 static uint16_t enabledCategories = LOG_ALL;
+#else
+static uint16_t enabledCategories = LOG_ALL & ~(LOG_SYSTEM | LOG_CONTROL | LOG_GPS);
+#endif
 
 // Global target enable mask — controls which outputs are active
 // Default: SD always on, Serial off (debug only), Web off (follows WiFi)
@@ -144,7 +151,6 @@ void logNewBoot() {
         LOG(cat, "");
     }
 }
-
 // Internal: resolve effective targets for a category
 static uint8_t getTargets(LogCategory category) {
     if (!(enabledCategories & (uint16_t)category)) return TARGET_NONE;
