@@ -23,7 +23,7 @@ String GenericAttributeServiceHandler::readGenericAttribute(NimBLEClient* pClien
         if (pChar->canIndicate()) {
             result += " (indicate)";
         }
-        result += "\n";
+        //result += "\n";
         LOG(LOG_GATT, "     " + result);
     }
 

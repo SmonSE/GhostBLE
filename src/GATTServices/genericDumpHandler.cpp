@@ -43,7 +43,7 @@ String GenericDumpHandler::dumpService(NimBLEClient* pClient, const std::string&
             }
         }
 
-        line += "\n";
+        //line += "\n";
         result += line;
         LOG(LOG_GATT, "     " + line);
     }

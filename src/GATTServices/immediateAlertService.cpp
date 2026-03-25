@@ -29,7 +29,7 @@ String ImmediateAlertServiceHandler::readImmediateAlert(NimBLEClient* pClient) {
     if (pChar->canWrite()) {
         alertStr += " (writable)";
     }
-    alertStr += "\n";
+    //alertStr += "\n";
     LOG(LOG_GATT,"     " + alertStr);
 
     return alertStr;

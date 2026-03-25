@@ -45,6 +45,6 @@ String HIDServiceHandler::readHID(NimBLEClient* pClient) {
         }
     }
 
-    result += "\n";
+    //result += "\n";
     return result;
 }

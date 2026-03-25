@@ -36,7 +36,7 @@ String AlertNotificationServiceHandler::readAlertNotification(NimBLEClient* pCli
                     first = false;
                 }
             }
-            result += "\n";
+            //result += "\n";
             LOG(LOG_GATT, "     " + result);
         }
     }

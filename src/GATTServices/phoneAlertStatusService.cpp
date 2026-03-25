@@ -27,7 +27,7 @@ String PhoneAlertStatusServiceHandler::readPhoneAlertStatus(NimBLEClient* pClien
             if (status & 0x02) result += "Vibrate ";
             if (status & 0x04) result += "Display ";
             if (status == 0) result += "Silent";
-            result += "\n";
+            //result += "\n";
             LOG(LOG_GATT, "     " + result);
         }
     }
