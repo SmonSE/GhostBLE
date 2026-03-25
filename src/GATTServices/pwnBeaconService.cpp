@@ -153,7 +153,7 @@ void PwnBeaconServiceHandler::startAdvertising(const String& deviceName, const S
     );
     nameChr->setValue(deviceName.c_str());
 
-    pwnService->start();
+    pServer->start();
 
     // Configure advertisement
     // NimBLE builds main adv from addServiceUUID (flags + UUID)
