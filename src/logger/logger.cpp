@@ -132,7 +132,6 @@ void logDisableCategory(LogCategory category) {
     enabledCategories &= ~(uint16_t)category;
 }
 
-<<<<<<< Updated upstream
 void logNewBoot() {
     char msg[64];
 
@@ -152,9 +151,6 @@ void logNewBoot() {
         LOG(cat, "");
     }
 }
-
-=======
->>>>>>> Stashed changes
 // Internal: resolve effective targets for a category
 static uint8_t getTargets(LogCategory category) {
     if (!(enabledCategories & (uint16_t)category)) return TARGET_NONE;
