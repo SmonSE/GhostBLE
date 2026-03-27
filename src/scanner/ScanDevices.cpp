@@ -37,56 +37,6 @@ const char* teslaMsgs[] = {
 
 NimBLEClient *pClient = nullptr;
 
-// Subscribe to all notifiable characteristics on a connected device
-template<typename Callback>
-void subscribeToAllNotifications(NimBLEClient* client, Callback notifyCallback) {
-    if (!client) return;
-    auto services = client->getServices();
-    for (auto* service : services) {
-        if (!service) continue;
-        auto characteristics = service->getCharacteristics(true);
-        for (auto* characteristic : characteristics) {
-          if (!characteristic) continue;
-          if (characteristic->canNotify()) {
-              characteristic->subscribe(true, notifyCallback);
-              xpManager.awardXP(1.0);  // +1.0 XP: characteristic subscription
-          } else if (characteristic->canIndicate()) {
-              characteristic->subscribe(false, notifyCallback);
-              xpManager.awardXP(1.0);  // +1.0 XP: characteristic subscription
-          } else {
-              continue;
-          }
-          if (characteristic->canRead()) {
-              std::string val = characteristic->readValue();
-              LOG(LOG_GATT, "   Read value length: " + String(val.length()));
-          }
-          LOG(LOG_GATT,
-              String("   Subscribed to notifis for char ") +
-              characteristic->getUUID().toString().c_str() +
-              " in service " +
-              service->getUUID().toString().c_str()
-          );
-        }
-    }
-}
-
-void genericNotifyCallback(NimBLERemoteCharacteristic* pChar,
-                           uint8_t* data,
-                           size_t length,
-                           bool isNotify)
-{
-    if (!pChar || !data || length == 0) return;
-
-    NimBLEUUID charUUID = pChar->getUUID();
-
-    // Forward everything to the decoder
-    decodeBLEData(charUUID.toString(), data, length);
-}
-
-bool isTarget = false;
-
-// MAX_SEEN_DEVICES and MIN_FREE_HEAP_BYTES defined in config.h
-
 struct IBeaconInfo {
   bool valid = false;
   std::string uuid;
@@ -393,10 +343,6 @@ static bool connectAndReadGATT(
   String gattLog = devTag + "🔓 Connected and discovered attributes: "  + address;
   //if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;  // make no sense to log this separately since it's all interleaved anyway
   LOG(LOG_GATT, gattLog);
-
-  // Subscribe to notifications for all characteristics that support it
-  LOG(LOG_GATT, devTag + "Sub to Notifi all Chars");
-  subscribeToAllNotifications(pClient, genericNotifyCallback);
 
   targetConnects++;
   xpManager.awardXP(0.5);  // +0.5 XP: GATT connection success

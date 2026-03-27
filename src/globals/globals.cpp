@@ -24,6 +24,7 @@ std::vector<std::string> nameList;
 
 bool scanIsRunning = false;
 
+bool isTarget = false;
 bool targetFound = false;
 std::atomic<bool> isGlassesTaskRunning{false};
 std::atomic<bool> isAngryTaskRunning{false};
