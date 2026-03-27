@@ -23,6 +23,7 @@ extern std::vector<std::string> nameList;
 extern bool scanIsRunning;
 
 // Global flags and strings
+extern bool isTarget;
 extern bool targetFound;
 extern std::atomic<bool> isGlassesTaskRunning;
 extern std::atomic<bool> isAngryTaskRunning;

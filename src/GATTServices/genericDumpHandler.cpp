@@ -30,15 +30,20 @@ String GenericDumpHandler::dumpService(NimBLEClient* pClient, const std::string&
         if (pChar->canRead()) {
             std::string raw = pChar->readValue();
             if (!raw.empty()) {
-                // Show as hex dump (max 16 bytes)
                 String hex = "";
-                size_t len = (raw.size() > 16) ? 16 : raw.size();
+                size_t maxLen = 64; // UI limit
+                size_t len = (raw.size() > maxLen) ? maxLen : raw.size();
+
                 for (size_t i = 0; i < len; i++) {
                     char buf[4];
                     snprintf(buf, sizeof(buf), "%02X ", (uint8_t)raw[i]);
                     hex += buf;
                 }
-                if (raw.size() > 16) hex += "...";
+                if (raw.size() > maxLen) {
+                    hex += "...";
+                }
+                // Optional but VERY useful:
+                line += " (len=" + String(raw.size()) + ")";
                 line += " = " + hex;
             }
         }
