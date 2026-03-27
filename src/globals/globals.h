@@ -70,6 +70,8 @@ extern String payload;
 extern String hexPayload;
 extern String spacedPayload;
 
+extern String deviceName;
+extern String appearanceName;
 extern String deviceInfoService;
 
 extern String lastConnectedDeviceInfo;

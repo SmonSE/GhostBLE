@@ -42,11 +42,16 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
         if (pChar->canRead()) {
             std::string value = pChar->readValue();
             
-            if (strcmp(charUUIDs[i], "2A01") == 0) {
+            if (strcmp(charUUIDs[i], "2A00") == 0) {
+                deviceName = String(value.c_str());
+                String val = deviceName;
+                accessInfoString += String(charNames[i]) + ": " + val + "\n";
+                LOG(LOG_GATT, "     " + String(charNames[i]) + ": " + val);
+            } else if (strcmp(charUUIDs[i], "2A01") == 0) {
                 if (value.size() >= 2) {
                     uint16_t appearance;
                     memcpy(&appearance, value.data(), sizeof(appearance));
-                    String appearanceName = getAppearanceName(appearance);
+                    appearanceName = getAppearanceName(appearance);
                     accessInfoString += "Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")\n";
                     LOG(LOG_GATT, "     Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")");
                 }
