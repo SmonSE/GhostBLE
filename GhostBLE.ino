@@ -151,6 +151,15 @@ void setup() {
   drawThoughtBubble("HI I'M NIBBLES", BUBBLE_X, THOUGHT_BUBBLE_Y);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
+  clearSpeechBubble();
+#if HAS_KEYBOARD
+  drawThoughtBubble("PRESS H FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
+#else
+  drawThoughtBubble("HOLD M5 FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
+#endif
+  vTaskDelay(pdMS_TO_TICKS(3000));
+  clearSpeechBubble();
+
   isWebLogActive = true;
   startWebLogServer();
   logEnableTarget(TARGET_WEB);
@@ -161,7 +170,7 @@ void setup() {
 
   scanIsRunning = false;
 
-  delay(3000);
+  delay(1000);
 
   toggleWiFi();
 
@@ -176,6 +185,25 @@ void loop() {
   unsigned long currentTime = millis();
 
   // ===== Input Handling =====
+
+  // When help overlay is visible, any input dismisses it
+  if (helpOverlayVisible) {
+#if HAS_KEYBOARD
+    if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
+      dismissHelpOverlay();
+      return;
+    }
+#endif
+#if defined(CARDPUTER)
+    if (M5Cardputer.BtnA.wasPressed()) { dismissHelpOverlay(); return; }
+#else
+    if (M5.BtnA.wasPressed()) { dismissHelpOverlay(); return; }
+#if HAS_TWO_BUTTONS
+    if (M5.BtnB.wasPressed()) { dismissHelpOverlay(); return; }
+#endif
+#endif
+    return;  // skip all other processing while help is visible
+  }
 
 #if HAS_KEYBOARD
   // Cardputer keyboard input
@@ -199,17 +227,23 @@ void loop() {
         LOG(LOG_CONTROL, "DEL pressed");
         switchGPSSource();
       }
+      // 'h' key opens help overlay
+      for (auto key : status.word) {
+        if (key == 'h' || key == 'H') {
+          LOG(LOG_CONTROL, "H pressed — showing help");
+          showHelpOverlay();
+          return;
+        }
+      }
     }
   }
 #endif
 
-  // Button A: long press = toggle BLE scan
+  // Button A: long press (1s) = toggle BLE scan
   //           short press = toggle WiFi (on 2-button devices)
+  //           3s hold = help overlay (on 2-button devices)
 #if defined(CARDPUTER)
   if (M5Cardputer.BtnA.isPressed()) {
-#else
-  if (M5.BtnA.isPressed()) {
-#endif
     if (!buttonAHeld) {
       if (buttonAPressStart == 0) {
         buttonAPressStart = currentTime;
@@ -219,16 +253,39 @@ void loop() {
       }
     }
   } else {
-#if HAS_TWO_BUTTONS
-    // Short press detection: was pressed but not held long enough
-    if (buttonAPressStart > 0 && !buttonAHeld) {
-      LOG(LOG_CONTROL, "BtnA short press");
-      toggleWiFi();
-    }
-#endif
     buttonAPressStart = 0;
     buttonAHeld = false;
   }
+#else
+  if (M5.BtnA.isPressed()) {
+    if (!buttonAHeld) {
+      if (buttonAPressStart == 0) {
+        buttonAPressStart = currentTime;
+      } else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
+        // 3s hold: show help overlay
+        buttonAHeld = true;
+        LOG(LOG_CONTROL, "BtnA 3s hold — showing help");
+        showHelpOverlay();
+      }
+      // Note: 1s BLE toggle deferred to release to distinguish from 3s help
+    }
+  } else {
+    if (buttonAPressStart > 0 && !buttonAHeld) {
+      unsigned long held = currentTime - buttonAPressStart;
+      if (held >= LONG_PRESS_MS) {
+        // Released between 1-3s: toggle BLE scan
+        LOG(LOG_CONTROL, "BtnA long press");
+        onLongPress();
+      } else {
+        // Short press: toggle WiFi
+        LOG(LOG_CONTROL, "BtnA short press");
+        toggleWiFi();
+      }
+    }
+    buttonAPressStart = 0;
+    buttonAHeld = false;
+  }
+#endif
 
 #if HAS_TWO_BUTTONS
   // Button B: long press = switch GPS source

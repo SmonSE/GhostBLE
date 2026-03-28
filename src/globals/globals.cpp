@@ -43,6 +43,7 @@ bool isWebLogActive = false;
 bool is_connectable = false;
 bool bleScanEnabledWeb = false;
 bool wardrivingEnabled = false;
+bool helpOverlayVisible = false;
 
 std::atomic<int> susDevice{0};
 std::atomic<int> beaconsFound{0};
