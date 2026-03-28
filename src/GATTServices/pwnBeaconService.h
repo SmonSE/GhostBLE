@@ -16,6 +16,7 @@ struct PwnBeaconInfo {
   String face;
   String identity;
   String gattName;
+  String message;
 };
 
 class PwnBeaconServiceHandler {
@@ -25,7 +26,7 @@ public:
     // Parse PwnBeacon from advertisement service data
     static PwnBeaconInfo parseAdvertisement(const uint8_t* data, size_t len);
 
-    // Read full PwnBeacon GATT characteristics (face, identity, name)
+    // Read full PwnBeacon GATT characteristics (face, identity, name, message)
     static void readGATT(NimBLEClient* pClient, PwnBeaconInfo& info);
 
     // Format fingerprint as colon-separated hex string
@@ -38,6 +39,9 @@ public:
 
     // Update pwnd counters in advertisement data
     static void updateCounters(uint16_t pwndRun, uint16_t pwndTot);
+
+    // Update face expression in GATT characteristic
+    static void updateFace(const String& face);
 
     // Stop advertising
     static void stopAdvertising();

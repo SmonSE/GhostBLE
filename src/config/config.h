@@ -37,11 +37,15 @@ extern const char* PWNBEACON_SERVICE_UUID;
 extern const char* PWNBEACON_IDENTITY_CHAR_UUID;
 extern const char* PWNBEACON_FACE_CHAR_UUID;
 extern const char* PWNBEACON_NAME_CHAR_UUID;
+extern const char* PWNBEACON_SIGNAL_CHAR_UUID;
+extern const char* PWNBEACON_MESSAGE_CHAR_UUID;
 
 // ===== PwnBeacon Protocol Constants =====
 #define PWNBEACON_PROTOCOL_VERSION  0x01
 #define PWNBEACON_ADV_MAX_NAME_LEN  8
 #define PWNBEACON_FINGERPRINT_LEN   6
+#define PWNBEACON_FLAG_ADVERTISE    0x01
+#define PWNBEACON_FLAG_CONNECTABLE  0x02
 
 // ===== GPS Pins =====
 #if defined(CARDPUTER)
