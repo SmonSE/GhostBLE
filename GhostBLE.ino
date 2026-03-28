@@ -158,6 +158,7 @@ void setup() {
   drawThoughtBubble("HOLD M5 FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
 #endif
   vTaskDelay(pdMS_TO_TICKS(3000));
+  clearSpeechBubble();
 
   isWebLogActive = true;
   startWebLogServer();
