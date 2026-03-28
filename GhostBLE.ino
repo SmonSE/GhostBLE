@@ -151,6 +151,10 @@ void setup() {
   drawThoughtBubble("HI I'M NIBBLES", BUBBLE_X, THOUGHT_BUBBLE_Y);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
+  clearSpeechBubble();
+  drawThoughtBubble("HERE ARE THE CONTROLS!", BUBBLE_X, THOUGHT_BUBBLE_Y);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+
   // Show help overlay on startup — wait for any key to dismiss
   showHelpOverlay();
   while (helpOverlayVisible) {
