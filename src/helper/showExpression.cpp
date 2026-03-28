@@ -190,22 +190,22 @@ void showHelpOverlay() {
 #if HAS_KEYBOARD
   // Cardputer key bindings
   M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("ENTER  Screenshot");
+  M5.Lcd.print("ENTER    Screenshot");
   y += lineH;
   M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("FN     WiFi On/Off");
+  M5.Lcd.print("FN       WiFi On/Off");
   y += lineH;
   M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("TAB    Wardriving");
+  M5.Lcd.print("TAB      Wardriving");
   y += lineH;
   M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("DEL    GPS Source");
+  M5.Lcd.print("DEL      GPS Source");
   y += lineH;
   M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("H      This Help");
+  M5.Lcd.print("H        This Help");
   y += lineH;
   M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Hold   BLE Scan");
+  M5.Lcd.print("Hold G0  BLE Scan");
   y += lineH;
 #endif
 
