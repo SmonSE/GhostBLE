@@ -144,7 +144,7 @@ void clearSpeechBubble() {
     int srcX = BUBBLE_X - NIBBLES_FRONT_X;
     int srcY = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
 
-    int restoreH = BUBBLE_RECT_H + BUBBLE_TRI_H + 2;
+    int restoreH = BUBBLE_RECT_H + BUBBLE_TRI_H + 3;
 
     for (int row = 0; row < restoreH; row++) {
         M5.Lcd.pushImage(
