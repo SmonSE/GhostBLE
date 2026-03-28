@@ -259,6 +259,13 @@ void loop() {
   // Update GPS if wardriving is active
   if (wardrivingEnabled) {
     gpsManager.update();
+
+    // Refresh GPS status bar every second
+    static unsigned long lastGPSDisplayUpdate = 0;
+    if (currentTime - lastGPSDisplayUpdate >= 1000) {
+      lastGPSDisplayUpdate = currentTime;
+      showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    }
   }
 
   // NibBLEs speech system (idle mumbling)
