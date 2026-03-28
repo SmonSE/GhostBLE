@@ -74,6 +74,8 @@ String payload = "";
 String hexPayload = "";
 String spacedPayload = "";
 
+String deviceName = "";
+String appearanceName = "";
 String deviceInfoService = "";
 
 String lastConnectedDeviceInfo = "Noch kein Gerät verbunden.";

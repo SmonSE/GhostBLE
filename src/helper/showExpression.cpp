@@ -188,13 +188,18 @@ void showGlassesExpressionTask(void* parameter) {
     }
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    if (localName.length() > 0 && !isSpeechBubbleActive) {
+    // Fallback chain: localName → deviceName → appearanceName
+    String bubbleText = localName;
+    if (bubbleText.length() == 0) bubbleText = deviceName;
+    if (bubbleText.length() == 0) bubbleText = appearanceName;
+
+    if (bubbleText.length() > 0 && !isSpeechBubbleActive) {
       clearSpeechBubble();
-      if(localName.length() > 14) {
-        localName = localName.substring(0, 11) + "...";
+      if(bubbleText.length() > 14) {
+        bubbleText = bubbleText.substring(0, 11) + "...";
       }
 
-      drawBubble(localName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+      drawBubble(bubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
 
       vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
 
@@ -246,12 +251,17 @@ void showSadExpressionTask(void* parameter) {
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    if (localName.length() > 0 && !isSpeechBubbleActive) {
+    // Fallback chain: localName → deviceName → appearanceName
+    String sadBubbleText = localName;
+    if (sadBubbleText.length() == 0) sadBubbleText = deviceName;
+    if (sadBubbleText.length() == 0) sadBubbleText = appearanceName;
+
+    if (sadBubbleText.length() > 0 && !isSpeechBubbleActive) {
       clearSpeechBubble();
-      if(localName.length() > 14) {
-        localName = localName.substring(0, 11) + "...";
+      if(sadBubbleText.length() > 14) {
+        sadBubbleText = sadBubbleText.substring(0, 11) + "...";
       }
-      drawBubble(localName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+      drawBubble(sadBubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
     }
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
