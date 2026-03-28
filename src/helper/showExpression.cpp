@@ -327,17 +327,27 @@ void showThugLifeExpressionTask(void* parameter) {
 }
 
 static void drawStatusIcons(int x, int y) {
+  // Always show WiFi and Scan icons
+  drawWifiIcon(x, y, isWebLogActive);
+  drawScanIcon(x + 15, y + 2, bleScanEnabledWeb);
+
+  // GPS info alongside when wardriving is enabled
   if (wardrivingEnabled) {
     extern GPSManager gpsManager;
     bool hasFix = gpsManager.isValid();
-    drawGPSIcon(x, y, hasFix);
+    int gpsX = x + 30;
+
+    drawGPSIcon(gpsX, y, hasFix);
     uint16_t gpsColor = hasFix ? GREEN : RED;
-    M5.Lcd.setTextColor(gpsColor);
-    M5.Lcd.setCursor(x + 13, y + 2);
-    M5.Lcd.printf("SAT:%u %s", gpsManager.getSatellites(), hasFix ? "FIX" : "NO FIX");
+    M5.Lcd.setTextColor(gpsColor, 0x00C4);
+    M5.Lcd.setCursor(gpsX + 13, y + 2);
+    M5.Lcd.printf("%-5s SAT:%-2u %-6s",
+                  gpsManager.getSourceName(),
+                  gpsManager.getSatellites(),
+                  hasFix ? "FIX" : "NO FIX");
   } else {
-    drawWifiIcon(x, y, isWebLogActive);
-    drawScanIcon(x + 15, y + 2, bleScanEnabledWeb);
+    // Clear GPS area when wardriving is off
+    M5.Lcd.fillRect(x + 30, y, 180, 11, 0x00C4);
   }
 }
 
