@@ -108,10 +108,10 @@ extern const char* PWNBEACON_MESSAGE_CHAR_UUID;
 
 // ===== Screen Dimensions =====
 // Cardputer and M5StickC Plus 2: 240x135 (landscape rotation)
-// M5StickS3: 128x128
+// M5StickS3: 135x240
 #if defined(M5STICKS3)
-  #define SCREEN_W 128
-  #define SCREEN_H 128
+  #define SCREEN_W 240
+  #define SCREEN_H 135
 #else
   #define SCREEN_W 240
   #define SCREEN_H 135

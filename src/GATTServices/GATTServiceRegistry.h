@@ -24,7 +24,12 @@ public:
                                 const std::string& label,
                                 std::function<String(NimBLEClient*)> handler);
 
+    // Register a fallback handler for unregistered services.
+    // Called with the client and the service UUID string.
+    static void registerFallback(std::function<String(NimBLEClient*, std::string)> handler);
+
     // Run all registered handlers whose UUID was discovered on the client.
+    // Unregistered services are routed to the fallback handler (if set).
     // Returns combined log output from all matched handlers.
     static String runDiscoveredHandlers(NimBLEClient* pClient);
 
@@ -38,4 +43,5 @@ public:
 private:
     static std::vector<GATTServiceEntry>& registry();
     static std::map<std::string, String>& results();
+    static std::function<String(NimBLEClient*, std::string)>& fallback();
 };

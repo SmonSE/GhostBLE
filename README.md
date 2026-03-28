@@ -76,13 +76,13 @@ GhostBLE gamifies the scanning process with experience points:
 
 | Event | XP |
 |-------|-----|
-| Device discovered | +1 |
-| Manufacturer data decoded | +2 |
-| iBeacon parsed | +3 |
-| GATT connection success | +5 |
-| Characteristic subscription | +10 |
-| PwnBeacon detected | +10 |
-| Suspicious target found | +20 |
+| Device discovered | +0.1 |
+| Manufacturer data decoded | +0.2 |
+| iBeacon parsed | +0.3 |
+| GATT connection success | +0.5 |
+| Characteristic subscription | +1.0 |
+| PwnBeacon detected | +1.0 |
+| Suspicious target found | +2.0 |
 
 XP is persisted to the SD card and shown on the display.
 

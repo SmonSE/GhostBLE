@@ -45,7 +45,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   // 4. PWNBEACON (PwnGrid over BLE)
   if (serviceUuid == PWNBEACON_SERVICE_UUID) {
     LOG(LOG_TARGET, "👾 PWNBEACON detected (PwnGrid/Pwnagotchi)");
-    return true;
+    return false;
   }
 
   return false;

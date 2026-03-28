@@ -23,6 +23,7 @@ extern std::vector<std::string> nameList;
 extern bool scanIsRunning;
 
 // Global flags and strings
+extern bool isTarget;
 extern bool targetFound;
 extern std::atomic<bool> isGlassesTaskRunning;
 extern std::atomic<bool> isAngryTaskRunning;
@@ -30,6 +31,7 @@ extern std::atomic<bool> isSadTaskRunning;
 extern std::atomic<bool> isHappyTaskRunning;
 extern std::atomic<bool> isThugLifeTaskRunning;
 extern std::atomic<bool> isSpeechBubbleActive;
+extern std::atomic<bool> isChargingState;
 
 // FreeRTOS task handles for expression animations
 extern TaskHandle_t glassesTaskHandle;

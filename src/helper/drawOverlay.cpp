@@ -58,7 +58,7 @@ void drawBubble(const char* message, int x0, int y0,
                 uint16_t fillColor, uint16_t borderColor, uint16_t textColor) {
     int textLen = strlen(message);
     // Bubble width adapts to text (clamped to screen)
-    int bubbleW = min(BUBBLE_MAX_W, max(BUBBLE_MIN_W, textLen * CHAR_WIDTH_PX + BUBBLE_PADDING_PX));
+    int bubbleW = min(108, max(60, textLen * 6 + 16));
     int bubbleH = 22;
 
     // Draw rounded rect bubble
