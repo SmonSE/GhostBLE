@@ -42,6 +42,7 @@ extern bool isWebLogActive;
 extern bool is_connectable;
 extern bool bleScanEnabledWeb;
 extern bool wardrivingEnabled;
+extern bool helpOverlayVisible;
 
 extern std::atomic<int> susDevice;
 extern std::atomic<int> beaconsFound;

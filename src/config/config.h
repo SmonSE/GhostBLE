@@ -180,3 +180,4 @@ extern const char* PWNBEACON_NAME_CHAR_UUID;
 
 // ===== Button Long Press Threshold =====
 #define LONG_PRESS_MS          1000
+#define HELP_LONG_PRESS_MS     3000

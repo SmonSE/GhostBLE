@@ -172,6 +172,88 @@ void clearSpeechBubble() {
 }
 
 
+void showHelpOverlay() {
+  helpOverlayVisible = true;
+
+  M5.Lcd.fillScreen(0x00C4);
+  M5.Lcd.setTextSize(1);
+
+  // Title
+  M5.Lcd.setTextColor(GREEN, 0x00C4);
+  M5.Lcd.setCursor(80, 4);
+  M5.Lcd.print("-- CONTROLS --");
+
+  M5.Lcd.setTextColor(WHITE, 0x00C4);
+  int y = 22;
+  const int lineH = 13;
+
+#if HAS_KEYBOARD
+  // Cardputer key bindings
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("ENTER  Screenshot");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("FN     WiFi On/Off");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("TAB    Wardriving");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("DEL    GPS Source");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("H      This Help");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("Hold   BLE Scan");
+  y += lineH;
+#endif
+
+#if HAS_TWO_BUTTONS
+  // StickC / StickS3 button bindings
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("BtnA       WiFi On/Off");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("Hold BtnA  BLE Scan");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("BtnB       Wardriving");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("Hold BtnB  GPS Source");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("Hold M5 3s This Help");
+  y += lineH;
+#endif
+
+  // Footer
+  M5.Lcd.setTextColor(0x7BEF, 0x00C4);  // light gray
+  M5.Lcd.setCursor(40, SCREEN_H - 12);
+  M5.Lcd.print("press any key to close");
+}
+
+void dismissHelpOverlay() {
+  helpOverlayVisible = false;
+
+  // Redraw normal UI
+  M5.Lcd.fillScreen(0x00C4);
+  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT,
+              NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+
+  if (random(2) == 0) {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                  nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
+                  NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+  } else {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+                  NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+  }
+  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+}
+
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
@@ -332,12 +414,19 @@ static void drawStatusIcons(int x, int y) {
     bool hasFix = gpsManager.isValid();
     drawGPSIcon(x, y, hasFix);
     uint16_t gpsColor = hasFix ? GREEN : RED;
-    M5.Lcd.setTextColor(gpsColor);
+    M5.Lcd.setTextColor(gpsColor, 0x00C4);
     M5.Lcd.setCursor(x + 13, y + 2);
     M5.Lcd.printf("SAT:%u %s", gpsManager.getSatellites(), hasFix ? "FIX" : "NO FIX");
   } else {
     drawWifiIcon(x, y, isWebLogActive);
     drawScanIcon(x + 15, y + 2, bleScanEnabledWeb);
+    // Mode text labels so users know what the icons mean
+    M5.Lcd.setCursor(x + 25, y + 2);
+    M5.Lcd.setTextColor(isWebLogActive ? GREEN : 0x4208, 0x00C4);
+    M5.Lcd.print("WiFi");
+    M5.Lcd.setCursor(x + 52, y + 2);
+    M5.Lcd.setTextColor(bleScanEnabledWeb ? GREEN : 0x4208, 0x00C4);
+    M5.Lcd.print("Scan");
   }
 }
 
