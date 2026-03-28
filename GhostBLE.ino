@@ -152,29 +152,12 @@ void setup() {
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   clearSpeechBubble();
-  drawThoughtBubble("HERE ARE THE CONTROLS!", BUBBLE_X, THOUGHT_BUBBLE_Y);
-  vTaskDelay(pdMS_TO_TICKS(2000));
-
-  // Show help overlay on startup — wait for any key to dismiss
-  showHelpOverlay();
-  while (helpOverlayVisible) {
-    hardwareUpdate();
 #if HAS_KEYBOARD
-    if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
-      dismissHelpOverlay();
-      break;
-    }
-#endif
-#if defined(CARDPUTER)
-    if (M5Cardputer.BtnA.wasPressed()) { dismissHelpOverlay(); break; }
+  drawThoughtBubble("PRESS H FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
 #else
-    if (M5.BtnA.wasPressed()) { dismissHelpOverlay(); break; }
-#if HAS_TWO_BUTTONS
-    if (M5.BtnB.wasPressed()) { dismissHelpOverlay(); break; }
+  drawThoughtBubble("HOLD M5 FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
 #endif
-#endif
-    delay(20);
-  }
+  vTaskDelay(pdMS_TO_TICKS(3000));
 
   isWebLogActive = true;
   startWebLogServer();
