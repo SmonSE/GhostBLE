@@ -420,13 +420,6 @@ static void drawStatusIcons(int x, int y) {
   } else {
     drawWifiIcon(x, y, isWebLogActive);
     drawScanIcon(x + 15, y + 2, bleScanEnabledWeb);
-    // Mode text labels so users know what the icons mean
-    M5.Lcd.setCursor(x + 25, y + 2);
-    M5.Lcd.setTextColor(isWebLogActive ? GREEN : 0x4208, 0x00C4);
-    M5.Lcd.print("WiFi");
-    M5.Lcd.setCursor(x + 52, y + 2);
-    M5.Lcd.setTextColor(bleScanEnabledWeb ? GREEN : 0x4208, 0x00C4);
-    M5.Lcd.print("Scan");
   }
 }
 
