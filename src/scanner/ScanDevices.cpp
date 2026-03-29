@@ -106,7 +106,17 @@ void startBleScan() {
 void stopBleScan() {
   LOG(LOG_SCAN, "🛑 Stopping BLE scan...");
   NimBLEDevice::getScan()->stop();
+  if (scanTaskHandle != NULL) {
+    vTaskDelete(scanTaskHandle);
+    scanTaskHandle = NULL;
+  }
   scanIsRunning = false;
+}
+
+void scanForDevicesTask(void* parameter) {
+  scanForDevices();
+  scanTaskHandle = NULL;
+  vTaskDelete(NULL);
 }
 
 bool isPrintableText(const std::string& s)

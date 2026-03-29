@@ -328,12 +328,12 @@ void loop() {
   // NibBLEs speech system (idle mumbling)
   nibblesSpeechUpdate(currentTime);
 
-  // BLE scan loop
+  // BLE scan loop (non-blocking: runs in FreeRTOS task on core 0)
   if (bleScanEnabledWeb) {
     if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-      if (!targetFound && !scanIsRunning) {
+      if (!targetFound && !scanIsRunning && scanTaskHandle == NULL) {
         nibblesSpeechNotifyEvent();
-        scanForDevices();
+        xTaskCreatePinnedToCore(scanForDevicesTask, "BLEScan", 8192, NULL, 1, &scanTaskHandle, 0);
       } else {
         targetFound = false;
       }
