@@ -133,6 +133,7 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 | **FN** | Toggle WiFi AP and web server |
 | **TAB** | Toggle wardriving mode |
 | **DEL** | Switch GPS source (Grove / LoRa) |
+| **H** | Help Control |
 
 ### M5StickC Plus 2 / M5StickS3 (Buttons)
 
