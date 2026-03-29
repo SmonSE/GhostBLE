@@ -156,8 +156,8 @@ void nibblesSpeechUpdate(unsigned long currentTime) {
         return;
     }
 
-    // Don't show new speech if an animation task is running
-    if (isGlassesTaskRunning || isAngryTaskRunning || isSadTaskRunning) {
+    // Don't show new speech if an animation task or scan is running
+    if (isGlassesTaskRunning || isAngryTaskRunning || isSadTaskRunning || scanIsRunning) {
         return;
     }
 

@@ -114,7 +114,9 @@ void stopBleScan() {
 }
 
 void scanForDevicesTask(void* parameter) {
+  scanIsRunning = true;
   scanForDevices();
+  scanIsRunning = false;
   scanTaskHandle = NULL;
   vTaskDelete(NULL);
 }
