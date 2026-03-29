@@ -394,11 +394,11 @@ void onLongPress() {
 
 void toggleWiFi() {
   if (wifiStarted) {
+    logDisableTarget(TARGET_WEB);
+    isWebLogActive = false;
     LOG(LOG_CONTROL,"WIFI / WEB SERVER OFF");
     stopWebLogServer();
     wifiStarted = false;
-    isWebLogActive = false;
-    logDisableTarget(TARGET_WEB);
     if (random(2) == 0) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
