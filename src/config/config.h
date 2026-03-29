@@ -69,14 +69,6 @@ extern const char* PWNBEACON_MESSAGE_CHAR_UUID;
 
 #define GPS_BAUD_RATE 115200
 
-// ===== Device Name =====
-#define DEVICE_NAME "NibBLEs"
-#define DEVICE_FACE "(◕‿◕)"
-
-// ===== WiFi AP Settings =====
-#define WIFI_AP_SSID "GhostBLE"
-#define WIFI_AP_PASSWORD "ghostble123!"
-
 // ===== Time Intervals =====
 #define FACE_UPDATE_INTERVAL_MS 1000
 #define ADV_WINDOW_MS           5000   // Advertise for 5s between scan cycles

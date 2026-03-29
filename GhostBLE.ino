@@ -28,6 +28,7 @@
 #include "src/gps/GPSManager.h"
 #include "src/wardriving/WigleLogger.h"
 #include "src/helper/nibblesSpeech.h"
+#include "src/config/DeviceConfig.h"
 
 #include <WiFi.h>
 #include <AsyncTCP.h>
@@ -35,8 +36,6 @@
 
 // Reactive memory cleanup uses heap threshold + set size (see loop)
 
-const char* ap_ssid = WIFI_AP_SSID;
-const char* ap_password = WIFI_AP_PASSWORD;
 
 AsyncWebServer server(80);
 
@@ -48,6 +47,23 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len) {
   if (type == WS_EVT_CONNECT) {
     LOG(LOG_SYSTEM, "WebSocket client connected: " + String(client->id()));
+  } else if (type == WS_EVT_DATA) {
+    AwsFrameInfo *info = (AwsFrameInfo*)arg;
+    if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+      String msg = String((char*)data).substring(0, len);
+      if (msg.startsWith("SET_")) {
+        String key = msg.substring(4, msg.indexOf(':'));
+        String value = msg.substring(msg.indexOf(':') + 1);
+        value.trim();
+        if (value.length() > 0) {
+          bool ok = deviceConfig.set(key, value);
+          if (ok) {
+            client->text(key + "_SET:" + value);
+            LOG(LOG_CONTROL, key + " changed to: " + value);
+          }
+        }
+      }
+    }
   }
 }
 
@@ -119,12 +135,14 @@ void setup() {
   M5.Lcd.fillScreen(0x00C4);
   delay(250);
 
-  NimBLEDevice::init(DEVICE_NAME);
+  deviceConfig.begin();
+
+  NimBLEDevice::init(deviceConfig.getName().c_str());
   registerGATTServiceHandlers();
   LOG(LOG_SYSTEM, "BLE initialized successfully.");
 
   // Start PwnBeacon advertising so other devices can discover us
-  PwnBeaconServiceHandler::startAdvertising(DEVICE_NAME, DEVICE_FACE);
+  PwnBeaconServiceHandler::startAdvertising(deviceConfig.getName(), deviceConfig.getFace());
 
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
@@ -446,7 +464,7 @@ void startWebLogServer() {
   if (wifiStarted) return;  // Don't start twice
   WiFi.mode(WIFI_AP);
   LOG(LOG_CONTROL, "   - SoftAP started? YES");
-  WiFi.softAP(ap_ssid, ap_password);
+  WiFi.softAP(deviceConfig.getWifiSSID().c_str(), deviceConfig.getWifiPassword().c_str());
   LOG(LOG_CONTROL, "   - Access Point IP: " + WiFi.softAPIP().toString());
 
   // Setup WebSocket events and handlers BEFORE starting the server
