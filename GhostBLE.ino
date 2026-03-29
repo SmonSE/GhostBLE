@@ -329,7 +329,7 @@ void loop() {
   nibblesSpeechUpdate(currentTime);
 
   // BLE scan loop
-  if (bleScanEnabledWeb) {
+  if (bleScanEnabled) {
     if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
       if (!targetFound && !scanIsRunning) {
         nibblesSpeechNotifyEvent();
@@ -369,9 +369,9 @@ void loop() {
 }
 
 void onLongPress() {
-  bleScanEnabledWeb = !bleScanEnabledWeb;
+  bleScanEnabled = !bleScanEnabled;
 
-  if (bleScanEnabledWeb) {
+  if (bleScanEnabled) {
     LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
     ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
@@ -468,6 +468,11 @@ void toggleWardriving() {
   wardrivingEnabled = !wardrivingEnabled;
 
   if (wardrivingEnabled) {
+    if (!bleScanEnabled) {
+      bleScanEnabled = true;
+      LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED (wardriving)");
+      ws.textAll("BLE_SCAN_ON");
+    }
     logEnableCategory(LOG_GPS);
     gpsManager.begin(GPSSource::GROVE);
     wigleLogger.begin();

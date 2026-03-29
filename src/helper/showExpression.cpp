@@ -411,7 +411,7 @@ void showThugLifeExpressionTask(void* parameter) {
 static void drawStatusIcons(int x, int y) {
   // Always show WiFi and Scan icons
   drawWifiIcon(x, y, isWebLogActive);
-  drawScanIcon(x + 15, y + 2, bleScanEnabledWeb);
+  drawScanIcon(x + 15, y + 2, bleScanEnabled);
 
   // GPS info alongside when wardriving is enabled
   if (wardrivingEnabled) {

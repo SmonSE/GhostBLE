@@ -728,6 +728,9 @@ void scanForDevices() {
         }
       }
       // Wardriving: log device with GPS coordinates
+      if (wardrivingEnabled) {
+        gpsManager.update();  // Refresh GPS data so age stays < 5000ms
+      }
       if (wardrivingEnabled && gpsManager.isValid()) {
         wigleLogger.logDevice(
             address,
