@@ -41,3 +41,18 @@ bool DeviceConfig::set(const String& key, const String& value) {
     LOG(LOG_CONTROL, key + " set: " + (key == "PASS" ? "***" : value));
     return true;
 }
+
+String DeviceConfig::handleMessage(const String& msg) {
+    if (!msg.startsWith("SET_")) return "";
+
+    int colonIdx = msg.indexOf(':');
+    if (colonIdx < 0) return "";
+
+    String key = msg.substring(4, colonIdx);
+    String value = msg.substring(colonIdx + 1);
+    value.trim();
+
+    if (value.length() == 0 || !set(key, value)) return "";
+
+    return key + "_SET:" + value;
+}

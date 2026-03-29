@@ -11,6 +11,7 @@ public:
     String getWifiSSID() const;
     String getWifiPassword() const;
     bool set(const String& key, const String& value);
+    String handleMessage(const String& msg);
 
 private:
     Preferences prefs;

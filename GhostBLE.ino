@@ -51,17 +51,9 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
       String msg = String((char*)data).substring(0, len);
-      if (msg.startsWith("SET_")) {
-        String key = msg.substring(4, msg.indexOf(':'));
-        String value = msg.substring(msg.indexOf(':') + 1);
-        value.trim();
-        if (value.length() > 0) {
-          bool ok = deviceConfig.set(key, value);
-          if (ok) {
-            client->text(key + "_SET:" + value);
-            LOG(LOG_CONTROL, key + " changed to: " + value);
-          }
-        }
+      String reply = deviceConfig.handleMessage(msg);
+      if (reply.length() > 0) {
+        client->text(reply);
       }
     }
   }
