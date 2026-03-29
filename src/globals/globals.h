@@ -40,7 +40,7 @@ extern TaskHandle_t sadTaskHandle;
 extern SemaphoreHandle_t taskMutex;
 extern bool isWebLogActive;
 extern bool is_connectable;
-extern bool bleScanEnabledWeb;
+extern bool bleScanEnabled;
 extern bool wardrivingEnabled;
 extern bool helpOverlayVisible;
 

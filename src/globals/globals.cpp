@@ -41,7 +41,7 @@ SemaphoreHandle_t taskMutex = NULL;
 
 bool isWebLogActive = false;
 bool is_connectable = false;
-bool bleScanEnabledWeb = false;
+bool bleScanEnabled = false;
 bool wardrivingEnabled = false;
 bool helpOverlayVisible = false;
 
