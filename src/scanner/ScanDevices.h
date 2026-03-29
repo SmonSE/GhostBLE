@@ -10,6 +10,7 @@
 void startBleScan();
 void stopBleScan();
 void scanForDevices();
+void scanForDevicesTask(void* parameter);
 void showGlassesExpressionTask(void* parameter);
 void showAngryExpressionTask(void* parameter);
 void showSadExpressionTask(void* parameter);
