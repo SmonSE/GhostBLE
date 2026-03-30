@@ -32,17 +32,27 @@ bool DeviceConfig::set(const String& key, const String& value) {
     }
 
     prefs.begin("ghostble", false);
-    if (key == "NAME") prefs.putString("name", name);
-    else if (key == "FACE") prefs.putString("face", face);
-    else if (key == "SSID") prefs.putString("wifiSSID", wifiSSID);
-    else if (key == "PASS") prefs.putString("wifiPass", wifiPassword);
+    size_t written = 0;
+    if (key == "NAME") written = prefs.putString("name", name);
+    else if (key == "FACE") written = prefs.putString("face", face);
+    else if (key == "SSID") written = prefs.putString("wifiSSID", wifiSSID);
+    else if (key == "PASS") written = prefs.putString("wifiPass", wifiPassword);
     prefs.end();
+
+    if (written == 0) {
+        LOG(LOG_CONTROL, "NVS write FAILED for " + key);
+        return false;
+    }
 
     LOG(LOG_CONTROL, key + " set: " + (key == "PASS" ? "***" : value));
     return true;
 }
 
 String DeviceConfig::handleMessage(const String& msg) {
+    if (msg == "GET_CONFIG") {
+        return "CONFIG:" + name + "\t" + face + "\t" + wifiSSID;
+    }
+
     if (!msg.startsWith("SET_")) return "";
 
     int colonIdx = msg.indexOf(':');

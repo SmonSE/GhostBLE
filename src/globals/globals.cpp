@@ -91,6 +91,7 @@ const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>NibBLEs Logger</title>
   <style>
     body {
@@ -157,10 +158,16 @@ const char index_html[] PROGMEM = R"rawliteral(
 
       socket.onopen = () => {
         logElement.textContent += "WebSocket connected. Press BtnG0 to TOGGLE BLE Scan\n";
+        socket.send('GET_CONFIG');
       };
 
       socket.onmessage = (event) => {
-        if (event.data.includes('_SET:')) {
+        if (event.data.startsWith('CONFIG:')) {
+          const parts = event.data.substring(7).split('\t');
+          if (parts[0]) document.getElementById('cfg-name').value = parts[0];
+          if (parts[1]) document.getElementById('cfg-face').value = parts[1];
+          if (parts[2]) document.getElementById('cfg-ssid').value = parts[2];
+        } else if (event.data.includes('_SET:')) {
           statusEl.textContent = 'Saved! Reboot to apply.';
         } else {
           logElement.textContent += event.data + "\n";

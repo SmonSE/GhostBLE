@@ -50,7 +50,8 @@ void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
   } else if (type == WS_EVT_DATA) {
     AwsFrameInfo *info = (AwsFrameInfo*)arg;
     if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-      String msg = String((char*)data).substring(0, len);
+      data[len] = '\0';
+      String msg = String((char*)data);
       String reply = deviceConfig.handleMessage(msg);
       if (reply.length() > 0) {
         client->text(reply);
