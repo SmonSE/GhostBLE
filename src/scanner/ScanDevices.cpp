@@ -98,16 +98,51 @@ float estimateDistance(int txPower, int rssi) {
   return distance;
 }
 
+// ===== Non-blocking scan state machine =====
+
+ScanState scanState = SCAN_IDLE;
+
+// Scan results held between states
+static NimBLEScanResults scanResults;
+static int scanDeviceIndex = 0;
+static unsigned long advWaitStart = 0;
+
+// Scan-complete callback (runs in NimBLE context — only set a flag)
+class ScanCallbacks : public NimBLEScanCallbacks {
+  void onScanEnd(const NimBLEScanResults& results, int reason) override {
+    // Signal main loop that scan is done; results are read via getResults()
+    scanState = SCAN_ADV_WAIT;
+  }
+};
+
+static ScanCallbacks scanCb;
+
+void initBleScan() {
+  NimBLEScan* pScan = NimBLEDevice::getScan();
+  pScan->setScanCallbacks(&scanCb);
+  pScan->setActiveScan(true);
+  pScan->setInterval(BLE_SCAN_INTERVAL);
+  pScan->setWindow(BLE_SCAN_WINDOW);
+}
+
 void startBleScan() {
   LOG(LOG_SCAN, "▶️ Starting BLE scan...");
-  scanIsRunning = false;   // allow scanForDevices() to trigger
+  scanState = SCAN_IDLE;
+  scanIsRunning = false;
 }
 
 void stopBleScan() {
   LOG(LOG_SCAN, "🛑 Stopping BLE scan...");
   NimBLEDevice::getScan()->stop();
+  scanState = SCAN_IDLE;
   scanIsRunning = false;
 }
+
+// Process one discovered device (called from updateBleScan)
+static void processOneDevice(const NimBLEAdvertisedDevice* device);
+
+// Log scan summary after all devices processed
+static void logScanSummary();
 
 bool isPrintableText(const std::string& s)
 {
@@ -347,7 +382,8 @@ static bool connectAndReadGATT(
   targetConnects++;
   xpManager.awardXP(0.5);  // +0.5 XP: GATT connection success
 
-  if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+  if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+    isGlassesTaskRunning = true;  // Set before task creation to prevent race
     if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1) != pdPASS) {
       LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
       isGlassesTaskRunning = false;
@@ -428,8 +464,8 @@ static bool connectAndReadGATT(
       LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
       vTaskDelay(pdMS_TO_TICKS(2000));
-      if (!isAngryTaskRunning) {
-        //LOG(LOG_SYSTEM, "showAngryExpressionTask");
+      if (!isAngryTaskRunning && !isGlassesTaskRunning && !isSadTaskRunning) {
+        isAngryTaskRunning = true;  // Set before task creation to prevent race
         if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1) != pdPASS) {
           LOG(LOG_SYSTEM, "Failed to create AngryFace task");
           isAngryTaskRunning = false;
@@ -472,304 +508,352 @@ static void handleExposureResult(
   deviceInfoService.clear();
 }
 
-void scanForDevices() {
+// ---------------------------------------------------------------------------
+// updateBleScan() — non-blocking state machine, call from loop()
+// ---------------------------------------------------------------------------
+void updateBleScan() {
+  switch (scanState) {
 
+    case SCAN_IDLE: {
+      // Start a new non-blocking scan
+      NimBLEScan* pScan = NimBLEDevice::getScan();
+      if (pScan == nullptr) {
+        LOG(LOG_SYSTEM, "Scan instance creation failed.");
+        return;
+      }
+      pScan->clearResults();
+      nibblesSpeechNotifyEvent();
+
+      if (!pScan->start(3, false, true)) {  // 3s, not continue, restart
+        LOG(LOG_SYSTEM, "Failed to start BLE scan");
+        return;
+      }
+      scanState = SCAN_ACTIVE;
+      scanIsRunning = true;
+      LOG(LOG_SCAN, "📡 Scan Is Running");
+      break;
+    }
+
+    case SCAN_ACTIVE:
+      // NimBLE is scanning in the background; onScanEnd callback will
+      // transition to SCAN_ADV_WAIT. Nothing to do here.
+      break;
+
+    case SCAN_ADV_WAIT: {
+      // Scan just finished — restart PwnBeacon advertising, then wait
+      static bool advRestarted = false;
+      if (!advRestarted) {
+        PwnBeaconServiceHandler::updateCounters(targetConnects, allSpottedDevice);
+        advWaitStart = millis();
+        advRestarted = true;
+      }
+      if (millis() - advWaitStart >= ADV_WINDOW_MS) {
+        // Adv window done — prepare to process results
+        advRestarted = false;
+        NimBLEScan* pScan = NimBLEDevice::getScan();
+        scanResults = pScan->getResults();
+        scanDeviceIndex = 0;
+
+        if (scanResults.getCount() == 0) {
+          LOG(LOG_SCAN, "NO DEVICES FOUND");
+          scanIsRunning = false;
+          scanState = SCAN_IDLE;
+        } else {
+          LOG(LOG_SCAN, "📲 DEVICES FOUND: " + String(scanResults.getCount()));
+          nibblesSpeechNotifyEvent();
+          scanState = SCAN_PROCESSING;
+        }
+      }
+      break;
+    }
+
+    case SCAN_PROCESSING: {
+      // Process one device per loop() call
+      if (scanDeviceIndex < scanResults.getCount()) {
+        const NimBLEAdvertisedDevice* device = scanResults.getDevice(scanDeviceIndex);
+        processOneDevice(device);
+        scanDeviceIndex++;
+      }
+
+      // Check if all devices processed (or scan was stopped)
+      if (scanDeviceIndex >= scanResults.getCount() || scanState == SCAN_IDLE) {
+        if (scanState != SCAN_IDLE) {
+          logScanSummary();
+          xpManager.save();
+          scanIsRunning = false;
+          scanState = SCAN_IDLE;
+        }
+      }
+      break;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// processOneDevice() — process a single discovered BLE device
+// ---------------------------------------------------------------------------
+static void processOneDevice(const NimBLEAdvertisedDevice* device) {
   DeviceInfo dev;
   uint16_t manufacturerId = 0;
   String manufacturerName = "Unknown";
 
-  NimBLEScan* pScan = NimBLEDevice::getScan();
+  bool hasCustomService = false;
+  bool hasSensitiveCharacteristic = false;
+  bool hasWeakName = false;
+  bool isUnknownManufacturer = false;
+  bool isSecurityOrTrackingDevice = false;
+  bool noAuthOrEncryption = false;
+  bool hasWritableChar = false;
+  bool encrypted = false;
+  bool proprietary = false;
 
-  if (pScan == nullptr) {
-    LOG(LOG_SYSTEM, "Scan instance creation failed.");
+  bool isIBeacon = false;
+  IBeaconInfo beacon;
+  bool isPwnBeaconDevice = false;
+  PwnBeaconInfo pwnBeacon;
+  int devSessionId = 0;
+
+  if (!parseDeviceInfo(device, manufacturerId, manufacturerName,
+                       isIBeacon, beacon, isPwnBeaconDevice, pwnBeacon,
+                       hasCustomService, hasWeakName,
+                       isUnknownManufacturer, isSecurityOrTrackingDevice,
+                       proprietary, devSessionId)) {
     return;
   }
 
-  pScan->clearResults();        // 1. Clear previous results first
-  pScan->setActiveScan(true);   // 2. Set active scan mode
-  pScan->setInterval(BLE_SCAN_INTERVAL);
-  pScan->setWindow(BLE_SCAN_WINDOW);
-  delay(100);                   // Optional small delay for stability
+  String devTag = "[#" + String(devSessionId) + "] ";
 
-  NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
+  // --- Payload direkt holen ---
+  std::vector<uint8_t> payloadVec = device->getPayload();
+  std::string advData(payloadVec.begin(), payloadVec.end());
 
-  // Restart PwnBeacon advertising (scanning stops it)
-  PwnBeaconServiceHandler::updateCounters(targetConnects, allSpottedDevice);
+  // -------- Advertisement Flags Analysis (AD Type 0x01) --------
+  std::vector<SecurityFinding> advFindings;
+  analyzeAdvFlags(payloadVec, dev, advFindings);
+  if (!advFindings.empty()) {
+    String advSecLog = devTag + "Adv Security Flags:";
+    for (auto& f : advFindings) {
+      advSecLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
+    }
+    LOG(LOG_SECURITY, advSecLog);
+  }
 
-  // Let other devices discover us before processing results
-  vTaskDelay(pdMS_TO_TICKS(ADV_WINDOW_MS));
+  handleDevicePrivacy(
+      std::string(localName.c_str()),
+      addrStr,
+      advData,
+      payloadVec,
+      is_connectable,
+      dev,
+      devTag
+  );
 
-  if (results.getCount() == 0) {
-     LOG(LOG_SCAN, "NO DEVICES FOUND");
-  } else {
-    LOG(LOG_SCAN, "📲 DEVICES FOUND: " + String(results.getCount()));
-    nibblesSpeechNotifyEvent();
+  // for else ExposureAnalyzer
+  dev.name = localName.c_str();
+  dev.manufacturer = manufacturerName.c_str();
 
-    scanIsRunning = true;
+  isTarget = false;
+  allSpottedDevice++;
+  xpManager.awardXP(0.1);  // +0.1 XP: new device discovered
 
-    LOG(LOG_SCAN, "📡 Scan Is Running");
+  // Tesla detection from advertisement name (no connection needed)
+  if (isTeslaDevice(localName, "")) {
+    LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected: " + localName);
+    String teslaMsg = "Tesla found!";
+    if (localName.startsWith("Tesla ")) {
+      teslaMsg = localName;
+    }
+    nibblesSpeechShowCustom(teslaMsg.c_str());
+  }
 
-    for (int i = 0; i < results.getCount(); i++) {
-      const NimBLEAdvertisedDevice *device = results.getDevice(i);
+  // Print device connectability
+  if (!is_connectable) {
+    LOG(LOG_SCAN, devTag + "Device is not connectable");
+  }
 
-      // New risk scoring system
-      bool hasCustomService = false;
-      bool hasSensitiveCharacteristic = false;
-      bool hasWeakName = false;
-      bool isUnknownManufacturer = false;
-      bool isSecurityOrTrackingDevice = false;
-      bool noAuthOrEncryption = false;
-      bool hasWritableChar = false;
-      bool encrypted = false;
-      bool proprietary = false;
+  pClient = NimBLEDevice::createClient();
+  delay(200);
 
-      bool isIBeacon = false;
-      IBeaconInfo beacon;
-      bool isPwnBeaconDevice = false;
-      PwnBeaconInfo pwnBeacon;
-      int devSessionId = 0;
+  if (!pClient) {
+    LOG(LOG_SYSTEM, "⚠️ Failed to create BLE client, skipping device.");
+    return;
+  }
 
-      if (!parseDeviceInfo(device, manufacturerId, manufacturerName,
-                           isIBeacon, beacon, isPwnBeaconDevice, pwnBeacon,
-                           hasCustomService, hasWeakName,
-                           isUnknownManufacturer, isSecurityOrTrackingDevice,
-                           proprietary, devSessionId)) {
-        continue;
-      }
+  if (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES) {
+    LOG(LOG_SYSTEM, "Clearing seenDevices (size: " + String(seenDevices.size()) +
+                    ", free heap: " + String(ESP.getFreeHeap()) + ")");
+    seenDevices.clear();
+    deviceSessionMap.clear();
+  }
 
-      String devTag = "[#" + String(devSessionId) + "] ";
+  pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
 
-      // --- Payload direkt holen ---
-      std::vector<uint8_t> payloadVec = device->getPayload();
-      std::string advData(payloadVec.begin(), payloadVec.end());
+  {
+    if (is_connectable && pClient->connect(*device)) {
+      if (pClient->discoverAttributes()) {
 
-      // -------- Advertisement Flags Analysis (AD Type 0x01) --------
-      std::vector<SecurityFinding> advFindings;
-      analyzeAdvFlags(payloadVec, dev, advFindings);
-      if (!advFindings.empty()) {
-        String advSecLog = devTag + "Adv Security Flags:";
-        for (auto& f : advFindings) {
-          advSecLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
-        }
-        LOG(LOG_SECURITY, advSecLog);
-      }
+        bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag);
 
-      handleDevicePrivacy(
-          std::string(localName.c_str()),
-          addrStr,
-          advData,
-          payloadVec,
-          is_connectable,
-          dev,
-          devTag
-      );
-
-      // for else ExposureAnalyzer
-      dev.name = localName.c_str();
-      dev.manufacturer = manufacturerName.c_str();
-
-      isTarget = false;
-      allSpottedDevice++;
-      xpManager.awardXP(0.1);  // +0.1 XP: new device discovered
-
-      // Tesla detection from advertisement name (no connection needed)
-      if (isTeslaDevice(localName, "")) {
-        LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected: " + localName);
-        String teslaMsg = "Tesla found!";
-        if (localName.startsWith("Tesla ")) {
-          teslaMsg = localName;
-        }
-        nibblesSpeechShowCustom(teslaMsg.c_str());
-      }
-
-      // Print device connectability
-      if (!is_connectable) {
-        LOG(LOG_SCAN, devTag + "Device is not connectable");
-      }
-
-      pClient = NimBLEDevice::createClient();
-      vTaskDelay(pdMS_TO_TICKS(200));
-
-      if (!pClient) { // Make sure the client was created
-        LOG(LOG_SYSTEM, "⚠️ Failed to create BLE client, skipping device.");
-        continue;
-      }
-
-      if (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES) {
-        LOG(LOG_SYSTEM, "Clearing seenDevices (size: " + String(seenDevices.size()) +
-                        ", free heap: " + String(ESP.getFreeHeap()) + ")");
-        seenDevices.clear();
-        deviceSessionMap.clear();
-      }
-
-      pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
-
-      {
-        if (is_connectable && pClient->connect(*device)) {
-          if (pClient->discoverAttributes()) {
-
-            bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag);
-
-            if (!targetDetected) {
-              String infoLog = devTag + "Device Infos\n"
-                  "   Adress:  " + address + "\n"
-                  "   Name:    " + localName + "\n"
-                  "   Manuf.:  " + manufacturerName + "\n"
-                  "   Device Name: ";
-              for (const auto& names : nameList) {
-                if (!names.empty()) {
-                  infoLog += "\n     - ";
-                  infoLog += names.c_str();
-                }
-              }
-              float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - rssi) / (float)RSSI_CONSTANT);
-              infoLog += "\n   Distance: " + String(distance, 2) + " m";
-              infoLog += "\n   RSSI: " + String(rssi);
-              LOG(LOG_SCAN, infoLog);
-
-              // iBeacon info
-              if (isIBeacon) {
-                beaconsFound++;
-                float beaconDistance = estimateDistance(beacon.txPower, rssi);
-                LOG(LOG_BEACON, devTag + "Beacon Type: iBeacon\n"
-                    "   UUID:  " + String(beacon.uuid.c_str()) + "\n"
-                    "   Major: " + String(beacon.major) + "\n"
-                    "   Minor: " + String(beacon.minor) + "\n"
-                    "   Beacon Distance: ~" + String(beaconDistance, 2) + " m\n"
-                    "   RSSI: " + String(rssi) + "\n"
-                    "   Manufacturer: " + manufacturerName);
-              }
-
-              // PwnBeacon info + GATT read
-              if (isPwnBeaconDevice) {
-                // Read full identity, face, and name via GATT
-                PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
-
-                LOG(LOG_BEACON, devTag + "Beacon Type: PwnBeacon (PwnGrid/BLE)\n"
-                    "   Name:     " + pwnBeacon.name + "\n"
-                    "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
-                    "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
-                    "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
-                    "   RSSI:     " + String(rssi));
-              }
-
-              // -------- Security Analysis --------
-              SecurityResult secResult = analyzeDeviceSecurity(pClient, dev);
-
-              dev.connectionEncrypted = secResult.connectionEncrypted;
-              dev.hasWritableChars = (secResult.writableCharCount > 0);
-              dev.writableCharCount = secResult.writableCharCount;
-              dev.hasDFUService = secResult.hasDFUService;
-              dev.hasUARTService = secResult.hasUARTService;
-              dev.hasSensitiveUnencrypted = secResult.hasSensitiveServiceUnencrypted;
-              dev.deviceFingerprint = secResult.deviceFingerprint;
-
-              if (!secResult.findings.empty() || !secResult.deviceFingerprint.empty()) {
-                String secLog = devTag + "Security Findings:";
-                for (auto& f : secResult.findings) {
-                  secLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
-                  if (f.severity == "HIGH") highFindingsCount++;
-                  if (f.category == "SENSITIVE_UNENCRYPTED") unencryptedSensitiveCount++;
-                  if (f.category == "WRITABLE_NO_AUTH") writableNoAuthCount++;
-                }
-                if (!secResult.deviceFingerprint.empty()) {
-                  secLog += "\n   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str());
-                }
-                LOG(LOG_SECURITY, secLog);
-              }
-
-              // Analyze exposure and log results
-              std::string mac = device->getAddress().toString().c_str();
-
-              MACType macType = getMACType(mac);
-
-              dev.mac = mac;
-              dev.name = localName.c_str();
-              dev.manufacturer = manufacturerName.c_str();
-
-              dev.isConnectable = is_connectable;
-
-              dev.isPublicMac = (macType == MACType::Public);
-              dev.hasStaticMac = (macType == MACType::Public || macType == MACType::StaticRandom);
-              dev.hasRotatingMac = isRotatingMAC(macType);
-
-              dev.hasName = !dev.name.empty();
-              dev.hasManufacturerData = !dev.manufacturer.empty();
-              dev.hasCleartextData = containsCleartext(payloadVec);
-
-              ExposureResult exposure = analyzeExposure(dev);
-
-              handleExposureResult(exposure, manufacturerName, devTag);
+        if (!targetDetected) {
+          String infoLog = devTag + "Device Infos\n"
+              "   Adress:  " + address + "\n"
+              "   Name:    " + localName + "\n"
+              "   Manuf.:  " + manufacturerName + "\n"
+              "   Device Name: ";
+          for (const auto& names : nameList) {
+            if (!names.empty()) {
+              infoLog += "\n     - ";
+              infoLog += names.c_str();
             }
           }
-        } else {
-            String reason;
-            if (rssi <= -85) {
-                reason = "📡 Too far / weak signal";
-            } else if (rssi <= -75) {
-                reason = "📡 Weak signal or unstable";
-            } else {
-                reason = "🔒 Likely protected (pairing required)";
+          float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - rssi) / (float)RSSI_CONSTANT);
+          infoLog += "\n   Distance: " + String(distance, 2) + " m";
+          infoLog += "\n   RSSI: " + String(rssi);
+          LOG(LOG_SCAN, infoLog);
+
+          // iBeacon info
+          if (isIBeacon) {
+            beaconsFound++;
+            float beaconDistance = estimateDistance(beacon.txPower, rssi);
+            LOG(LOG_BEACON, devTag + "Beacon Type: iBeacon\n"
+                "   UUID:  " + String(beacon.uuid.c_str()) + "\n"
+                "   Major: " + String(beacon.major) + "\n"
+                "   Minor: " + String(beacon.minor) + "\n"
+                "   Beacon Distance: ~" + String(beaconDistance, 2) + " m\n"
+                "   RSSI: " + String(rssi) + "\n"
+                "   Manufacturer: " + manufacturerName);
+          }
+
+          // PwnBeacon info + GATT read
+          if (isPwnBeaconDevice) {
+            PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
+
+            LOG(LOG_BEACON, devTag + "Beacon Type: PwnBeacon (PwnGrid/BLE)\n"
+                "   Name:     " + pwnBeacon.name + "\n"
+                "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
+                "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
+                "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
+                "   RSSI:     " + String(rssi));
+          }
+
+          // -------- Security Analysis --------
+          SecurityResult secResult = analyzeDeviceSecurity(pClient, dev);
+
+          dev.connectionEncrypted = secResult.connectionEncrypted;
+          dev.hasWritableChars = (secResult.writableCharCount > 0);
+          dev.writableCharCount = secResult.writableCharCount;
+          dev.hasDFUService = secResult.hasDFUService;
+          dev.hasUARTService = secResult.hasUARTService;
+          dev.hasSensitiveUnencrypted = secResult.hasSensitiveServiceUnencrypted;
+          dev.deviceFingerprint = secResult.deviceFingerprint;
+
+          if (!secResult.findings.empty() || !secResult.deviceFingerprint.empty()) {
+            String secLog = devTag + "Security Findings:";
+            for (auto& f : secResult.findings) {
+              secLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
+              if (f.severity == "HIGH") highFindingsCount++;
+              if (f.category == "SENSITIVE_UNENCRYPTED") unencryptedSensitiveCount++;
+              if (f.category == "WRITABLE_NO_AUTH") writableNoAuthCount++;
             }
-            LOG(LOG_GATT, devTag + reason + ": " + address + " (" + String(rssi) + " dBm)");
-
-            dev.isConnectable = false;
-            ExposureResult exposure = analyzeExposure(dev);
-
-            if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-              //LOG(LOG_SYSTEM, "showSadExpressionTask");
-              if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1) != pdPASS) {
-                LOG(LOG_SYSTEM, "Failed to create SadFace task");
-                isSadTaskRunning = false;
-              }
+            if (!secResult.deviceFingerprint.empty()) {
+              secLog += "\n   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str());
             }
+            LOG(LOG_SECURITY, secLog);
+          }
 
-            handleExposureResult(exposure, manufacturerName, devTag);
+          // Analyze exposure and log results
+          std::string mac = device->getAddress().toString().c_str();
+
+          MACType macType = getMACType(mac);
+
+          dev.mac = mac;
+          dev.name = localName.c_str();
+          dev.manufacturer = manufacturerName.c_str();
+
+          dev.isConnectable = is_connectable;
+
+          dev.isPublicMac = (macType == MACType::Public);
+          dev.hasStaticMac = (macType == MACType::Public || macType == MACType::StaticRandom);
+          dev.hasRotatingMac = isRotatingMAC(macType);
+
+          dev.hasName = !dev.name.empty();
+          dev.hasManufacturerData = !dev.manufacturer.empty();
+          dev.hasCleartextData = containsCleartext(payloadVec);
+
+          ExposureResult exposure = analyzeExposure(dev);
+
+          handleExposureResult(exposure, manufacturerName, devTag);
         }
       }
-      // Wardriving: log device with GPS coordinates
-      if (wardrivingEnabled) {
-        gpsManager.update();  // Refresh GPS data so age stays < 5000ms
-      }
-      if (wardrivingEnabled && gpsManager.isValid()) {
-        wigleLogger.logDevice(
-            address,
-            localName.length() > 0 ? localName : String(dev.name.c_str()),
-            rssi,
-            gpsManager.getLatitude(),
-            gpsManager.getLongitude(),
-            gpsManager.getAltitude(),
-            gpsManager.getHDOP(),
-            gpsManager.getTimestamp()
-        );
-      }
+    } else {
+        String reason;
+        if (rssi <= -85) {
+            reason = "📡 Too far / weak signal";
+        } else if (rssi <= -75) {
+            reason = "📡 Weak signal or unstable";
+        } else {
+            reason = "🔒 Likely protected (pairing required)";
+        }
+        LOG(LOG_GATT, devTag + reason + ": " + address + " (" + String(rssi) + " dBm)");
 
-      if (pClient != nullptr && pClient->isConnected()) {
-        pClient->disconnect();
-      }
-      NimBLEDevice::deleteClient(pClient);
-      pClient = nullptr;
-    }
-    LOG(LOG_SCAN, "##########################");
-    LOG(LOG_SCAN, "Scan Summary:");
-    LOG(LOG_SCAN, "Sniffed:    " + String(targetConnects));
-    LOG(LOG_SCAN, "Spotted:    " + String(allSpottedDevice));
-    LOG(LOG_SCAN, "Suspicious: " + String(susDevice));
-    LOG(LOG_SCAN, "Beacons:    " + String(beaconsFound));
-    LOG(LOG_SCAN, "PwnBeacons: " + String(pwnbeaconsFound));
-    if (highFindingsCount > 0 || unencryptedSensitiveCount > 0 || writableNoAuthCount > 0) {
-      LOG(LOG_SCAN, "--- Security ---");
-      LOG(LOG_SCAN, "HIGH findings:   " + String((int)highFindingsCount));
-      LOG(LOG_SCAN, "Sensitive unenc: " + String((int)unencryptedSensitiveCount));
-      LOG(LOG_SCAN, "Writable noAuth: " + String((int)writableNoAuthCount));
-    }
-    if (wardrivingEnabled) {
-      LOG(LOG_SCAN, "WiGLE log:  " + String(wigleLogger.getLoggedCount()));
-      wigleLogger.flush();
-    }
-    LOG(LOG_SCAN, "##########################\n");
+        dev.isConnectable = false;
+        ExposureResult exposure = analyzeExposure(dev);
 
-    xpManager.save();
-    scanIsRunning = false;
+        if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+          isSadTaskRunning = true;  // Set before task creation to prevent race
+          if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1) != pdPASS) {
+            LOG(LOG_SYSTEM, "Failed to create SadFace task");
+            isSadTaskRunning = false;
+          }
+        }
+
+        handleExposureResult(exposure, manufacturerName, devTag);
+    }
   }
+  // Wardriving: log device with GPS coordinates
+  if (wardrivingEnabled) {
+    gpsManager.update();  // Refresh GPS data so age stays < 5000ms
+  }
+  if (wardrivingEnabled && gpsManager.isValid()) {
+    wigleLogger.logDevice(
+        address,
+        localName.length() > 0 ? localName : String(dev.name.c_str()),
+        rssi,
+        gpsManager.getLatitude(),
+        gpsManager.getLongitude(),
+        gpsManager.getAltitude(),
+        gpsManager.getHDOP(),
+        gpsManager.getTimestamp()
+    );
+  }
+
+  if (pClient != nullptr && pClient->isConnected()) {
+    pClient->disconnect();
+  }
+  NimBLEDevice::deleteClient(pClient);
+  pClient = nullptr;
+}
+
+// ---------------------------------------------------------------------------
+// logScanSummary() — called after all devices in a cycle are processed
+// ---------------------------------------------------------------------------
+static void logScanSummary() {
+  LOG(LOG_SCAN, "##########################");
+  LOG(LOG_SCAN, "Scan Summary:");
+  LOG(LOG_SCAN, "Sniffed:    " + String(targetConnects));
+  LOG(LOG_SCAN, "Spotted:    " + String(allSpottedDevice));
+  LOG(LOG_SCAN, "Suspicious: " + String(susDevice));
+  LOG(LOG_SCAN, "Beacons:    " + String(beaconsFound));
+  LOG(LOG_SCAN, "PwnBeacons: " + String(pwnbeaconsFound));
+  if (highFindingsCount > 0 || unencryptedSensitiveCount > 0 || writableNoAuthCount > 0) {
+    LOG(LOG_SCAN, "--- Security ---");
+    LOG(LOG_SCAN, "HIGH findings:   " + String((int)highFindingsCount));
+    LOG(LOG_SCAN, "Sensitive unenc: " + String((int)unencryptedSensitiveCount));
+    LOG(LOG_SCAN, "Writable noAuth: " + String((int)writableNoAuthCount));
+  }
+  if (wardrivingEnabled) {
+    LOG(LOG_SCAN, "WiGLE log:  " + String(wigleLogger.getLoggedCount()));
+    wigleLogger.flush();
+  }
+  LOG(LOG_SCAN, "##########################\n");
 }

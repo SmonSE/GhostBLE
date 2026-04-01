@@ -299,7 +299,8 @@ void showGlassesExpressionTask(void* parameter) {
     clearSpeechBubble();
 
     isGlassesTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
+    glassesTaskHandle = NULL;
+    vTaskDelete(NULL);
 }
 
 
@@ -308,9 +309,8 @@ void showAngryExpressionTask(void* parameter) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
 
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // HappyLeft and Happy should be shown randomly to add some variety
     if (random(2) == 0) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
@@ -321,9 +321,8 @@ void showAngryExpressionTask(void* parameter) {
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     isAngryTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
-
-    clearSpeechBubble();
+    angryTaskHandle = NULL;
+    vTaskDelete(NULL);
 }
 
 
@@ -346,9 +345,8 @@ void showSadExpressionTask(void* parameter) {
       drawBubble(sadBubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
     }
 
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // HappyLeft and Happy should be shown randomly to add some variety
     if (random(2) == 0) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
@@ -358,10 +356,11 @@ void showSadExpressionTask(void* parameter) {
     }
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    isSadTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
-
     clearSpeechBubble();
+
+    isSadTaskRunning = false;
+    sadTaskHandle = NULL;
+    vTaskDelete(NULL);
 }
 
 void showHappyExpressionTask(void* parameter) {

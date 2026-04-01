@@ -132,6 +132,7 @@ void setup() {
 
   NimBLEDevice::init(deviceConfig.getName().c_str());
   registerGATTServiceHandlers();
+  initBleScan();
   LOG(LOG_SYSTEM, "BLE initialized successfully.");
 
   // Start PwnBeacon advertising so other devices can discover us
@@ -227,12 +228,20 @@ void loop() {
         Screenshot::capture();
       }
       if (status.fn) {
-        LOG(LOG_CONTROL, "FN pressed");
-        toggleWiFi();
+        if (scanIsRunning) {
+          LOG(LOG_CONTROL, "FN blocked — scan active");
+        } else {
+          LOG(LOG_CONTROL, "FN pressed");
+          toggleWiFi();
+        }
       }
       if (status.tab){
-        LOG(LOG_CONTROL, "TAB pressed");
-        toggleWardriving();
+        if (scanIsRunning) {
+          LOG(LOG_CONTROL, "TAB blocked — scan active");
+        } else {
+          LOG(LOG_CONTROL, "TAB pressed");
+          toggleWardriving();
+        }
       }
       if (status.del){
         LOG(LOG_CONTROL, "DEL pressed");
@@ -289,8 +298,12 @@ void loop() {
         onLongPress();
       } else {
         // Short press: toggle WiFi
-        LOG(LOG_CONTROL, "BtnA short press");
-        toggleWiFi();
+        if (scanIsRunning) {
+          LOG(LOG_CONTROL, "BtnA short press blocked — scan active");
+        } else {
+          LOG(LOG_CONTROL, "BtnA short press");
+          toggleWiFi();
+        }
       }
     }
     buttonAPressStart = 0;
@@ -315,8 +328,12 @@ void loop() {
   } else {
     // Short press detection: was pressed but not held long enough
     if (buttonBPressStart > 0 && !buttonBHeld) {
-      LOG(LOG_CONTROL, "BtnB short press");
-      toggleWardriving();
+      if (scanIsRunning) {
+        LOG(LOG_CONTROL, "BtnB short press blocked — scan active");
+      } else {
+        LOG(LOG_CONTROL, "BtnB short press");
+        toggleWardriving();
+      }
     }
     buttonBPressStart = 0;
     buttonBHeld = false;
@@ -339,17 +356,9 @@ void loop() {
   // NibBLEs speech system (idle mumbling)
   nibblesSpeechUpdate(currentTime);
 
-  // BLE scan loop
+  // BLE scan loop (non-blocking state machine)
   if (bleScanEnabled) {
-    if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-      if (!targetFound && !scanIsRunning) {
-        nibblesSpeechNotifyEvent();
-        scanForDevices();
-      } else {
-        targetFound = false;
-      }
-      lastFaceUpdate = currentTime;
-    }
+    updateBleScan();
   }
 
   // Reactive memory cleanup: clear seenDevices when heap runs low or set grows too large,
