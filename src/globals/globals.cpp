@@ -23,6 +23,7 @@ std::vector<std::string> uuidList;
 std::vector<std::string> nameList;
 
 bool scanIsRunning = false;
+std::atomic<bool> scanStopRequested{false};
 
 bool isTarget = false;
 bool targetFound = false;

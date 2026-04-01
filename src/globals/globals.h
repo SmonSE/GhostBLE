@@ -21,6 +21,7 @@ extern std::vector<std::string> uuidList;
 extern std::vector<std::string> nameList;
 
 extern bool scanIsRunning;
+extern std::atomic<bool> scanStopRequested;
 
 // Global flags and strings
 extern bool isTarget;

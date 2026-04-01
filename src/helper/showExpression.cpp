@@ -299,6 +299,7 @@ void showGlassesExpressionTask(void* parameter) {
     clearSpeechBubble();
 
     isGlassesTaskRunning = false;
+    glassesTaskHandle = NULL;
     vTaskDelete(NULL);  // Task selbst beenden
 }
 
@@ -321,9 +322,8 @@ void showAngryExpressionTask(void* parameter) {
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     isAngryTaskRunning = false;
+    angryTaskHandle = NULL;
     vTaskDelete(NULL);  // Task selbst beenden
-
-    clearSpeechBubble();
 }
 
 
@@ -359,6 +359,7 @@ void showSadExpressionTask(void* parameter) {
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     isSadTaskRunning = false;
+    sadTaskHandle = NULL;
     vTaskDelete(NULL);  // Task selbst beenden
 
     clearSpeechBubble();

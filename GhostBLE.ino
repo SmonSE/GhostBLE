@@ -227,12 +227,20 @@ void loop() {
         Screenshot::capture();
       }
       if (status.fn) {
-        LOG(LOG_CONTROL, "FN pressed");
-        toggleWiFi();
+        if (scanIsRunning) {
+          LOG(LOG_CONTROL, "FN blocked — scan active");
+        } else {
+          LOG(LOG_CONTROL, "FN pressed");
+          toggleWiFi();
+        }
       }
       if (status.tab){
-        LOG(LOG_CONTROL, "TAB pressed");
-        toggleWardriving();
+        if (scanIsRunning) {
+          LOG(LOG_CONTROL, "TAB blocked — scan active");
+        } else {
+          LOG(LOG_CONTROL, "TAB pressed");
+          toggleWardriving();
+        }
       }
       if (status.del){
         LOG(LOG_CONTROL, "DEL pressed");
@@ -289,8 +297,12 @@ void loop() {
         onLongPress();
       } else {
         // Short press: toggle WiFi
-        LOG(LOG_CONTROL, "BtnA short press");
-        toggleWiFi();
+        if (scanIsRunning) {
+          LOG(LOG_CONTROL, "BtnA short press blocked — scan active");
+        } else {
+          LOG(LOG_CONTROL, "BtnA short press");
+          toggleWiFi();
+        }
       }
     }
     buttonAPressStart = 0;
@@ -315,8 +327,12 @@ void loop() {
   } else {
     // Short press detection: was pressed but not held long enough
     if (buttonBPressStart > 0 && !buttonBHeld) {
-      LOG(LOG_CONTROL, "BtnB short press");
-      toggleWardriving();
+      if (scanIsRunning) {
+        LOG(LOG_CONTROL, "BtnB short press blocked — scan active");
+      } else {
+        LOG(LOG_CONTROL, "BtnB short press");
+        toggleWardriving();
+      }
     }
     buttonBPressStart = 0;
     buttonBHeld = false;

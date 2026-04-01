@@ -105,16 +105,34 @@ void startBleScan() {
 
 void stopBleScan() {
   LOG(LOG_SCAN, "🛑 Stopping BLE scan...");
+  scanStopRequested = true;
   NimBLEDevice::getScan()->stop();
+
+  // Wait for the scan task to self-terminate (max 5s)
+  int waitMs = 0;
+  while (scanTaskHandle != NULL && waitMs < 5000) {
+    vTaskDelay(pdMS_TO_TICKS(50));
+    waitMs += 50;
+  }
+
+  // If task didn't exit in time, force-delete as last resort
   if (scanTaskHandle != NULL) {
     vTaskDelete(scanTaskHandle);
     scanTaskHandle = NULL;
   }
+
   scanIsRunning = false;
+  scanStopRequested = false;
+
+  // Reset expression flags that may have been left set by killed tasks
+  isGlassesTaskRunning = false;
+  isAngryTaskRunning = false;
+  isSadTaskRunning = false;
 }
 
 void scanForDevicesTask(void* parameter) {
   scanIsRunning = true;
+  scanStopRequested = false;
   scanForDevices();
   scanIsRunning = false;
   scanTaskHandle = NULL;
@@ -505,6 +523,8 @@ void scanForDevices() {
 
   NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
 
+  if (scanStopRequested) return;
+
   // Restart PwnBeacon advertising (scanning stops it)
   PwnBeaconServiceHandler::updateCounters(targetConnects, allSpottedDevice);
 
@@ -522,6 +542,8 @@ void scanForDevices() {
     LOG(LOG_SCAN, "📡 Scan Is Running");
 
     for (int i = 0; i < results.getCount(); i++) {
+      if (scanStopRequested) break;
+
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
 
       // New risk scoring system
@@ -598,6 +620,8 @@ void scanForDevices() {
       if (!is_connectable) {
         LOG(LOG_SCAN, devTag + "Device is not connectable");
       }
+
+      if (scanStopRequested) break;
 
       pClient = NimBLEDevice::createClient();
       vTaskDelay(pdMS_TO_TICKS(200));
