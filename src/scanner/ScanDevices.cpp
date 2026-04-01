@@ -107,6 +107,7 @@ void stopBleScan() {
   LOG(LOG_SCAN, "🛑 Stopping BLE scan...");
   NimBLEDevice::getScan()->stop();
   scanIsRunning = false;
+  bleScanEnabled = false;
 }
 
 bool isPrintableText(const std::string& s)
@@ -348,7 +349,7 @@ static bool connectAndReadGATT(
   xpManager.awardXP(0.5);  // +0.5 XP: GATT connection success
 
   if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-    if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1) != pdPASS) {
+    if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 2, &glassesTaskHandle, 1) != pdPASS) {
       LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
       isGlassesTaskRunning = false;
     }
@@ -473,7 +474,6 @@ static void handleExposureResult(
 }
 
 void scanForDevices() {
-
   DeviceInfo dev;
   uint16_t manufacturerId = 0;
   String manufacturerName = "Unknown";

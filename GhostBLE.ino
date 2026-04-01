@@ -33,15 +33,25 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 
-
-// Reactive memory cleanup uses heap threshold + set size (see loop)
-
+TaskHandle_t scanTaskHandle = NULL;
 
 AsyncWebServer server(80);
 
 #if HAS_KEYBOARD
 auto keys = M5Cardputer.Keyboard.keysState();
 #endif
+
+void scanTask(void* parameter) {
+  while (true) {
+
+    if (bleScanEnabled && !scanIsRunning) {
+      nibblesSpeechNotifyEvent();
+      scanForDevices();
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(200)); // wichtig für Stabilität
+  }
+}
 
 void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
                AwsEventType type, void *arg, uint8_t *data, size_t len) {
@@ -187,6 +197,9 @@ void setup() {
 
   // To Update Wifi Logo to ON
   showFindingCounter(targetConnects, susDevice, leakedCounter);
+
+  // Start Scan Task (FreeRTOS)
+  xTaskCreatePinnedToCore(scanTask, "ScanTask", 12000, NULL, 1, &scanTaskHandle, 1);
 }
 
 
@@ -226,15 +239,15 @@ void loop() {
         LOG(LOG_CONTROL, "ENTER pressed");
         Screenshot::capture();
       }
-      if (status.fn) {
+      if (status.fn && !bleScanEnabled) {
         LOG(LOG_CONTROL, "FN pressed");
         toggleWiFi();
       }
-      if (status.tab){
+      if (status.tab && !bleScanEnabled){
         LOG(LOG_CONTROL, "TAB pressed");
         toggleWardriving();
       }
-      if (status.del){
+      if (status.del && !bleScanEnabled){
         LOG(LOG_CONTROL, "DEL pressed");
         switchGPSSource();
       }
@@ -338,19 +351,6 @@ void loop() {
 
   // NibBLEs speech system (idle mumbling)
   nibblesSpeechUpdate(currentTime);
-
-  // BLE scan loop
-  if (bleScanEnabled) {
-    if (currentTime - lastFaceUpdate > FACE_UPDATE_INTERVAL_MS) {
-      if (!targetFound && !scanIsRunning) {
-        nibblesSpeechNotifyEvent();
-        scanForDevices();
-      } else {
-        targetFound = false;
-      }
-      lastFaceUpdate = currentTime;
-    }
-  }
 
   // Reactive memory cleanup: clear seenDevices when heap runs low or set grows too large,
   // rather than on a fixed timer. This avoids both premature clearing (losing dedup)
