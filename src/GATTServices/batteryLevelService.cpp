@@ -56,7 +56,7 @@ String BatteryServiceHandler::readBatteryLevel(NimBLEClient* pClient) {
   // ---------- Human readable output ----------
   batteryStr  = "🔋 Battery: " + String(level) + "%\n";
   batteryStr += "   Access: Public (standard BLE)\n";
-  batteryStr += "   Control: Read-only\n";
+  batteryStr += "   Control: Read-only";
 
   LOG(LOG_GATT,batteryStr);
 

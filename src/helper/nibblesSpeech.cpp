@@ -92,6 +92,7 @@ void nibblesSpeechBegin() {
 }
 
 void drawThoughtBubble(const char* message, int x0, int y0) {
+    clearSpeechBubble();
     drawBubble(message, x0, y0, 0x2444, 0x07E0, 0x07E0);  // dark green fill, green border, green text
 }
 
@@ -170,7 +171,7 @@ void nibblesSpeechUpdate(unsigned long currentTime) {
     }
 
     // Check if idle long enough
-    if (currentTime - lastEventTime >= IDLE_TIMEOUT_MS) {
+    if (currentTime - lastEventTime >= IDLE_TIMEOUT_MS && !bleScanEnabled) {
         const char* msg = pickRandom(idleMessages, idleMessageCount);
         showMumble(msg);
         // Reset idle timer so next idle speech waits again
