@@ -358,11 +358,11 @@ void showSadExpressionTask(void* parameter) {
     }
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
+    clearSpeechBubble();
+
     isSadTaskRunning = false;
     sadTaskHandle = NULL;
     vTaskDelete(NULL);  // Task selbst beenden
-
-    clearSpeechBubble();
 }
 
 void showHappyExpressionTask(void* parameter) {

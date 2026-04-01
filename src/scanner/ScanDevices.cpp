@@ -108,26 +108,18 @@ void stopBleScan() {
   scanStopRequested = true;
   NimBLEDevice::getScan()->stop();
 
-  // Wait for the scan task to self-terminate (max 5s)
+  // Wait for the scan task to self-terminate (max 6s to cover connect timeout + margin)
   int waitMs = 0;
-  while (scanTaskHandle != NULL && waitMs < 5000) {
-    vTaskDelay(pdMS_TO_TICKS(50));
-    waitMs += 50;
+  while (scanTaskHandle != NULL && waitMs < 6000) {
+    vTaskDelay(pdMS_TO_TICKS(100));
+    waitMs += 100;
   }
 
-  // If task didn't exit in time, force-delete as last resort
-  if (scanTaskHandle != NULL) {
-    vTaskDelete(scanTaskHandle);
-    scanTaskHandle = NULL;
-  }
-
+  // Never force-delete — if the task is still running it holds mutexes or
+  // NimBLE state that would crash on vTaskDelete(). Just reset our flags
+  // and let it finish on its own; scanForDevicesTask() will clean up.
   scanIsRunning = false;
   scanStopRequested = false;
-
-  // Reset expression flags that may have been left set by killed tasks
-  isGlassesTaskRunning = false;
-  isAngryTaskRunning = false;
-  isSadTaskRunning = false;
 }
 
 void scanForDevicesTask(void* parameter) {
@@ -377,7 +369,8 @@ static bool connectAndReadGATT(
   targetConnects++;
   xpManager.awardXP(0.5);  // +0.5 XP: GATT connection success
 
-  if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+  if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+    isGlassesTaskRunning = true;  // Set before task creation to prevent race
     if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 0, &glassesTaskHandle, 1) != pdPASS) {
       LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
       isGlassesTaskRunning = false;
@@ -458,8 +451,8 @@ static bool connectAndReadGATT(
       LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
       nibblesSpeechShow(SpeechContext::SUSPICIOUS);
       vTaskDelay(pdMS_TO_TICKS(2000));
-      if (!isAngryTaskRunning) {
-        //LOG(LOG_SYSTEM, "showAngryExpressionTask");
+      if (!isAngryTaskRunning && !isGlassesTaskRunning && !isSadTaskRunning) {
+        isAngryTaskRunning = true;  // Set before task creation to prevent race
         if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1) != pdPASS) {
           LOG(LOG_SYSTEM, "Failed to create AngryFace task");
           isAngryTaskRunning = false;
@@ -626,6 +619,14 @@ void scanForDevices() {
       pClient = NimBLEDevice::createClient();
       vTaskDelay(pdMS_TO_TICKS(200));
 
+      if (scanStopRequested) {
+        if (pClient != nullptr) {
+          NimBLEDevice::deleteClient(pClient);
+          pClient = nullptr;
+        }
+        break;
+      }
+
       if (!pClient) { // Make sure the client was created
         LOG(LOG_SYSTEM, "⚠️ Failed to create BLE client, skipping device.");
         continue;
@@ -753,7 +754,7 @@ void scanForDevices() {
             ExposureResult exposure = analyzeExposure(dev);
 
             if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
-              //LOG(LOG_SYSTEM, "showSadExpressionTask");
+              isSadTaskRunning = true;  // Set before task creation to prevent race
               if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1) != pdPASS) {
                 LOG(LOG_SYSTEM, "Failed to create SadFace task");
                 isSadTaskRunning = false;
