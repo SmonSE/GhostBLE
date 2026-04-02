@@ -27,6 +27,9 @@
 extern GPSManager gpsManager;
 extern WigleLogger wigleLogger;
 
+#define RSSI_IGNORE_THRESHOLD   -85   // komplett ignorieren
+#define RSSI_CONNECT_THRESHOLD  -75   // nur darüber wird connected
+
 const char* teslaMsgs[] = {
   "Oh! Tesla!",
   "Ooo Tesla!",
@@ -82,6 +85,20 @@ IBeaconInfo parseIBeacon(const std::string& mfg) {
   info.valid = true;
 
   return info;
+}
+
+bool heartTaskRunning = false;
+
+void heartTask(void* param) {
+    heartTaskRunning = true;
+
+    drawHeart(30, 30, TFT_RED);
+    drawHeart(45, 40, TFT_RED);
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    clearHearts();
+
+    heartTaskRunning = false;
+    vTaskDelete(NULL);
 }
 
 float estimateDistance(int txPower, int rssi) {
@@ -173,6 +190,13 @@ static bool parseDeviceInfo(
   localName = device->haveName() ? String(device->getName().c_str()) : "";
   rssi = device->getRSSI();
   is_connectable = device->isConnectable();
+
+  // --- EARLY FILTER ---
+  if (rssi <= RSSI_IGNORE_THRESHOLD) {
+    //LOG(LOG_SCAN, devTag + String("📡 Ignoring far device: ")
+    //    + String(addrStr.c_str()) + " (" + String(rssi) + " dBm)");
+    return false;
+  }
   
   // Dedupe: Insert into seenDevices immediately (before any connect attempt)
   if (seenDevices.find(addrStr) != seenDevices.end()) {
@@ -200,7 +224,9 @@ static bool parseDeviceInfo(
 
   if (device->haveManufacturerData()) {
     std::string mfg = device->getManufacturerData();
-    manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
+    if (mfg.size() >= 2) {
+        manufacturerId = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
+    }
     manufacturerName = getManufacturerName(manufacturerId);
     xpManager.awardXP(2.0);  // +2.0 XP: manufacturer data decoded
 
@@ -258,10 +284,9 @@ static bool parseDeviceInfo(
         isPwnBeacon = true;
         pwnbeaconsFound++;
         // Add heart emoji here to change expresion of nibBLEs when a PwnBeacon is detected.
-        drawHeart(30, 30, TFT_RED);
-        drawHeart(45, 40, TFT_RED);
-        delay(3000);
-        clearHearts();
+        if (!heartTaskRunning) {
+            xTaskCreatePinnedToCore(heartTask, "Heart", 2048, NULL, 1, NULL, 1);
+        }
         LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected (service UUID)!");
       }
     }
@@ -491,7 +516,7 @@ void scanForDevices() {
   pScan->setWindow(BLE_SCAN_WINDOW);
   delay(100);                   // Optional small delay for stability
 
-  NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
+  NimBLEScanResults results = pScan->getResults(2000);  // Scan 2 seconds to get scan results -> maybe check 2sec for smaller list and earlier new scan
 
   // Restart PwnBeacon advertising (scanning stops it)
   PwnBeaconServiceHandler::updateCounters(targetConnects, allSpottedDevice);
@@ -587,6 +612,17 @@ void scanForDevices() {
         LOG(LOG_SCAN, devTag + "Device is not connectable");
       }
 
+      int currentRSSI = device->getRSSI();
+      bool shouldConnect = (currentRSSI >= RSSI_CONNECT_THRESHOLD);
+
+      // If signal is weak, skip connection but still log the device info
+      if (!shouldConnect) {
+        //LOG(LOG_SCAN, devTag + "📡 Weak signal → scan only (no connect): "
+        //    + String(currentRSSI) + " dBm");
+
+        continue;
+      }
+
       pClient = NimBLEDevice::createClient();
       vTaskDelay(pdMS_TO_TICKS(200));
 
@@ -605,7 +641,7 @@ void scanForDevices() {
       pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
 
       {
-        if (is_connectable && pClient->connect(*device)) {
+        if (is_connectable && shouldConnect && pClient->connect(*device)) {
           if (pClient->discoverAttributes()) {
 
             bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag);
