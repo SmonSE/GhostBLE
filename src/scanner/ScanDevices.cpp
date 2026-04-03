@@ -27,8 +27,8 @@
 extern GPSManager gpsManager;
 extern WigleLogger wigleLogger;
 
-#define RSSI_IGNORE_THRESHOLD   -85   // komplett ignorieren
-#define RSSI_CONNECT_THRESHOLD  -75   // nur darüber wird connected
+#define RSSI_IGNORE_THRESHOLD   -99   // komplett ignorieren
+#define RSSI_CONNECT_THRESHOLD  -95   // nur darüber wird connected
 
 const char* teslaMsgs[] = {
   "Oh! Tesla!",
@@ -193,14 +193,14 @@ static bool parseDeviceInfo(
 
   // --- EARLY FILTER ---
   if (rssi <= RSSI_IGNORE_THRESHOLD) {
-    //LOG(LOG_SCAN, devTag + String("📡 Ignoring far device: ")
-    //    + String(addrStr.c_str()) + " (" + String(rssi) + " dBm)");
+    LOG(LOG_SCAN, devTag + String("📡 Ignoring far device: ")
+        + String(addrStr.c_str()) + " (" + String(rssi) + " dBm)");
     return false;
   }
   
   // Dedupe: Insert into seenDevices immediately (before any connect attempt)
   if (seenDevices.find(addrStr) != seenDevices.end()) {
-    //LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
+    LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
     return false;
   }
   seenDevices.insert(addrStr);
@@ -516,7 +516,7 @@ void scanForDevices() {
   pScan->setWindow(BLE_SCAN_WINDOW);
   delay(100);                   // Optional small delay for stability
 
-  NimBLEScanResults results = pScan->getResults(2000);  // Scan 2 seconds to get scan results -> maybe check 2sec for smaller list and earlier new scan
+  NimBLEScanResults results = pScan->getResults(3000);  // Scan 3 seconds to get scan results -> maybe check 3sec for smaller list and earlier new scan
 
   // Restart PwnBeacon advertising (scanning stops it)
   PwnBeaconServiceHandler::updateCounters(targetConnects, allSpottedDevice);
@@ -617,8 +617,8 @@ void scanForDevices() {
 
       // If signal is weak, skip connection but still log the device info
       if (!shouldConnect) {
-        //LOG(LOG_SCAN, devTag + "📡 Weak signal → scan only (no connect): "
-        //    + String(currentRSSI) + " dBm");
+        LOG(LOG_SCAN, devTag + "📡 Weak signal → scan only (no connect): "
+            + String(currentRSSI) + " dBm");
 
         continue;
       }
