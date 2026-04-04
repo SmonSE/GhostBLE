@@ -29,6 +29,8 @@
 #include "src/wardriving/WigleLogger.h"
 #include "src/helper/nibblesSpeech.h"
 #include "src/config/DeviceConfig.h"
+#include "src/config/scanConfig.h"
+#include "src/helper/showScanIcon.h"
 
 #include <WiFi.h>
 #include <AsyncTCP.h>
@@ -189,6 +191,8 @@ void setup() {
 
   nibblesSpeechBegin();
 
+  showScanIcon();
+
   scanIsRunning = false;
 
   delay(1000);
@@ -256,6 +260,14 @@ void loop() {
         if (key == 'h' || key == 'H') {
           LOG(LOG_CONTROL, "H pressed — showing help");
           showHelpOverlay();
+          return;
+        }
+        // Scan Mode Toggle
+        if ((key == 'm' || key == 'M')) {
+          LOG(LOG_CONTROL, "M pressed — toggling scan mode");
+          if(!bleScanEnabled) {
+            toggleScanMode();
+          }
           return;
         }
       }
@@ -388,6 +400,7 @@ void onLongPress() {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     delay(1500);
+    clearScanIcon();
     logNewBoot();
     delay(500);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
