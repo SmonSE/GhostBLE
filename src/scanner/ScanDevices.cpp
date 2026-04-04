@@ -22,13 +22,12 @@
 #include "../gps/GPSManager.h"
 #include "../wardriving/WigleLogger.h"
 #include "../helper/nibblesSpeech.h"
+#include "../config/scanConfig.h"
 
 // Wardriving instances (defined in GhostBLE.ino)
 extern GPSManager gpsManager;
 extern WigleLogger wigleLogger;
 
-#define RSSI_IGNORE_THRESHOLD   -99   // komplett ignorieren
-#define RSSI_CONNECT_THRESHOLD  -95   // nur darüber wird connected
 
 const char* teslaMsgs[] = {
   "Oh! Tesla!",
