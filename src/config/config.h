@@ -112,11 +112,11 @@ extern const char* PWNBEACON_MESSAGE_CHAR_UUID;
 
 // Speech/thought bubble geometry
 #if defined(M5STICKS3)
-  #define BUBBLE_X               80
-  #define BUBBLE_MAX_W           45
+  #define BUBBLE_X             125
+  #define BUBBLE_MAX_W         108
 #else
-  #define BUBBLE_X               125
-  #define BUBBLE_MAX_W           108
+  #define BUBBLE_X             125
+  #define BUBBLE_MAX_W         108
 #endif
 #define BUBBLE_RECT_Y          15
 #define BUBBLE_RECT_W          108
@@ -145,22 +145,22 @@ extern const char* PWNBEACON_MESSAGE_CHAR_UUID;
 
 // Bottom bar
 #if defined(M5STICKS3)
-  #define BOTTOM_BAR_Y           120
-  #define XP_BAR_W              50
+  #define BOTTOM_BAR_Y         127
+  #define XP_BAR_W             70
 #else
-  #define BOTTOM_BAR_Y           127
-  #define XP_BAR_W              70
+  #define BOTTOM_BAR_Y         127
+  #define XP_BAR_W             70
 #endif
 #define LEVEL_TEXT_X           5
-#define XP_BAR_X              38
+#define XP_BAR_X               38
 #define XP_BAR_H               7
 #define TITLE_TEXT_X           112
 
 // Battery icon position
 #if defined(M5STICKS3)
-  #define BATTERY_ICON_X        105
+  #define BATTERY_ICON_X       215
 #else
-  #define BATTERY_ICON_X        215
+  #define BATTERY_ICON_X       215
 #endif
 
 // Border/outline color for white speech bubbles
