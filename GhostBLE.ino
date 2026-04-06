@@ -127,7 +127,9 @@ void setup() {
   Serial.begin(115200);
   delay(500);
 
+#if defined(CARDPUTER) 
   Screenshot::init();
+#endif
 
   M5.Lcd.setSwapBytes(true);
 
@@ -208,7 +210,9 @@ void setup() {
 
 
 void loop() {
+#if defined(CARDPUTER)  
   Screenshot::handle();
+#endif  
   ws.cleanupClients();  // Important for websocket memory management
   hardwareUpdate();
   unsigned long currentTime = millis();
