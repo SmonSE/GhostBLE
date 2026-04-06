@@ -205,6 +205,9 @@ void showHelpOverlay() {
   M5.Lcd.print("Btn H        This Help");
   y += lineH;
   M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("Btn M        Scan Mode");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
   M5.Lcd.print("Hold BtnG0   BLE Scan");
   y += lineH;
 #endif
