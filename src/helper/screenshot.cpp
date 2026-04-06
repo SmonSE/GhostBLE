@@ -17,6 +17,7 @@ void Screenshot::init() {
         Serial.println("[Screenshot] SD init failed!");
     } else {
         Serial.println("[Screenshot] SD ready");
+        SD.mkdir("/GhostBLE");
     }
 }
 
