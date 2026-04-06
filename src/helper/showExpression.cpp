@@ -16,6 +16,7 @@
 #include "../images/nibblesSleep.h"
 #include "../gps/GPSManager.h"
 
+
 static float smoothedVoltage = 0;
 static int displayedPercent = 100;
 static bool lastChargingState = false;
@@ -35,14 +36,14 @@ static int voltageToPercent(int mv) {
 
 // --- Icon drawing functions ---
 
-static void drawWifiIcon(int x, int y, bool active) {
+void drawWifiIcon(int x, int y, bool active) {
   uint16_t color = active ? GREEN : 0x4208;
   M5.Lcd.fillRect(x,     y + 6, 2, 3, color);
   M5.Lcd.fillRect(x + 3, y + 3, 2, 6, color);
   M5.Lcd.fillRect(x + 6, y,     2, 9, color);
 }
 
-static void drawScanIcon(int x, int y, bool active) {
+void drawScanIcon(int x, int y, bool active) {
   uint16_t color = active ? GREEN : 0x4208;
   M5.Lcd.fillRect(x + 2, y,     1, 1, color);
   M5.Lcd.fillRect(x + 1, y + 1, 3, 1, color);
@@ -51,7 +52,7 @@ static void drawScanIcon(int x, int y, bool active) {
   M5.Lcd.fillRect(x + 2, y + 4, 1, 1, color);
 }
 
-static void drawGPSIcon(int x, int y, bool hasFix) {
+void drawGPSIcon(int x, int y, bool hasFix) {
   uint16_t color = hasFix ? GREEN : RED;
   M5.Lcd.drawCircle(x + 4, y + 4, 4, color);
   M5.Lcd.drawLine(x + 4, y, x + 4, y + 8, color);
@@ -59,7 +60,7 @@ static void drawGPSIcon(int x, int y, bool hasFix) {
   if (hasFix) M5.Lcd.fillCircle(x + 4, y + 4, 1, color);
 }
 
-static void drawBatteryIcon(int x, int y, int percent, bool charging) {
+void drawBatteryIcon(int x, int y, int percent, bool charging) {
   M5.Lcd.drawRect(x, y, 16, 8, WHITE);
   M5.Lcd.fillRect(x + 16, y + 2, 2, 4, WHITE);
   uint16_t fillColor = charging ? YELLOW : (percent < 20 ? RED : GREEN);
@@ -68,7 +69,7 @@ static void drawBatteryIcon(int x, int y, int percent, bool charging) {
   if (fillW < 14) M5.Lcd.fillRect(x + 1 + fillW, y + 1, 14 - fillW, 6, BLACK);
 }
 
-static void updateBatteryState() {
+void updateBatteryState() {
   int rawVoltage = M5.Power.getBatteryVoltage();
 
   bool chargingNow = M5.Power.isCharging();
@@ -411,7 +412,7 @@ void showThugLifeExpressionTask(void* parameter) {
   vTaskDelete(NULL);  // Task selbst beenden
 }
 
-static void drawStatusIcons(int x, int y) {
+void drawStatusIcons(int x, int y) {
   // Always show WiFi and Scan icons
   drawWifiIcon(x, y, isWebLogActive);
   drawScanIcon(x + 15, y + 2, bleScanEnabled);
@@ -436,7 +437,7 @@ static void drawStatusIcons(int x, int y) {
   }
 }
 
-static void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
+void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
 
   M5.Lcd.setTextColor(WHITE, 0x00C4);
 
@@ -454,7 +455,7 @@ static void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
   M5.Lcd.printf("Sus %-4d", susDevice);
 }
 
-static void drawXPBar(int x, int y) {
+void drawXPBar(int x, int y) {
   M5.Lcd.setTextColor(GREEN, 0x00C4);
   M5.Lcd.setCursor(x, y);
   M5.Lcd.printf("LV%u", xpManager.getLevel());

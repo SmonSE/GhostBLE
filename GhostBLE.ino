@@ -405,7 +405,6 @@ void onLongPress() {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     delay(1500);
-    clearScanIcon();
     logNewBoot();
     delay(500);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
@@ -497,11 +496,6 @@ void toggleWardriving() {
   wardrivingEnabled = !wardrivingEnabled;
 
   if (wardrivingEnabled) {
-    if (!bleScanEnabled) {
-      bleScanEnabled = true;
-      LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED (wardriving)");
-      ws.textAll("BLE_SCAN_ON");
-    }
     logEnableCategory(LOG_GPS);
     gpsManager.begin(GPSSource::GROVE);
     wigleLogger.begin();
