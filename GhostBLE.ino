@@ -208,6 +208,7 @@ void setup() {
 
 
 void loop() {
+  Screenshot::handle();
   ws.cleanupClients();  // Important for websocket memory management
   hardwareUpdate();
   unsigned long currentTime = millis();
