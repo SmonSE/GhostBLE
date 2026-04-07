@@ -128,15 +128,17 @@ static void clearThoughtBubble() {
 }
 
 static void showMumble(const char* message) {
-    // Clear any previous bubble and draw sleep expression
-    M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 22, 0x00C4);
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesSleep, NIBBLESSLEEP_WIDTH, NIBBLESSLEEP_HEIGHT, NIBBLES_SLEEP_X, NIBBLES_SLEEP_Y);
+    if(!scanIsRunning){
+        // Clear any previous bubble and draw sleep expression
+        M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 22, 0x00C4);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesSleep, NIBBLESSLEEP_WIDTH, NIBBLESSLEEP_HEIGHT, NIBBLES_SLEEP_X, NIBBLES_SLEEP_Y);
 
-    drawThoughtBubble(message, BUBBLE_X, THOUGHT_BUBBLE_Y);
-    thoughtVisible = true;
-    thoughtShownAt = millis();
-    lastSpeechTime = millis();
+        drawThoughtBubble(message, BUBBLE_X, THOUGHT_BUBBLE_Y);
+        thoughtVisible = true;
+        thoughtShownAt = millis();
+        lastSpeechTime = millis();
+    }
 }
 
 void nibblesSpeechNotifyEvent() {

@@ -2,6 +2,12 @@
 
 #include <Arduino.h>
 
+enum ScanState {
+  SCAN_OFF,
+  SCAN_RUNNING,
+  SCAN_STOPPING
+};
+
 void showGlassesExpressionTask(void* parameter);
 void showAngryExpressionTask(void* parameter);
 void showSadExpressionTask(void* parameter);
@@ -17,7 +23,7 @@ void drawStatusIcons(int x, int y);
 void drawBatteryIcon(int x, int y, int percent, bool isCharging);
 void updateBatteryState();
 void drawGPSIcon(int x, int y, bool hasFix);
-void drawScanIcon(int x, int y, bool active);
+void drawScanIcon(int x, int y, ScanState state, int radius);
 void drawWifiIcon(int x, int y, bool active);
 void drawStats(int sniffed, int susDevice, int spotted, int x, int y);
 void drawXPBar(int x, int y);

@@ -22,7 +22,7 @@ int getOrAssignDeviceId(const std::string& mac) {
 std::vector<std::string> uuidList;
 std::vector<std::string> nameList;
 
-bool scanIsRunning = false;
+
 
 bool isTarget = false;
 bool targetFound = false;
@@ -41,6 +41,7 @@ SemaphoreHandle_t taskMutex = NULL;
 
 bool isWebLogActive = false;
 bool is_connectable = false;
+bool scanIsRunning = false;
 bool bleScanEnabled = false;
 bool wardrivingEnabled = false;
 bool helpOverlayVisible = false;
