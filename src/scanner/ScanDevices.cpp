@@ -122,7 +122,6 @@ void startBleScan() {
 void stopBleScan() {
   LOG(LOG_SCAN, "🛑 Stopping BLE scan...");
   NimBLEDevice::getScan()->stop();
-  scanIsRunning = false;
   bleScanEnabled = false;
 }
 
@@ -501,6 +500,7 @@ void scanForDevices() {
   DeviceInfo dev;
   uint16_t manufacturerId = 0;
   String manufacturerName = "Unknown";
+  scanIsRunning = true;
 
   NimBLEScan* pScan = NimBLEDevice::getScan();
 
@@ -528,8 +528,6 @@ void scanForDevices() {
   } else {
     LOG(LOG_SCAN, "📲 DEVICES FOUND: " + String(results.getCount()));
     nibblesSpeechNotifyEvent();
-
-    scanIsRunning = true;
 
     LOG(LOG_SCAN, "📡 Scan Is Running");
 
@@ -805,6 +803,6 @@ void scanForDevices() {
     LOG(LOG_SCAN, "##########################\n");
 
     xpManager.save();
-    scanIsRunning = false;
   }
+  scanIsRunning = false;
 }

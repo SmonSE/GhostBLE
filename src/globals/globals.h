@@ -20,8 +20,6 @@ int getOrAssignDeviceId(const std::string& mac);
 extern std::vector<std::string> uuidList;
 extern std::vector<std::string> nameList;
 
-extern bool scanIsRunning;
-
 // Global flags and strings
 extern bool isTarget;
 extern bool targetFound;
@@ -40,6 +38,7 @@ extern TaskHandle_t sadTaskHandle;
 extern SemaphoreHandle_t taskMutex;
 extern bool isWebLogActive;
 extern bool is_connectable;
+extern bool scanIsRunning;
 extern bool bleScanEnabled;
 extern bool wardrivingEnabled;
 extern bool helpOverlayVisible;

@@ -22,6 +22,7 @@ static int displayedPercent = 100;
 static bool lastChargingState = false;
 static unsigned long usbDisconnectTime = 0;
 
+
 static const struct { int mv; int percent; } batteryLevels[] = {
     {4200, 100}, {4100, 90}, {4000, 80}, {3900, 70},
     {3800, 60}, {3700, 50}, {3600, 30}, {3500, 20}, {3400, 10}
@@ -35,21 +36,25 @@ static int voltageToPercent(int mv) {
 }
 
 // --- Icon drawing functions ---
-
+// WiFi icon to show WiFi is active.
 void drawWifiIcon(int x, int y, bool active) {
   uint16_t color = active ? GREEN : 0x4208;
-  M5.Lcd.fillRect(x,     y + 6, 2, 3, color);
-  M5.Lcd.fillRect(x + 3, y + 3, 2, 6, color);
-  M5.Lcd.fillRect(x + 6, y,     2, 9, color);
+  M5.Lcd.fillRect(x - 1, y + 6, 3, 3, color);
+  M5.Lcd.fillRect(x + 3, y + 3, 3, 6, color);
+  M5.Lcd.fillRect(x + 7, y,     3, 9, color);
 }
 
-void drawScanIcon(int x, int y, bool active) {
-  uint16_t color = active ? GREEN : 0x4208;
-  M5.Lcd.fillRect(x + 2, y,     1, 1, color);
-  M5.Lcd.fillRect(x + 1, y + 1, 3, 1, color);
-  M5.Lcd.fillRect(x,     y + 2, 5, 1, color);
-  M5.Lcd.fillRect(x + 1, y + 3, 3, 1, color);
-  M5.Lcd.fillRect(x + 2, y + 4, 1, 1, color);
+// Circle to show SCAN is running.
+void drawScanIcon(int x, int y, ScanState state, int radius) {
+  uint16_t color;
+
+  switch (state) {
+    case SCAN_RUNNING:  color = BLUE; break;
+    case SCAN_STOPPING: color = YELLOW; break;
+    case SCAN_OFF:      color = 0x4208; break;
+  }
+
+  M5.Lcd.fillCircle(x + radius, y + radius, radius, color);
 }
 
 void drawGPSIcon(int x, int y, bool hasFix) {
@@ -415,7 +420,13 @@ void showThugLifeExpressionTask(void* parameter) {
 void drawStatusIcons(int x, int y) {
   // Always show WiFi and Scan icons
   drawWifiIcon(x, y, isWebLogActive);
-  drawScanIcon(x + 15, y + 2, bleScanEnabled);
+  if (bleScanEnabled) {
+    drawScanIcon(x + 15, y + 1, SCAN_RUNNING, 3);
+  } else if (scanIsRunning) {
+    drawScanIcon(x + 15, y + 1, SCAN_STOPPING, 3);
+  } else {
+    drawScanIcon(x + 15, y + 1, SCAN_OFF, 3);
+  }
 
   // GPS info alongside when wardriving is enabled
   if (wardrivingEnabled) {
