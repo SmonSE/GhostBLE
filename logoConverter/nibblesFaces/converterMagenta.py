@@ -4,9 +4,9 @@ import os
 def is_magentaish(r, g, b, tolerance=180):
     return abs(r - 255) < tolerance and g < tolerance and abs(b - 255) < tolerance
 
-def convert_png_with_transparency(png_path, output_name="aggresive_mgt"):
+def convert_png_with_transparency(png_path, output_name="nibbles_face_funny"):
     img = Image.open(png_path).convert("RGB")
-    img = img.resize((32, 32))
+    img = img.resize((72, 26))
 
     width, height = img.size
     pixels = img.load()
@@ -28,4 +28,4 @@ def convert_png_with_transparency(png_path, output_name="aggresive_mgt"):
     print(f"#define {output_name.upper()}_HEIGHT {height}")
 
 # Beispielaufruf
-convert_png_with_transparency("aggresive_mgt.png", output_name="iconAggressive")
+convert_png_with_transparency("nibbles_face_funny.png", output_name="nibblesFunny")

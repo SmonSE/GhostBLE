@@ -6,8 +6,8 @@
 ScanMode currentMode = AGGRESSIVE;
 
 // ===== RSSI Thresholds =====
-int RSSI_IGNORE_THRESHOLD = -99;
-int RSSI_CONNECT_THRESHOLD = -94;
+int RSSI_IGNORE_THRESHOLD = -100;
+int RSSI_CONNECT_THRESHOLD = -98;
 
 // ===== BLE Scan Parameters =====
 int BLE_SCAN_INTERVAL = 45;
@@ -20,7 +20,7 @@ void applyScanMode() {
 
     case FOCUSED:
       RSSI_IGNORE_THRESHOLD  = -90;
-      RSSI_CONNECT_THRESHOLD = -85;
+      RSSI_CONNECT_THRESHOLD = -86;
 
       BLE_SCAN_INTERVAL = 45;
       BLE_SCAN_WINDOW   = 20;
@@ -28,15 +28,15 @@ void applyScanMode() {
 
     case BALANCED:
       RSSI_IGNORE_THRESHOLD  = -95;
-      RSSI_CONNECT_THRESHOLD = -90;
+      RSSI_CONNECT_THRESHOLD = -92;
 
       BLE_SCAN_INTERVAL = 45;
       BLE_SCAN_WINDOW   = 25;
       break;
 
     case AGGRESSIVE:
-      RSSI_IGNORE_THRESHOLD  = -99;
-      RSSI_CONNECT_THRESHOLD = -94;
+      RSSI_IGNORE_THRESHOLD  = -100;
+      RSSI_CONNECT_THRESHOLD = -98;
 
       BLE_SCAN_INTERVAL = 45;
       BLE_SCAN_WINDOW   = 30;

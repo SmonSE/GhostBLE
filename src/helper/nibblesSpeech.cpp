@@ -8,6 +8,7 @@
 #include "../images/nibblesHappy.h"
 #include "../images/nibblesHappyLeft.h"
 #include "../images/nibblesSleep.h"
+#include "../images/nibblesFunny.h"
 
 // --- Message pools ---
 
@@ -115,12 +116,17 @@ static void clearThoughtBubble() {
     }
 
     // Gesicht wieder korrekt zusammensetzen
-    if (random(2) == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+    int r = random(3);
+
+    if (r == 0) {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+    } else if (r == 1) {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     // Stats neu zeichnen

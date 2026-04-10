@@ -737,9 +737,9 @@ void scanForDevices() {
           }
         } else {
             String reason;
-            if (rssi <= -85) {
+            if (rssi <= RSSI_IGNORE_THRESHOLD) {
                 reason = "📡 Too far / weak signal";
-            } else if (rssi <= -75) {
+            } else if (rssi <= RSSI_CONNECT_THRESHOLD) {
                 reason = "📡 Weak signal or unstable";
             } else {
                 reason = "🔒 Likely protected (pairing required)";
