@@ -1,5 +1,7 @@
 # GhostBLE
 
+![Description](logoConverter/rawConverter/anyone_here.png)
+
 **A BLE privacy scanner for M5Stack devices**
 
 GhostBLE discovers nearby Bluetooth Low Energy devices, analyzes their privacy posture, and flags potential security concerns. Built for security researchers, tinkerers, and educators interested in BLE privacy, device fingerprinting, and wireless reconnaissance.
