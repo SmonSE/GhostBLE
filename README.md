@@ -1,8 +1,8 @@
 # GhostBLE
 
-| Bild 1 | Bild 2 | Bild 3 |
-|--------|--------|--------|
-| ![Description](logoConverter/rawConverter/anyone_here.png) | ![Description](logoConverter/rawConverter/thugLife.png | ![Description](logoConverter/rawConverter/yawn.png |
+| Image 1 | Image 2 | Image 3 |
+|---------|---------|---------|
+| ![](logoConverter/rawConverter/anyone_here.png) | ![](logoConverter/rawConverter/thugLife.png) | ![](logoConverter/rawConverter/yawn.png) |
 
 **A BLE privacy scanner for M5Stack devices**
 
