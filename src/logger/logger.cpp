@@ -27,7 +27,7 @@ static bool sdInitialized = false;
 // Category index → filename mapping
 static const char* catFileNames[] = {
     "/GhostBLE/scan.log",       // 0  LOG_SCAN
-    "/GhostBLE/gatt.log",       // 1  LOG_GATT
+    "/GhostBLE/sniffed.log",    // 1  LOG_GATT / SNIFFED
     "/GhostBLE/privacy.log",    // 2  LOG_PRIVACY
     "/GhostBLE/security.log",   // 3  LOG_SECURITY
     "/GhostBLE/beacon.log",     // 4  LOG_BEACON
@@ -78,6 +78,9 @@ bool initLogger(int sdCsPin) {
     // Disable not important LOGs to reduce trace load
     logDisableCategory(LOG_SYSTEM);
     logDisableCategory(LOG_CONTROL);
+    logDisableCategory(LOG_SCAN);
+    logDisableCategory(LOG_BEACON);
+    logDisableCategory(LOG_NOTIFY);
 
     // Default: all categories route to all targets
     // (actual output filtered by enabledTargets)

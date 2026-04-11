@@ -288,7 +288,8 @@ static bool parseDeviceInfo(
         LOG(LOG_BEACON, devTag + "👾 PwnBeacon detected (service UUID)!");
       }
     }
-    LOG(LOG_SCAN, svcLog);
+    //LOG(LOG_SCAN, svcLog);
+    LOG(LOG_GATT, svcLog);
   }
 
   // -------- Advertisement TX Power --------
@@ -335,7 +336,8 @@ static bool parseDeviceInfo(
         }
       }
     }
-    LOG(LOG_SCAN, sdLog);
+    //LOG(LOG_SCAN, sdLog);
+    LOG(LOG_GATT, sdLog);
   }
 
   return true;
@@ -658,7 +660,8 @@ void scanForDevices() {
               float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - rssi) / (float)RSSI_CONSTANT);
               infoLog += "\n   Distance: " + String(distance, 2) + " m";
               infoLog += "\n   RSSI: " + String(rssi);
-              LOG(LOG_SCAN, infoLog);
+              //LOG(LOG_SCAN, infoLog);
+              LOG(LOG_GATT, infoLog);
 
               // iBeacon info
               if (isIBeacon) {
