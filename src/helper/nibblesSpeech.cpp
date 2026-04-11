@@ -26,7 +26,7 @@ static const char* idleMessages[] = {
     "Beep boop...",
     "Just chillin'",
     "Wake me up!",
-    "Bored.exe running..."
+    "Bored.exe running"
 };
 static const int idleMessageCount = sizeof(idleMessages) / sizeof(idleMessages[0]);
 
