@@ -1,6 +1,5 @@
 # GhostBLE
 
-|---------|---------|---------|
 | ![](logoConverter/rawConverter/anyone_here.png) | ![](logoConverter/rawConverter/thugLife.png) | ![](logoConverter/rawConverter/jbl_headphone.png) |
 
 **A BLE privacy scanner for M5Stack devices**
