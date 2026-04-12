@@ -1,6 +1,5 @@
 # GhostBLE
 
-| Image 1 | Image 2 | Image 3 |
 |---------|---------|---------|
 | ![](logoConverter/rawConverter/anyone_here.png) | ![](logoConverter/rawConverter/thugLife.png) | ![](logoConverter/rawConverter/jbl_headphone.png) |
 
