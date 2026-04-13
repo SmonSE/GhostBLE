@@ -10,8 +10,6 @@
 #include "../images/nibblesSad.h"
 #include "../images/nibblesHappy.h"
 #include "../images/nibblesHappyLeft.h"
-#include "../images/nibblesHeartLeft.h"
-#include "../images/nibblesHeartRight.h"
 #include "../images/nibblesThugLife.h"
 #include "../images/nibblesSleep.h"
 #include "../gps/GPSManager.h"

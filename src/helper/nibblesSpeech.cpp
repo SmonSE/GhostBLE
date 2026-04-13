@@ -9,6 +9,7 @@
 #include "../images/nibblesHappyLeft.h"
 #include "../images/nibblesSleep.h"
 #include "../images/nibblesFunny.h"
+#include "../images/nibblesBored.h"
 
 // --- Message pools ---
 // max length of bubble is 16 chars, so keep it short and sweet!
@@ -130,7 +131,7 @@ static void clearThoughtBubble() {
     }
 
     // Gesicht wieder korrekt zusammensetzen
-    int r = random(3);
+    int r = random(4);
 
     if (r == 0) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
@@ -138,9 +139,12 @@ static void clearThoughtBubble() {
     } else if (r == 1) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } else {
+    } else if (r == 2) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     // Stats neu zeichnen

@@ -11,13 +11,10 @@
 #include "src/helper/showExpression.h"
 #include "src/helper/screenshot.h"
 
-#include "src/images/nibblesStartWorking.h"
 #include "src/images/nibblesFront.h"
 #include "src/images/nibblesGlasses.h"
 #include "src/images/nibblesAngry.h"
 #include "src/images/nibblesSad.h"
-#include "src/images/nibblesHeartLeft.h"
-#include "src/images/nibblesHeartRight.h"
 #include "src/images/nibblesHappy.h"
 #include "src/images/nibblesHappyLeft.h"
 #include "src/images/nibblesThugLife.h"

@@ -4,7 +4,7 @@ import os
 def is_magentaish(r, g, b, tolerance=180):
     return abs(r - 255) < tolerance and g < tolerance and abs(b - 255) < tolerance
 
-def convert_png_with_transparency(png_path, output_name="nibbles_face_funny"):
+def convert_png_with_transparency(png_path, output_name="nibbles_face_bored"):
     img = Image.open(png_path).convert("RGB")
     img = img.resize((72, 26))
 
@@ -28,4 +28,4 @@ def convert_png_with_transparency(png_path, output_name="nibbles_face_funny"):
     print(f"#define {output_name.upper()}_HEIGHT {height}")
 
 # Beispielaufruf
-convert_png_with_transparency("nibbles_face_funny.png", output_name="nibblesFunny")
+convert_png_with_transparency("nibbles_face_bored.png", output_name="nibblesBored")
