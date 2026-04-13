@@ -6,6 +6,7 @@
 enum class SpeechContext {
     IDLE,
     SCAN_START,
+    SCAN_STOP,
     WARDRIVING,
     SUSPICIOUS,
     LEVEL_UP
