@@ -32,6 +32,7 @@
 #include "src/config/scanConfig.h"
 #include "src/helper/showScanIcon.h"
 
+
 #include <WiFi.h>
 #include <AsyncTCP.h>
 
@@ -400,15 +401,16 @@ void onLongPress() {
   bleScanEnabled = !bleScanEnabled;
 
   if (bleScanEnabled) {
+    //nibblesSpeechShow(SpeechContext::SCAN_START); //to much for queue!
+    //delay(1000);
     LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
     ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-    delay(1500);
+    delay(1000);
     logNewBoot();
     delay(500);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
-    nibblesSpeechShow(SpeechContext::SCAN_START);
   }
   else {
     LOG(LOG_CONTROL,"⏹️ BLE Scan DISABLED");
@@ -416,6 +418,7 @@ void onLongPress() {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    //nibblesSpeechShow(SpeechContext::SCAN_STOP); //to much for queue!
     stopBleScan();   // THIS is the important part
   }
 }
@@ -496,6 +499,7 @@ void toggleWardriving() {
   wardrivingEnabled = !wardrivingEnabled;
 
   if (wardrivingEnabled) {
+    nibblesSpeechShow(SpeechContext::WARDRIVING);
     logEnableCategory(LOG_GPS);
     gpsManager.begin(GPSSource::GROVE);
     wigleLogger.begin();

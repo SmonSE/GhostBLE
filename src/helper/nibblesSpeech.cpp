@@ -11,12 +11,12 @@
 #include "../images/nibblesFunny.h"
 
 // --- Message pools ---
-
+// max length of bubble is 16 chars, so keep it short and sweet!
 static const char* idleMessages[] = {
     "Hmm...",
     "Anyone here?",
     "Nothing to do...",
-    "Press H for help!",
+    "Press H for help!", 
     "Where is everyone",
     "So quiet...",
     "Zzz...",
@@ -32,13 +32,23 @@ static const int idleMessageCount = sizeof(idleMessages) / sizeof(idleMessages[0
 
 static const char* scanStartMessages[] = {
     "Lets go!",
-    "Start scanning!",
+    "I smell BLE!",
     "Ready?",
     "Lets begin!",
     "Eyes open!",
     "Here we go!"
 };
 static const int scanStartMessageCount = sizeof(scanStartMessages) / sizeof(scanStartMessages[0]);
+
+static const char* scanStopMessages[] = {
+    "Scan stopped!",
+    "No more scanning",
+    "Time to rest!",
+    "Scan complete!",
+    "Eyes closed!",
+    "One more scan?"
+};
+static const int scanStopMessageCount = sizeof(scanStopMessages) / sizeof(scanStopMessages[0]);
 
 static const char* wardrivingMessages[] = {
     "Lets walk!",
@@ -204,6 +214,9 @@ void nibblesSpeechShow(SpeechContext context) {
     switch (context) {
         case SpeechContext::SCAN_START:
             msg = pickRandom(scanStartMessages, scanStartMessageCount);
+            break;
+        case SpeechContext::SCAN_STOP:
+            msg = pickRandom(scanStopMessages, scanStopMessageCount);
             break;
         case SpeechContext::WARDRIVING:
             msg = pickRandom(wardrivingMessages, wardrivingMessageCount);
