@@ -19,8 +19,8 @@ void applyScanMode() {
   switch (currentMode) {
 
     case FOCUSED:
-      RSSI_IGNORE_THRESHOLD  = -90;
-      RSSI_CONNECT_THRESHOLD = -86;
+      RSSI_IGNORE_THRESHOLD  = -85;
+      RSSI_CONNECT_THRESHOLD = -80;
 
       BLE_SCAN_INTERVAL = 45;
       BLE_SCAN_WINDOW   = 20;
