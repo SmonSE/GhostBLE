@@ -442,7 +442,7 @@ static bool connectAndReadGATT(
 
     // Tesla detection via GATT service UUID
     if (isTeslaDevice("", serviceUuid.c_str())) {
-      //LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected via GATT service");
+      LOG(LOG_TARGET, devTag + "🚗 Tesla vehicle detected via GATT service");
       nibblesSpeechShowCustom(teslaMsgs[random(5)]);
     }
 
@@ -736,8 +736,12 @@ void scanForDevices() {
               ExposureResult exposure = analyzeExposure(dev);
 
               handleExposureResult(exposure, manufacturerName, devTag);
+            } else {
+              LOG(LOG_GATT, devTag + "🔒 Connected but has no information available: " + address);
             }
-          }
+          } else {
+            LOG(LOG_GATT, devTag + "🔒 Connected but failed to discover attributes: " + address);
+          } 
         } else {
             String reason;
             if (rssi <= RSSI_IGNORE_THRESHOLD) {

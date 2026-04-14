@@ -87,19 +87,50 @@ void XPManager::recalculateLevel() {
 
 const char* XPManager::getTitle() {
     uint16_t lvl = currentLevel;
-    if (lvl >= 500) return "BLE Deity";
-    if (lvl >= 300) return "Phantom Lord";
-    if (lvl >= 200) return "Ghost King";
-    if (lvl >= 150) return "Ether Wraith";
-    if (lvl >= 100) return "Packet Overlord";
-    if (lvl >= 75)  return "Signal Sorcerer";
-    if (lvl >= 50)  return "Byte Bandit";
-    if (lvl >= 35)  return "Freq Fiend";
-    if (lvl >= 25)  return "Sniff Lord";
-    if (lvl >= 18)  return "Air Pirate";
-    if (lvl >= 12)  return "Beacon Hunter";
-    if (lvl >= 8)   return "Data Gremlin";
-    if (lvl >= 5)   return "Sniff Puppy";
-    if (lvl >= 3)   return "Bit Curious";
-    return "Clueless Ghost";
+
+    // --- Mythic BLE Tier ---
+    if (lvl >= 300) return "Null Advertiser";
+    if (lvl >= 270) return "Hidden Broadcaster";
+    if (lvl >= 250) return "RF Ascendant";
+    if (lvl >= 230) return "Packet God";
+    if (lvl >= 210) return "BLE Revenant";
+    if (lvl >= 195) return "Airwave Ghost";
+    if (lvl >= 180) return "Silent Beacon";
+    if (lvl >= 165) return "Phantom Peripheral";
+    if (lvl >= 150) return "Spectrum Deity";
+    if (lvl >= 135) return "Ether Controller";
+
+    // --- Power Tier ---
+    if (lvl >= 120) return "GATT Architect";
+    if (lvl >= 110) return "Beacon Overlord";
+    if (lvl >= 100) return "RF Dominator";
+    if (lvl >= 92)  return "Advert Injector";
+    if (lvl >= 85)  return "Frequency Warlord";
+    if (lvl >= 78)  return "Signal Overmind";
+    if (lvl >= 70)  return "BLE Phantom";
+    if (lvl >= 63)  return "Packet Architect";
+    if (lvl >= 56)  return "Airwave Manipulator";
+
+    // --- Hacker Tier ---
+    if (lvl >= 50)  return "Spectrum Rider";
+    if (lvl >= 45)  return "BLE Operator";
+    if (lvl >= 40)  return "Data Phreak";
+    if (lvl >= 36)  return "RF Trickster";
+    if (lvl >= 32)  return "Frame Breaker";
+    if (lvl >= 28)  return "UUID Tracker";
+    if (lvl >= 24)  return "Signal Tinkerer";
+    if (lvl >= 20)  return "Packet Whisperer";
+    if (lvl >= 16)  return "Protocol Raider";
+
+    // --- Learning Tier ---
+    if (lvl >= 14)  return "Beacon Chaser";
+    if (lvl >= 12)  return "Ping Listener";
+    if (lvl >= 10)  return "Airwave Scout";
+    if (lvl >= 8)   return "RF Wanderer";
+    if (lvl >= 6)   return "Byte Rookie";
+    if (lvl >= 4)   return "Signal Sniffer";
+    if (lvl >= 2)   return "Packet Peeker";
+    if (lvl >= 1)   return "Curious Scanner";
+
+    return "Uninitialized Device";
 }
