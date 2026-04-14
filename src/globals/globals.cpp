@@ -147,8 +147,8 @@ const char index_html[] PROGMEM = R"rawliteral(
       <b>Settings (reboot to apply)</b>
       <div><label>Name:</label><input id="cfg-name" maxlength="20" placeholder="NibBLEs"><button onclick="send('NAME')">Set</button></div>
       <div><label>Face:</label><input id="cfg-face" maxlength="20" placeholder="(◕‿◕)"><button onclick="send('FACE')">Set</button></div>
-      <div><label>BLE Name:</label><input id="cfg-ssid" maxlength="32" placeholder="GhostBLE"><button onclick="send('SSID')">Set</button></div>
-      <div><label>BLE Pass:</label><input id="cfg-pass" type="password" maxlength="63" placeholder="********"><button onclick="send('PASS')">Set</button></div>
+      <div><label>WiFi SSID:</label><input id="cfg-ssid" maxlength="32" placeholder="GhostBLE"><button onclick="send('SSID')">Set</button></div>
+      <div><label>WiFi Pass:</label><input id="cfg-pass" type="password" maxlength="63" placeholder="********"><button onclick="send('PASS')">Set</button></div>
       <div class="status" id="cfg-status"></div>
     </div>
     <pre id="log"></pre>
