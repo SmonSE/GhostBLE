@@ -188,7 +188,11 @@ void LOG(LogCategory category, const String& msg) {
             Serial.println(msg);
         }
         if ((targets & TARGET_WEB) && ws.count() > 0 && ws.availableForWriteAll()) {
-            ws.textAll(msg);
+            // Log only SNIFFED data to web!
+            //if ((category & LOG_GATT) || (category & LOG_MARKER))
+            if (category & LOG_GATT) {
+                ws.textAll(msg);
+            }
         }
         if ((targets & TARGET_SD) && sdInitialized) {
             File f = SD.open(getCatFileName(category), FILE_APPEND);
