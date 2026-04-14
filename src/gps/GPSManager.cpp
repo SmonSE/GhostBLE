@@ -82,13 +82,27 @@ uint32_t GPSManager::getSatellites() {
 
 String GPSManager::getTimestamp() {
     if (gps.date.isValid() && gps.time.isValid()) {
-        char buf[24];
+        char buf[32];
+
+        int year  = gps.date.year();
+        int month = gps.date.month();
+        int day   = gps.date.day();
+
+        int hour  = gps.time.hour();
+        int min   = gps.time.minute();
+        int sec   = gps.time.second();
+
+        // Germany Summer Time (UTC+2)
+        // Germany Winter Time (UTC+1)
+        hour = (hour + 2) % 24;
+
         snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d",
-                 gps.date.year(), gps.date.month(), gps.date.day(),
-                 gps.time.hour(), gps.time.minute(), gps.time.second());
+                 year, month, day, hour, min, sec);
+
         return String(buf);
     }
-    // Fallback: use millis as relative timestamp
+
+    // Fallback
     unsigned long sec = millis() / 1000;
     char buf[24];
     snprintf(buf, sizeof(buf), "0000-00-00 %02lu:%02lu:%02lu",

@@ -43,6 +43,7 @@ extern bool bleScanEnabled;
 extern bool wardrivingEnabled;
 extern bool helpOverlayVisible;
 
+extern std::atomic<int> pointer;
 extern std::atomic<int> susDevice;
 extern std::atomic<int> beaconsFound;
 extern std::atomic<int> pwnbeaconsFound;

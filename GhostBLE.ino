@@ -273,6 +273,35 @@ void loop() {
           }
           return;
         }
+        if ((key == 'p' || key == 'P') && bleScanEnabled) {
+            LOG(LOG_CONTROL, "P pressed — marker set");
+
+            extern GPSManager gpsManager;
+            bool hasFix = gpsManager.isValid();
+
+            pointer++;
+
+            char msg[160];
+
+            if (wardrivingEnabled && hasFix) {
+                snprintf(msg, sizeof(msg),
+                        "[MARKER #%d][GPS] Time:%s SAT:%u Lat: %.6f Lon: %.6f",
+                        pointer.load(),
+                        gpsManager.getTimestamp().c_str(),
+                        gpsManager.getSatellites(),
+                        gpsManager.getLatitude(),
+                        gpsManager.getLongitude());
+            } else {
+                snprintf(msg, sizeof(msg),
+                        "[MARKER #%d][NO GPS]",
+                        pointer.load());
+            }
+
+            drawPointer(pointer.load());  // Update on-screen pointer count immediately
+
+            LOG(LOG_GATT, msg);
+            return;
+        }
       }
     }
   }
