@@ -46,6 +46,7 @@ bool bleScanEnabled = false;
 bool wardrivingEnabled = false;
 bool helpOverlayVisible = false;
 
+std::atomic<int> pointer{0};
 std::atomic<int> susDevice{0};
 std::atomic<int> beaconsFound{0};
 std::atomic<int> pwnbeaconsFound{0};

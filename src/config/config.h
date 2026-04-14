@@ -140,7 +140,7 @@ extern const char* PWNBEACON_MESSAGE_CHAR_UUID;
 
 // Stats panel (left side)
 #define STATS_X                5
-#define STATS_Y_START          62
+#define STATS_Y_START          67
 #define STATS_LINE_HEIGHT      12
 
 // Bottom bar

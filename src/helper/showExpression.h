@@ -8,6 +8,7 @@ enum ScanState {
   SCAN_STOPPING
 };
 
+void drawPointer(int pointer);
 void showGlassesExpressionTask(void* parameter);
 void showAngryExpressionTask(void* parameter);
 void showSadExpressionTask(void* parameter);

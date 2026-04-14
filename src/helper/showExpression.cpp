@@ -33,6 +33,20 @@ static int voltageToPercent(int mv) {
     return 5;
 }
 
+void drawPointer(int pointer) {
+    int x = 5;
+    int y = 55;
+    uint16_t bgColor = 0x00C4;
+
+    // Bereich löschen
+    M5.Lcd.fillRect(x, y, 40, 10, bgColor);
+
+    // Neu zeichnen
+    M5.Lcd.setTextColor(GREEN, bgColor);
+    M5.Lcd.setCursor(x, y);
+    M5.Lcd.printf("Pnt %-2d", pointer);
+}
+
 // --- Icon drawing functions ---
 // WiFi icon to show WiFi is active.
 void drawWifiIcon(int x, int y, bool active) {
