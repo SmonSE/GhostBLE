@@ -22,24 +22,24 @@ void applyScanMode() {
       RSSI_IGNORE_THRESHOLD  = -85;
       RSSI_CONNECT_THRESHOLD = -80;
 
-      BLE_SCAN_INTERVAL = 45;
-      BLE_SCAN_WINDOW   = 20;
+      BLE_SCAN_INTERVAL = 90;
+      BLE_SCAN_WINDOW   = 30;
       break;
 
     case BALANCED:
       RSSI_IGNORE_THRESHOLD  = -95;
       RSSI_CONNECT_THRESHOLD = -92;
 
-      BLE_SCAN_INTERVAL = 45;
-      BLE_SCAN_WINDOW   = 25;
+      BLE_SCAN_INTERVAL = 60;
+      BLE_SCAN_WINDOW   = 45;
       break;
 
     case AGGRESSIVE:
       RSSI_IGNORE_THRESHOLD  = -100;
       RSSI_CONNECT_THRESHOLD = -98;
 
-      BLE_SCAN_INTERVAL = 45;
-      BLE_SCAN_WINDOW   = 30;
+      BLE_SCAN_INTERVAL = 30 + random(0, 10);
+      BLE_SCAN_WINDOW   = BLE_SCAN_INTERVAL;
       break;
   }
 
