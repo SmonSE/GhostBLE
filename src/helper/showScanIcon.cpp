@@ -1,11 +1,11 @@
 #include "showScanIcon.h"
 #include "showExpression.h"
-#include "../config/scanConfig.h"
-#include "../config/hardware.h"
-#include "../globals/globals.h"
-#include "../config/config.h"
-#include "../helper/drawOverlay.h"
-#include "../logger/logger.h"
+#include "config/scanConfig.h"
+#include "config/hardware.h"
+#include "globals/globals.h"
+#include "config/config.h"
+#include "helper/drawOverlay.h"
+#include "logger/logger.h"
 
 
 // Position vom Icon

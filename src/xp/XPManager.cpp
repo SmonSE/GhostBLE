@@ -1,6 +1,6 @@
 #include "XPManager.h"
 #include <math.h>
-#include "../logger/logger.h"
+#include "logger/logger.h"
 
 static const char* XP_FILE = "/GhostBLE/xp.dat";
 

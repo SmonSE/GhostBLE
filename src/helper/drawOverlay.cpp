@@ -1,5 +1,5 @@
 #include "drawOverlay.h"
-#include "../config/config.h"
+#include "config/config.h"
 
 void drawOverlay(const uint16_t* img, int w, int h, int x0, int y0) {
     for (int y = 0; y < h; y++) {

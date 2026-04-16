@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "../models/DeviceInfo.h"
+#include "globals/globals.h"
+#include "core/models/DeviceInfo.h"
 
 struct ExposureResult {
     std::string deviceType;

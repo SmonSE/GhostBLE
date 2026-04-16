@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../config/hardware.h"
+#include "config/hardware.h"
 
 // Function to draw an overlay image onto the screen
 // Parameters:

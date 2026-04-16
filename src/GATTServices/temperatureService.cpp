@@ -3,9 +3,9 @@
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
 
-#include "../config/config.h"
-#include "../globals/globals.h"
-#include "../logger/logger.h"
+#include "config/config.h"
+#include "globals/globals.h"
+#include "logger/logger.h"
 
 static bool tempSubscribed = false;
 

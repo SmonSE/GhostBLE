@@ -1,6 +1,6 @@
 #include "GPSManager.h"
-#include "../config/config.h"
-#include "../logger/logger.h"
+#include "config/config.h"
+#include "logger/logger.h"
 
 GPSManager::GPSManager() : currentSource(GPSSource::GROVE), gpsSerial(1) {}
 

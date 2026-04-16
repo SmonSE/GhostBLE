@@ -1,5 +1,5 @@
 #include "ExposureClassifier.h"
-#include "../globals/globals.h"
+#include "globals/globals.h"
 #include <algorithm>
 #include <cctype>
 #include <vector>

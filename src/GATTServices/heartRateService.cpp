@@ -4,9 +4,9 @@
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
 
-#include "../globals/globals.h"
-#include "../helper/showExpression.h"
-#include "../logger/logger.h"
+#include "globals/globals.h"
+#include "helper/showExpression.h"
+#include "logger/logger.h"
 
 
 String HeartRateServiceHandler::readHeartRate(NimBLEClient* pClient) {

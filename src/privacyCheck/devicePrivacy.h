@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "../models/DeviceInfo.h"
+#include "core/models/DeviceInfo.h"
 
 // === Structs ===
 struct DevicePrivacyInfo {

@@ -1,5 +1,5 @@
 #include "ExposureAnalyzer.h"
-#include "../globals/globals.h"
+
 
 static ExposureTier determineExposureTier(const DeviceInfo& dev)
 {

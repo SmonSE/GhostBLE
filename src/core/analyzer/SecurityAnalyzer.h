@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 #include <NimBLEClient.h>
-#include "../models/DeviceInfo.h"
+#include "logger/logger.h"
+#include "core/models/DeviceInfo.h"
 
 struct SecurityFinding {
     std::string severity;    // "HIGH", "MEDIUM", "LOW", "INFO"

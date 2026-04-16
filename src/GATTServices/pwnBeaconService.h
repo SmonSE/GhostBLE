@@ -3,7 +3,7 @@
 #include <NimBLEClient.h>
 #include <NimBLEServer.h>
 #include <Arduino.h>
-#include "../config/config.h"
+#include "config/config.h"
 
 struct PwnBeaconInfo {
   bool valid = false;
