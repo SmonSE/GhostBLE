@@ -7,7 +7,7 @@
 #include <vector>
 #include <atomic>
 
-#include "xp/XPManager.h"
+#include "xp/xp_manager.h"
 
 extern XPManager xpManager;
 
