@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "core/models/BLEAdvertisementData.h"
+#include "core/models/ble_adv_data.h"
 
 // Hauptfunktion
 uint32_t makeFingerprint(const BLEAdvertisementData& data);

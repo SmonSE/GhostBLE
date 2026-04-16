@@ -6,9 +6,9 @@
 
 #include "src/globals/globals.h"
 #include "src/config/config.h"
-#include "src/scanner/ScanDevices.h"
-#include "src/helper/drawOverlay.h"
-#include "src/helper/showExpression.h"
+#include "src/scanner/ble_scanner.h"
+#include "src/helper/draw_overlay.h"
+#include "src/helper/show_expression.h"
 #include "src/helper/screenshot.h"
 
 #include "src/images/nibblesFront.h"
@@ -20,14 +20,14 @@
 #include "src/images/nibblesThugLife.h"
 
 #include "src/logger/logger.h"
-#include "src/GATTServices/pwnBeaconService.h"
-#include "src/GATTServices/GATTServiceInit.h"
-#include "src/gps/GPSManager.h"
-#include "src/wardriving/WigleLogger.h"
-#include "src/helper/nibblesSpeech.h"
-#include "src/config/DeviceConfig.h"
-#include "src/config/scanConfig.h"
-#include "src/helper/showScanIcon.h"
+#include "src/GATTServices/pwn_beacon_service.h"
+#include "src/GATTServices/init_gatt_service.h"
+#include "src/gps/gps_manager.h"
+#include "src/wardriving/wigle_logger.h"
+#include "src/helper/nibbles_speech.h"
+#include "src/config/device_config.h"
+#include "src/config/scan_config.h"
+#include "src/helper/scan_icon.h"
 
 
 #include <WiFi.h>
