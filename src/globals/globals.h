@@ -1,12 +1,13 @@
 #pragma once
+
+#include <Arduino.h>
 #include <unordered_set>
 #include <map>
 #include <string>
-#include <Arduino.h>
 #include <vector>
 #include <atomic>
 
-#include "../xp/XPManager.h"
+#include "xp/XPManager.h"
 
 extern XPManager xpManager;
 

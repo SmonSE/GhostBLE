@@ -4,7 +4,7 @@
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
 
-#include "../logger/logger.h"
+#include "logger/logger.h"
 
 String GenericDumpHandler::dumpService(NimBLEClient* pClient, const std::string& uuid) {
     String result = "";

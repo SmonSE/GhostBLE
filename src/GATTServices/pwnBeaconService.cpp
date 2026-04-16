@@ -5,8 +5,8 @@
 #include <NimBLERemoteCharacteristic.h>
 #include <mbedtls/sha256.h>
 
-#include "../logger/logger.h"
-#include "../config/DeviceConfig.h"
+#include "logger/logger.h"
+#include "config/DeviceConfig.h"
 
 // === Server state ===
 static NimBLEServer* pServer = nullptr;

@@ -1,7 +1,7 @@
 #include "BLEDecoder.h"
-#include "../config/config.h"
-#include "../logger/logger.h"
-#include "../globals/globals.h"
+#include "config/config.h"
+#include "logger/logger.h"
+#include "globals/globals.h"
 #include <string>
 
 static String toHex(uint8_t* data, size_t len)

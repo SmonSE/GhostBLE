@@ -1,10 +1,10 @@
 #pragma once
 
 #include <Arduino.h>
-#include "../config/hardware.h"
-#include "../config/config.h"
-#include "../globals/globals.h"
-#include "../logger/logger.h"
+#include "config/hardware.h"
+#include "config/config.h"
+#include "globals/globals.h"
+#include "logger/logger.h"
 
 class Screenshot {
 public:

@@ -2,10 +2,10 @@
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 
-#include "../globals/globals.h"
-#include "../config/config.h"
-#include "../logger/logger.h"
-#include "../helper/AppearanceHelper.h"
+#include "globals/globals.h"
+#include "config/config.h"
+#include "logger/logger.h"
+#include "helper/AppearanceHelper.h"
 
 
 String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient) {

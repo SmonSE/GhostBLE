@@ -1,6 +1,6 @@
 #include "devicePrivacy.h"
-#include "../globals/globals.h"
-#include "../logger/logger.h"
+#include "globals/globals.h"
+#include "logger/logger.h"
 
 #include <map>
 #include <vector>

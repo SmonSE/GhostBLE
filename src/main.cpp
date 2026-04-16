@@ -1,2 +1,4 @@
 // PlatformIO entry point — includes the Arduino sketch
-#include "../GhostBLE.ino"
+#ifndef PIO_UNIT_TESTING
+    #include "../GhostBLE.ino"
+#endif

@@ -1,5 +1,5 @@
 #include "deviceInfoService.h"
-#include "../logger/logger.h"
+#include "logger/logger.h"
 
 
 String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {

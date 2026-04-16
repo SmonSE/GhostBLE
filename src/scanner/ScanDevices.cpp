@@ -1,28 +1,10 @@
 #include <NimBLEDevice.h>
-#include "../config/hardware.h"
 #include <unordered_set>
 #include <vector>
 #include <algorithm>
 
 #include "ScanDevices.h"
-#include "../globals/globals.h"
-#include "../helper/ManufacturerHelper.h"
-#include "../helper/ServiceHelper.h"
-#include "../helper/drawOverlay.h"
-#include "../helper/showExpression.h"
-#include "../logger/logger.h"
-#include "../privacyCheck/devicePrivacy.h"
-#include "../analyzer/ExposureAnalyzer.h"
-#include "../models/DeviceInfo.h"
-#include "../privacyCheck/ExposureClassifier.h"
-#include "../helper/BLEDecoder.h"
-#include "../GATTServices/GATTServiceRegistry.h"
-#include "../GATTServices/pwnBeaconService.h"
-#include "../analyzer/SecurityAnalyzer.h"
-#include "../gps/GPSManager.h"
-#include "../wardriving/WigleLogger.h"
-#include "../helper/nibblesSpeech.h"
-#include "../config/scanConfig.h"
+
 
 // Wardriving instances (defined in GhostBLE.ino)
 extern GPSManager gpsManager;

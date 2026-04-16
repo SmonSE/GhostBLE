@@ -1,6 +1,6 @@
 #include "TargetDevice.h"
-#include "../config/config.h"
-#include "../logger/logger.h"
+#include "config/config.h"
+#include "logger/logger.h"
 
 bool isTargetDevice(String name, String address, String serviceUuid, String deviceInfoService) {
 

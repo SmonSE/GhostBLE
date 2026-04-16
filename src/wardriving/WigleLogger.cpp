@@ -1,6 +1,6 @@
 #include "WigleLogger.h"
-#include "../logger/logger.h"
-#include "../config/hardware.h"
+#include "logger/logger.h"
+#include "config/hardware.h"
 
 WigleLogger::WigleLogger() : active(false), initialized(false), loggedCount(0) {}
 

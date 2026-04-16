@@ -1,5 +1,5 @@
 #include "ServiceHelper.h"
-#include "../config/config.h"
+#include "config/config.h"
 
 // Sorted lookup table for standard 16-bit BLE service UUIDs.
 // Binary search is O(log n) with no heap allocation vs cascading String comparisons.
