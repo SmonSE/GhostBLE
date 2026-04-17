@@ -793,5 +793,6 @@ void scanForDevices() {
 
     xpManager.save();
   }
+  clearSpeechBubble();    // if speechbubble is not cleared because of qeueing, clear it at the end of the scan to avoid stale messages.
   scanIsRunning = false;
 }
