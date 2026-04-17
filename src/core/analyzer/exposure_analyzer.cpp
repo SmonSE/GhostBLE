@@ -1,47 +1,41 @@
 #include "exposure_analyzer.h"
 
 
-static ExposureTier determineExposureTier(const DeviceInfo& dev)
+ExposureTier determineExposureTier(const DeviceInfo& dev)
 {
-    // Tier 3 — Consent (personal or user-identifiable data)
     if (dev.gattHasPersonalName)
         return ExposureTier::Consent;
 
-    // Tier 2 — Active (requires connection)
     if (dev.gattHasName || dev.gattHasNameIdentityData)
         return ExposureTier::Active;
 
-    // Tier 1 — Passive (visible without connection)
     if (dev.advHasName)
         return ExposureTier::Passive;
 
     return ExposureTier::None;
 }
 
-ExposureResult analyzeExposure(const DeviceInfo& dev)
+
+void classifyDevice(const DeviceInfo& dev, ExposureResult& result)
 {
-    ExposureResult result{};
-    int score = 0;
-
-    result.exposureTier = determineExposureTier(dev);
-
-    // -------- Device Type --------
     if (dev.manufacturer.find("Epson") != std::string::npos)
         result.deviceType = "Printer";
     else
         result.deviceType = "Unknown";
+}
+
+
+int calculateExposureScore(const DeviceInfo& dev, ExposureResult& result)
+{
+    int score = 0;
 
     bool isApple   = dev.manufacturer.find("Apple Inc.") != std::string::npos;
     bool isGoogle  = dev.manufacturer.find("Google") != std::string::npos;
     bool isSamsung = dev.manufacturer.find("Samsung") != std::string::npos;
 
-    // -------- Exposure evaluation --------
-
-
-    // Combine public and static MAC address reasons if both are true
+    // -------- MAC behavior --------
     if (dev.isPublicMac && dev.hasStaticMac) {
-        score += 40; // public
-        score += 20; // static
+        score += 60;
         result.reasons.push_back("public static MAC address");
     } else if (dev.isPublicMac) {
         score += 40;
@@ -56,6 +50,7 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
         result.reasons.push_back("rotating MAC address");
     }
 
+    // -------- Identity exposure --------
     if (dev.hasName) {
         score += 15;
         result.reasons.push_back("device name broadcasted");
@@ -76,23 +71,6 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
         result.reasons.push_back("structured identity info (reduced exposure)");
     }
 
-    bool genericAppleName =
-        dev.name == "iPhone" ||
-        dev.name.find("iPhone") != std::string::npos ||
-        dev.name.find("iPad") != std::string::npos;
-
-    if (genericAppleName)
-        score -= 10;
-
-    if (isApple || isGoogle || isSamsung) {
-        result.reasons.push_back("modern mobile privacy implementation");
-    }
-
-    if (dev.isConnectable)
-        score += 10;
-
-    // -------- Exposure sources --------
-
     if (dev.gattHasEnvironmentName)
         score += 5;
 
@@ -108,32 +86,11 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
     if (dev.gattHasPersonalName)
         score += 30;
 
-    // -------- Exposure Tier Impact --------
-    switch(result.exposureTier) {
-        case ExposureTier::Passive:
-            score += 30;
-            result.reasons.push_back("identity exposed via advertising");
-            break;
+    // -------- Device behavior --------
+    if (dev.isConnectable)
+        score += 10;
 
-        case ExposureTier::Active:
-            score += 10;
-            result.reasons.push_back("identity readable after connection");
-            break;
-
-        case ExposureTier::Consent:
-            score += 5;
-            result.reasons.push_back("identity visible after interaction");
-            break;
-
-        default:
-            break;
-    }
-
-    // Apple devices typically expose identity later
-    if (isApple)
-        score -= 20;
-
-    // -------- Security vulnerability factors --------
+    // -------- Security factors --------
     if (dev.hasDFUService) {
         score += 20;
         result.reasons.push_back("firmware update service exposed (DFU)");
@@ -159,30 +116,54 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
         result.reasons.push_back("dual-mode device (BLE + Classic)");
     }
 
-    // -------- Minimal information mitigation --------
-    // A public/static MAC alone enables tracking but reveals little about
-    // the device or its owner.  Reduce the score when no other identifying
-    // information is available so the rating reflects actual exposure.
-    bool hasMinimalInfo = !dev.hasName && !dev.hasManufacturerData &&
-                          !dev.advHasName && !dev.gattHasName &&
-                          !dev.gattHasNameIdentityData && !dev.gattHasPersonalName &&
-                          !dev.gattHasModelInfo && !dev.gattHasIdentityInfo &&
-                          !dev.gattHasEnvironmentName;
+    // -------- Vendor adjustments --------
+    if (isApple)
+        score -= 20;
+
+    if (isApple || isGoogle || isSamsung) {
+        result.reasons.push_back("modern mobile privacy implementation");
+    }
+
+    // -------- Minimal info mitigation --------
+    bool hasMinimalInfo =
+        !dev.hasName &&
+        !dev.hasManufacturerData &&
+        !dev.advHasName &&
+        !dev.gattHasName &&
+        !dev.gattHasNameIdentityData &&
+        !dev.gattHasPersonalName &&
+        !dev.gattHasModelInfo &&
+        !dev.gattHasIdentityInfo &&
+        !dev.gattHasEnvironmentName;
 
     if (hasMinimalInfo && (dev.isPublicMac || dev.hasStaticMac)) {
         score -= 15;
         result.reasons.push_back("limited exposure (MAC only, no identifying data)");
     }
 
+    return score;
+}
+
+
+void finalizeExposureRatings(const DeviceInfo& dev, ExposureResult& result)
+{
     // -------- Identity Exposure --------
-    if (score > 60)
+    if (result.score > 60)
         result.identityExposure = "HIGH";
-    else if (score > 30)
+    else if (result.score > 30)
         result.identityExposure = "MEDIUM";
     else
         result.identityExposure = "LOW";
 
     // -------- Tracking Risk --------
+    bool hasMinimalInfo =
+        !dev.hasName &&
+        !dev.hasManufacturerData &&
+        !dev.advHasName &&
+        !dev.gattHasName &&
+        !dev.gattHasNameIdentityData &&
+        !dev.gattHasPersonalName;
+
     if (dev.hasRotatingMac)
         result.trackingRisk = "LOW";
     else if ((dev.hasStaticMac || dev.isPublicMac) && !hasMinimalInfo)
@@ -193,16 +174,51 @@ ExposureResult analyzeExposure(const DeviceInfo& dev)
         result.trackingRisk = "MEDIUM";
 
     // -------- Privacy Level --------
-    if (score > 80)
+    if (result.score > 80)
         result.privacyLevel = "VERY POOR";
-    else if (score > 60)
+    else if (result.score > 60)
         result.privacyLevel = "POOR";
-    else if (score > 40)
+    else if (result.score > 40)
         result.privacyLevel = "ACCEPTABLE";
-    else if (score > 20)
+    else if (result.score > 20)
         result.privacyLevel = "OK";
     else
         result.privacyLevel = "GOOD";
+}
+
+
+ExposureResult analyzeExposure(const DeviceInfo& dev)
+{
+    ExposureResult result{};
+
+    result.exposureTier = determineExposureTier(dev);
+
+    classifyDevice(dev, result);
+
+    result.score = calculateExposureScore(dev, result);
+
+    // Tier impact
+    switch (result.exposureTier) {
+        case ExposureTier::Passive:
+            result.score += 30;
+            result.reasons.push_back("identity exposed via advertising");
+            break;
+
+        case ExposureTier::Active:
+            result.score += 10;
+            result.reasons.push_back("identity readable after connection");
+            break;
+
+        case ExposureTier::Consent:
+            result.score += 5;
+            result.reasons.push_back("identity visible after interaction");
+            break;
+
+        default:
+            break;
+    }
+
+    finalizeExposureRatings(dev, result);
 
     return result;
 }
