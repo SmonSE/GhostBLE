@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <NimBLEClient.h>
-#include "logger/logger.h"
+#include "infrastructure/logging/logger.h"
 #include "core/models/device_info.h"
 
 struct SecurityFinding {

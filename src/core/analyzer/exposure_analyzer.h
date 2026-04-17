@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "globals/globals.h"
+#include "app/context/globals.h"
 #include "core/models/device_info.h"
 
 struct ExposureResult {

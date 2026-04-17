@@ -203,24 +203,50 @@ Scan Summary:
 
 ```
 GhostBLE/
-├── GhostBLE.ino              # Main sketch (setup, loop, WiFi, controls)
-├── platformio.ini             # PlatformIO build configuration
-├── boards/                    # Custom board definitions (Cardputer, StickC+2, StickS3)
-└── src/
-    ├── GATTServices/          # BLE service readers (9 standard + PwnBeacon)
-    ├── analyzer/              # Exposure analysis & security scoring
-    ├── config/                # Hardware config, known device UUIDs
-    ├── globals/               # Shared state variables
-    ├── gps/                   # GPS manager (Grove + LoRa cap)
-    ├── helper/                # BLE decoders, manufacturer lookup, UI, speech bubbles
-    ├── images/                # Sprite assets for NibBLEs mascot
-    ├── logger/                # Unified multi-target logging
-    ├── models/                # Data structures (DeviceInfo)
-    ├── privacyCheck/          # MAC type detection, cleartext analysis
-    ├── scanner/               # Core BLE scanning and GATT operations
-    ├── target/                # Known device detection (Flipper, Tesla, PwnBeacon)
-    ├── wardriving/            # WiGLE CSV export
-    └── xp/                    # Experience points system
+├── src/
+│
+│   ├── app/                 # Application Layer (Use Cases)
+│   │   ├── context/
+│   │   ├── controller/
+│   │   ├── device/
+│   │   └── gamification/
+│   │
+│   ├── core/                # Domain Layer (Core Logic)
+│   │   ├── models/
+│   │   ├── parsing/
+│   │   ├── detection/
+│   │   ├── fingerprint/
+│   │   ├── filtering/
+│   │   ├── analysis/
+│   │   ├── privacy/
+│   │   └── gatt/
+│   │
+│   ├── infrastructure/      # Infrastructure Layer
+│   │   ├── ble/
+│   │   ├── logging/
+│   │   ├── gps/
+│   │   ├── storage/
+│   │   └── platform/        # Hardware (M5, ESP32 etc.)
+│   │
+│   ├── ui/                  # Presentation Layer
+│   │   ├── display/
+│   │   ├── overlay/
+│   │   ├── icons/
+│   │   └── screens/
+│   │
+│   ├── config/              # Configuration
+│   │   ├── app_config
+│   │   ├── detection_config
+│   │   ├── signal_config
+│   │   └── ...
+│   │
+│   ├── assets/              # Assets / Resources
+│   │   ├── images/
+│   │   └── gatt/ (optional)
+│   │
+│   └── main.cpp             # Entry Point
+│
+├── tests/                   # Tests / Unit Tests
 ```
 
 ---

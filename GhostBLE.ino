@@ -1,37 +1,39 @@
-#include "src/config/hardware.h"
+
 #include <SPI.h>
 #include <vector>
 #include <unordered_set>
 #include <NimBLEDevice.h>
-
-#include "src/globals/globals.h"
-#include "src/config/config.h"
-#include "src/scanner/ble_scanner.h"
-#include "src/helper/draw_overlay.h"
-#include "src/helper/show_expression.h"
-#include "src/helper/screenshot.h"
-
-#include "src/images/nibblesFront.h"
-#include "src/images/nibblesGlasses.h"
-#include "src/images/nibblesAngry.h"
-#include "src/images/nibblesSad.h"
-#include "src/images/nibblesHappy.h"
-#include "src/images/nibblesHappyLeft.h"
-#include "src/images/nibblesThugLife.h"
-
-#include "src/logger/logger.h"
-#include "src/GATTServices/pwn_beacon_service.h"
-#include "src/GATTServices/init_gatt_service.h"
-#include "src/gps/gps_manager.h"
-#include "src/wardriving/wigle_logger.h"
-#include "src/helper/nibbles_speech.h"
-#include "src/config/device_config.h"
-#include "src/config/scan_config.h"
-#include "src/helper/scan_icon.h"
-
-
 #include <WiFi.h>
 #include <AsyncTCP.h>
+
+#include "app/context/globals.h"
+#include "app/interaction/nibbles_speech.h"
+
+#include "src/assets/nibblesFront.h"
+#include "src/assets/nibblesGlasses.h"
+#include "src/assets/nibblesAngry.h"
+#include "src/assets/nibblesSad.h"
+#include "src/assets/nibblesHappy.h"
+#include "src/assets/nibblesHappyLeft.h"
+#include "src/assets/nibblesThugLife.h"
+
+#include "src/infrastructure/ble/ble_scanner.h"
+#include "src/infrastructure/ble/gattServices/init_gatt_service.h"
+#include "src/infrastructure/ble/gattServices/pwn_beacon_service.h"
+#include "src/infrastructure/gps/gps_manager.h"
+#include "src/infrastructure/logging/logger.h"
+#include "src/infrastructure/platform/hardware.h"
+#include "src/infrastructure/platform/hardware_config.h"
+#include "src/infrastructure/storage/screenshot.h"
+#include "src/infrastructure/wardriving/wigle_logger.h"
+
+#include "src/config/app_config.h"
+#include "src/config/device_config.h"
+#include "src/config/scan_config.h"
+
+#include "src/ui/icons/scan_icon.h"
+#include "src/ui/overlay/draw_overlay.h"
+#include "src/ui/expression/show_expression.h"
 
 TaskHandle_t scanTaskHandle = NULL;
 

@@ -1,5 +1,5 @@
 #include "device_config.h"
-#include "logger/logger.h"
+#include "infrastructure/logging/logger.h"
 
 DeviceConfig deviceConfig;
 

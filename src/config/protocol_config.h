@@ -1,0 +1,8 @@
+#pragma once
+
+// ===== PwnBeacon Protocol Constants =====
+#define PWNBEACON_PROTOCOL_VERSION  0x01
+#define PWNBEACON_ADV_MAX_NAME_LEN  8
+#define PWNBEACON_FINGERPRINT_LEN   6
+#define PWNBEACON_FLAG_ADVERTISE    0x01
+#define PWNBEACON_FLAG_CONNECTABLE  0x02
