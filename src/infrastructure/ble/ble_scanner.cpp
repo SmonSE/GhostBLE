@@ -5,11 +5,11 @@
 
 #include "ble_scanner.h"
 
+DeviceRegistry registry;
 
 // Wardriving instances (defined in GhostBLE.ino)
 extern GPSManager gpsManager;
 extern WigleLogger wigleLogger;
-
 
 const char* teslaMsgs[] = {
   "Oh! Tesla!",
@@ -179,11 +179,10 @@ static bool parseDeviceInfo(
   }
   
   // Dedupe: Insert into seenDevices immediately (before any connect attempt)
-  if (seenDevices.find(addrStr) != seenDevices.end()) {
-    LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
-    return false;
+  if (!registry.isNewDevice(addrStr)) {
+      LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
+      return false;
   }
-  seenDevices.insert(addrStr);
 
   // Assign incremental session ID for cross-log correlation
   outDeviceSessionId = getOrAssignDeviceId(addrStr);
@@ -612,11 +611,11 @@ void scanForDevices() {
         continue;
       }
 
-      if (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES) {
-        LOG(LOG_SYSTEM, "Clearing seenDevices (size: " + String(seenDevices.size()) +
-                        ", free heap: " + String(ESP.getFreeHeap()) + ")");
-        seenDevices.clear();
-        deviceSessionMap.clear();
+      if (registry.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES) {
+          LOG(LOG_SYSTEM, "Clearing registry (size: " + String(registry.size()) +
+                ", free heap: " + String(ESP.getFreeHeap()) + ")");
+          registry.clear();
+          deviceSessionMap.clear();
       }
 
       pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
