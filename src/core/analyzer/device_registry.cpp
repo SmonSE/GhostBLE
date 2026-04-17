@@ -16,4 +16,15 @@ size_t DeviceRegistry::size() const {
 
 void DeviceRegistry::clear() {
     seenDevices.clear();
+    seenFingerprints.clear();
+}
+
+bool DeviceRegistry::isNewFingerprint(const SoftFingerprint& fp)
+{
+    if (seenFingerprints.find(fp) != seenFingerprints.end()) {
+        return false;
+    }
+
+    seenFingerprints.insert(fp);
+    return true;
 }

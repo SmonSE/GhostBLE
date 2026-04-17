@@ -184,6 +184,11 @@ static bool parseDeviceInfo(
       return false;
   }
 
+  SoftFingerprint fp = createFingerprint(device);
+  if (!registry.isNewFingerprint(fp)) {
+      return false;
+  }
+
   // Assign incremental session ID for cross-log correlation
   outDeviceSessionId = getOrAssignDeviceId(addrStr);
   devTag = "[#" + String(outDeviceSessionId) + "] ";
