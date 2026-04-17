@@ -29,6 +29,7 @@
 #include <NimBLEDevice.h>
 #include "core/analyzer/device_registry.h"
 #include "core/analyzer/exposure_analyzer.h"
+#include "core/analyzer/soft_fingerprint.h"
 
 
 class BleScanner {
