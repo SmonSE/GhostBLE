@@ -136,8 +136,8 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 | **TAB** | Toggle wardriving mode |
 | **DEL** | Switch GPS source (Grove / LoRa) |
 | **H** | Help Control |
-| **M** | SCAN Mode |
-| **P** | Pointer in logfile |
+| **S** | SCAN Mode |
+| **M** | Marker in logfile |
 
 ### M5StickC Plus 2 / M5StickS3 (Buttons)
 
