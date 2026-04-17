@@ -27,7 +27,14 @@
 #include "infrastructure/platform/hardware.h"
 
 #include <NimBLEDevice.h>
+#include "core/analyzer/device_registry.h"
+#include "core/analyzer/exposure_analyzer.h"
 
+
+class BleScanner {
+private:
+    DeviceRegistry registry;
+};
 
 void startBleScan();
 void stopBleScan();
