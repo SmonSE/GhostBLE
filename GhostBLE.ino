@@ -268,15 +268,15 @@ void loop() {
           return;
         }
         // Scan Mode Toggle
-        if ((key == 'm' || key == 'M')) {
-          LOG(LOG_CONTROL, "M pressed — toggling scan mode");
+        if ((key == 's' || key == 'S')) {
+          LOG(LOG_CONTROL, "S pressed — toggling scan mode");
           if(!bleScanEnabled) {
             toggleScanMode();
           }
           return;
         }
-        if ((key == 'p' || key == 'P') && bleScanEnabled) {
-            LOG(LOG_CONTROL, "P pressed — marker set");
+        if ((key == 'm' || key == 'M') && bleScanEnabled) {
+            LOG(LOG_CONTROL, "M pressed — marker set");
 
             extern GPSManager gpsManager;
             bool hasFix = gpsManager.isValid();

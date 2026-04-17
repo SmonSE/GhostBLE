@@ -13,6 +13,8 @@
 #include "assets/nibblesHappyLeft.h"
 #include "assets/nibblesThugLife.h"
 #include "assets/nibblesSleep.h"
+#include "assets/nibblesFunny.h"
+#include "assets/nibblesBored.h"
 
 
 static float smoothedVoltage = 0;
@@ -201,7 +203,7 @@ void showHelpOverlay() {
   M5.Lcd.print("-- CONTROLS --");
 
   M5.Lcd.setTextColor(WHITE, 0x00C4);
-  int y = 22;
+  int y = 20;
   const int lineH = 13;
 
 #if HAS_KEYBOARD
@@ -222,7 +224,10 @@ void showHelpOverlay() {
   M5.Lcd.print("Btn H        This Help");
   y += lineH;
   M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn M        Scan Mode");
+  M5.Lcd.print("Btn S        Scan Mode");
+  y += lineH;
+  M5.Lcd.setCursor(10, y);
+  M5.Lcd.print("Btn M        Marker set");
   y += lineH;
   M5.Lcd.setCursor(10, y);
   M5.Lcd.print("Hold BtnG0   BLE Scan");
@@ -276,18 +281,23 @@ void dismissHelpOverlay() {
 
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
-    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
+    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
 
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
 
     // HappyLeft and Happy should be shown randomly to add some variety
-    if (random(2) == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+    int r = random(3);
+
+    if (r == 0) {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+    } else if (r == 1) {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    }
+    } else {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } 
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     // Fallback chain: localName → deviceName → appearanceName
@@ -369,38 +379,20 @@ void showSadExpressionTask(void* parameter) {
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     // HappyLeft and Happy should be shown randomly to add some variety
-    if (random(2) == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+    int r = random(3);
+    if (r == 0) {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+    } else if (r == 1) {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
     isSadTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
-
-    clearSpeechBubble();
-}
-
-void showHappyExpressionTask(void* parameter) {
-    isHappyTaskRunning = true;
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
-
-    // HappyLeft and Happy should be shown randomly to add some variety
-    if (random(2) == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    }
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
-
-    vTaskDelay(pdMS_TO_TICKS(4000));  // 4 Sekunden
-
-    isHappyTaskRunning = false;
     vTaskDelete(NULL);  // Task selbst beenden
 
     clearSpeechBubble();
