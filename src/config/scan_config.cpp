@@ -1,5 +1,5 @@
 #include "scan_config.h"
-#include "helper/scan_icon.h"
+#include "ui/icons/scan_icon.h"
 #include <NimBLEDevice.h>
 
 // ===== Global State =====
