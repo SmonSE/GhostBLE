@@ -67,6 +67,7 @@ extern unsigned long lastFaceUpdate;
 
 extern String devTag;
 extern String localName;
+extern String displayName;
 extern String address;
 extern String serviceInfo;
 extern String manuInfo;

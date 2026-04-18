@@ -34,3 +34,23 @@ SoftFingerprint createFingerprint(const NimBLEAdvertisedDevice* device) {
 
     return fp;
 }
+
+SoftFingerprint createAppleFingerprint(
+    const NimBLEAdvertisedDevice* device,
+    const String& localName,
+    int rssi ) {
+        
+    SoftFingerprint fp;
+
+    fp.manufacturerHash = 0x004C;
+
+    if (!localName.isEmpty()) {
+        std::string name = localName.c_str();
+        fp.serviceHash = simpleHash(name);
+    }
+
+    int bucket = (rssi / 10) * 10;  // e.g. -67 → -60
+    fp.appearance = (uint16_t)(bucket + 100);
+
+    return fp;
+}

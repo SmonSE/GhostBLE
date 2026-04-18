@@ -177,14 +177,24 @@ static bool parseDeviceInfo(
         + String(addrStr.c_str()) + " (" + String(rssi) + " dBm)");
     return false;
   }
-  
+
   // Dedupe: Insert into seenDevices immediately (before any connect attempt)
+  SoftFingerprint fp;
+
+  bool isApple = (manufacturerId == 0x004C) ||
+                (manufacturerName == "Apple Inc.");
+
   if (!registry.isNewDevice(addrStr)) {
       LOG(LOG_SCAN, String("🛑 Already seen: ") + address.c_str() + "\n");
       return false;
   }
 
-  SoftFingerprint fp = createFingerprint(device);
+  if (isApple) {
+      fp = createAppleFingerprint(device, localName, rssi);
+  } else {
+      fp = createFingerprint(device);
+  }
+
   if (!registry.isNewFingerprint(fp)) {
       return false;
   }
@@ -343,6 +353,10 @@ static bool connectAndReadGATT(
       dev.advHasName = true;
   }
 
+  String gattLog = devTag + "🔓 Connected and discovered attributes: "  + address;
+  //if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;  // make no sense to log this separately since it's all interleaved anyway
+  LOG(LOG_GATT, gattLog);
+
   // Run all registered GATT service handlers dynamically
   String serviceOutput = GATTServiceRegistry::runDiscoveredHandlers(pClient);
 
@@ -352,19 +366,8 @@ static bool connectAndReadGATT(
       dev.gattHasName = true;
   }
 
-  String gattLog = devTag + "🔓 Connected and discovered attributes: "  + address;
-  //if (!serviceOutput.isEmpty()) gattLog += "\n" + serviceOutput;  // make no sense to log this separately since it's all interleaved anyway
-  LOG(LOG_GATT, gattLog);
-
   targetConnects++;
   xpManager.awardXP(0.5);  // +0.5 XP: GATT connection success
-
-  if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-    if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 2, &glassesTaskHandle, 1) != pdPASS) {
-      LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
-      isGlassesTaskRunning = false;
-    }
-  }
 
   for (auto it = pClient->getServices().begin(); it != pClient->getServices().end(); ++it) {
     NimBLERemoteService* service = *it;  // Dereference the iterator to get the element
@@ -624,107 +627,150 @@ void scanForDevices() {
       }
 
       pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
-
       {
         if (is_connectable && shouldConnect && pClient->connect(*device)) {
           if (pClient->discoverAttributes()) {
 
             bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag);
-
             if (!targetDetected) {
-              String infoLog = devTag + "Device Infos\n"
-                  "   Adress:  " + address + "\n"
-                  "   Name:    " + localName + "\n"
-                  "   Manuf.:  " + manufacturerName + "\n"
-                  "   Device Name: ";
-              for (const auto& names : nameList) {
-                if (!names.empty()) {
-                  infoLog += "\n     - ";
-                  infoLog += names.c_str();
-                }
-              }
-              float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - rssi) / (float)RSSI_CONSTANT);
-              infoLog += "\n   Distance: " + String(distance, 2) + " m";
-              infoLog += "\n   RSSI: " + String(rssi);
-              //LOG(LOG_SCAN, infoLog);
-              LOG(LOG_GATT, infoLog);
-
-              // iBeacon info
-              if (isIBeacon) {
-                beaconsFound++;
-                float beaconDistance = estimateDistance(beacon.txPower, rssi);
-                LOG(LOG_BEACON, devTag + "Beacon Type: iBeacon\n"
-                    "   UUID:  " + String(beacon.uuid.c_str()) + "\n"
-                    "   Major: " + String(beacon.major) + "\n"
-                    "   Minor: " + String(beacon.minor) + "\n"
-                    "   Beacon Distance: ~" + String(beaconDistance, 2) + " m\n"
-                    "   RSSI: " + String(rssi) + "\n"
-                    "   Manufacturer: " + manufacturerName);
-              }
-
-              // PwnBeacon info + GATT read
-              if (isPwnBeaconDevice) {
-                // Read full identity, face, and name via GATT
-                PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
-
-                LOG(LOG_BEACON, devTag + "Beacon Type: PwnBeacon (PwnGrid/BLE)\n"
-                    "   Name:     " + pwnBeacon.name + "\n"
-                    "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
-                    "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
-                    "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
-                    "   RSSI:     " + String(rssi));
-              }
-
-              // -------- Security Analysis --------
-              SecurityResult secResult = analyzeDeviceSecurity(pClient, dev);
-
-              dev.connectionEncrypted = secResult.connectionEncrypted;
-              dev.hasWritableChars = (secResult.writableCharCount > 0);
-              dev.writableCharCount = secResult.writableCharCount;
-              dev.hasDFUService = secResult.hasDFUService;
-              dev.hasUARTService = secResult.hasUARTService;
-              dev.hasSensitiveUnencrypted = secResult.hasSensitiveServiceUnencrypted;
-              dev.deviceFingerprint = secResult.deviceFingerprint;
-
-              if (!secResult.findings.empty() || !secResult.deviceFingerprint.empty()) {
-                String secLog = devTag + "Security Findings:";
-                for (auto& f : secResult.findings) {
-                  secLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
-                  if (f.severity == "HIGH") highFindingsCount++;
-                  if (f.category == "SENSITIVE_UNENCRYPTED") unencryptedSensitiveCount++;
-                  if (f.category == "WRITABLE_NO_AUTH") writableNoAuthCount++;
-                }
-                if (!secResult.deviceFingerprint.empty()) {
-                  secLog += "\n   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str());
-                }
-                LOG(LOG_SECURITY, secLog);
-              }
-
-              // Analyze exposure and log results
-              std::string mac = device->getAddress().toString().c_str();
-
-              MACType macType = getMACType(mac);
-
-              dev.mac = mac;
-              dev.name = localName.c_str();
-              dev.manufacturer = manufacturerName.c_str();
-
-              dev.isConnectable = is_connectable;
-
-              dev.isPublicMac = (macType == MACType::Public);
-              dev.hasStaticMac = (macType == MACType::Public || macType == MACType::StaticRandom);
-              dev.hasRotatingMac = isRotatingMAC(macType);
-
-              dev.hasName = !dev.name.empty();
-              dev.hasManufacturerData = !dev.manufacturer.empty();
-              dev.hasCleartextData = containsCleartext(payloadVec);
-
-              ExposureResult exposure = analyzeExposure(dev);
-
-              handleExposureResult(exposure, manufacturerName, devTag);
-            } else {
-              LOG(LOG_GATT, devTag + "🔒 Connected but has no information available: " + address);
+              LOG(LOG_GATT, devTag + "No Target detected in gatt with address: " + address);
             }
+
+            // ---------------- Model extraction ----------------
+            String modelIdentifier = "";
+
+            for (const auto& n : nameList) {
+                String s = n.c_str();
+
+                // Detect Apple model identifier like "iPhone17,3"
+                if ((s.startsWith("iPhone") ||
+                    s.startsWith("iPad")   ||
+                    s.startsWith("Mac")) &&
+                    s.indexOf(",") != -1) {
+                    
+                    modelIdentifier = s;
+                    break;
+                }
+            }
+
+            // Resolve to human-readable model name
+            String modelName = "";
+            if (!modelIdentifier.isEmpty()) {
+                modelName = getAppleModelName(modelIdentifier);
+            }
+
+            // ---------------- Logging ----------------
+            String infoLog = devTag + "Device Infos\n"
+                "   Adress:  " + address + "\n"
+                "   Name:    " + localName + "\n"
+                "   Manuf.:  " + manufacturerName;
+
+            // Show resolved model if available
+            if (!modelName.isEmpty()) {
+                infoLog += "\n   Model:   " + modelName;
+                displayName = modelName;
+            }
+
+            // Optional: fallback if Apple but no model found
+            else if (manufacturerName == "Apple Inc.") {
+                infoLog += "\n   Model:   Apple Device";
+            }
+
+            // Optional: keep raw debug info (very useful during development)
+            infoLog += "\n   Raw GATT:";
+            for (const auto& n : nameList) {
+                if (!n.empty()) {
+                    infoLog += "\n     - " + String(n.c_str());
+                }
+            }
+
+            float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - rssi) / (float)RSSI_CONSTANT);
+            infoLog += "\n   Distance: " + String(distance, 2) + " m";
+            infoLog += "\n   RSSI: " + String(rssi);
+            //LOG(LOG_SCAN, infoLog);
+            LOG(LOG_GATT, infoLog);
+
+            // iBeacon info
+            if (isIBeacon) {
+              beaconsFound++;
+              float beaconDistance = estimateDistance(beacon.txPower, rssi);
+              LOG(LOG_BEACON, devTag + "Beacon Type: iBeacon\n"
+                  "   UUID:  " + String(beacon.uuid.c_str()) + "\n"
+                  "   Major: " + String(beacon.major) + "\n"
+                  "   Minor: " + String(beacon.minor) + "\n"
+                  "   Beacon Distance: ~" + String(beaconDistance, 2) + " m\n"
+                  "   RSSI: " + String(rssi) + "\n"
+                  "   Manufacturer: " + manufacturerName);
+            }
+
+            // PwnBeacon info + GATT read
+            if (isPwnBeaconDevice) {
+              // Read full identity, face, and name via GATT
+              PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
+
+              LOG(LOG_BEACON, devTag + "Beacon Type: PwnBeacon (PwnGrid/BLE)\n"
+                  "   Name:     " + pwnBeacon.name + "\n"
+                  "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
+                  "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
+                  "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
+                  "   RSSI:     " + String(rssi));
+            }
+
+            // -------- Security Analysis --------
+            SecurityResult secResult = analyzeDeviceSecurity(pClient, dev);
+
+            dev.connectionEncrypted = secResult.connectionEncrypted;
+            dev.hasWritableChars = (secResult.writableCharCount > 0);
+            dev.writableCharCount = secResult.writableCharCount;
+            dev.hasDFUService = secResult.hasDFUService;
+            dev.hasUARTService = secResult.hasUARTService;
+            dev.hasSensitiveUnencrypted = secResult.hasSensitiveServiceUnencrypted;
+            dev.deviceFingerprint = secResult.deviceFingerprint;
+
+            if (!secResult.findings.empty() || !secResult.deviceFingerprint.empty()) {
+              String secLog = devTag + "Security Findings:";
+              for (auto& f : secResult.findings) {
+                secLog += "\n   [" + String(f.severity.c_str()) + "] " + String(f.description.c_str());
+                if (f.severity == "HIGH") highFindingsCount++;
+                if (f.category == "SENSITIVE_UNENCRYPTED") unencryptedSensitiveCount++;
+                if (f.category == "WRITABLE_NO_AUTH") writableNoAuthCount++;
+              }
+              if (!secResult.deviceFingerprint.empty()) {
+                secLog += "\n   Device Fingerprint: " + String(secResult.deviceFingerprint.c_str());
+              }
+              LOG(LOG_SECURITY, secLog);
+            }
+
+            // Analyze exposure and log results
+            std::string mac = device->getAddress().toString().c_str();
+
+            MACType macType = getMACType(mac);
+
+            dev.mac = mac;
+            dev.name = localName.c_str();
+            dev.manufacturer = manufacturerName.c_str();
+            dev.isConnectable = is_connectable;
+
+            dev.isPublicMac = (macType == MACType::Public);
+            dev.hasStaticMac = (macType == MACType::Public || macType == MACType::StaticRandom);
+            dev.hasRotatingMac = isRotatingMAC(macType);
+
+            dev.hasName = !dev.name.empty();
+            dev.hasManufacturerData = !dev.manufacturer.empty();
+            dev.hasCleartextData = containsCleartext(payloadVec);
+
+            ExposureResult exposure = analyzeExposure(dev);
+
+            handleExposureResult(exposure, manufacturerName, devTag);
+
+            // At the end of processing because of bubble displayname and queuing.
+            if (!isGlassesTaskRunning && !isAngryTaskRunning) {
+              if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 2, &glassesTaskHandle, 1) != pdPASS) {
+                LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
+                isGlassesTaskRunning = false;
+              }
+            }
+
           } else {
             LOG(LOG_GATT, devTag + "🔒 Connected but failed to discover attributes: " + address);
           } 
@@ -735,7 +781,7 @@ void scanForDevices() {
             } else if (rssi <= RSSI_CONNECT_THRESHOLD) {
                 reason = "📡 Weak signal or unstable";
             } else {
-                reason = "🔒 Likely protected (pairing required)";
+                reason = "🔒 Likely protected (pairing required but not possible)";
             }
             LOG(LOG_GATT, devTag + reason + ": " + address + " (" + String(rssi) + " dBm)");
 
@@ -797,6 +843,7 @@ void scanForDevices() {
 
     xpManager.save();
   }
+  displayName.clear();
   clearSpeechBubble();    // if speechbubble is not cleared because of qeueing, clear it at the end of the scan to avoid stale messages.
   scanIsRunning = false;
 }

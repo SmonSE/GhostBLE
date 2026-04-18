@@ -66,9 +66,10 @@ std::string addrStr = "";
 unsigned long lastScanTime = 0;
 unsigned long lastFaceUpdate = 0;
 
-
+  
 String devTag = "";
 String localName = "";
+String displayName = "";
 String address = "";
 String serviceInfo = "";
 String manuInfo = "";

@@ -14,4 +14,10 @@ struct SoftFingerprint {
     }
 };
 
+SoftFingerprint createAppleFingerprint(
+    const NimBLEAdvertisedDevice* device,
+    const String& localName,
+    int rssi
+);
+
 SoftFingerprint createFingerprint(const NimBLEAdvertisedDevice* device);
