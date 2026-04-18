@@ -31,6 +31,8 @@
 #include "core/analyzer/exposure_analyzer.h"
 #include "core/analyzer/soft_fingerprint.h"
 
+#include "utils/apple_models.h"
+
 
 class BleScanner {
 private:

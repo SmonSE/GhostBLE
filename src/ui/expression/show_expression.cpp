@@ -300,15 +300,16 @@ void showGlassesExpressionTask(void* parameter) {
     } 
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    // Fallback chain: localName → deviceName → appearanceName
-    String bubbleText = localName;
+    // Fallback chain: displayName → localName → deviceName → appearanceName
+    String bubbleText = displayName;
+    if (bubbleText.length() == 0) bubbleText = localName;
     if (bubbleText.length() == 0) bubbleText = deviceName;
     if (bubbleText.length() == 0) bubbleText = appearanceName;
 
     if (bubbleText.length() > 0 && !isSpeechBubbleActive) {
       clearSpeechBubble();
-      if(bubbleText.length() > 14) {
-        bubbleText = bubbleText.substring(0, 11) + "...";
+      if(bubbleText.length() > 16) {
+        bubbleText = bubbleText.substring(0, 13) + "...";
       }
 
       drawBubble(bubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
