@@ -267,7 +267,9 @@ void dismissHelpOverlay() {
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT,
               NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
 
-  if (random(2) == 0) {
+  int r = esp_random() % 2;
+
+  if (r == 0) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
                   NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
@@ -281,12 +283,12 @@ void dismissHelpOverlay() {
 
 void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
-    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
+    drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
 
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     // HappyLeft and Happy should be shown randomly to add some variety
-    int r = random(3);
+    int r = esp_random() % 3;
 
     if (r == 0) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
@@ -342,7 +344,9 @@ void showAngryExpressionTask(void* parameter) {
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     // HappyLeft and Happy should be shown randomly to add some variety
-    if (random(2) == 0) {
+    int r = esp_random() % 2;
+
+    if (r == 0) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
@@ -367,7 +371,8 @@ void showSadExpressionTask(void* parameter) {
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     // HappyLeft and Happy should be shown randomly to add some variety
-    int r = random(3);
+    int r = esp_random() % 3;
+
     if (r == 0) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
@@ -395,7 +400,9 @@ void showThugLifeExpressionTask(void* parameter) {
   vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
   // HappyLeft and Happy should be shown randomly to add some variety
-  if (random(2) == 0) {
+  int r = esp_random() % 2;
+
+  if (r == 0) {
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
   } else {
@@ -410,10 +417,12 @@ void showThugLifeExpressionTask(void* parameter) {
 
 void showHappyExpressionTask(void* parameter) {
     isHappyTaskRunning = true;
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(1000));  // 1 Sekunde
 
     // HappyLeft and Happy should be shown randomly to add some variety
-    if (random(2) == 0) {
+    int r = esp_random() % 2;
+
+    if (r == 0) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {

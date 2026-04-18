@@ -4,13 +4,17 @@
 static std::map<String, String> appleModels = {
 
     // iPhone
+    {"iPhone10,1", "iPhone 8"},
     {"iPhone12,1", "iPhone 11"},
     {"iPhone12,8", "iPhone SE"},
+    {"iPhone13,1", "iPhone 12 mini"},
     {"iPhone13,2", "iPhone 12"},
     {"iPhone14,2", "iPhone 13 Pro"},
     {"iPhone14,5", "iPhone 13"},
+    {"iPhone14,6", "iPhone SE (3rd gen)"},
     {"iPhone15,2", "iPhone 14 Pro"},
     {"iPhone15,3", "iPhone 14 Pro Max"},
+    {"iPhone16,2", "iPhone 15 Pro"},
     {"iPhone17,3", "iPhone 16"},
     {"iPhone17,4", "iPhone 16 Pro"},
     {"iPhone17,5", "iPhone 16 Pro Max"},

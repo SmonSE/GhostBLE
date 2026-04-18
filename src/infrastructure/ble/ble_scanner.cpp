@@ -635,7 +635,7 @@ void scanForDevices() {
           deviceSessionMap.clear();
       }
 
-      pClient->setConnectTimeout(4 * 1000); // Set 4s timeout
+      pClient->setConnectTimeout(3 * 1000); // Set 3s timeout
       {
         if (is_connectable && shouldConnect && pClient->connect(*device)) {
           if (pClient->discoverAttributes()) {
@@ -779,7 +779,8 @@ void scanForDevices() {
                 isGlassesTaskRunning = false;
               }
             }
-
+            // For more stable ui flow
+            delay(1000);
           } else {
             LOG(LOG_GATT, devTag + "🔒 Connected but failed to discover attributes: " + address);
           } 
@@ -804,7 +805,8 @@ void scanForDevices() {
                 isSadTaskRunning = false;
               }
             }
-
+            // For more stable ui flow
+            delay(1000);
             handleExposureResult(exposure, manufacturerName, devTag);
         }
       }
@@ -851,6 +853,8 @@ void scanForDevices() {
     LOG(LOG_SCAN, "##########################\n");
 
     xpManager.save();
+    // For more stable ui flow
+    delay(2000);
   }
   clearSpeechBubble();    // if speechbubble is not cleared because of qeueing, clear it at the end of the scan to avoid stale messages.
   displayName.clear();
