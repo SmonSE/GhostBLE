@@ -16,6 +16,8 @@ static std::map<String, String> appleModels = {
     {"iPhone17,5", "iPhone 16 Pro Max"},
 
     // iPad
+    {"iPad5,3", "iPad Air 2"},  // wifi
+    {"iPad5,4", "iPad Air 2"},  // cellular
     {"iPad7,11",  "iPad (7th gen)"},
     {"iPad7,12",  "iPad (7th gen)"},
     {"iPad11,6",  "iPad (8th gen)"},
