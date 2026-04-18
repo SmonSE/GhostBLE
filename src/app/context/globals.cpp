@@ -36,6 +36,7 @@ std::atomic<bool> isChargingState{false};
 
 TaskHandle_t glassesTaskHandle = NULL;
 TaskHandle_t angryTaskHandle = NULL;
+TaskHandle_t happyTaskHandle = NULL;
 TaskHandle_t sadTaskHandle = NULL;
 SemaphoreHandle_t taskMutex = NULL;
 

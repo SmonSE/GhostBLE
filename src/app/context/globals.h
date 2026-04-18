@@ -35,8 +35,10 @@ extern std::atomic<bool> isChargingState;
 // FreeRTOS task handles for expression animations
 extern TaskHandle_t glassesTaskHandle;
 extern TaskHandle_t angryTaskHandle;
+extern TaskHandle_t happyTaskHandle;
 extern TaskHandle_t sadTaskHandle;
 extern SemaphoreHandle_t taskMutex;
+
 extern bool isWebLogActive;
 extern bool is_connectable;
 extern bool scanIsRunning;

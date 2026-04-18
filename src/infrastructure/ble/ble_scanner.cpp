@@ -445,7 +445,7 @@ static bool connectAndReadGATT(
       vTaskDelay(pdMS_TO_TICKS(2000));
       if (!isAngryTaskRunning) {
         //LOG(LOG_SYSTEM, "showAngryExpressionTask");
-        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 4, &angryTaskHandle, 1) != pdPASS) {
+        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, NULL, 5, &angryTaskHandle, 1) != pdPASS) {
           LOG(LOG_SYSTEM, "Failed to create AngryFace task");
           isAngryTaskRunning = false;
         }
@@ -522,8 +522,17 @@ void scanForDevices() {
 
     LOG(LOG_SCAN, "📡 Scan Is Running");
 
+    if (!isHappyTaskRunning) {
+      if (xTaskCreatePinnedToCore(showHappyExpressionTask, "HappyFace", 4096, NULL, 2, &happyTaskHandle, 1) != pdPASS) {
+            LOG(LOG_SYSTEM, "Failed to create HappyFace task");
+          isHappyTaskRunning = false;
+      }
+    }
+
     for (int i = 0; i < results.getCount(); i++) {
       const NimBLEAdvertisedDevice *device = results.getDevice(i);
+
+      showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
       // New risk scoring system
       bool hasCustomService = false;
@@ -765,7 +774,7 @@ void scanForDevices() {
 
             // At the end of processing because of bubble displayname and queuing.
             if (!isGlassesTaskRunning && !isAngryTaskRunning) {
-              if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 2, &glassesTaskHandle, 1) != pdPASS) {
+              if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses", 4096, NULL, 4, &glassesTaskHandle, 1) != pdPASS) {
                 LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
                 isGlassesTaskRunning = false;
               }
@@ -788,9 +797,9 @@ void scanForDevices() {
             dev.isConnectable = false;
             ExposureResult exposure = analyzeExposure(dev);
 
-            if (!isGlassesTaskRunning && !isAngryTaskRunning && !isSadTaskRunning) {
+            if (!isAngryTaskRunning && !isSadTaskRunning) {
               //LOG(LOG_SYSTEM, "showSadExpressionTask");
-              if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 1, &sadTaskHandle, 1) != pdPASS) {
+              if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace", 4096, NULL, 3, &sadTaskHandle, 1) != pdPASS) {
                 LOG(LOG_SYSTEM, "Failed to create SadFace task");
                 isSadTaskRunning = false;
               }
@@ -843,7 +852,7 @@ void scanForDevices() {
 
     xpManager.save();
   }
-  displayName.clear();
   clearSpeechBubble();    // if speechbubble is not cleared because of qeueing, clear it at the end of the scan to avoid stale messages.
+  displayName.clear();
   scanIsRunning = false;
 }
