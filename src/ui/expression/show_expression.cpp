@@ -283,7 +283,7 @@ void showGlassesExpressionTask(void* parameter) {
     isGlassesTaskRunning = true;
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 77, 52);
 
-    vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     // HappyLeft and Happy should be shown randomly to add some variety
     int r = random(3);
@@ -364,19 +364,6 @@ void showSadExpressionTask(void* parameter) {
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    // Fallback chain: localName → deviceName → appearanceName
-    String sadBubbleText = localName;
-    if (sadBubbleText.length() == 0) sadBubbleText = deviceName;
-    if (sadBubbleText.length() == 0) sadBubbleText = appearanceName;
-
-    if (sadBubbleText.length() > 0 && !isSpeechBubbleActive) {
-      clearSpeechBubble();
-      if(sadBubbleText.length() > 14) {
-        sadBubbleText = sadBubbleText.substring(0, 11) + "...";
-      }
-      drawBubble(sadBubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
-    }
-
     vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
 
     // HappyLeft and Happy should be shown randomly to add some variety
@@ -419,6 +406,26 @@ void showThugLifeExpressionTask(void* parameter) {
 
   isThugLifeTaskRunning = false;
   vTaskDelete(NULL);  // Task selbst beenden
+}
+
+void showHappyExpressionTask(void* parameter) {
+    isHappyTaskRunning = true;
+    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+
+    // HappyLeft and Happy should be shown randomly to add some variety
+    if (random(2) == 0) {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    }
+    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+
+    isHappyTaskRunning = false;
+    vTaskDelete(NULL);  // Task selbst beenden
+
+    clearSpeechBubble();
 }
 
 void drawStatusIcons(int x, int y) {
