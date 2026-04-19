@@ -195,7 +195,7 @@ pio test -e native -v
      - fe78 (Unknown Service)
 [#17] 🔓 Connected and discovered attributes: be:e9:2f:33:47:f1
 [#17] Reading Generic Access Service (0x1800)
-   Device found: **ENVY Photo 6200 series** [be:e9:2f:33:47:f1]
+   Device found: ENVY Photo 6200 series [be:e9:2f:33:47:f1]
    Generic Access Service found (0x1800)
      Read value of generic access info
      Device Name: ENVY Photo 6200 series
@@ -205,8 +205,8 @@ pio test -e native -v
      Generic Attribute Service detected (0x1801)
      Service Changed: Supported (indicate)
      Unknown Service (0xfe78)
-       Char 73fd8f50-626c-4f9b-a52e-b1d226efcf8d [RN] (len=4) = **C0 A8 B2 35 (192.168.178.53) **
-       Char 262040ed-6f79-41bb-b657-bff4cb49195a [RN] (len=16) = **2A 02  ... (2A02:8071:2287:5B20:BEE9:2FFF:FE33:C7F1)**
+       Char 73fd8f50-626c-4f9b-a52e-b1d226efcf8d [RN] (len=4) = C0 A8 B2 35 (192.168.178.53)
+       Char 262040ed-6f79-41bb-b657-bff4cb49195a [RN] (len=16) = 2A 02  ... (2A02:8071:2287:5B20:BEE9:2FFF:FE33:C7F1)
        Char 58633f16-5cad-46bd-978d-fa0ad01a45ea [R] (len=16) = 0C 76 32 66 4E A8 51 21 6D CA D9 B8 50 B3 E9 3D 
        Char 380c09f8-9665-417a-bb2b-06cb6a76e784 [R] (len=6) = 00 00 00 00 00 00 
        Char 8fe0b1c0-ea32-11e5-a4fc-0002a5d5c51b [RN] (len=58) = 01 20 E2 F8 8D C4 24 90 AE 79 A8 DF 86 8E 47 ...
@@ -231,9 +231,9 @@ pio test -e native -v
    Name:    ENVY Photo 6200 series
    Manuf.:  Sony Ericsson Mobile Communications
    Raw GATT:
-     - **ENVY Photo 6200 series**
-     - **IPv4 Address**
-     - **IPv6 Address**
+     - ENVY Photo 6200 series
+     - IPv4 Address
+     - IPv6 Address
      - Device UUID
      - P2P Device ID
      - Wi-Fi Infrastructure
