@@ -12,6 +12,7 @@ static std::map<String, String> appleModels = {
     {"iPhone14,2", "iPhone 13 Pro"},
     {"iPhone14,5", "iPhone 13"},
     {"iPhone14,6", "iPhone SE (3rd gen)"},
+    {"iPhone14,7", "iPhone 14"},
     {"iPhone15,2", "iPhone 14 Pro"},
     {"iPhone15,3", "iPhone 14 Pro Max"},
     {"iPhone16,2", "iPhone 15 Pro"},
@@ -19,6 +20,7 @@ static std::map<String, String> appleModels = {
     {"iPhone17,2", "iPhone 16 Pro Max"},
     {"iPhone17,3", "iPhone 16"},
     {"iPhone17,4", "iPhone 16 Plus"},
+    {"iPhone17,5", "iPhone 16 Pro Max"},
 
     // iPad
     {"iPad5,3", "iPad Air 2"},  // wifi

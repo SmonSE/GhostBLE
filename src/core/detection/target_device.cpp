@@ -29,17 +29,27 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   }
 
   // 3. FLIPPER ZERO UUIDs
-  if (serviceUuid == FLIPPER_BLACK_UUID) {
-    LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Black)");
-    return true;
+  String uuid = serviceUuid;
+  uuid.toLowerCase();
+
+  // Normalize to 16-bit UUID
+  if (uuid.length() == 4) {
+  // already short → do nothing
+  } else if (uuid.length() >= 8) {
+      uuid = uuid.substring(4, 8);
   }
-  if (serviceUuid == FLIPPER_WHITE_UUID) {
-    LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (White)");
-    return true;
+  // Detection
+  if (uuid == "3081") {
+      LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Black)");
+      return true;
   }
-  if (serviceUuid == FLIPPER_TRANSPARENT_UUID) {
-    LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Transparent)");
-    return true;
+  if (uuid == "3082") {
+      LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (White)");
+      return true;
+  }
+  if (uuid == "3083") {
+      LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Transparent)");
+      return true;
   }
 
   // 4. PWNBEACON (PwnGrid over BLE)
