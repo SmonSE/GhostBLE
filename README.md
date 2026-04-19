@@ -191,14 +191,55 @@ pio test -e native -v
 ## Sample Output
 
 ```
-<NoName> MAC: d3:c9:9d:fa:d9:9a | Rotating: Yes | Cleartext: Yes
-Trying to connect to address: d3:c9:9d:fa:d9:9a
-Attribute discovery failed: d3:c9:9d:fa:d9:9a
-
-Scan Summary:
-- Spotted: 4
-- Sniffed: 2
-- Suspicious: 0
+[#17] Advertised Services (1):
+     - fe78 (Unknown Service)
+[#17] 🔓 Connected and discovered attributes: be:e9:2f:33:47:f1
+[#17] Reading Generic Access Service (0x1800)
+   Device found: **ENVY Photo 6200 series** [be:e9:2f:33:47:f1]
+   Generic Access Service found (0x1800)
+     Read value of generic access info
+     Device Name: ENVY Photo 6200 series
+     Appearance: Unknown (0x0)
+     PPCP - Min: 6, Max: 6, Latency: 0, Timeout: 2000
+     Central Address Resolution: Not Supported
+     Generic Attribute Service detected (0x1801)
+     Service Changed: Supported (indicate)
+     Unknown Service (0xfe78)
+       Char 73fd8f50-626c-4f9b-a52e-b1d226efcf8d [RN] (len=4) = **C0 A8 B2 35 (192.168.178.53) **
+       Char 262040ed-6f79-41bb-b657-bff4cb49195a [RN] (len=16) = **2A 02  ... (2A02:8071:2287:5B20:BEE9:2FFF:FE33:C7F1)**
+       Char 58633f16-5cad-46bd-978d-fa0ad01a45ea [R] (len=16) = 0C 76 32 66 4E A8 51 21 6D CA D9 B8 50 B3 E9 3D 
+       Char 380c09f8-9665-417a-bb2b-06cb6a76e784 [R] (len=6) = 00 00 00 00 00 00 
+       Char 8fe0b1c0-ea32-11e5-a4fc-0002a5d5c51b [RN] (len=58) = 01 20 E2 F8 8D C4 24 90 AE 79 A8 DF 86 8E 47 ...
+       Char 17d096e0-ea1f-11e5-9dbc-0002a5d5c51b [RN] (len=51) = 00 00 ...
+     Unknown Service (0xfe77)
+       Char aec832f7-7dff-4d6e-9b65-5b5bcf753941 [R] (len=1) = 00 
+       Char 8cec8341-c2b8-4744-b491-6826c665f187 [W]
+       Char d87a143d-16f7-4c20-9b73-2e24a8dfbcac [R] (len=1) = 00 
+       Char c4be737a-c1ed-44a4-b115-b28bddba8f45 [RNI] (len=1) = 00 
+     Unknown Service (0x7365a0ae-e596-129d-d84a-88db1ffbcc04)
+       Char 1c7cfacb-7818-c09c-9345-04602070e0cc [RW] (len=1) = 00 
+       Char ddbb8ffd-d1b6-bbb5-0f47-87a23630038b [RNI] (len=1) = 00 
+[#17] Descriptor [73fd8f50-626c-4f9b-a52e-b1d226efcf8d]: IPv4 Address
+[#17] Descriptor [262040ed-6f79-41bb-b657-bff4cb49195a]: IPv6 Address
+[#17] Descriptor [58633f16-5cad-46bd-978d-fa0ad01a45ea]: Device UUID
+[#17] Descriptor [380c09f8-9665-417a-bb2b-06cb6a76e784]: P2P Device ID
+[#17] Descriptor [8fe0b1c0-ea32-11e5-a4fc-0002a5d5c51b]: Wi-Fi Infrastructure
+[#17] Descriptor [17d096e0-ea1f-11e5-9dbc-0002a5d5c51b]: Micro Ap Configuration
+[#17] No Target detected in gatt with address: be:e9:2f:33:47:f1
+[#17] Device Infos
+   Adress:  be:e9:2f:33:47:f1
+   Name:    ENVY Photo 6200 series
+   Manuf.:  Sony Ericsson Mobile Communications
+   Raw GATT:
+     - **ENVY Photo 6200 series**
+     - **IPv4 Address**
+     - **IPv6 Address**
+     - Device UUID
+     - P2P Device ID
+     - Wi-Fi Infrastructure
+     - Micro Ap Configuration
+   Distance: 19.95 m
+   RSSI: -95
 ```
 
 ---
