@@ -170,6 +170,9 @@ pio run -e ghostble-stickcplus2 -t upload
 
 # M5StickS3
 pio run -e ghostble-sticks3 -t upload
+
+# Google Test
+pio test -e native -v
 ```
 
 ### Arduino IDE
