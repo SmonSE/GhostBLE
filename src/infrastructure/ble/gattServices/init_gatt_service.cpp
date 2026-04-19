@@ -5,6 +5,8 @@
 #include "device_info_service.h"
 #include "battery_lvl_service.h"
 #include "heart_rate_service.h"
+#include "weight_service.h"
+#include "pulse_oximeter_service.h"
 #include "temperature_service.h"
 #include "current_time_service.h"
 #include "tx_power_service.h"
@@ -15,6 +17,7 @@
 #include "alert_notifi_service.h"
 #include "phone_alert_status_service.h"
 #include "gen_dump_handler.h"
+#include "location_navigation_service.h"
 
 
 void registerGATTServiceHandlers()
@@ -38,6 +41,14 @@ void registerGATTServiceHandlers()
     GATTServiceRegistry::registerService(
         "180d", "Heart Rate",
         [](NimBLEClient* c) { return HeartRateServiceHandler::readHeartRate(c); });
+
+    GATTServiceRegistry::registerService(
+        "181d", "Weight Scale",
+        [](NimBLEClient* c) { return WeightServiceHandler::readWeight(c); });
+
+    GATTServiceRegistry::registerService(
+        "1822", "Pulse Oximeter",
+        [](NimBLEClient* c) { return PulseOximeterServiceHandler::readSpO2(c); });
 
     GATTServiceRegistry::registerService(
         "1809", "Health Thermometer",
@@ -78,4 +89,8 @@ void registerGATTServiceHandlers()
     // Fallback: dump characteristics for any unregistered service
     GATTServiceRegistry::registerFallback(
         [](NimBLEClient* c, std::string uuid) { return GenericDumpHandler::dumpService(c, uuid); });
+
+    GATTServiceRegistry::registerService(
+    "1819", "Location & Navigation",
+    [](NimBLEClient* c) { return LocationNavigationServiceHandler::readLocation(c); });
 }
