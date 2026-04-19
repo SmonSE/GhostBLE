@@ -232,8 +232,8 @@ pio test -e native -v
    Manuf.:  Sony Ericsson Mobile Communications
    Raw GATT:
      - ENVY Photo 6200 series
-     - IPv4 Address
-     - IPv6 Address
+     - IPv4 Address = (192.168.178.53)
+     - IPv6 Address = (2A02:8071:2287:5B20:BEE9:2FFF:FE33:C7F1)
      - Device UUID
      - P2P Device ID
      - Wi-Fi Infrastructure
