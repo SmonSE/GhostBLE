@@ -29,7 +29,7 @@ A friendly mascot named **NibBLEs** guides you through the scanning process on t
 |--------|----------|---------|----------|---------|
 | **M5Stack Cardputer** | ESP32-S3 | 240x135 LCD | Yes | Yes |
 | **M5StickC Plus 2** | ESP32 | 240x135 LCD | No (2 buttons) | No |
-| **M5StickS3** | ESP32-S3 | 128x128 LCD | No (2 buttons) | No |
+| **M5StickS3** | ESP32-S3 | 240x135 LCD | No (2 buttons) | No |
 
 All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboard, and PwnBeacon. The Cardputer adds keyboard controls, SD card logging, XP persistence, and screenshot capture.
 
