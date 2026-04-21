@@ -1,9 +1,14 @@
 #include "nibbles_speech.h"
+
 #include "infrastructure/platform/hardware.h"
 #include "ui/overlay/draw_overlay.h"
 #include "ui/expression/show_expression.h"
 #include "app/context/globals.h"
 #include "config/ui_config.h"
+#include "app/context/scan_context.h"
+#include "app/context/ui_context.h"
+
+
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"
 #include "assets/nibblesHappyLeft.h"
@@ -114,7 +119,7 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
 
 static void clearThoughtBubble() {
     // Clear thought bubble area
-    isSpeechBubbleActive = false;
+    UIContext::isSpeechBubbleActive = false;
 
     // Hintergrund unter der Bubble wiederherstellen
     int srcX = BUBBLE_X - NIBBLES_FRONT_X;
@@ -148,11 +153,11 @@ static void clearThoughtBubble() {
     }
 
     // Stats neu zeichnen
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
 }
 
 static void showMumble(const char* message) {
-    if(!scanIsRunning){
+    if(!ScanContext::scanIsRunning){
         // Clear any previous bubble and draw sleep expression
         M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 22, 0x00C4);
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
@@ -184,7 +189,7 @@ void nibblesSpeechUpdate(unsigned long currentTime) {
     }
 
     // Don't show new speech if an animation task is running
-    if (isGlassesTaskRunning || isAngryTaskRunning || isSadTaskRunning) {
+    if (UIContext::isGlassesTaskRunning || UIContext::isAngryTaskRunning || UIContext::isSadTaskRunning) {
         return;
     }
 
@@ -197,7 +202,7 @@ void nibblesSpeechUpdate(unsigned long currentTime) {
     }
 
     // Check if idle long enough
-    if (currentTime - lastEventTime >= IDLE_TIMEOUT_MS && !bleScanEnabled) {
+    if (currentTime - lastEventTime >= IDLE_TIMEOUT_MS && !ScanContext::bleScanEnabled) {
         const char* msg = pickRandom(idleMessages, idleMessageCount);
         showMumble(msg);
         // Reset idle timer so next idle speech waits again
@@ -244,7 +249,7 @@ void nibblesSpeechShow(SpeechContext context) {
 
 void nibblesSpeechShowCustom(const char* message) {
     unsigned long now = millis();
-    isSpeechBubbleActive = true;
+    UIContext::isSpeechBubbleActive = true;
 
     if (lastSpeechTime > 0 && (now - lastSpeechTime < SPEECH_COOLDOWN_MS)) {
         return;

@@ -1,10 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "infrastructure/platform/hardware.h"
-#include "config/ui_config.h"
-#include "app/context/globals.h"
-#include "infrastructure/logging/logger.h"
+
 
 class Screenshot {
 public:

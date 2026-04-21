@@ -1,6 +1,11 @@
-#include "infrastructure/platform/hardware.h"
 #include "show_expression.h"
+
+#include "infrastructure/platform/hardware.h"
 #include "app/context/globals.h"
+#include "app/context/device_context.h"
+#include "app/context/scan_context.h"
+#include "app/context/network_context.h"
+#include "app/context/ui_context.h"
 #include "config/ui_config.h"
 #include "ui/overlay/draw_overlay.h"
 #include "infrastructure/gps/gps_manager.h"
@@ -17,14 +22,14 @@
 #include "assets/nibblesBored.h"
 
 
-static float smoothedVoltage = 0;
-static int displayedPercent = 100;
-static bool lastChargingState = false;
-static unsigned long usbDisconnectTime = 0;
+static float         smoothedVoltage    = 0;
+static int           displayedPercent   = 100;
+static bool          lastChargingState  = false;
+static unsigned long usbDisconnectTime  = 0;
 
 static const struct { int mv; int percent; } batteryLevels[] = {
     {4200, 100}, {4100, 90}, {4000, 80}, {3900, 70},
-    {3800, 60}, {3700, 50}, {3600, 30}, {3500, 20}, {3400, 10}
+    {3800, 60},  {3700, 50}, {3600, 30}, {3500, 20}, {3400, 10}
 };
 
 static int voltageToPercent(int mv) {
@@ -34,122 +39,109 @@ static int voltageToPercent(int mv) {
     return 5;
 }
 
+// ----------------------------------------------------------------
+//  Pointer
+// ----------------------------------------------------------------
 void drawPointer(int pointer) {
-    int x = 5;
-    int y = 55;
+    int      x       = 5;
+    int      y       = 55;
     uint16_t bgColor = 0x00C4;
 
-    // Bereich löschen
     M5.Lcd.fillRect(x, y, 40, 10, bgColor);
-
-    // Neu zeichnen
     M5.Lcd.setTextColor(GREEN, bgColor);
     M5.Lcd.setCursor(x, y);
     M5.Lcd.printf("Pnt %-2d", pointer);
 }
 
-// --- Icon drawing functions ---
-// WiFi icon to show WiFi is active.
+// ----------------------------------------------------------------
+//  Icon drawing
+// ----------------------------------------------------------------
 void drawWifiIcon(int x, int y, bool active) {
-  uint16_t color = active ? GREEN : 0x4208;
-  M5.Lcd.fillRect(x - 1, y + 6, 3, 3, color);
-  M5.Lcd.fillRect(x + 3, y + 3, 3, 6, color);
-  M5.Lcd.fillRect(x + 7, y,     3, 9, color);
+    uint16_t color = active ? GREEN : 0x4208;
+    M5.Lcd.fillRect(x - 1, y + 6, 3, 3, color);
+    M5.Lcd.fillRect(x + 3, y + 3, 3, 6, color);
+    M5.Lcd.fillRect(x + 7, y,     3, 9, color);
 }
 
-// Circle to show SCAN is running.
 void drawScanIcon(int x, int y, ScanState state, int radius) {
-  uint16_t color;
-
-  switch (state) {
-    case SCAN_RUNNING:  color = BLUE; break;
-    case SCAN_STOPPING: color = YELLOW; break;
-    case SCAN_OFF:      color = 0x4208; break;
-  }
-
-  M5.Lcd.fillCircle(x + radius, y + radius, radius, color);
+    uint16_t color;
+    switch (state) {
+        case SCAN_RUNNING:  color = BLUE;   break;
+        case SCAN_STOPPING: color = YELLOW; break;
+        case SCAN_OFF:      color = 0x4208; break;
+    }
+    M5.Lcd.fillCircle(x + radius, y + radius, radius, color);
 }
 
 void drawGPSIcon(int x, int y, bool hasFix) {
-  uint16_t color = hasFix ? GREEN : RED;
-  M5.Lcd.drawCircle(x + 4, y + 4, 4, color);
-  M5.Lcd.drawLine(x + 4, y, x + 4, y + 8, color);
-  M5.Lcd.drawLine(x, y + 4, x + 8, y + 4, color);
-  if (hasFix) M5.Lcd.fillCircle(x + 4, y + 4, 1, color);
+    uint16_t color = hasFix ? GREEN : RED;
+    M5.Lcd.drawCircle(x + 4, y + 4, 4, color);
+    M5.Lcd.drawLine(x + 4, y,     x + 4, y + 8, color);
+    M5.Lcd.drawLine(x,     y + 4, x + 8, y + 4, color);
+    if (hasFix) M5.Lcd.fillCircle(x + 4, y + 4, 1, color);
 }
 
 void drawBatteryIcon(int x, int y, int percent, bool charging) {
-  M5.Lcd.drawRect(x, y, 16, 8, WHITE);
-  M5.Lcd.fillRect(x + 16, y + 2, 2, 4, WHITE);
-  uint16_t fillColor = charging ? YELLOW : (percent < 20 ? RED : GREEN);
-  int fillW = 14 * percent / 100;
-  if (fillW > 0) M5.Lcd.fillRect(x + 1, y + 1, fillW, 6, fillColor);
-  if (fillW < 14) M5.Lcd.fillRect(x + 1 + fillW, y + 1, 14 - fillW, 6, BLACK);
+    M5.Lcd.drawRect(x, y, 16, 8, WHITE);
+    M5.Lcd.fillRect(x + 16, y + 2, 2, 4, WHITE);
+    uint16_t fillColor = charging ? YELLOW : (percent < 20 ? RED : GREEN);
+    int fillW = 14 * percent / 100;
+    if (fillW > 0)  M5.Lcd.fillRect(x + 1,         y + 1, fillW,      6, fillColor);
+    if (fillW < 14) M5.Lcd.fillRect(x + 1 + fillW, y + 1, 14 - fillW, 6, BLACK);
 }
 
+// ----------------------------------------------------------------
+//  Battery state — writes to UIContext
+// ----------------------------------------------------------------
 void updateBatteryState() {
-  int rawVoltage = M5.Power.getBatteryVoltage();
+    int  rawVoltage  = M5.Power.getBatteryVoltage();
+    bool chargingNow = M5.Power.isCharging();
+    bool usbConnected = (rawVoltage > 4200);
 
-  bool chargingNow = M5.Power.isCharging();
-  bool usbConnected = (rawVoltage > 4200);
+    if (!chargingNow && rawVoltage > 4200) chargingNow = true;
 
-  if (!chargingNow && rawVoltage > 4200) {
-    chargingNow = true;
-  }
+    if (smoothedVoltage == 0) smoothedVoltage = rawVoltage;
+    smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;
 
-  // Smooth Voltage
-  if (smoothedVoltage == 0) {
-    smoothedVoltage = rawVoltage;
-  }
+    // Debounce USB disconnect
+    if (UIContext::isChargingState.load() && !chargingNow) {
+        usbDisconnectTime = millis();
+    }
 
-  smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;
+    UIContext::isChargingState.store(chargingNow || usbConnected);
 
-  // USB Disconnect Delay Fix
-  if (isChargingState && !chargingNow) {
-    usbDisconnectTime = millis();
-  }
+    if (!chargingNow && (millis() - usbDisconnectTime < 2000)) {
+        // keep current displayedPercent during debounce window
+    } else {
+        int newPercent = voltageToPercent((int)smoothedVoltage);
+        if      (newPercent > displayedPercent) displayedPercent++;
+        else if (newPercent < displayedPercent) displayedPercent--;
+    }
 
-  isChargingState = chargingNow || usbConnected;
-
-  if (!chargingNow && (millis() - usbDisconnectTime < 2000)) {
-    // keep value
-  } else {
-    int newPercent = voltageToPercent((int)smoothedVoltage);
-
-    if (newPercent > displayedPercent)
-      displayedPercent++;
-    else if (newPercent < displayedPercent)
-      displayedPercent--;
-  }
+    UIContext::batteryPercent.store(displayedPercent);
 }
 
-
+// ----------------------------------------------------------------
+//  Heart helpers
+// ----------------------------------------------------------------
 void drawHeart(int x, int y, uint16_t color) {
-
-    int s = 2; // pixel size (scaling)
-
+    int s = 2;
     M5.Display.fillRect(x+2*s, y+0*s, s, s, color);
     M5.Display.fillRect(x+3*s, y+0*s, s, s, color);
     M5.Display.fillRect(x+6*s, y+0*s, s, s, color);
     M5.Display.fillRect(x+7*s, y+0*s, s, s, color);
-
     M5.Display.fillRect(x+1*s, y+1*s, s, s, color);
     M5.Display.fillRect(x+4*s, y+1*s, s, s, color);
     M5.Display.fillRect(x+5*s, y+1*s, s, s, color);
     M5.Display.fillRect(x+8*s, y+1*s, s, s, color);
-
     M5.Display.fillRect(x+0*s, y+2*s, s, s, color);
     M5.Display.fillRect(x+9*s, y+2*s, s, s, color);
-
     M5.Display.fillRect(x+1*s, y+3*s, s, s, color);
     M5.Display.fillRect(x+8*s, y+3*s, s, s, color);
-
     M5.Display.fillRect(x+2*s, y+4*s, s, s, color);
     M5.Display.fillRect(x+7*s, y+4*s, s, s, color);
-
     M5.Display.fillRect(x+3*s, y+5*s, s, s, color);
     M5.Display.fillRect(x+6*s, y+5*s, s, s, color);
-
     M5.Display.fillRect(x+4*s, y+6*s, s, s, color);
     M5.Display.fillRect(x+5*s, y+6*s, s, s, color);
 }
@@ -158,11 +150,12 @@ void clearHearts() {
     M5.Display.fillRect(25, 24, 40, 30, 0x00C4);
 }
 
+// ----------------------------------------------------------------
+//  Speech bubble
+// ----------------------------------------------------------------
 void clearSpeechBubble() {
-
-    int srcX = BUBBLE_X - NIBBLES_FRONT_X;
-    int srcY = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
-
+    int srcX    = BUBBLE_X - NIBBLES_FRONT_X;
+    int srcY    = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
     int restoreH = BUBBLE_RECT_H + BUBBLE_TRI_H + 3;
 
     for (int row = 0; row < restoreH; row++) {
@@ -176,353 +169,327 @@ void clearSpeechBubble() {
     }
 
     drawComposite(
-        nibblesFront,
-        NIBBLESFRONT_WIDTH,
-        NIBBLES_FRONT_X,
-        NIBBLES_FRONT_Y,
+        nibblesFront, NIBBLESFRONT_WIDTH,
+        NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
         nibblesHappy,
-        NIBBLESHAPPY_WIDTH,
-        NIBBLESHAPPY_HEIGHT,
-        NIBBLES_HAPPY_X,
-        NIBBLES_HAPPY_Y
+        NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+        NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y
     );
 
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
 }
 
-
+// ----------------------------------------------------------------
+//  Help overlay — reads/writes UIContext::helpOverlayVisible
+// ----------------------------------------------------------------
 void showHelpOverlay() {
-  helpOverlayVisible = true;
+    UIContext::helpOverlayVisible = true;
 
-  M5.Lcd.fillScreen(0x00C4);
-  M5.Lcd.setTextSize(1);
+    M5.Lcd.fillScreen(0x00C4);
+    M5.Lcd.setTextSize(1);
 
-  // Title
-  M5.Lcd.setTextColor(GREEN, 0x00C4);
-  M5.Lcd.setCursor(80, 4);
-  M5.Lcd.print("-- CONTROLS --");
+    M5.Lcd.setTextColor(GREEN, 0x00C4);
+    M5.Lcd.setCursor(80, 4);
+    M5.Lcd.print("-- CONTROLS --");
 
-  M5.Lcd.setTextColor(WHITE, 0x00C4);
-  int y = 20;
-  const int lineH = 13;
+    M5.Lcd.setTextColor(WHITE, 0x00C4);
+    int y            = 20;
+    const int lineH  = 13;
 
 #if HAS_KEYBOARD
-  // Cardputer key bindings
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn ENTER    Screenshot");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn FN       WiFi On/Off");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn TAB      Wardriving");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn DEL      GPS Source");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn H        This Help");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn S        Scan Mode");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Btn M        Marker set");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Hold BtnG0   BLE Scan");
-  y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn ENTER    Screenshot"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn TAB      Wardriving"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn DEL      GPS Source"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn H        This Help"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn S        Scan Mode"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M        Marker set"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
 #endif
 
 #if HAS_TWO_BUTTONS
-  // StickC / StickS3 button bindings
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("BtnA       WiFi On/Off");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Hold BtnA  BLE Scan");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("BtnB       Wardriving");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Hold BtnB  GPS Source");
-  y += lineH;
-  M5.Lcd.setCursor(10, y);
-  M5.Lcd.print("Hold M5 3s This Help");
-  y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnA       WiFi On/Off"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnA  BLE Scan"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnB       Wardriving"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnB  GPS Source"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold M5 3s This Help"); y += lineH;
 #endif
 
-  // Footer
-  M5.Lcd.setTextColor(0x7BEF, 0x00C4);  // light gray
-  M5.Lcd.setCursor(40, SCREEN_H - 12);
-  M5.Lcd.print("press any key to close");
+    M5.Lcd.setTextColor(0x7BEF, 0x00C4);
+    M5.Lcd.setCursor(40, SCREEN_H - 12);
+    M5.Lcd.print("press any key to close");
 }
 
 void dismissHelpOverlay() {
-  helpOverlayVisible = false;
+    UIContext::helpOverlayVisible = false;
 
-  // Redraw normal UI
-  M5.Lcd.fillScreen(0x00C4);
-  drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT,
-              NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    M5.Lcd.fillScreen(0x00C4);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT,
+                NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
 
-  int r = esp_random() % 2;
+    int r = esp_random() % 2;
+    if (r == 0) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    }
 
-  if (r == 0) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
-                  NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-  } else {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-                  NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-  }
-  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
 }
 
+// ----------------------------------------------------------------
+//  Expression tasks — alle schreiben in UIContext::
+// ----------------------------------------------------------------
 void showGlassesExpressionTask(void* parameter) {
-    isGlassesTaskRunning = true;
+    UIContext::isGlassesTaskRunning.store(true);
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
 
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // HappyLeft and Happy should be shown randomly to add some variety
     int r = esp_random() % 3;
-
     if (r == 0) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else if (r == 1) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } 
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    }
+
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
 
     // Fallback chain: displayName → localName → deviceName → appearanceName
+    // Note: these scan-time strings still come from globals until
+    //       they are moved into ScanContext in a future refactor step.
     String bubbleText = displayName;
     if (bubbleText.length() == 0) bubbleText = localName;
     if (bubbleText.length() == 0) bubbleText = deviceName;
     if (bubbleText.length() == 0) bubbleText = appearanceName;
 
-    if (bubbleText.length() > 0 && !isSpeechBubbleActive) {
-      clearSpeechBubble();
-      if(bubbleText.length() > 16) {
-        bubbleText = bubbleText.substring(0, 13) + "...";
-      }
+    if (bubbleText.length() > 0 && !UIContext::isSpeechBubbleActive.load()) {
+        clearSpeechBubble();
+        if (bubbleText.length() > 16) bubbleText = bubbleText.substring(0, 13) + "...";
+        drawBubble(bubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+        vTaskDelay(pdMS_TO_TICKS(3000));
 
-      drawBubble(bubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
-
-      vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
-
-    } else if (appearanceName.length() > 0 && !isSpeechBubbleActive && localName.length() == 0) {
-      clearSpeechBubble();
-      if(appearanceName.length() > 14) {
-        appearanceName = appearanceName.substring(0, 11) + "...";
-      } 
-
-      drawBubble(appearanceName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
-
-      vTaskDelay(pdMS_TO_TICKS(3000));  // 3 Sekunden
+    } else if (appearanceName.length() > 0 &&
+               !UIContext::isSpeechBubbleActive.load() &&
+               localName.length() == 0) {
+        clearSpeechBubble();
+        if (appearanceName.length() > 14) appearanceName = appearanceName.substring(0, 11) + "...";
+        drawBubble(appearanceName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 
     clearSpeechBubble();
-
-    isGlassesTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
+    UIContext::isGlassesTaskRunning.store(false);
+    vTaskDelete(NULL);
 }
 
-
 void showAngryExpressionTask(void* parameter) {
-    isAngryTaskRunning = true;
+    UIContext::isAngryTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
 
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    vTaskDelay(pdMS_TO_TICKS(2000));
 
-    // HappyLeft and Happy should be shown randomly to add some variety
     int r = esp_random() % 2;
-
     if (r == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    isAngryTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
 
     clearSpeechBubble();
+    UIContext::isAngryTaskRunning.store(false);
+    vTaskDelete(NULL);
 }
-
 
 void showSadExpressionTask(void* parameter) {
-    isSadTaskRunning = true;
+    UIContext::isSadTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
 
-    // HappyLeft and Happy should be shown randomly to add some variety
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
     int r = esp_random() % 3;
-
     if (r == 0) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else if (r == 1) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    isSadTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
 
     clearSpeechBubble();
+    UIContext::isSadTaskRunning.store(false);
+    vTaskDelete(NULL);
 }
 
-
 void showThugLifeExpressionTask(void* parameter) {
-  isThugLifeTaskRunning = true;
-  drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
-
-  vTaskDelay(pdMS_TO_TICKS(2000));  // 2 Sekunden
-
-  // HappyLeft and Happy should be shown randomly to add some variety
-  int r = esp_random() % 2;
-
-  if (r == 0) {
+    UIContext::isThugLifeTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-  } else {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                  nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-  }
-  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+                  nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
 
-  isThugLifeTaskRunning = false;
-  vTaskDelete(NULL);  // Task selbst beenden
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    int r = esp_random() % 2;
+    if (r == 0) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    }
+
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
+
+    UIContext::isThugLifeTaskRunning.store(false);
+    vTaskDelete(NULL);
 }
 
 void showHappyExpressionTask(void* parameter) {
-    isHappyTaskRunning = true;
-    vTaskDelay(pdMS_TO_TICKS(1000));  // 1 Sekunde
+    UIContext::isHappyTaskRunning.store(true);
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
-    // HappyLeft and Happy should be shown randomly to add some variety
     int r = esp_random() % 2;
-
     if (r == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
 
-    isHappyTaskRunning = false;
-    vTaskDelete(NULL);  // Task selbst beenden
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
 
     clearSpeechBubble();
+    UIContext::isHappyTaskRunning.store(false);
+    vTaskDelete(NULL);
 }
 
+// ----------------------------------------------------------------
+//  Status bar
+// ----------------------------------------------------------------
 void drawStatusIcons(int x, int y) {
-  // Always show WiFi and Scan icons
-  drawWifiIcon(x, y, isWebLogActive);
-  if (bleScanEnabled) {
-    drawScanIcon(x + 15, y + 1, SCAN_RUNNING, 3);
-  } else if (scanIsRunning) {
-    drawScanIcon(x + 15, y + 1, SCAN_STOPPING, 3);
-  } else {
-    drawScanIcon(x + 15, y + 1, SCAN_OFF, 3);
-  }
+    drawWifiIcon(x, y, NetworkContext::isWebLogActive);  // isWebLogActive → network_context later
 
-  // GPS info alongside when wardriving is enabled
-  if (wardrivingEnabled) {
-    extern GPSManager gpsManager;
-    bool hasFix = gpsManager.isValid();
-    int gpsX = x + 30;
+    if (ScanContext::bleScanEnabled.load()) {
+        drawScanIcon(x + 15, y + 1, SCAN_RUNNING, 3);
+    } else if (ScanContext::scanIsRunning.load()) {
+        drawScanIcon(x + 15, y + 1, SCAN_STOPPING, 3);
+    } else {
+        drawScanIcon(x + 15, y + 1, SCAN_OFF, 3);
+    }
 
-    drawGPSIcon(gpsX, y, hasFix);
-    uint16_t gpsColor = hasFix ? GREEN : RED;
-    M5.Lcd.setTextColor(gpsColor, 0x00C4);
-    M5.Lcd.setCursor(gpsX + 13, y + 2);
-    M5.Lcd.printf("%-5s SAT:%-2u %-6s",
-                  gpsManager.getSourceName(),
-                  gpsManager.getSatellites(),
-                  hasFix ? "FIX" : "NO FIX");
-  } else {
-    // Clear GPS area when wardriving is off
-    M5.Lcd.fillRect(x + 30, y, 180, 11, 0x00C4);
-  }
+    if (NetworkContext::wardrivingEnabled) {  // wardrivingEnabled → network_context later
+        bool hasFix = NetworkContext::gpsManager.isValid();
+        int  gpsX   = x + 30;
+
+        drawGPSIcon(gpsX, y, hasFix);
+        M5.Lcd.setTextColor(hasFix ? GREEN : RED, 0x00C4);
+        M5.Lcd.setCursor(gpsX + 13, y + 2);
+        M5.Lcd.printf("%-5s SAT:%-2u %-6s",
+                      NetworkContext::gpsManager.getSourceName(),
+                      NetworkContext::gpsManager.getSatellites(),
+                      hasFix ? "FIX" : "NO FIX");
+    } else {
+        M5.Lcd.fillRect(x + 30, y, 180, 11, 0x00C4);
+    }
 }
 
-void drawStats(int sniffed, int susDevice, int spotted, int x, int y) {
-
-  M5.Lcd.setTextColor(WHITE, 0x00C4);
-
-  M5.Lcd.setCursor(x, y);
-  M5.Lcd.printf("Spt %-4d", spotted);
-
-  M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);
-  M5.Lcd.printf("Snf %-4d", sniffed);
-
-  M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 2);
-  M5.Lcd.printf("Bcn %-4d", beaconsFound.load());
-
-  M5.Lcd.setTextColor(RED, 0x00C4);
-  M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3);
-  M5.Lcd.printf("Sus %-4d", susDevice);
+void drawStats(int sniffed, int sus, int spotted, int x, int y) {
+    M5.Lcd.setTextColor(WHITE, 0x00C4);
+    M5.Lcd.setCursor(x, y);                        M5.Lcd.printf("Spt %-4d", spotted);
+    M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);     M5.Lcd.printf("Snf %-4d", sniffed);
+    M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 2); M5.Lcd.printf("Bcn %-4d", ScanContext::beaconsFound.load());
+    M5.Lcd.setTextColor(RED, 0x00C4);
+    M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3); M5.Lcd.printf("Sus %-4d", sus);
 }
 
 void drawXPBar(int x, int y) {
-  M5.Lcd.setTextColor(GREEN, 0x00C4);
-  M5.Lcd.setCursor(x, y);
-  M5.Lcd.printf("LV%u", xpManager.getLevel());
+    M5.Lcd.setTextColor(GREEN, 0x00C4);
+    M5.Lcd.setCursor(x, y);
+    M5.Lcd.printf("LV%u", DeviceContext::xpManager.getLevel());
 
-  // Progress bar
-  M5.Lcd.drawRect(XP_BAR_X, y, XP_BAR_W, XP_BAR_H, GREEN);
-  int fillW = (XP_BAR_W - 2) * xpManager.getProgressPercent() / 100;
-  if (fillW > 0) {
-    M5.Lcd.fillRect(XP_BAR_X + 1, y + 1, fillW, XP_BAR_H - 2, GREEN);
-  }
-  if (fillW < XP_BAR_W - 2) {
-    M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
-  }
+    M5.Lcd.drawRect(XP_BAR_X, y, XP_BAR_W, XP_BAR_H, GREEN);
+    int fillW = (XP_BAR_W - 2) * DeviceContext::xpManager.getProgressPercent() / 100;
+    if (fillW > 0)          M5.Lcd.fillRect(XP_BAR_X + 1,         y + 1, fillW,              XP_BAR_H - 2, GREEN);
+    if (fillW < XP_BAR_W-2) M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
 
-  // Clear title area
-  M5.Lcd.fillRect(TITLE_TEXT_X, y, 140, 16, 0x00C4);
-
-  // Nibbles title
-  M5.Lcd.setTextColor(GREEN);
-  M5.Lcd.setCursor(TITLE_TEXT_X, y);
-  M5.Lcd.print(xpManager.getTitle());
+    M5.Lcd.fillRect(TITLE_TEXT_X, y, 140, 16, 0x00C4);
+    M5.Lcd.setTextColor(GREEN);
+    M5.Lcd.setCursor(TITLE_TEXT_X, y);
+    M5.Lcd.print(DeviceContext::xpManager.getTitle());
 }
 
-void showFindingCounter(int sniffed, int susDevice, int spotted) {
+void showFindingCounter(int sniffed, int sus, int spotted) {
+    updateBatteryState();
 
-  updateBatteryState();
-  bool charging = M5.Power.isCharging();
-  M5.Lcd.setTextSize(1);
-
-  // ---- TOP BAR ----
-  drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
-  drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, isChargingState);
-
-  // ---- STATS — LEFT SIDE ----
-  drawStats(sniffed, susDevice, spotted, STATS_X, STATS_Y_START);
-
-  // ---- BOTTOM BAR — Level/XP ----
-  drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y);
+    M5.Lcd.setTextSize(1);
+    drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
+    drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, UIContext::isChargingState.load());
+    drawStats(sniffed, sus, spotted, STATS_X, STATS_Y_START);
+    drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y);
 }
