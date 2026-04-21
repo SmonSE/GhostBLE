@@ -252,32 +252,12 @@ GhostBLE/
 │
 │   ├── app/                 # Application Layer (Use Cases)
 │   │   ├── context/
-│   │   ├── controller/
-│   │   ├── device/
-│   │   └── gamification/
+│   │   ├── gamification/
+│   │   └── interaction/
 │   │
-│   ├── core/                # Domain Layer (Core Logic)
-│   │   ├── models/
-│   │   ├── parsing/
-│   │   ├── detection/
-│   │   ├── fingerprint/
-│   │   ├── filtering/
-│   │   ├── analysis/
-│   │   ├── privacy/
-│   │   └── gatt/
-│   │
-│   ├── infrastructure/      # Infrastructure Layer
-│   │   ├── ble/
-│   │   ├── logging/
-│   │   ├── gps/
-│   │   ├── storage/
-│   │   └── platform/        # Hardware (M5, ESP32 etc.)
-│   │
-│   ├── ui/                  # Presentation Layer
-│   │   ├── display/
-│   │   ├── overlay/
-│   │   ├── icons/
-│   │   └── screens/
+│   ├── assets/              # Assets / Resources
+│   │   ├── nibblesAngry
+│   │   └── ...
 │   │
 │   ├── config/              # Configuration
 │   │   ├── app_config
@@ -285,9 +265,33 @@ GhostBLE/
 │   │   ├── signal_config
 │   │   └── ...
 │   │
-│   ├── assets/              # Assets / Resources
-│   │   ├── images/
-│   │   └── gatt/ (optional)
+│   ├── core/                # Domain Layer (Core Logic)
+│   │   ├── analycer/
+│   │   ├── detection/
+│   │   ├── filtering/
+│   │   ├── fingerprint/
+│   │   ├── models/
+│   │   ├── parsing/
+│   │   └── privacy/
+│   │
+│   ├── infrastructure/      # Infrastructure Layer
+│   │   ├── ble/
+│   │   ├── gps/
+│   │   ├── logging/
+│   │   ├── platform/
+│   │   ├── storage/
+│   │   └── wardrive/        # Hardware (M5, ESP32 etc.)
+│   │
+│   ├── ui/                  # Presentation Layer
+│   │   ├── expressions/
+│   │   ├── icons/
+│   │   └── overlay/
+│   │
+│   ├── utils/               
+│   │   └── models/
+│   │
+│   ├── web/                 # WebSocket-Dashboard
+│   │   └── ui/
 │   │
 │   └── main.cpp             # Entry Point
 │
