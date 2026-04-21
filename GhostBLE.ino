@@ -6,7 +6,9 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 
-#include "app/context/globals.h"
+#include "app/context/ui_context.h"
+#include "app/context/network_context.h"
+#include "app/context/device_context.h"
 #include "app/interaction/nibbles_speech.h"
 
 #include "src/assets/nibblesFront.h"
@@ -16,6 +18,11 @@
 #include "src/assets/nibblesHappy.h"
 #include "src/assets/nibblesHappyLeft.h"
 #include "src/assets/nibblesThugLife.h"
+
+#include "src/config/ui_config.h"
+#include "src/config/app_config.h"
+#include "src/config/device_config.h"
+#include "src/config/scan_config.h"
 
 #include "src/infrastructure/ble/ble_scanner.h"
 #include "src/infrastructure/ble/gattServices/init_gatt_service.h"
@@ -27,17 +34,11 @@
 #include "src/infrastructure/storage/screenshot.h"
 #include "src/infrastructure/wardriving/wigle_logger.h"
 
-#include "src/config/app_config.h"
-#include "src/config/device_config.h"
-#include "src/config/scan_config.h"
-
 #include "src/ui/icons/scan_icon.h"
 #include "src/ui/overlay/draw_overlay.h"
 #include "src/ui/expression/show_expression.h"
 
 TaskHandle_t scanTaskHandle = NULL;
-
-AsyncWebServer server(80);
 
 #if HAS_KEYBOARD
 auto keys = M5Cardputer.Keyboard.keysState();
@@ -46,7 +47,7 @@ auto keys = M5Cardputer.Keyboard.keysState();
 void scanTask(void* parameter) {
   while (true) {
 
-    if (bleScanEnabled && !scanIsRunning) {
+    if (ScanContext::bleScanEnabled && !ScanContext::scanIsRunning) {
       nibblesSpeechNotifyEvent();
       scanForDevices();
     }
@@ -110,7 +111,6 @@ void stopWebLogServer();
 // Button long press tracking
 unsigned long buttonAPressStart = 0;
 bool buttonAHeld = false;
-bool wifiStarted = false;
 
 #if HAS_TWO_BUTTONS
 unsigned long buttonBPressStart = 0;
@@ -135,14 +135,15 @@ void setup() {
 
   LOG(LOG_SYSTEM, "GhostBLE starting...");
 
-  taskMutex = xSemaphoreCreateMutex();
+  //taskMutex = xSemaphoreCreateMutex();
+  UIContext::init();
 
   M5.Lcd.setRotation(1);
 
   M5.Lcd.fillScreen(0x00C4);
   delay(250);
 
-  deviceConfig.begin();
+  DeviceContext::deviceConfig.begin();
 
   NimBLEDevice::init(deviceConfig.getName().c_str());
   registerGATTServiceHandlers();
@@ -171,7 +172,7 @@ void setup() {
   initLogger(-1);
   #endif
 
-  xpManager.begin();
+  DeviceContext::xpManager.begin();
 
   drawThoughtBubble("HI I'M NIBBLES", BUBBLE_X, THOUGHT_BUBBLE_Y);
   vTaskDelay(pdMS_TO_TICKS(2000));
@@ -185,24 +186,22 @@ void setup() {
   vTaskDelay(pdMS_TO_TICKS(3000));
   clearSpeechBubble();
 
-  isWebLogActive = true;
-  startWebLogServer();
+  showScanIcon();
+
+  NetworkContext::isWebLogActive = false;
   logEnableTarget(TARGET_WEB);
 
   ws.textAll("BLE_SCAN_READY");
 
   nibblesSpeechBegin();
 
-  showScanIcon();
 
-  scanIsRunning = false;
+  ScanContext::scanIsRunning = false;
 
   delay(500);
 
-  toggleWiFi();
-
   // To Update Wifi Logo to ON
-  showFindingCounter(targetConnects, susDevice, leakedCounter);
+  showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
 
   // Start Scan Task (FreeRTOS)
   xTaskCreatePinnedToCore(scanTask, "ScanTask", 12000, NULL, 1, &scanTaskHandle, 1);
@@ -220,7 +219,7 @@ void loop() {
   // ===== Input Handling =====
 
   // When help overlay is visible, any input dismisses it
-  if (helpOverlayVisible) {
+  if (UIContext::helpOverlayVisible) {
 #if HAS_KEYBOARD
     if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
       dismissHelpOverlay();
@@ -248,17 +247,19 @@ void loop() {
         LOG(LOG_CONTROL, "ENTER pressed");
         Screenshot::capture();
       }
-      if (status.fn && !bleScanEnabled) {
+      if (status.fn && !ScanContext::bleScanEnabled) {
         LOG(LOG_CONTROL, "FN pressed");
         toggleWiFi();
       }
-      if (status.tab && !bleScanEnabled){
+      if (status.tab && !ScanContext::bleScanEnabled){
         LOG(LOG_CONTROL, "TAB pressed");
+        printf("Toggle Wardrive\n");
         toggleWardriving();
       }
-      if (status.del && !bleScanEnabled){
+      if (status.del && !ScanContext::bleScanEnabled){
         LOG(LOG_CONTROL, "DEL pressed");
-        switchGPSSource();
+        printf("switchGPSSource\n");
+        NetworkContext::switchGPSSource();
       }
       // 'h' key opens help overlay
       for (auto key : status.word) {
@@ -270,36 +271,35 @@ void loop() {
         // Scan Mode Toggle
         if ((key == 's' || key == 'S')) {
           LOG(LOG_CONTROL, "S pressed — toggling scan mode");
-          if(!bleScanEnabled) {
+          if(!ScanContext::bleScanEnabled) {
             toggleScanMode();
           }
           return;
         }
-        if ((key == 'm' || key == 'M') && bleScanEnabled) {
+        if ((key == 'm' || key == 'M') && ScanContext::bleScanEnabled) {
             LOG(LOG_CONTROL, "M pressed — marker set");
 
-            extern GPSManager gpsManager;
-            bool hasFix = gpsManager.isValid();
+            bool hasFix = NetworkContext::gpsManager.isValid();
 
-            pointer++;
+            DeviceContext::pointer++;
 
             char msg[160];
 
-            if (wardrivingEnabled && hasFix) {
+            if (NetworkContext::wardrivingEnabled && hasFix) {
                 snprintf(msg, sizeof(msg),
                         "[MARKER #%d][GPS] Time:%s SAT:%u Lat: %.6f Lon: %.6f",
-                        pointer.load(),
-                        gpsManager.getTimestamp().c_str(),
-                        gpsManager.getSatellites(),
-                        gpsManager.getLatitude(),
-                        gpsManager.getLongitude());
+                        DeviceContext::pointer.load(),
+                        NetworkContext::gpsManager.getTimestamp().c_str(),
+                        NetworkContext::gpsManager.getSatellites(),
+                        NetworkContext::gpsManager.getLatitude(),
+                        NetworkContext::gpsManager.getLongitude());
             } else {
                 snprintf(msg, sizeof(msg),
                         "[MARKER #%d][NO GPS]",
-                        pointer.load());
+                        DeviceContext::pointer.load());
             }
 
-            drawPointer(pointer.load());  // Update on-screen pointer count immediately
+            drawPointer(DeviceContext::pointer.load());  // Update on-screen pointer count immediately
 
             LOG(LOG_GATT, msg);
             return;
@@ -368,14 +368,14 @@ void loop() {
         buttonBHeld = true;
         buttonBShortHandled = true;
         LOG(LOG_CONTROL, "BtnB long press");
-        switchGPSSource();
+        NetworkContext::switchGPSSource();
       }
     }
   } else {
     // Short press detection: was pressed but not held long enough
     if (buttonBPressStart > 0 && !buttonBHeld) {
       LOG(LOG_CONTROL, "BtnB short press");
-      toggleWardriving();
+      NetworkContext::toggleWardriving();
     }
     buttonBPressStart = 0;
     buttonBHeld = false;
@@ -384,14 +384,14 @@ void loop() {
 #endif
 
   // Update GPS if wardriving is active
-  if (wardrivingEnabled) {
+  if (NetworkContext::wardrivingEnabled) {
     gpsManager.update();
 
     // Refresh GPS status bar every second
     static unsigned long lastGPSDisplayUpdate = 0;
     if (currentTime - lastGPSDisplayUpdate >= 1000) {
       lastGPSDisplayUpdate = currentTime;
-      showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+      showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     }
   }
 
@@ -401,12 +401,12 @@ void loop() {
   // Reactive memory cleanup: clear seenDevices when heap runs low or set grows too large,
   // rather than on a fixed timer. This avoids both premature clearing (losing dedup)
   // and late clearing (OOM risk).
-  if (!seenDevices.empty() &&
-      (seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES)) {
-    LOG(LOG_SYSTEM, "Reactive cleanup (size: " + String(seenDevices.size()) +
+  if (!ScanContext::seenDevices.empty() &&
+      (ScanContext::seenDevices.size() >= MAX_SEEN_DEVICES || ESP.getFreeHeap() < MIN_FREE_HEAP_BYTES)) {
+    LOG(LOG_SYSTEM, "Reactive cleanup (size: " + String(ScanContext::seenDevices.size()) +
                     ", free heap: " + String(ESP.getFreeHeap()) + ")");
-    std::unordered_set<std::string>().swap(seenDevices);
-    deviceSessionMap.clear();
+    std::unordered_set<std::string>().swap(ScanContext::seenDevices);
+    ScanContext::deviceSessionMap.clear();
     LOG(LOG_SYSTEM, "CLEAR SEEN DEVICES");
   }
   // Auto-enable serial logging when USB host is connected
@@ -426,9 +426,9 @@ void loop() {
 }
 
 void onLongPress() {
-  bleScanEnabled = !bleScanEnabled;
+  ScanContext::bleScanEnabled = !ScanContext::bleScanEnabled;
 
-  if (bleScanEnabled) {
+  if (ScanContext::bleScanEnabled) {
     //nibblesSpeechShow(SpeechContext::SCAN_START); //to much for queue!
     //delay(1000);
     LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
@@ -438,25 +438,25 @@ void onLongPress() {
     delay(1000);
     logNewBoot();
     delay(500);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
   }
   else {
     LOG(LOG_CONTROL,"⏹️ BLE Scan DISABLED");
     ws.textAll("BLE_SCAN_OFF");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
-    showFindingCounter(targetConnects, susDevice, allSpottedDevice);
+    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     //nibblesSpeechShow(SpeechContext::SCAN_STOP); //to much for queue!
     stopBleScan();   // THIS is the important part
   }
 }
 
 void toggleWiFi() {
-  if (wifiStarted) {
+  if (NetworkContext::wifiStarted) {
     LOG(LOG_CONTROL,"WIFI / WEB SERVER OFF");
     stopWebLogServer();
-    wifiStarted = false;
-    isWebLogActive = false;
+    NetworkContext::wifiStarted = false;
+    NetworkContext::isWebLogActive = false;
     logDisableTarget(TARGET_WEB);
     if (random(2) == 0) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
@@ -465,11 +465,11 @@ void toggleWiFi() {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     }
-    showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
+    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter); // optional: Icon ON
   } else {
     LOG(LOG_CONTROL,"WIFI / WEB SERVER ON");
     startWebLogServer();
-    isWebLogActive = true;
+    NetworkContext::isWebLogActive = true;
     logEnableTarget(TARGET_WEB);
     if (random(2) == 0) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
@@ -478,93 +478,49 @@ void toggleWiFi() {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
     }
-    showFindingCounter(targetConnects, susDevice, leakedCounter); // optional: Icon ON
+    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter); // optional: Icon ON
   }
 
-}
-
-void stopWebLogServer() {
-  ws.closeAll();       // disconnect Clients
-  server.end();        // stop server
-  delay(50);
-  WiFi.softAPdisconnect(true);  // Access Point beenden
-  delay(50);
-
-  WiFi.mode(WIFI_OFF);
-  delay(100);                   // THIS is critical
-
-  wifiStarted    = false;
-  isWebLogActive = false;
-
-  LOG(LOG_CONTROL, "WiFi fully stopped");
-}
-
-
-void startWebLogServer() {
-  LOG(LOG_CONTROL,"WEB SERVER");
-  if (wifiStarted) return;  // Don't start twice
-  WiFi.mode(WIFI_AP);
-  LOG(LOG_CONTROL, "   - SoftAP started? YES");
-  WiFi.softAP(deviceConfig.getWifiSSID().c_str(), deviceConfig.getWifiPassword().c_str());
-  LOG(LOG_CONTROL, "   - Access Point IP: " + WiFi.softAPIP().toString());
-
-  // Setup WebSocket events and handlers BEFORE starting the server
-  ws.onEvent(onWsEvent);
-  server.addHandler(&ws);
-
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send_P(200, "text/html", index_html);
-  });
-
-  server.begin();
-  LOG(LOG_CONTROL,"   - Web server started.");
-  wifiStarted = true;
-
-  LOG(LOG_CONTROL,"Press BtnA (long) to TOGGLE BLE Scan");
 }
 
 void toggleWardriving() {
-  wardrivingEnabled = !wardrivingEnabled;
+  printf("call toggleWardriving\n");
+    if (NetworkContext::wardrivingEnabled) {
+        printf("Toggle Wardrive enabled (if)\n");
+        NetworkContext::wardrivingEnabled = false;
+        wigleLogger.end();
+        LOG(LOG_CONTROL, "Wardriving OFF (" +
+        String(wigleLogger.getLoggedCount()) + " logged)");
+        logDisableCategory(LOG_GPS);
+        
+        if (random(2) == 0) {
+          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                        nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+        } else {
+          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                        nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+        }
+        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
+    } else {
+        printf("Toggle Wardrive enabled (else)\n");
+        logEnableCategory(LOG_GPS);
+        gpsManager.begin(GPSSource::GROVE);
+        wigleLogger.begin();
+        LOG(LOG_CONTROL, "Wardriving ON  (" + String(gpsManager.getSourceName()) + ")");
+        LOG(LOG_CONTROL, "  File: " + wigleLogger.getFilename());
 
-  if (wardrivingEnabled) {
-    nibblesSpeechShow(SpeechContext::WARDRIVING);
-    logEnableCategory(LOG_GPS);
-    gpsManager.begin(GPSSource::GROVE);
-    wigleLogger.begin();
-    LOG(LOG_CONTROL,"Wardriving ON (" + String(gpsManager.getSourceName()) + ")");
-    LOG(LOG_CONTROL,"  File: " + wigleLogger.getFilename());
-  } else {
-    wigleLogger.end();
-    LOG(LOG_CONTROL,"Wardriving OFF (" + String(wigleLogger.getLoggedCount()) + " logged)");
-    logDisableCategory(LOG_GPS);
-  }
-
-  ws.textAll(wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
-  drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
-  if (wardrivingEnabled) {
-    nibblesSpeechShow(SpeechContext::WARDRIVING);
-  }
+        if (random(2) == 0) {
+          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+        } else {
+          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                        nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+        }
+        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
+    }
+    ws.textAll(NetworkContext::wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
 }
 
-void switchGPSSource() {
-  if (!wardrivingEnabled) {
-    LOG(LOG_CONTROL,"Enable wardriving first");
-    return;
-  }
-
-#if defined(LORA_CS_PIN)
-  GPSSource next = (gpsManager.getSource() == GPSSource::GROVE)
-                   ? GPSSource::LORA_CAP
-                   : GPSSource::GROVE;
-  gpsManager.switchSource(next);
-  LOG(LOG_CONTROL,"GPS: " + String(gpsManager.getSourceName()));
-#else
-  LOG(LOG_CONTROL,"Only Grove GPS available on this device");
-#endif
-
-  drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-  showFindingCounter(targetConnects, susDevice, allSpottedDevice);
-}
+void switchGPSSource()  { NetworkContext::switchGPSSource();  }
+void startWebLogServer(){ NetworkContext::startWebServer();   }
+void stopWebLogServer() { NetworkContext::stopWebServer();    }

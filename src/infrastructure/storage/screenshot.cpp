@@ -1,5 +1,11 @@
 #include "screenshot.h"
+
+#include "app/context/globals.h"
+#include "config/ui_config.h"
+#include "infrastructure/platform/hardware.h"
+#include "infrastructure/logging/logger.h"
 #include <SD.h>
+
 
 uint16_t* Screenshot::buffer = nullptr;
 bool Screenshot::pending = false;

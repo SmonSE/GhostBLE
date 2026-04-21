@@ -1,12 +1,17 @@
 #include "gps_manager.h"
+
 #include "infrastructure/platform/hardware_config.h"
 #include "infrastructure/logging/logger.h"
+#include "app/context/network_context.h"
+
 
 GPSManager::GPSManager() : currentSource(GPSSource::GROVE), gpsSerial(1) {}
 
 void GPSManager::begin(GPSSource source) {
     currentSource = source;
     initSerial(source);
+
+    NetworkContext::wardrivingEnabled = true;
 }
 
 void GPSManager::switchSource(GPSSource source) {

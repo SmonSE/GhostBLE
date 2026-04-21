@@ -2,7 +2,9 @@
 #include "config/gatt_config.h"
 #include "infrastructure/logging/logger.h"
 #include "app/context/globals.h"
+#include "app/context/device_context.h"
 #include <string>
+
 
 static String toHex(uint8_t* data, size_t len)
 {
@@ -80,7 +82,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     String hexString   = toHex(data, length);
     String asciiString = toASCII(data, length);
 
-    xpManager.awardXP(1.5);  // +1.5 XP: notify data received
+    DeviceContext::xpManager.awardXP(1.5);  // +1.5 XP: notify data received
 
     LOG(LOG_NOTIFY, devTag + "BLE Notify");
 
@@ -96,7 +98,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     // ---- Known BLE characteristics ----
     if (uuidStr.endsWith(UUID_BATTERY_LEVEL) && length >= 1)
     {
-        xpManager.awardXP(2.5);  // +2.5 XP: known char decoded (battery)
+        DeviceContext::xpManager.awardXP(2.5);  // +2.5 XP: known char decoded (battery)
         String battery = String(data[0]) + "%";
         LOG(LOG_NOTIFY, "   Battery Level: " + battery);
     }
@@ -108,14 +110,14 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
 
     if (uuidStr.endsWith(UUID_DEVICE_NAME))
     {
-        xpManager.awardXP(2.5);  // +2.5 XP: known char decoded (name)
+        DeviceContext::xpManager.awardXP(2.5);  // +2.5 XP: known char decoded (name)
         LOG(LOG_NOTIFY, "   Device Name: " + asciiString);
     }
 
     // ---- UINT16 detection ----
     if (length % 2 == 0 && length <= 16)
     {
-        xpManager.awardXP(1.0);  // +1.0 XP: UINT payload decoded
+        DeviceContext::xpManager.awardXP(1.0);  // +1.0 XP: UINT payload decoded
         String values;
         values.reserve(length * 3);
 
@@ -153,7 +155,7 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
     // ---- FLOAT32 detection ----
     if (length == 4)
     {
-        xpManager.awardXP(1.0);  // +1.0 XP: FLOAT payload decoded
+        DeviceContext::xpManager.awardXP(1.0);  // +1.0 XP: FLOAT payload decoded
         float f;
         memcpy(&f, data, 4);
 

@@ -1,7 +1,8 @@
 #include "logger.h"
+
 #include <SD.h>
 
-AsyncWebSocket ws("/ws");
+
 SemaphoreHandle_t logMutex = NULL;
 
 // Per-category target configuration

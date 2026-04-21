@@ -1,6 +1,8 @@
 #include "wigle_logger.h"
+
 #include "infrastructure/logging/logger.h"
 #include "infrastructure/platform/hardware.h"
+
 
 WigleLogger::WigleLogger() : active(false), initialized(false), loggedCount(0) {}
 

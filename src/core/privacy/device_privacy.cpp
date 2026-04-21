@@ -1,6 +1,7 @@
 #include "device_privacy.h"
 #include "app/context/globals.h"
 #include "infrastructure/logging/logger.h"
+#include "app/context/scan_context.h"
 
 #include <map>
 #include <vector>
@@ -218,7 +219,7 @@ void handleDevicePrivacy(
         name.find("AirPods") != std::string::npos;
 
     if (isLikelyConsumerDevice && rotating_mac) {
-        riskScore -= 3;
+        ScanContext::riskScore -= 3;
     }
 
     DeviceCategory category = classifyDevice(
@@ -245,15 +246,15 @@ void handleDevicePrivacy(
     LOG(LOG_PRIVACY,logLineWebSocket);
 
     // ---- Risk score ----
-    if (weakName) riskScore += 3;
-    if (!emptyName && !rotating_mac) riskScore += 3;
-    if (rotating_mac) riskScore -= 1;
-    else riskScore += 1;
+    if (weakName) ScanContext::riskScore += 3;
+    if (!emptyName && !rotating_mac) ScanContext::riskScore += 3;
+    if (rotating_mac) ScanContext::riskScore -= 1;
+    else ScanContext::riskScore += 1;
 
-    if (!is_connectable) riskScore += 2;
-    else riskScore -= 2;
+    if (!is_connectable) ScanContext::riskScore += 2;
+    else ScanContext::riskScore -= 2;
 
-    if (adv_contains_cleartext) riskScore += 2;
+    if (adv_contains_cleartext) ScanContext::riskScore += 2;
 }
 
 // Helper function to convert raw payload bytes to hex string
