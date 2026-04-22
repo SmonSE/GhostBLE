@@ -10,24 +10,24 @@
 //  UIContext — NibBLEs-Animationen, Overlays, Display-State
 //
 //  Thread-safety:
-//    - std::atomic<bool>  → FreeRTOS-Tasks (Core 1) setzen
-//                           diese Flags, loop() (Core 0) liest
-//    - plain Felder       → nur aus loop() / setup() verwendet
-//    - taskMutex          → muss vor jedem TaskHandle-Zugriff
-//                           gehalten werden
+//    - std::atomic<bool>  → set FreeRTOS-Tasks (Core 1)
+//                           this Flags read, loop() (Core 0)
+//    - plain field        → only from loop() / use setup()
+//    - taskMutex          → needs to be set before every 
+//                           TaskHandle access
 // ============================================================
 
 namespace UIContext {
 
 // ------------------------------------------------------------
-//  FreeRTOS-Infrastruktur
-//  taskMutex schützt alle TaskHandle-Operationen.
+//  FreeRTOS-Infrastructure
+//  taskMutex safes all TaskHandle-Operations
 // ------------------------------------------------------------
 extern SemaphoreHandle_t taskMutex;
 
 // ------------------------------------------------------------
 //  Animations-Task-Handles
-//  Vor Zugriff immer taskMutex nehmen!
+//  Before access use taskMutex!
 // ------------------------------------------------------------
 extern TaskHandle_t glassesTaskHandle;
 extern TaskHandle_t angryTaskHandle;
@@ -35,7 +35,7 @@ extern TaskHandle_t happyTaskHandle;
 extern TaskHandle_t sadTaskHandle;
 
 // ------------------------------------------------------------
-//  Animations-Flags  (Core 1 schreibt ↔ Core 0 liest → atomic)
+//  Animations-Flags  (Core 1 write ↔ Core 0 read → atomic)
 // ------------------------------------------------------------
 extern std::atomic<bool> isGlassesTaskRunning;
 extern std::atomic<bool> isAngryTaskRunning;
@@ -45,12 +45,12 @@ extern std::atomic<bool> isThugLifeTaskRunning;
 extern std::atomic<bool> isSpeechBubbleActive;
 
 // ------------------------------------------------------------
-//  Overlay-State  (nur loop() liest/schreibt)
+//  Overlay-State  (nur loop() read/write)
 // ------------------------------------------------------------
 extern bool helpOverlayVisible;
 
 // ------------------------------------------------------------
-//  Gerätestatus-Anzeige  (nur loop() liest/schreibt)
+//  Show Device-State  (only loop() read/write)
 // ------------------------------------------------------------
 extern std::atomic<bool> isChargingState;
 extern std::atomic<int>  batteryPercent;
@@ -59,17 +59,17 @@ extern std::atomic<int>  batteryPercent;
 //  Lifecycle-Helpers
 // ------------------------------------------------------------
 
-// Initialisiert taskMutex. Einmalig in setup() aufrufen,
-// bevor irgendein Task gestartet wird.
+// Initialisations taskMutex. Called once in setup(),
+// bevore any task is running.
 void init();
 
-// Gibt true zurück wenn gerade irgendeine Expression-Animation läuft.
-// Nützlich um konkurrierende Animations-Tasks zu verhindern.
+// Gave true back if any Expression-Animation is running.
+// Usefull if competing Animations-Tasks.
 bool isAnyExpressionRunning();
 
-// Stoppt einen laufenden Task sicher (prüft Handle + Flag).
-// expression: Zeiger auf das atomic<bool>-Flag des Tasks
-// handle:     Zeiger auf den zugehörigen TaskHandle_t
+// Stopps running Task gracefully (check Handle + Flag).
+// expression: Pointer at atomic<bool>-Flag of Tasks
+// handle:     Pointer at associated TaskHandle_t
 void stopExpressionTask(std::atomic<bool>& runningFlag,
                         TaskHandle_t&      handle);
 

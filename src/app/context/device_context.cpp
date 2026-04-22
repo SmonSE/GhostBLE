@@ -10,8 +10,8 @@ namespace DeviceContext {
 DeviceConfig deviceConfig;
 
 // ------------------------------------------------------------
-//  XP-System
-//  begin() nach initLogger() aufrufen (braucht SD-Karte).
+// XP system
+// call begin() after initLogger() (requires SD card).
 // ------------------------------------------------------------
 XPManager xpManager;
 
@@ -22,7 +22,7 @@ std::atomic<int> targetConnects{0};
 std::atomic<int> pointer{0};
 
 // ------------------------------------------------------------
-//  Beacon-Zähler
+//  Beacon-Counter
 // ------------------------------------------------------------
 std::atomic<int> beaconsFound{0};
 std::atomic<int> pwnbeaconsFound{0};

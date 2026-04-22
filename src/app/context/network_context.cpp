@@ -5,21 +5,21 @@
 #include <ESPAsyncWebServer.h>
 
 #include "infrastructure/logging/logger.h"
-#include "app/context/globals.h"   // deviceConfig, index_html — bis web_ui.h existiert
+#include "app/context/globals.h"
 #include "config/device_config.h"
 #include "infrastructure/platform/hardware_config.h"
 
 
 // ------------------------------------------------------------
-//  WebServer + WebSocket — Objekte leben hier
+//  WebServer + WebSocket — Objects here
 // ------------------------------------------------------------
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
 
 // ------------------------------------------------------------
-//  WebSocket-Event-Handler
-//  Fix gegenüber Original: data[len] = '\0' war Out-of-bounds.
-//  Stattdessen: String direkt mit Längenangabe konstruieren.
+// WebSocket Event Handler
+// Fix compared to the original: `data[len] = '\0'` was out-of-bounds.
+// Instead: Construct the string directly with a length specification.
 // ------------------------------------------------------------
 static void onWsEvent(AsyncWebSocket*       wsServer,
                       AsyncWebSocketClient* client,
@@ -59,7 +59,7 @@ bool wardrivingEnabled = false;
 
 // ------------------------------------------------------------
 //  GPS + WiGLE-Logger
-//  Objekte leben hier — einzige Instanz im gesamten Projekt.
+// Objects live here — the only instance in the entire project.
 // ------------------------------------------------------------
 GPSManager  gpsManager;
 WigleLogger wigleLogger;
@@ -68,7 +68,7 @@ WigleLogger wigleLogger;
 //  Lifecycle-Helpers
 // ------------------------------------------------------------
 void startWebServer() {
-    if (wifiStarted) return;  // Guard: nicht doppelt starten
+    if (wifiStarted) return;  // Guard: do not start twice
 
     WiFi.mode(WIFI_AP);
     WiFi.softAP(deviceConfig.getWifiSSID().c_str(),
@@ -76,7 +76,7 @@ void startWebServer() {
 
     LOG(LOG_CONTROL, "SoftAP started — IP: " + WiFi.softAPIP().toString());
 
-    // WebSocket-Events und Handler VOR server.begin() registrieren
+    // WebSocket-Events and handler for server.begin() registration
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
@@ -100,7 +100,7 @@ void stopWebServer() {
     WiFi.softAPdisconnect(true);
     delay(50);
     WiFi.mode(WIFI_OFF);
-    delay(100);  // kritisch: ESP32 braucht Zeit für sauberes Shutdown
+    delay(100);  // critical: ESP32 needs time for a clean shutdown
 
     wifiStarted    = false;
     isWebLogActive = false;

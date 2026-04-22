@@ -8,8 +8,8 @@
 #include "infrastructure/gps/gps_manager.h"
 #include "infrastructure/wardriving/wigle_logger.h"
 
-// WebServer + WebSocket — definiert in network_context.cpp,
-// extern damit GhostBLE.ino und Logger darauf zugreifen können.
+// WebServer + WebSocket — defined in network_context.cpp,
+// extern that GhostBLE.ino and Logger be able to access it.
 extern AsyncWebServer server;
 extern AsyncWebSocket ws;
 
@@ -17,11 +17,11 @@ extern AsyncWebSocket ws;
 //  NetworkContext — WiFi/WebSocket, Wardriving, GPS
 //
 //  Thread-safety:
-//    - std::atomic<bool>  → loop() und ScanTask lesen/schreiben
-//    - plain bool         → nur aus loop() / setup() verwendet
-//    - gpsManager         → nur aus loop() verwendet (update(),
-//                           switchSource()) — kein Task-Zugriff
-//    - wigleLogger        → nur aus loop() verwendet
+//    - std::atomic<bool>  → loop() and ScanTask read/write
+//    - plain bool         → only called from loop() / setup(),
+//    - gpsManager         → only called from loop() (update(),
+//                           switchSource()) — no task access
+//    - wigleLogger        → only called from loop().
 // ============================================================
 
 namespace NetworkContext {
@@ -34,18 +34,18 @@ extern bool wifiStarted;      // SoftAP läuft gerade
 
 // ------------------------------------------------------------
 //  Wardriving
-//  atomic: ScanTask liest wardrivingEnabled um zu entscheiden
-//  ob GPS-Koordinaten geloggt werden sollen.
+//  atomic: ScanTask read wardrivingEnabled for decission
+//  if GPS-Koordinates should be logged.
 // ------------------------------------------------------------
 extern bool wardrivingEnabled;
 
 // ------------------------------------------------------------
-//  GPS  (nur loop() greift zu)
+//  GPS  (only loop() have access)
 // ------------------------------------------------------------
 extern GPSManager gpsManager;
 
 // ------------------------------------------------------------
-//  WiGLE-Logger  (nur loop() greift zu)
+//  WiGLE-Logger  (only loop() have access)
 // ------------------------------------------------------------
 extern WigleLogger wigleLogger;
 
@@ -53,15 +53,15 @@ extern WigleLogger wigleLogger;
 //  Lifecycle-Helpers
 // ------------------------------------------------------------
 
-// Startet SoftAP + WebSocket-Server.
-// Interner Guard verhindert doppelten Start.
+// Starts SoftAP + WebSocket-Server.
+// Internal Guard prevent double start.
 void startWebServer();
 
-// Stoppt WebSocket-Clients, Server und SoftAP sauber.
+// Stopps WebSocket-Clients, Server and SoftAP clean.
 void stopWebServer();
 
-// Wechselt GPS-Quelle (GROVE ↔ LORA_CAP).
-// Gibt false zurück wenn Wardriving nicht aktiv ist.
+// Change GPS-Source (GROVE ↔ LORA_CAP).
+// Return false if Wardriving isn't active.
 bool switchGPSSource();
 
 } // namespace NetworkContext

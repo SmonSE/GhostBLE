@@ -7,39 +7,39 @@
 #include "config/device_config.h"
 
 // ============================================================
-//  DeviceContext — Gerätekonfiguration, XP-System,
-//                  Gamification, Target-Tracking
+//  DeviceContext — device configuration, XP system,
+//                  gamification, target tracking
 //
 //  Thread-safety:
-//    - DeviceConfig / XPManager  → nur aus loop() / setup(),
-//                                  kein Task-Zugriff
-//    - plain Felder              → nur aus loop() / setup()
+//    - DeviceConfig / XPManager  → accessed from loop() / setup()
+//                                  only, no FreeRTOS task access
+//    - plain fields              → loop() / setup() only
 // ============================================================
 
 namespace DeviceContext {
 
 // ------------------------------------------------------------
-//  Gerätekonfiguration (NVS/Preferences)
-//  Einzige Instanz im Projekt — deviceConfig.begin() in setup()
+//  Device configuration (NVS/Preferences)
+//  Single instance — call deviceConfig.begin() first in setup()
 // ------------------------------------------------------------
 extern DeviceConfig deviceConfig;
 
 // ------------------------------------------------------------
-//  XP-System / Gamification
-//  Einzige Instanz im Projekt — xpManager.begin() in setup()
+//  XP system / gamification
+//  Single instance — call xpManager.begin() after initLogger()
 // ------------------------------------------------------------
 extern XPManager xpManager;
 
 // ------------------------------------------------------------
-//  Target-Tracking
+//  Target tracking
 // ------------------------------------------------------------
-extern std::atomic<int> targetConnects;  // Erfolgreiche GATT-Verbindungen
-extern std::atomic<int> pointer;         // Manuell gesetzter Marker-Zähler
+extern std::atomic<int> targetConnects;  // successful GATT connections
+extern std::atomic<int> pointer;         // manually placed marker count
 
 // ------------------------------------------------------------
-//  Beacon-Zähler
-//  Hier eingeordnet weil Beacons zum "was haben wir gefunden"
-//  gehören — unabhängig vom laufenden Scan.
+//  Beacon counters
+//  Kept here because beacons are a discovery result independent
+//  of the active scan cycle.
 // ------------------------------------------------------------
 extern std::atomic<int> beaconsFound;
 extern std::atomic<int> pwnbeaconsFound;
