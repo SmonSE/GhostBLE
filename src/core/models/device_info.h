@@ -50,6 +50,9 @@ struct DeviceInfo {
     bool connectionEncrypted = false;
     bool hasSensitiveUnencrypted = false;
     bool supportsBrEdr = false;
-    int writableCharCount = 0;
+    bool hasNotifyData = false;
+    bool hasIndicateData = false;
+    int  notifyCharCount = 0;
+    int  writableCharCount = 0;
     std::string deviceFingerprint;
 };

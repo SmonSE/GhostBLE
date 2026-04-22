@@ -101,6 +101,20 @@ int calculateExposureScore(const DeviceInfo& dev, ExposureResult& result)
         result.reasons.push_back("serial/UART service exposed");
     }
 
+    if (dev.hasNotifyData) {
+        int notifyScore = 25;
+        // More characteristics streaming = higher exposure
+        if (dev.notifyCharCount > 2) notifyScore += 10;
+        score += notifyScore;
+        result.reasons.push_back("live sensor data streamed without authentication ("
+            + std::to_string(dev.notifyCharCount) + " characteristic(s))");
+    }
+
+    if (dev.hasIndicateData) {
+        score += 15;
+        result.reasons.push_back("medical-grade indications received (acknowledged notify)");
+    }
+
     if (dev.hasWritableChars && !dev.connectionEncrypted) {
         score += 15;
         result.reasons.push_back("writable characteristics without encryption");
@@ -166,7 +180,7 @@ void finalizeExposureRatings(const DeviceInfo& dev, ExposureResult& result)
 
     if (dev.hasRotatingMac)
         result.trackingRisk = "LOW";
-    else if ((dev.hasStaticMac || dev.isPublicMac) && !hasMinimalInfo)
+    else if (dev.hasNotifyData && (dev.hasStaticMac || dev.isPublicMac) && !hasMinimalInfo)
         result.trackingRisk = "HIGH";
     else if (dev.hasStaticMac || dev.isPublicMac)
         result.trackingRisk = "MEDIUM";
