@@ -3,9 +3,9 @@
 namespace DeviceContext {
 
 // ------------------------------------------------------------
-//  Gerätekonfiguration
-//  begin() muss als erstes in setup() aufgerufen werden —
-//  vor NimBLE, WiFi und allem was den Namen braucht.
+// Device configuration
+// begin() must be called first in setup() —
+// before NimBLE, WiFi, and anything else that needs a name.
 // ------------------------------------------------------------
 DeviceConfig deviceConfig;
 
