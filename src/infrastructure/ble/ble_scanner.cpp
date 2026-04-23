@@ -396,7 +396,8 @@ static bool connectAndReadGATT(
     const NimBLEAdvertisedDevice* device,
     DeviceInfo&   dev,
     bool&         hasWritableChar,
-    const String& devTag)
+    const String& devTag,
+    int           remaining)
 {
     if (device->haveName()) dev.advHasName = true;
 
@@ -407,12 +408,12 @@ static bool connectAndReadGATT(
 
     // After Registry-Run, before Security-Analyse:
     // Short window if many devices in queue:
-    //uint32_t captureMs = (results.getCount() > 5) ? 1500 : 3000;
-    String notifySummary = NotifyHandler::subscribeAndCapture(pClient, 2000);
+    uint32_t captureMs = (remaining > 5) ? 1500 : 2500;
+    String notifySummary = NotifyHandler::subscribeAndCapture(pClient, captureMs);
     if (!notifySummary.isEmpty()) {
         LOG(LOG_NOTIFY, devTag + notifySummary);
         dev.hasNotifyData = true;
-        dev.notifyCharCount  = NotifyHandler::lastNotifyCount();  // falls du den Wert aus dem Handler holst
+        dev.notifyCharCount  = NotifyHandler::lastNotifyCount();
     }
 
     // Cache Device Information Service result for downstream use
@@ -737,9 +738,12 @@ void scanForDevices() {
         // ---------------------------------------------------------------
         if (ScanContext::is_connectable && pClient->connect(*device)) {
 
+            // get Device scan count
+            int remaining = results.getCount() - i;
+          
             if (pClient->discoverAttributes()) {
                 // --- Full GATT read + target detection ---
-                bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag);
+                bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag, remaining);
                 if (!targetDetected) {
                     LOG(LOG_GATT, devTag + "No target detected via GATT: " + address);
                 }
