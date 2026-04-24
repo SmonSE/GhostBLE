@@ -9,6 +9,8 @@
 #include "config/device_config.h"
 #include "infrastructure/platform/hardware_config.h"
 
+#include "web/web_sender.h"
+
 
 // ------------------------------------------------------------
 //  WebServer + WebSocket — Objects here
@@ -29,7 +31,10 @@ static void onWsEvent(AsyncWebSocket*       wsServer,
                       size_t                len) {
     if (type == WS_EVT_CONNECT) {
         LOG(LOG_SYSTEM, "WebSocket client connected: " + String(client->id()));
-
+    } else if (type == WS_EVT_CONNECT) {
+        LOG(LOG_SYSTEM, "WebSocket client connected: " + String(client->id()));
+        WebSender::sendConfig();
+        WebSender::sendStats();
     } else if (type == WS_EVT_DATA) {
         AwsFrameInfo* info = (AwsFrameInfo*)arg;
         if (info->final && info->index == 0 &&

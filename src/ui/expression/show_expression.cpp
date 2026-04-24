@@ -9,6 +9,7 @@
 #include "config/ui_config.h"
 #include "ui/overlay/draw_overlay.h"
 #include "infrastructure/gps/gps_manager.h"
+#include "web/web_sender.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesGlasses.h"
@@ -492,4 +493,5 @@ void showFindingCounter(int sniffed, int sus, int spotted) {
     drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, UIContext::isChargingState.load());
     drawStats(sniffed, sus, spotted, STATS_X, STATS_Y_START);
     drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y);
+    WebSender::sendStats();
 }
