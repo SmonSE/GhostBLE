@@ -11,6 +11,8 @@
 
 #include "gattServices/notify_handler.h"
 
+#include "web/web_sender.h"
+
 
 // ---------------------------------------------------------------------------
 //  Device registry — tracks seen devices across scan cycles.
@@ -321,7 +323,6 @@ static bool parseDeviceInfo(
                 isPwnBeacon = true;
                 DeviceContext::beaconsFound++;
                 DeviceContext::pwnbeaconsFound++;
-
                 if (!heartTaskRunning.load()) {
                     xTaskCreatePinnedToCore(heartTask, "Heart", 2048, NULL, 1, NULL, 1);
                 }
@@ -704,6 +705,10 @@ void scanForDevices() {
             ExposureResult exposure = analyzeExposure(dev);
             handleExposureResult(exposure, manufacturerName, devTag);
 
+            WebSender::sendDevice(dev, devSessionId, currentRSSI,
+                      isIBeacon, isPwnBeaconDevice,
+                      dev.hasNotifyData);
+
             // Sad expression: device visible but unreachable
             if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load()) {
                 if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace",
@@ -856,6 +861,10 @@ void scanForDevices() {
                 ExposureResult exposure = analyzeExposure(dev);
                 handleExposureResult(exposure, manufacturerName, devTag);
 
+                WebSender::sendDevice(dev, devSessionId, currentRSSI,
+                      isIBeacon, isPwnBeaconDevice,
+                      dev.hasNotifyData);
+
                 // Glasses expression: detective mode after successful GATT read
                 if (!UIContext::isGlassesTaskRunning.load() && !UIContext::isAngryTaskRunning.load()) {
                     if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses",
@@ -887,6 +896,10 @@ void scanForDevices() {
             dev.isConnectable = false;
             ExposureResult exposure = analyzeExposure(dev);
             handleExposureResult(exposure, manufacturerName, devTag);
+
+            WebSender::sendDevice(dev, devSessionId, currentRSSI,
+                      isIBeacon, isPwnBeaconDevice,
+                      dev.hasNotifyData);
 
             // Sad expression: device visible but connection rejected
             if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load()) {
