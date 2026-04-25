@@ -882,35 +882,78 @@ void scanForDevices() {
             }
 
         } else {
-            // ---------------------------------------------------------------
-            //  Connection failed branch
-            // ---------------------------------------------------------------
-            String reason;
-            if (currentRSSI <= RSSI_IGNORE_THRESHOLD)  reason = "Too far / weak signal";
-            else if (currentRSSI <= RSSI_CONNECT_THRESHOLD) reason = "Weak or unstable signal";
-            else                                            reason = "Protected (pairing required)";
+          // ---------------------------------------------------------------
+          //  Connection failed branch
+          // ---------------------------------------------------------------
+          if (device != nullptr && device->haveServiceUUID()) {
 
-            LOG(LOG_GATT, devTag + reason + ": " + address
-                + " (" + String(currentRSSI) + " dBm)");
+              NimBLEUUID uuid = device->getServiceUUID();
+              String uuidStr = String(uuid.toString().c_str());
 
-            dev.isConnectable = false;
-            ExposureResult exposure = analyzeExposure(dev);
-            handleExposureResult(exposure, manufacturerName, devTag);
+              LOG(LOG_GATT, devTag + "Adv UUID: " + uuidStr);
 
-            WebSender::sendDevice(dev, devSessionId, currentRSSI,
-                      isIBeacon, isPwnBeaconDevice,
-                      dev.hasNotifyData);
+              // --- Known / suspicious target detection (advertisement-based) ---
+              // Note: deviceInfoService are empty here since we didn't connect
+              if (isTargetDevice(localName.c_str(), address.c_str(), uuidStr.c_str(), "")) {
+                  ScanContext::targetFound = true;
+                  ScanContext::susDevice++;
+                  DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
 
-            // Sad expression: device visible but connection rejected
-            if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load()) {
-                if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace",
-                    4096, NULL, 3, &UIContext::sadTaskHandle, 1) != pdPASS) {
-                    LOG(LOG_SYSTEM, "Failed to create SadFace task");
-                    UIContext::isSadTaskRunning.store(false);
-                }
-            }
-            delay(1000);
-        }
+                  LOG(LOG_TARGET, devTag + "!!! Target detected (no GATT) !!!");
+                  nibblesSpeechShow(SpeechContext::SUSPICIOUS);
+                  vTaskDelay(pdMS_TO_TICKS(2000));
+
+                  if (!UIContext::isAngryTaskRunning.load()) {
+                      if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace",
+                          4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
+                          LOG(LOG_SYSTEM, "Failed to create AngryFace task");
+                          UIContext::isAngryTaskRunning.store(false);
+                      }
+                  }
+
+                  ScanContext::isTarget = true;
+                  // Don't return here - we're in the main loop, not in connectAndReadGATT()
+              }
+          }
+
+          String reason;
+          if (currentRSSI <= RSSI_IGNORE_THRESHOLD)  reason = "Too far / weak signal";
+          else if (currentRSSI <= RSSI_CONNECT_THRESHOLD) reason = "Weak or unstable signal";
+          else                                            reason = "Protected (pairing required)";
+
+          LOG(LOG_GATT, devTag + reason + ": " + address
+              + " (" + String(currentRSSI) + " dBm)");
+
+          // --- Log full device info even without GATT connection ---
+          String infoLog = devTag + "Device info (no GATT)\n"
+              "   Address:  " + address + "\n"
+              "   Name:     " + localName + "\n"
+              "   Manuf.:   " + manufacturerName;
+
+          float distance = powf(10.0f,
+              (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
+          infoLog += "\n   Distance: ~" + String(distance, 2) + " m"
+                  + "\n   RSSI:     " + String(currentRSSI) + " dBm";
+          LOG(LOG_GATT, infoLog);
+
+          dev.isConnectable = false;
+          ExposureResult exposure = analyzeExposure(dev);
+          handleExposureResult(exposure, manufacturerName, devTag);
+
+          WebSender::sendDevice(dev, devSessionId, currentRSSI,
+                    isIBeacon, isPwnBeaconDevice,
+                    dev.hasNotifyData);
+
+          // Sad expression: device visible but connection rejected
+          if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load()) {
+              if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace",
+                  4096, NULL, 3, &UIContext::sadTaskHandle, 1) != pdPASS) {
+                  LOG(LOG_SYSTEM, "Failed to create SadFace task");
+                  UIContext::isSadTaskRunning.store(false);
+              }
+          }
+          delay(1000);
+      }
 
         // --- Wardriving: log device with GPS coordinates if fix is valid ---
         if (NetworkContext::wardrivingEnabled) {
