@@ -57,6 +57,51 @@ struct IBeaconInfo {
     int8_t      txPower  = 0;
 };
 
+// Extra Payload
+void extractUUIDs(const std::vector<uint8_t>& payload) {
+    int i = 0;
+
+    while (i < payload.size()) {
+        uint8_t len = payload[i++];
+        if (len == 0 || i >= payload.size()) break;
+
+        uint8_t type = payload[i++];
+
+        // 🔹 16-bit UUIDs
+        if (type == 0x02 || type == 0x03) {
+            for (int j = 0; j < len - 1; j += 2) {
+                if (i + j + 1 >= payload.size()) break;
+
+                uint16_t uuid = payload[i + j] | (payload[i + j + 1] << 8);
+                LOG(LOG_GATT, "16-bit UUID: " + String(uuid, HEX));
+            }
+        }
+
+        // 🔹 128-bit UUIDs
+        if (type == 0x06 || type == 0x07) {
+            for (int j = 0; j < len - 1; j += 16) {
+                if (i + j + 15 >= payload.size()) break;
+
+                char buf[37];
+                sprintf(buf,
+                    "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                    payload[i+j+15], payload[i+j+14], payload[i+j+13], payload[i+j+12],
+                    payload[i+j+11], payload[i+j+10],
+                    payload[i+j+9],  payload[i+j+8],
+                    payload[i+j+7],  payload[i+j+6],
+                    payload[i+j+5],  payload[i+j+4],
+                    payload[i+j+3],  payload[i+j+2],
+                    payload[i+j+1],  payload[i+j]
+                );
+
+                LOG(LOG_GATT, "128-bit UUID: " + String(buf));
+            }
+        }
+
+        i += (len - 1);
+    }
+}
+
 // ===========================================================================
 //  Helper: heart animation FreeRTOS task
 // ===========================================================================
@@ -885,41 +930,70 @@ void scanForDevices() {
           // ---------------------------------------------------------------
           //  Connection failed branch
           // ---------------------------------------------------------------
-          if (device != nullptr && device->haveServiceUUID()) {
+          if (device != nullptr) {
 
-              NimBLEUUID uuid = device->getServiceUUID();
-              String uuidStr = String(uuid.toString().c_str());
+              if (device->haveServiceUUID()) {
+                NimBLEUUID uuid = device->getServiceUUID();
+                String uuidStr = String(uuid.toString().c_str());
 
-              LOG(LOG_GATT, devTag + "Adv UUID: " + uuidStr);
+                LOG(LOG_GATT, devTag + "Service-UUID: " + uuidStr);
 
-              // --- Known / suspicious target detection (advertisement-based) ---
-              // Note: deviceInfoService are empty here since we didn't connect
-              if (isTargetDevice(localName.c_str(), address.c_str(), uuidStr.c_str(), "")) {
-                  ScanContext::targetFound = true;
-                  ScanContext::susDevice++;
-                  DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
+                // --- Known / suspicious target detection (advertisement-based) ---
+                // Note: deviceInfoService are empty here since we didn't connect
+                if (isTargetDevice(localName.c_str(), address.c_str(), uuidStr.c_str(), "")) {
+                    ScanContext::targetFound = true;
+                    ScanContext::susDevice++;
+                    DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
 
-                  LOG(LOG_TARGET, devTag + "!!! Target detected (no GATT) !!!");
-                  nibblesSpeechShow(SpeechContext::SUSPICIOUS);
-                  vTaskDelay(pdMS_TO_TICKS(2000));
+                    LOG(LOG_TARGET, devTag + "!!! Target detected (no GATT) !!!");
+                    LOG(LOG_GATT, devTag + "!!! Target detected (no GATT) !!!");
+                    nibblesSpeechShow(SpeechContext::SUSPICIOUS);
+                    vTaskDelay(pdMS_TO_TICKS(2000));
 
-                  if (!UIContext::isAngryTaskRunning.load()) {
-                      if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace",
-                          4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
-                          LOG(LOG_SYSTEM, "Failed to create AngryFace task");
-                          UIContext::isAngryTaskRunning.store(false);
-                      }
-                  }
+                    if (!UIContext::isAngryTaskRunning.load()) {
+                        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace",
+                            4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
+                            LOG(LOG_SYSTEM, "Failed to create AngryFace task");
+                            UIContext::isAngryTaskRunning.store(false);
+                        }
+                    }
 
-                  ScanContext::isTarget = true;
-                  // Don't return here - we're in the main loop, not in connectAndReadGATT()
+                    ScanContext::isTarget = true;
+                    // Don't return here - we're in the main loop, not in connectAndReadGATT()
+                }
               }
+
+              // Manufacturer
+              if (device->haveManufacturerData()) {
+                  std::string mfg = device->getManufacturerData();
+
+                  if (mfg.size() >= 2) {
+                      manufacturerId   = (uint8_t)mfg[1] << 8 | (uint8_t)mfg[0];
+                  }
+                  manufacturerName = getManufacturerName(manufacturerId);
+
+                  LOG(LOG_GATT, devTag + "Manufacturer: " + manufacturerName.c_str());
+              }
+
+              // TX Power
+              //if (device->haveTXPower()) {
+              //    LOG(LOG_GATT, devTag + "TX: " + String(device->getTXPower()));
+              //}
+
+              // Appearance
+              if (device->haveAppearance()) {
+                  LOG(LOG_GATT, devTag + "Appearance: " + String(device->getAppearance()));
+              }
+
+              // RAW (immer!)
+              auto payload = device->getPayload();
+              extractUUIDs(payload);
           }
 
           String reason;
           if (currentRSSI <= RSSI_IGNORE_THRESHOLD)  reason = "Too far / weak signal";
           else if (currentRSSI <= RSSI_CONNECT_THRESHOLD) reason = "Weak or unstable signal";
-          else                                            reason = "Protected (pairing required)";
+          else                                            reason = "Protected (no pairing possible)";
 
           LOG(LOG_GATT, devTag + reason + ": " + address
               + " (" + String(currentRSSI) + " dBm)");

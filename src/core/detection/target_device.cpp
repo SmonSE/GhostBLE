@@ -39,15 +39,15 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
       uuid = uuid.substring(4, 8);
   }
   // Detection
-  if (uuid == "3081") {
+  if (uuid == "0x3081" || "3081") {
       LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Black)");
       return true;
   }
-  if (uuid == "3082") {
+  if (uuid == "0x3082" || "3082") {
       LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (White)");
       return true;
   }
-  if (uuid == "3083") {
+  if (uuid == "0x3083" || "3083") {
       LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Transparent)");
       return true;
   }
