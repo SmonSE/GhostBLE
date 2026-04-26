@@ -22,6 +22,7 @@ inline const char* tierToString(ExposureTier tier)
 struct DeviceInfo {
     std::string mac;
     std::string name;
+    std::string displayName;
     std::string manufacturer;
 
     bool gattHasEnvironmentName = false;

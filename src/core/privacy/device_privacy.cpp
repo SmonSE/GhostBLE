@@ -205,7 +205,7 @@ void handleDevicePrivacy(
         adv_data.find("http") != std::string::npos ||
         isLikelyCleartextBytes(payloadVec);
 
-    // ✅ SINGLE SOURCE OF TRUTH
+    // SINGLE SOURCE OF TRUTH
     MACType macType = getMACType(mac);
     bool rotating_mac = isRotatingMAC(macType);
     String macPrivacyLabel = macTypeToString(macType);

@@ -548,9 +548,9 @@ static bool connectAndReadGATT(
                     UIContext::isAngryTaskRunning.store(false);
                 }
             }
-
-            ScanContext::isTarget = true;
             return true;  // target found — caller breaks loop
+        }else {
+          ScanContext::targetFound = false;  // ← Only reset if NOT a target
         }
     }
 
@@ -719,10 +719,33 @@ void scanForDevices() {
             dev,
             devTag);
 
-        dev.name         = localName.c_str();
-        dev.manufacturer = manufacturerName.c_str();
+        // Hier muss nach Apple Name device gecheckt werden
+        // --- Apple model resolution ---
+        // Scan nameList for Apple model identifiers (e.g. "iPhone17,3")
+        String modelIdentifier;
+        for (const auto& n : ScanContext::nameList) {
+            String s = n.c_str();
+            if ((s.startsWith("iPhone") || s.startsWith("iPad") || s.startsWith("Mac"))
+                && s.indexOf(",") != -1) {
+                modelIdentifier = s;
+                break;
+            }
+        }
 
-        ScanContext::isTarget = false;
+        String modelName;
+        if (!modelIdentifier.isEmpty()) {
+            modelName    = getAppleModelName(modelIdentifier);
+            displayName  = modelName;
+            dev.name = std::string(modelName.c_str()); 
+            dev.displayName = std::string(modelName.c_str()); 
+        } else if (manufacturerName == "Apple Inc.") {
+            modelName         = "Apple Device";
+            dev.displayName   = "Apple Device";  
+        } else {
+            dev.name          = localName.c_str();  
+            dev.manufacturer  = manufacturerName.c_str();
+        } 
+
         ScanContext::allSpottedDevice++;
         DeviceContext::xpManager.awardXP(0.1f);  // +0.1 XP: new device discovered
 
@@ -814,8 +837,12 @@ void scanForDevices() {
                 if (!modelIdentifier.isEmpty()) {
                     modelName    = getAppleModelName(modelIdentifier);
                     displayName  = modelName;
+                    dev.displayName = std::string(modelName.c_str()); 
                 } else if (manufacturerName == "Apple Inc.") {
-                    modelName = "Apple Device";
+                    modelName         = "Apple Device";
+                    dev.displayName   = "Apple Device";
+                    dev.name          = localName.c_str();
+                    dev.manufacturer  = manufacturerName.c_str();
                 }
 
                 // --- Build and log device info summary ---
@@ -893,8 +920,6 @@ void scanForDevices() {
                 MACType macType = getMACType(device->getAddress().toString().c_str());
 
                 dev.mac              = device->getAddress().toString().c_str();
-                dev.name             = localName.c_str();
-                dev.manufacturer     = manufacturerName.c_str();
                 dev.isConnectable    = ScanContext::is_connectable;
                 dev.isPublicMac      = (macType == MACType::Public);
                 dev.hasStaticMac     = (macType == MACType::Public || macType == MACType::StaticRandom);
@@ -931,7 +956,6 @@ void scanForDevices() {
           //  Connection failed branch
           // ---------------------------------------------------------------
           if (device != nullptr) {
-
               if (device->haveServiceUUID()) {
                 NimBLEUUID uuid = device->getServiceUUID();
                 String uuidStr = String(uuid.toString().c_str());
@@ -957,9 +981,8 @@ void scanForDevices() {
                             UIContext::isAngryTaskRunning.store(false);
                         }
                     }
-
-                    ScanContext::isTarget = true;
-                    // Don't return here - we're in the main loop, not in connectAndReadGATT()
+                } else {
+                    ScanContext::targetFound = false;  // ← Only reset if NOT a target
                 }
               }
 

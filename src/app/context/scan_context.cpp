@@ -49,7 +49,6 @@ std::atomic<int> writableNoAuthCount{0};
 // ------------------------------------------------------------
 //  Target-Tracking
 // ------------------------------------------------------------
-bool isTarget   = false;
 bool targetFound = false;
 std::atomic<int> targetConnects{0};
 
@@ -74,7 +73,6 @@ void reset() {
     writableNoAuthCount.store(0);
     rssi.store(0);
 
-    isTarget   = false;
     targetFound = false;
 }
 

@@ -74,7 +74,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       font-size: 18px;
       font-weight: 900;
       color: var(--green);
-      letter-spacing: 4px;
+      letter-spacing: 3px;
       text-shadow: 0 0 20px rgba(0,255,136,0.5);
     }
 
@@ -107,7 +107,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       50%       { opacity: 0.4; }
     }
 
-    .stat-item { display: flex; align-items: center; gap: 4px; }
+    .stat-item { display: flex; align-items: center; gap: 3px; }
     .stat-val  { color: var(--cyan); font-weight: bold; }
 
     /* ── Main layout ── */
@@ -418,7 +418,7 @@ const char index_html[] PROGMEM = R"rawliteral(
       font-size: 11px;
       border-radius: var(--radius);
       outline: none;
-      width: 130px;
+      width: 100px;
     }
 
     .filter-bar input:focus { border-color: var(--cyan); }
@@ -443,7 +443,6 @@ const char index_html[] PROGMEM = R"rawliteral(
     <div class="stat-item">SUS <span class="stat-val" id="stat-sus" style="color:var(--red)">0</span></div>
     <div class="stat-item">BCN <span class="stat-val" id="stat-bcn" style="color:var(--amber)">0</span></div>
     <div class="stat-item">PWN <span class="stat-val" id="stat-pwn" style="color:var(--red)">0</span></div>
-    <button class="btn-icon" onclick="toggleSettings()" title="Settings">⚙</button>
   </div>
 </header>
 
@@ -451,8 +450,9 @@ const char index_html[] PROGMEM = R"rawliteral(
 <div class="section-header">
   <span class="label">Live BLE Devices</span>
   <div class="filter-bar">
-    <input id="filter-input" placeholder="filter name / mac…" oninput="applyFilter()">
+    <input id="filter-input" placeholder="filter name" oninput="applyFilter()">
     <button class="btn-icon" onclick="clearDevices()" title="Clear">✕</button>
+    <button class="btn-icon" onclick="toggleSettings()" title="Settings">⚙</button>
   </div>
 </div>
 
