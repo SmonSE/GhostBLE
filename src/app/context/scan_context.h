@@ -62,7 +62,6 @@ extern std::atomic<int> writableNoAuthCount;
 // ------------------------------------------------------------
 //  Target-Tracking
 // ------------------------------------------------------------
-extern bool isTarget;
 extern bool targetFound;
 extern std::atomic<int> targetConnects;
 
