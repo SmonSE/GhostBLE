@@ -843,7 +843,10 @@ void scanForDevices() {
                     dev.displayName   = "Apple Device";
                     dev.name          = localName.c_str();
                     dev.manufacturer  = manufacturerName.c_str();
-                }
+                } else {
+                    dev.name          = localName.c_str();
+                    dev.manufacturer  = manufacturerName.c_str();
+                } 
 
                 // --- Build and log device info summary ---
                 String infoLog = devTag + "Device info\n"
@@ -943,7 +946,7 @@ void scanForDevices() {
                         UIContext::isGlassesTaskRunning.store(false);
                     }
                 }
-
+                dev = {};
                 delay(1000);  // brief pause for stable UI flow
 
             } else {
@@ -955,6 +958,32 @@ void scanForDevices() {
           // ---------------------------------------------------------------
           //  Connection failed branch
           // ---------------------------------------------------------------
+
+          // --- Apple model resolution ---
+          // Scan nameList for Apple model identifiers (e.g. "iPhone17,3")
+          String modelIdentifier;
+          for (const auto& n : ScanContext::nameList) {
+              String s = n.c_str();
+              if ((s.startsWith("iPhone") || s.startsWith("iPad") || s.startsWith("Mac"))
+                  && s.indexOf(",") != -1) {
+                  modelIdentifier = s;
+                  break;
+              }
+          }
+
+          String modelName;
+          if (!modelIdentifier.isEmpty()) {
+              modelName    = getAppleModelName(modelIdentifier);
+              displayName  = modelName;
+              dev.displayName = std::string(modelName.c_str()); 
+          } else if (manufacturerName == "Apple Inc.") {
+              modelName         = "Apple Device";
+              dev.displayName   = "Apple Device";
+          } else {
+              dev.name          = localName.c_str();
+              dev.manufacturer  = manufacturerName.c_str();
+          }  
+
           if (device != nullptr) {
               if (device->haveServiceUUID()) {
                 NimBLEUUID uuid = device->getServiceUUID();

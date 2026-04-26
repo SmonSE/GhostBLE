@@ -51,8 +51,8 @@ void sendDevice(const DeviceInfo& dev,
     if (!wsReady()) return;
 
     // Build name: prefer GATT name → adv name → manufacturer → "Unknown"
-    String name = dev.name.c_str();
-    if (name.isEmpty()) name = dev.displayName.c_str();
+    String name = dev.displayName.c_str();
+    if (name.isEmpty()) name = dev.name.c_str();
     if (name.isEmpty()) name = "Unknown";
 
     String mac  = dev.mac.c_str();
