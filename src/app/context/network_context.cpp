@@ -3,11 +3,13 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <M5Unified.h>
 
 #include "infrastructure/logging/logger.h"
 #include "app/context/globals.h"
 #include "config/device_config.h"
 #include "infrastructure/platform/hardware_config.h"
+#include "app/context/ui_context.h"
 
 #include "web/web_sender.h"
 
@@ -29,12 +31,25 @@ static void onWsEvent(AsyncWebSocket*       wsServer,
                       void*                 arg,
                       uint8_t*              data,
                       size_t                len) {
+
     if (type == WS_EVT_CONNECT) {
-        LOG(LOG_SYSTEM, "WebSocket client connected: " + String(client->id()));
-    } else if (type == WS_EVT_CONNECT) {
         LOG(LOG_SYSTEM, "WebSocket client connected: " + String(client->id()));
         WebSender::sendConfig();
         WebSender::sendStats();
+
+        // Display aus
+        M5.Lcd.sleep();
+        NetworkContext::displayEnabled = false;
+
+        // Laufende Expression Tasks stoppen
+        UIContext::stopExpressionTask(UIContext::isGlassesTaskRunning,  UIContext::glassesTaskHandle);
+        UIContext::stopExpressionTask(UIContext::isAngryTaskRunning,    UIContext::angryTaskHandle);
+        UIContext::stopExpressionTask(UIContext::isSadTaskRunning,      UIContext::sadTaskHandle);
+        UIContext::stopExpressionTask(UIContext::isHappyTaskRunning,    UIContext::happyTaskHandle);
+
+        // Speech bubble Flag zurücksetzen
+        UIContext::isSpeechBubbleActive.store(false);
+        
     } else if (type == WS_EVT_DATA) {
         AwsFrameInfo* info = (AwsFrameInfo*)arg;
         if (info->final && info->index == 0 &&
@@ -46,6 +61,11 @@ static void onWsEvent(AsyncWebSocket*       wsServer,
                 client->text(reply);
             }
         }
+    } else if (type == WS_EVT_DISCONNECT) {
+        Serial.println("WebSocket client disconnected");
+        M5.Display.wakeup();
+        NetworkContext::displayEnabled = true;
+        delay(100);
     }
 }
 
@@ -56,6 +76,7 @@ namespace NetworkContext {
 // ------------------------------------------------------------
 bool isWebLogActive = false;
 bool wifiStarted    = false;
+bool displayEnabled  = true;
 
 // ------------------------------------------------------------
 //  Wardriving
@@ -74,6 +95,16 @@ WigleLogger wigleLogger;
 // ------------------------------------------------------------
 void startWebServer() {
     if (wifiStarted) return;  // Guard: do not start twice
+
+    String ssid = deviceConfig.getWifiSSID();
+    String pass = deviceConfig.getWifiPassword();
+
+    // Guard: empty credentials crashes WiFi.softAP()
+    //if (ssid.isEmpty()) ssid = "GhostBLE";
+    //if (pass.isEmpty()) pass = "ghostble123";
+
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(ssid.c_str(), pass.c_str());
 
     WiFi.mode(WIFI_AP);
     WiFi.softAP(deviceConfig.getWifiSSID().c_str(),

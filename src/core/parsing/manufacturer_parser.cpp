@@ -19,10 +19,11 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x1D) return "Motorola";
     if (manufacturerId == 0x25) return "Nokia Mobile Phones";
     if (manufacturerId == 0x3D) return "Hitachi, Ltd";
-    if (manufacturerId == 0x65) return "Sony Ericsson Mobile Communications";
+    if (manufacturerId == 0x65) return "HP, Inc.";
     if (manufacturerId == 0x79) return "LG Electronics";
     if (manufacturerId == 0xA0) return "Qualcomm Inc.";
     if (manufacturerId == 0xC7) return "Garmin International, Inc.";
+    if (manufacturerId == 0x87) return "Garmin International, Inc.";
     if (manufacturerId == 0xD2) return "GoPro, Inc.";
     if (manufacturerId == 0xE1) return "Bosch Sensortec GmbH";
     if (manufacturerId == 0xEC) return "Sony Corporation";
@@ -49,6 +50,7 @@ String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x30) return "Symbol Technologies (barcode scanners)";
     if (manufacturerId == 0x3FF) return "Withings (Unofficial)";
     if (manufacturerId == 0xBA3) return "Sennheiser - Sonova Consumer Hearing";
+    if (manufacturerId == 0x969) return "Woan Technology (Shenzen)";
 
     return "Unknown Manufacturer";
 }
