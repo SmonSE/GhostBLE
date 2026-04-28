@@ -8,6 +8,7 @@
 #include "app/context/network_context.h"
 #include "app/context/scan_context.h"
 #include "app/context/ui_context.h"
+#include "app/context/network_context.h"
 
 #include "gattServices/notify_handler.h"
 
@@ -67,17 +68,17 @@ void extractUUIDs(const std::vector<uint8_t>& payload) {
 
         uint8_t type = payload[i++];
 
-        // 🔹 16-bit UUIDs
+        // 16-bit UUIDs
         if (type == 0x02 || type == 0x03) {
             for (int j = 0; j < len - 1; j += 2) {
                 if (i + j + 1 >= payload.size()) break;
 
                 uint16_t uuid = payload[i + j] | (payload[i + j + 1] << 8);
-                LOG(LOG_GATT, "16-bit UUID: " + String(uuid, HEX));
+                LOG(LOG_GATT, "     16-bit UUID: " + String(uuid, HEX));
             }
         }
 
-        // 🔹 128-bit UUIDs
+        // 128-bit UUIDs
         if (type == 0x06 || type == 0x07) {
             for (int j = 0; j < len - 1; j += 16) {
                 if (i + j + 15 >= payload.size()) break;
@@ -94,7 +95,7 @@ void extractUUIDs(const std::vector<uint8_t>& payload) {
                     payload[i+j+1],  payload[i+j]
                 );
 
-                LOG(LOG_GATT, "128-bit UUID: " + String(buf));
+                LOG(LOG_GATT, "     128-bit UUID: " + String(buf));
             }
         }
 
@@ -331,7 +332,7 @@ static bool parseDeviceInfo(
 
             // Tesla vehicles use a known iBeacon UUID
             if (String(beacon.uuid.c_str()).equalsIgnoreCase(TESLA_IBEACON_UUID)) {
-                LOG(LOG_TARGET, devTag + "Tesla iBeacon detected");
+                LOG(LOG_TARGET, devTag + "Tesla iBeacon detected: " + String(beacon.uuid.c_str()));
             }
         }
 
@@ -541,7 +542,7 @@ static bool connectAndReadGATT(
             nibblesSpeechShow(SpeechContext::SUSPICIOUS);
             vTaskDelay(pdMS_TO_TICKS(2000));
 
-            if (!UIContext::isAngryTaskRunning.load()) {
+            if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled) {
                 if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace",
                     4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
                     LOG(LOG_SYSTEM, "Failed to create AngryFace task");
@@ -649,7 +650,7 @@ void scanForDevices() {
     nibblesSpeechNotifyEvent();
 
     // Trigger happy expression at start of fruitful scan
-    if (!UIContext::isHappyTaskRunning.load()) {
+    if (!UIContext::isHappyTaskRunning.load() && NetworkContext::displayEnabled) {
         if (xTaskCreatePinnedToCore(showHappyExpressionTask, "HappyFace",
             4096, NULL, 2, &UIContext::happyTaskHandle, 1) != pdPASS) {
             LOG(LOG_SYSTEM, "Failed to create HappyFace task");
@@ -663,21 +664,23 @@ void scanForDevices() {
     for (int i = 0; i < results.getCount(); i++) {
         const NimBLEAdvertisedDevice* device = results.getDevice(i);
 
-        showFindingCounter(
-            ScanContext::targetConnects.load(),
-            ScanContext::susDevice.load(),
-            ScanContext::allSpottedDevice.load());
+        if (NetworkContext::displayEnabled) {
+            showFindingCounter(
+                ScanContext::targetConnects.load(),
+                ScanContext::susDevice.load(),
+                ScanContext::allSpottedDevice.load());
+        }
 
         // --- Per-device risk flags (reset each iteration) ---
-        bool hasCustomService          = false;
-        bool hasWeakName               = false;
-        bool isUnknownManufacturer     = false;
+        bool hasCustomService           = false;
+        bool hasWeakName                = false;
+        bool isUnknownManufacturer      = false;
         bool isSecurityOrTrackingDevice = false;
-        bool hasWritableChar           = false;
-        bool proprietary               = false;
-        bool isIBeacon                 = false;
-        bool isPwnBeaconDevice         = false;
-        int  devSessionId              = 0;
+        bool hasWritableChar            = false;
+        bool proprietary                = false;
+        bool isIBeacon                  = false;
+        bool isPwnBeaconDevice          = false;
+        int  devSessionId               = 0;
 
         IBeaconInfo   beacon;
         PwnBeaconInfo pwnBeacon;
@@ -743,8 +746,8 @@ void scanForDevices() {
             dev.displayName   = "Apple Device";  
         } else {
             dev.name          = localName.c_str();  
-            dev.manufacturer  = manufacturerName.c_str();
         } 
+        dev.manufacturer  = manufacturerName.c_str();
 
         ScanContext::allSpottedDevice++;
         DeviceContext::xpManager.awardXP(0.1f);  // +0.1 XP: new device discovered
@@ -842,11 +845,10 @@ void scanForDevices() {
                     modelName         = "Apple Device";
                     dev.displayName   = "Apple Device";
                     dev.name          = localName.c_str();
-                    dev.manufacturer  = manufacturerName.c_str();
                 } else {
                     dev.name          = localName.c_str();
-                    dev.manufacturer  = manufacturerName.c_str();
                 } 
+                dev.manufacturer  = manufacturerName.c_str();
 
                 // --- Build and log device info summary ---
                 String infoLog = devTag + "Device info\n"
@@ -1003,7 +1005,7 @@ void scanForDevices() {
                     nibblesSpeechShow(SpeechContext::SUSPICIOUS);
                     vTaskDelay(pdMS_TO_TICKS(2000));
 
-                    if (!UIContext::isAngryTaskRunning.load()) {
+                    if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled) {
                         if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace",
                             4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
                             LOG(LOG_SYSTEM, "Failed to create AngryFace task");
@@ -1079,6 +1081,7 @@ void scanForDevices() {
               }
           }
           delay(1000);
+          dev = {};
       }
 
         // --- Wardriving: log device with GPS coordinates if fix is valid ---
@@ -1141,6 +1144,7 @@ void scanForDevices() {
 
     // Clear any stale speech bubble that may have been skipped due to queuing
     clearSpeechBubble();
+    dev = {};
     displayName.clear();
 
     ScanContext::scanIsRunning.store(false);

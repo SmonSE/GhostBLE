@@ -212,7 +212,13 @@ void loop() {
 #if defined(CARDPUTER)  
   Screenshot::handle();
 #endif  
-  ws.cleanupClients();  // Important for websocket memory management
+  
+  static unsigned long lastCleanup = 0;
+  if (NetworkContext::isWebLogActive && millis() - lastCleanup > 1000) {
+      ws.cleanupClients();
+      lastCleanup = millis();
+  }
+
   hardwareUpdate();
   unsigned long currentTime = millis();
 

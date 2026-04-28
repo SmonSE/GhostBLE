@@ -31,6 +31,7 @@ namespace NetworkContext {
 // ------------------------------------------------------------
 extern bool isWebLogActive;   // WebSocket-Logging aktiv
 extern bool wifiStarted;      // SoftAP läuft gerade
+extern bool displayEnabled;   // Websocket active -> Display sleep
 
 // ------------------------------------------------------------
 //  Wardriving
