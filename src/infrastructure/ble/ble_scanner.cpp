@@ -453,6 +453,23 @@ static bool connectAndReadGATT(
     // Run all registered GATT service handlers (DeviceInfo, Battery, etc.)
     String serviceOutput = GATTServiceRegistry::runDiscoveredHandlers(pClient);
 
+    // Read 2A00 directly if localName is still empty
+    if (localName.isEmpty()) {
+        NimBLERemoteService* gasSvc = pClient->getService("1800");
+        if (gasSvc) {
+            NimBLERemoteCharacteristic* nameChr = gasSvc->getCharacteristic("2A00");
+            if (nameChr && nameChr->canRead()) {
+                std::string val = nameChr->readValue();
+                if (!val.empty() && isPrintableText(val)) {
+                    localName       = val.c_str();
+                    dev.name        = val;
+                    dev.gattHasName = true;
+                    //LOG(LOG_GATT, devTag + "DeviceName to LocalName: " + localName);
+                }
+            }
+        }
+    }
+
     // After Registry-Run, before Security-Analyse:
     // Short window if many devices in queue:
     uint32_t captureMs = (remaining > 5) ? 1500 : 2500;
