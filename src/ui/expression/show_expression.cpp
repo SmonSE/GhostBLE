@@ -8,6 +8,7 @@
 #include "app/context/ui_context.h"
 #include "config/ui_config.h"
 #include "ui/overlay/draw_overlay.h"
+#include "ui/icons/scan_icon.h"
 #include "infrastructure/gps/gps_manager.h"
 #include "web/web_sender.h"
 
@@ -169,13 +170,25 @@ void clearSpeechBubble() {
         );
     }
 
-    drawComposite(
-        nibblesFront, NIBBLESFRONT_WIDTH,
-        NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-        nibblesHappy,
-        NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-        NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y
-    );
+    if(UIContext::isEvilModeActive) 
+    {
+      drawComposite(
+          nibblesFront, NIBBLESFRONT_WIDTH,
+          NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+          nibblesBored,
+          NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT,
+          NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y
+      );
+    } else {
+      drawComposite(
+          nibblesFront, NIBBLESFRONT_WIDTH,
+          NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+          nibblesHappy,
+          NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
+          NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y
+      );
+    }
+
 
     showFindingCounter(
         ScanContext::targetConnects.load(),
@@ -202,14 +215,15 @@ void showHelpOverlay() {
     const int lineH  = 13;
 
 #if HAS_KEYBOARD
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn ENTER    Screenshot"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn TAB      Wardriving"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn DEL      GPS Source"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn H        This Help"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn S        Scan Mode"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn E        Evil Mode"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M        Marker set"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn S        Scan Mode"); y += lineH;
+    //M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn H        This Help"); y += lineH;
 #endif
 
 #if HAS_TWO_BUTTONS
@@ -242,6 +256,9 @@ void dismissHelpOverlay() {
                       nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
                       NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
+
+    showEvilMode();
+    showScanIcon();
 
     showFindingCounter(
         ScanContext::targetConnects.load(),
@@ -485,6 +502,23 @@ void drawXPBar(int x, int y) {
     M5.Lcd.print(DeviceContext::xpManager.getTitle());
 }
 
+void showEvilMode() {
+    int cx = 15;
+    int cy = 22;
+
+    if(UIContext::isEvilModeActive){
+      M5.Lcd.fillCircle(cx - 6, cy, 2, 0x4208);
+      M5.Lcd.fillCircle(cx + 6, cy, 2, 0x4208);
+      M5.Lcd.fillCircle(cx - 6, cy, 1, RED);
+      M5.Lcd.fillCircle(cx + 6, cy, 1, RED);
+      M5.Lcd.drawLine(cx - 10, cy - 6, cx - 2, cy - 2, RED);
+      M5.Lcd.drawLine(cx + 2, cy - 2, cx + 10, cy - 6, RED);
+    } else {
+      // clear full face area
+      M5.Lcd.fillRect(cx - 12, cy - 8, 24, 16, 0x00C4);
+    }
+}
+
 void showFindingCounter(int sniffed, int sus, int spotted) {
     updateBatteryState();
 
@@ -493,5 +527,7 @@ void showFindingCounter(int sniffed, int sus, int spotted) {
     drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, UIContext::isChargingState.load());
     drawStats(sniffed, sus, spotted, STATS_X, STATS_Y_START);
     drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y);
+    showEvilMode();
+
     WebSender::sendStats();
 }

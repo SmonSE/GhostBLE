@@ -8,13 +8,15 @@
 #include "app/context/scan_context.h"
 #include "app/context/ui_context.h"
 
-
+#include "assets/nibblesAngry.h"
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"
 #include "assets/nibblesHappyLeft.h"
 #include "assets/nibblesSleep.h"
 #include "assets/nibblesFunny.h"
 #include "assets/nibblesBored.h"
+#include "assets/nibblesBoredLeft.h"
+
 
 // --- Message pools ---
 // max length of bubble is 16 chars, so keep it short and sweet!
@@ -35,6 +37,26 @@ static const char* idleMessages[] = {
     "Bored.exe running"
 };
 static const int idleMessageCount = sizeof(idleMessages) / sizeof(idleMessages[0]);
+
+static const char* evilMessages[] = {
+    "Evil mode active",
+    "Chaos engaged",
+    "Lets break things",
+    "I regret nothing",
+    "No rules detected",
+    "Maximum chaos",
+    "Because we can",
+    "All systems bad",
+    "What could break?",
+    "Oops",
+    "Bad idea running",
+    "More chaos pls",
+    "No control left",
+    "Trust me, ok?",
+    "Now it gets fun",
+    "Why not?"
+};
+static const int evilMessageCount = sizeof(evilMessages) / sizeof(evilMessages[0]);
 
 static const char* scanStartMessages[] = {
     "Lets go!",
@@ -135,21 +157,28 @@ static void clearThoughtBubble() {
         );
     }
 
-    // Gesicht wieder korrekt zusammensetzen
-    int r = random(4);
-
-    if (r == 0) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } else if (r == 1) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-    } else if (r == 2) {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    if(UIContext::isEvilModeActive) 
+    {
+        int r = random(2);
+        if (r == 0) {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                        nibblesBoredLeft, NIBBLESBOREDLEFT_WIDTH, NIBBLESBOREDLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        } else {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                        nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        }    
     } else {
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                    nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        int r = random(3);
+        if (r == 0) {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                        nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        } else if (r == 1) {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                        nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        } else {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                        nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+        }
     }
 
     // Stats neu zeichnen
@@ -203,8 +232,15 @@ void nibblesSpeechUpdate(unsigned long currentTime) {
 
     // Check if idle long enough
     if (currentTime - lastEventTime >= IDLE_TIMEOUT_MS && !ScanContext::bleScanEnabled) {
-        const char* msg = pickRandom(idleMessages, idleMessageCount);
-        showMumble(msg);
+        if(UIContext::isEvilModeActive) {
+            // idleMessage
+            const char* msg = pickRandom(evilMessages, evilMessageCount);  
+            showMumble(msg);
+        } else {
+            // idleMessage
+            const char* msg = pickRandom(idleMessages, idleMessageCount);  
+            showMumble(msg);
+        }
         // Reset idle timer so next idle speech waits again
         lastEventTime = currentTime;
     }
