@@ -4,6 +4,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "app/features/evil_mode.h"
+
 #include "app/context/device_context.h"
 #include "app/context/network_context.h"
 #include "app/context/scan_context.h"
@@ -841,6 +843,31 @@ void scanForDevices() {
                     LOG(LOG_GATT, devTag + "No target detected via GATT: " + address);
                 }
 
+                // ============================================================
+                // EVIL MODE: Check if this is a Govee device and attack it!
+                // ============================================================
+                if (UIContext::isEvilModeActive.load()) {
+                    if (EvilMode::isGoveeDevice(localName) || EvilMode::hasGoveeService(pClient)) {
+                        LOG(LOG_TARGET, devTag + "😈 GOVEE DETECTED! Activating Evil Mode...");
+                        
+                        if (EvilMode::executeAttack(pClient, devTag)) {
+                            // Success! Show evil speech bubble
+                            nibblesSpeechShowCustom("Hehe! Yellow!");
+                            DeviceContext::xpManager.awardXP(10.0f);  // +10 XP for evil mode success
+                            
+                            // Show evil expression
+                            if (!UIContext::isAngryTaskRunning.load()) {
+                                if (xTaskCreatePinnedToCore(showAngryExpressionTask, "EvilFace",
+                                    4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
+                                    LOG(LOG_SYSTEM, "Failed to create EvilFace task");
+                                    UIContext::isAngryTaskRunning.store(false);
+                                }
+                            }
+                            vTaskDelay(pdMS_TO_TICKS(3000));  // Let user see the evil success
+                        }
+                    }
+                }
+
                 // --- Apple model resolution ---
                 // Scan nameList for Apple model identifiers (e.g. "iPhone17,3")
                 String modelIdentifier;
@@ -1138,6 +1165,15 @@ void scanForDevices() {
     LOG(LOG_SCAN, "  Suspicious: " + String(ScanContext::susDevice.load()));
     LOG(LOG_SCAN, "  Beacons:    " + String(DeviceContext::beaconsFound.load()));
     LOG(LOG_SCAN, "  PwnBeacons: " + String(DeviceContext::pwnbeaconsFound.load()));
+
+    // Evil Mode Statistics
+    if (UIContext::isEvilModeActive.load() && (EvilMode::stats.goveeDevicesFound > 0 || 
+        EvilMode::stats.successfulAttacks > 0 || EvilMode::stats.failedAttacks > 0)) {
+        LOG(LOG_SCAN, "  --- Evil Mode ---");
+        LOG(LOG_SCAN, "  Govee found:    " + String(EvilMode::stats.goveeDevicesFound));
+        LOG(LOG_SCAN, "  Attacks OK:     " + String(EvilMode::stats.successfulAttacks));
+        LOG(LOG_SCAN, "  Attacks FAIL:   " + String(EvilMode::stats.failedAttacks));
+    }
 
     if (ScanContext::highFindingsCount.load()           > 0 ||
         ScanContext::unencryptedSensitiveCount.load()   > 0 ||
