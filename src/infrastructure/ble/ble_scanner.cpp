@@ -1005,6 +1005,12 @@ void scanForDevices() {
           //  Connection failed branch
           // ---------------------------------------------------------------
 
+          // EVIL MODE: Check by name even without connection
+          if (UIContext::isEvilModeActive.load() && EvilMode::isGoveeDevice(localName)) {
+              LOG(LOG_TARGET, devTag + "😈 Govee detected but connection failed!");
+              nibblesSpeechShowCustom("So close!");
+          }
+
           // --- Apple model resolution ---
           // Scan nameList for Apple model identifiers (e.g. "iPhone17,3")
           String modelIdentifier;
