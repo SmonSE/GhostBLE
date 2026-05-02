@@ -2,6 +2,7 @@
 
 String getManufacturerName(uint16_t manufacturerId) {
     if (manufacturerId == 0x2E5) return "Espressif Systems (M5Stack)";
+    if (manufacturerId == 0x1AB) return "Meta";
     if (manufacturerId == 0x4C) return "Apple, Inc.";
     if (manufacturerId == 0x6) return "Microsoft Corporation";
     if (manufacturerId == 0xF) return "Broadcom Corporation";
