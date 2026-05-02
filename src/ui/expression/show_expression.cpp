@@ -22,6 +22,7 @@
 #include "assets/nibblesSleep.h"
 #include "assets/nibblesFunny.h"
 #include "assets/nibblesBored.h"
+#include "assets/nibblesBoredLeft.h"
 
 
 static float         smoothedVoltage    = 0;
@@ -172,21 +173,24 @@ void clearSpeechBubble() {
 
     if(UIContext::isEvilModeActive) 
     {
-      drawComposite(
-          nibblesFront, NIBBLESFRONT_WIDTH,
-          NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-          nibblesBored,
-          NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT,
-          NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y
-      );
+      int r = random(2);
+      if (r == 0) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesBoredLeft, NIBBLESBOREDLEFT_WIDTH, NIBBLESBOREDLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+      } else {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+      } 
     } else {
-      drawComposite(
-          nibblesFront, NIBBLESFRONT_WIDTH,
-          NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-          nibblesHappy,
-          NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-          NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y
-      );
+      int r = random(2);
+      if (r == 0) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+      } else {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+      } 
+
     }
 
 
@@ -243,18 +247,15 @@ void dismissHelpOverlay() {
     UIContext::helpOverlayVisible = false;
 
     M5.Lcd.fillScreen(0x00C4);
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT,
-                NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
+    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, NIBBLES_FRONT_X, NIBBLES_FRONT_Y);
 
     int r = esp_random() % 2;
     if (r == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     showEvilMode();
@@ -279,16 +280,13 @@ void showGlassesExpressionTask(void* parameter) {
     int r = esp_random() % 3;
     if (r == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else if (r == 1) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     showFindingCounter(
@@ -335,12 +333,10 @@ void showAngryExpressionTask(void* parameter) {
     int r = esp_random() % 2;
     if (r == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     showFindingCounter(
@@ -370,16 +366,13 @@ void showSadExpressionTask(void* parameter) {
     int r = esp_random() % 3;
     if (r == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else if (r == 1) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     showFindingCounter(
@@ -403,12 +396,10 @@ void showThugLifeExpressionTask(void* parameter) {
     int r = esp_random() % 2;
     if (r == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     showFindingCounter(
@@ -428,12 +419,10 @@ void showHappyExpressionTask(void* parameter) {
     int r = esp_random() % 2;
     if (r == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     } else {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT,
-                      NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
     showFindingCounter(
