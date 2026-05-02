@@ -38,6 +38,7 @@
 #include "src/ui/overlay/draw_overlay.h"
 #include "src/ui/expression/show_expression.h"
 
+
 TaskHandle_t scanTaskHandle = NULL;
 
 #if HAS_KEYBOARD
@@ -282,6 +283,17 @@ void loop() {
           }
           return;
         }
+        if ((key == 'e' || key == 'E')) {
+          LOG(LOG_CONTROL, "E pressed — toggling evil mode");
+          if(!UIContext::isEvilModeActive) {
+            UIContext::isEvilModeActive = true;
+            showEvilMode();
+          } else {
+            UIContext::isEvilModeActive = false;
+            showEvilMode();
+          }
+          return;
+        }
         if ((key == 'm' || key == 'M') && ScanContext::bleScanEnabled) {
             LOG(LOG_CONTROL, "M pressed — marker set");
 
@@ -426,7 +438,6 @@ void loop() {
     }
     lastUsbState = usbConnected;
   }
-
   // Let system handle BLE, GPIO, etc.
   yield();
 }

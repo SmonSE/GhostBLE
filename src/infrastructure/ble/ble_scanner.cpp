@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "app/features/evil_mode.h"
+#include "app/features/meta_glasses.h"
 
 #include "app/context/device_context.h"
 #include "app/context/network_context.h"
@@ -320,6 +321,27 @@ static bool parseDeviceInfo(
         manufacturerName = getManufacturerName(manufacturerId);
         DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: manufacturer data decoded
 
+
+        // ============================================================
+        // META RAY-BAN DETECTION
+        // ============================================================
+        uint8_t metaConfidence = MetaGlasses::detectMetaGlasses(
+            device, localName, manufacturerId);
+        
+        if (metaConfidence > 0) {
+            MetaGlasses::processMetaGlasses(
+                device, devTag, address.c_str(), localName, manufacturerId);
+            
+            // Mark as high-value target if confident
+            if (MetaGlasses::isHighValueTarget(metaConfidence)) {
+                isSecurityOrTrackingDevice = true;
+                DeviceContext::xpManager.awardXP(5.0f);  // +5 XP for Meta glasses
+                
+                // Show speech bubble
+                nibblesSpeechShowCustom("Meta Glasses!");
+            }
+        }
+
         // iBeacon detection
         beacon = parseIBeacon(mfg);
         if (beacon.valid) {
@@ -633,6 +655,15 @@ void scanForDevices() {
     uint16_t   manufacturerId   = 0;
     String     manufacturerName = "Unknown";
 
+    // ============================================================
+    // OPTIONAL: Reset statistics
+    // ============================================================
+    MetaGlasses::resetStats();
+    
+    if (UIContext::isEvilModeActive.load()) {
+        EvilMode::resetStats();
+    }
+
     ScanContext::scanIsRunning.store(true);
 
     // --- Configure and run NimBLE scan ---
@@ -841,6 +872,38 @@ void scanForDevices() {
                 bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag, remaining);
                 if (!targetDetected) {
                     LOG(LOG_GATT, devTag + "No target detected via GATT: " + address);
+                }
+
+                // ============================================================
+                // META RAY-BAN GATT SERVICE CHECK (neu hinzufügen!)
+                // ============================================================
+                if (MetaGlasses::hasMetaGATTService(pClient)) {
+                    LOG(LOG_TARGET, devTag + "👓 Meta Ray-Ban GATT service confirmed!");
+                    
+                    String generation = MetaGlasses::detectGeneration(localName, true);
+                    String model = MetaGlasses::extractModelName(localName);
+                    
+                    LOG(LOG_TARGET, devTag + "   Generation: " + generation);
+                    LOG(LOG_TARGET, devTag + "   Model:      " + model);
+                    
+                    // Mark as suspicious target
+                    ScanContext::targetFound = true;
+                    ScanContext::susDevice++;
+                    DeviceContext::xpManager.awardXP(10.0f);  // +10 XP confirmed Meta
+                    
+                    // Show warning
+                    nibblesSpeechShowCustom("Recording?");
+                    
+                    // Angry face (privacy concern!)
+                    if (!UIContext::isAngryTaskRunning.load()) {
+                        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "MetaWarning",
+                            4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
+                            LOG(LOG_SYSTEM, "Failed to create MetaWarning task");
+                            UIContext::isAngryTaskRunning.store(false);
+                        }
+                    }
+                    
+                    vTaskDelay(pdMS_TO_TICKS(3000));  // Let user see the warning
                 }
 
                 // ============================================================
@@ -1171,6 +1234,19 @@ void scanForDevices() {
     LOG(LOG_SCAN, "  Suspicious: " + String(ScanContext::susDevice.load()));
     LOG(LOG_SCAN, "  Beacons:    " + String(DeviceContext::beaconsFound.load()));
     LOG(LOG_SCAN, "  PwnBeacons: " + String(DeviceContext::pwnbeaconsFound.load()));
+
+    // ============================================================
+    // META RAY-BAN STATISTICS (neu hinzufügen!)
+    // ============================================================
+    if (MetaGlasses::stats.glassesFound > 0) {
+        LOG(LOG_SCAN, "  --- 👓 Meta Ray-Ban ---");
+        LOG(LOG_SCAN, "  Total found:    " + String(MetaGlasses::stats.glassesFound));
+        LOG(LOG_SCAN, "  Gen 2:          " + String(MetaGlasses::stats.gen2Detected));
+        LOG(LOG_SCAN, "  Gen 1:          " + String(MetaGlasses::stats.gen1Detected));
+        if (!MetaGlasses::stats.lastModelDetected.isEmpty()) {
+            LOG(LOG_SCAN, "  Last model:     " + MetaGlasses::stats.lastModelDetected);
+        }
+    }
 
     // Evil Mode Statistics
     if (UIContext::isEvilModeActive.load() && (EvilMode::stats.goveeDevicesFound > 0 || 
