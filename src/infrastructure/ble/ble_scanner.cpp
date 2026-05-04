@@ -1139,7 +1139,7 @@ void scanForDevices() {
                   }
                   manufacturerName = getManufacturerName(manufacturerId);
 
-                  LOG(LOG_GATT, devTag + "Manufacturer: " + manufacturerName.c_str());
+                  LOG(LOG_GATT, devTag + "Manufacturer: " + manufacturerName.c_str() + "(" + manufacturerId + ")");
               }
 
               // TX Power

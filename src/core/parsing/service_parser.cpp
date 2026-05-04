@@ -1,5 +1,6 @@
 #include "service_parser.h"
 #include "config/detection_config.h"
+#include "core/parsing/manufacturer_parser.h"
 
 // Sorted lookup table for standard 16-bit BLE service UUIDs.
 // Binary search is O(log n) with no heap allocation vs cascading String comparisons.
@@ -54,6 +55,12 @@ String getServiceName(const String& uuid) {
                 if (serviceTable[mid].uuid == id) return serviceTable[mid].name;
                 if (serviceTable[mid].uuid < id) lo = mid + 1;
                 else hi = mid - 1;
+            }
+
+            // Not in standard table — check Member Services (Section 3.11)
+            String owner = getMemberServiceOwner(id);
+            if (!owner.isEmpty()) {
+                return "Member Service (" + owner + ")";
             }
         }
     }

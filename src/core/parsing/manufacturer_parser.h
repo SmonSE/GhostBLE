@@ -3,3 +3,5 @@
 #include <Arduino.h>
 
 String getManufacturerName(uint16_t manufacturerId);
+String getMemberServiceOwner(uint16_t uuid);
+
