@@ -13,6 +13,8 @@
 #include "app/context/ui_context.h"
 #include "app/context/network_context.h"
 
+#include "core/parsing/appearance_parser.h"
+
 #include "gattServices/notify_handler.h"
 
 #include "web/web_sender.h"
@@ -1149,7 +1151,11 @@ void scanForDevices() {
 
               // Appearance
               if (device->haveAppearance()) {
-                  LOG(LOG_GATT, devTag + "Appearance: " + String(device->getAppearance()));
+                  uint16_t ap = device->getAppearance();
+                  String apName = getAppearanceName(ap);
+                  appearanceName = apName;  // for speech bubble in showGlassesExpressionTask
+                  LOG(LOG_GATT, devTag + "Appearance: " + apName
+                      + " (0x" + String(ap, HEX) + ")");
               }
 
               // RAW (immer!)
