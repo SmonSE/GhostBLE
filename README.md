@@ -145,7 +145,6 @@ GhostBLE gamifies the scanning process with experience points:
 | Suspicious device found | +2.0 |
 | Known characteristic decoded | +2.5 |
 | iBeacon parsed | +3.0 |
-| Eddystone beacon decoded | +3.0 |
 
 XP is persisted to the SD card (Cardputer) and shown on the display with level progression.
 
