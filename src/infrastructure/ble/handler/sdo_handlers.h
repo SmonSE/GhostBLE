@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 
-// Optional: Wenn du später Device-Kontext übergeben willst
 struct SdoContext {
     int rssi;
     String mac;
@@ -10,7 +9,6 @@ struct SdoContext {
 };
 
 // ===== Handler Interface =====
-
 class SdoHandlers {
 public:
     static void handleDrone(const SdoContext* ctx = nullptr);

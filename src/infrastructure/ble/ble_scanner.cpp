@@ -370,6 +370,7 @@ static bool parseDeviceInfo(
         }
     }
 
+    // --- SDO detection via primary service UUID (if present) ---
     if (device->haveServiceUUID()) {
 
         NimBLEUUID uuid = device->getServiceUUID();

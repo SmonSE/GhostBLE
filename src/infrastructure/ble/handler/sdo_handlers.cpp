@@ -12,7 +12,6 @@ void SdoHandlers::handleDrone(const SdoContext* ctx) {
 
     unsigned long now = millis();
 
-    // Cooldown vermeiden Spam
     if (now - lastDroneAlert < DRONE_ALERT_COOLDOWN) {
         return;
     }

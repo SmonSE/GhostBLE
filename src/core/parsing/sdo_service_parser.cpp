@@ -16,13 +16,11 @@ struct SdoEntry {
 };
 
 // ===== Forward Handler =====
-
 static void handleDrone();
 static void handleFido();
 static void handleMatter();
 
 // ===== SDO Table =====
-
 static const std::map<uint16_t, SdoEntry> sdoTable = {
     {0xFFFA, SdoEntry{"ASTM Remote ID (Drone)", SDO_CAT_DRONE, SDO_THREAT_HIGH, std::bind(SdoHandlers::handleDrone, nullptr)}},
     {0xFFFB, SdoEntry{"Thread Network", SDO_CAT_IOT, SDO_THREAT_LOW, nullptr}},
@@ -33,7 +31,6 @@ static const std::map<uint16_t, SdoEntry> sdoTable = {
 };
 
 // ===== Core Parser =====
-
 bool SdoServiceParser::parse(uint16_t uuid, SdoResult& result) {
 
     auto it = sdoTable.find(uuid);

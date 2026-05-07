@@ -4,7 +4,6 @@
 #include <functional>
 
 // ===== Kategorien =====
-
 enum SdoCategory {
     SDO_CAT_UNKNOWN,
     SDO_CAT_DRONE,
@@ -14,7 +13,6 @@ enum SdoCategory {
 };
 
 // ===== Threat Level =====
-
 enum SdoThreatLevel {
     SDO_THREAT_LOW,
     SDO_THREAT_MEDIUM,
@@ -22,7 +20,6 @@ enum SdoThreatLevel {
 };
 
 // ===== Result Struct =====
-
 struct SdoResult {
     uint16_t uuid;
     const char* name;
@@ -31,11 +28,9 @@ struct SdoResult {
 };
 
 // ===== Handler Typ =====
-
 using SdoHandler = std::function<void()>;
 
 // ===== Parser =====
-
 class SdoServiceParser {
 public:
     static bool parse(uint16_t uuid, SdoResult& result);
