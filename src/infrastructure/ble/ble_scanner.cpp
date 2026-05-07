@@ -17,6 +17,9 @@
 
 #include "gattServices/notify_handler.h"
 
+#include "infrastructure/ble/handler/sdo_handlers.h"
+#include "core/parsing/sdo_service_parser.h"
+
 #include "web/web_sender.h"
 
 
@@ -364,6 +367,26 @@ static bool parseDeviceInfo(
 
         if (manufacturerName.isEmpty()) {
             isUnknownManufacturer = true;
+        }
+    }
+
+    if (device->haveServiceUUID()) {
+
+        NimBLEUUID uuid = device->getServiceUUID();
+
+        uint16_t uuid16;
+
+        if (SdoHandlers::extract16BitUUID(uuid, uuid16)) {
+
+            if (uuid16 >= 0xFFF0) {
+
+                SdoResult result; 
+
+                if (SdoServiceParser::parse(uuid16, result)) {
+
+                    LOG(LOG_GATT, "     [BLE] SDO Match: " + String(result.name));
+                }
+            }
         }
     }
 
