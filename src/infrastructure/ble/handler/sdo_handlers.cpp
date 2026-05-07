@@ -1,0 +1,94 @@
+#include "sdo_handlers.h"
+
+#include "infrastructure/logging/logger.h"
+
+
+static unsigned long lastDroneAlert = 0;
+static const unsigned long DRONE_ALERT_COOLDOWN = 5000; // 5s
+
+// ===== Drone Handler =====
+
+void SdoHandlers::handleDrone(const SdoContext* ctx) {
+
+    unsigned long now = millis();
+
+    if (now - lastDroneAlert < DRONE_ALERT_COOLDOWN) {
+        return;
+    }
+
+    lastDroneAlert = now;
+
+    String msg = "     [SDO] Drone detected (ASTM Remote ID)";
+    
+    if (ctx) {
+        msg += " | RSSI: " + String(ctx->rssi);
+        msg += " | MAC: " + ctx->mac;
+    }
+
+    LOG(LOG_GATT, msg);
+
+    // ===== GhostBLE Hooks =====
+
+    // UI Highlight
+    // UI::showDroneAlert();
+
+    // Global State
+    // SystemState::droneDetected = true;
+
+    // Sound (falls vorhanden)
+    // Sound::play(SOUND_ALERT);
+
+    // später: Remote ID Payload parsen
+}
+
+// ===== FIDO Handler =====
+
+void SdoHandlers::handleFido(const SdoContext* ctx) {
+
+    String msg = "     [SDO] FIDO Security Device detected";
+
+    if (ctx) {
+        msg += " | RSSI: " + String(ctx->rssi);
+    }
+
+    LOG(LOG_GATT, msg);
+
+    // Optional:
+    // UI::showSecurityIcon();
+}
+
+// ===== Matter Handler =====
+
+void SdoHandlers::handleMatter(const SdoContext* ctx) {
+
+    String msg = "     [SDO] Matter IoT device detected";
+
+    if (ctx) {
+        msg += " | RSSI: " + String(ctx->rssi);
+    }
+
+    LOG(LOG_GATT, msg);
+
+    // Optional:
+    // UI::showIoTIcon();
+}
+
+bool SdoHandlers::extract16BitUUID(const NimBLEUUID& uuid, uint16_t& out) {
+    std::string s = uuid.toString();  // z.B. "0000fffa-0000-1000-8000-00805f9b34fb"
+
+    // Fall 1: kurze Form "fffa"
+    if (s.length() == 4) {
+        out = (uint16_t) strtol(s.c_str(), nullptr, 16);
+        return true;
+    }
+
+    // Fall 2: lange 128-bit Form → Bluetooth Base UUID
+    if (s.length() == 36) {
+        // Format: 0000XXXX-0000-1000-8000-00805f9b34fb
+        std::string shortPart = s.substr(4, 4);
+        out = (uint16_t) strtol(shortPart.c_str(), nullptr, 16);
+        return true;
+    }
+
+    return false;
+}
