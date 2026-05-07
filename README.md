@@ -1,6 +1,6 @@
 # GhostBLE
 
-![](logoConverter/rawConverter/anyone_here.png)    ![](logoConverter/rawConverter/thugLife.png)    ![](logoConverter/rawConverter/jbl_headphone.png)   
+![](logoConverter/rawConverter/anyone_here.png)    ![](logoConverter/rawConverter/thugLife.png)    ![](logoConverter/rawConverter/jbl_headphone.png)
 
 **A BLE privacy scanner for M5Stack devices**
 
@@ -27,9 +27,8 @@ A friendly mascot named **NibBLEs** guides you through the scanning process on t
 
 | Device | Platform | Display | Keyboard | SD Card |
 |--------|----------|---------|----------|---------|
-| **M5Stack Cardputer** | ESP32-S3 | 240x135 LCD | Yes | Yes |
-| **M5StickC Plus 2** | ESP32 | 240x135 LCD | No (2 buttons) | No |
-| **M5StickS3** | ESP32-S3 | 240x135 LCD | No (2 buttons) | No |
+| **M5Stack Cardputer** | ESP32-S3 | 240×135 LCD | Yes | Yes |
+| **M5StickS3** | ESP32-S3 | 240×135 LCD | No (2 buttons) | No |
 
 All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboard, and PwnBeacon. The Cardputer adds keyboard controls, SD card logging, XP persistence, and screenshot capture.
 
@@ -40,28 +39,50 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 ### BLE Scanning & Analysis
 
 - **Passive BLE scanning** — discovers nearby devices with signal strength (RSSI) and estimated distance
-- **Device info extraction** — retrieves names, service UUIDs, and manufacturer-specific data
+- **Device info extraction** — retrieves names, service UUIDs, manufacturer data, appearance and TX power
 - **GATT connections** — connects to devices and reads standard BLE services (Device Info, Battery, Heart Rate, Temperature, Generic Access, Current Time, TX Power, Immediate Alert, Link Loss)
+- **Notification capture** — subscribes to notifiable characteristics and decodes live sensor data (Heart Rate, SpO2, Temperature, CSC, RSC, Glucose, Battery)
+- **Advertisement interval fingerprinting** — measures time between advertisements for passive device-class identification
+
+### Beacon Detection
+
+- **iBeacon** — parses UUID, major, minor, TX power and estimates distance
+- **Eddystone** — decodes all four frame types:
+  - **UID** — 16-byte namespace + instance identifier
+  - **URL** — leaks raw URLs (internal hostnames, asset tracker URLs)
+  - **TLM** — telemetry data (battery voltage, temperature, uptime)
+  - **EID** — ephemeral rotating ID (privacy-aware device)
+- **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters)
 
 ### Privacy Heuristics
 
 - **Rotating MAC detection** — flags devices using Resolvable Private Addresses (RPA)
 - **Cleartext detection** — flags devices leaking unencrypted identifiers
 - **Exposure classification** — rates devices into tiers (None, Passive, Active, Consent) with a privacy score
+- **Live sensor data streaming** — flags devices broadcasting sensor data without authentication
 
 ### Security Analysis
 
-- Detects **writable characteristics** (potential for unauthorized writes)
+- Detects **writable characteristics** without authentication (potential attack surface)
 - Identifies **DFU** and **UART** services (expanded attack surface)
 - Checks for **encryption** on sensitive services
 - Builds **device fingerprints** from advertised UUIDs and GATT profiles
+- **Pairing / bonding state detection** — distinguishes open from bonded devices via ATT error codes
+
+### Parsers
+
+- **Manufacturer parser** — 60+ company IDs from Bluetooth Assigned Numbers Section 7
+- **Member Service parser** — 100+ member service UUIDs (Section 3.11): Apple, Google, Samsung, Tesla, Xiaomi, Huawei, Garmin, Polar, Bose, Sennheiser, Medtronic, Abbott, Dexcom and more
+- **Appearance parser** — full subcategory decoding (190+ entries from Section 2.6): watches, medical devices, domestic appliances, vehicles, industrial tools, cookware and more
+- **SDO Service parser** — Section 3.10 special services: Matter (0xFFF6), Zigbee Direct (0xFFF7), ASTM Drone Remote ID (0xFFFA), Thread (0xFFFB), AirFuel (0xFFFC), FIDO U2F (0xFFFD)
 
 ### Known Device Detection
 
-- **Flipper Zero** — detected by known service UUIDs (black, white, transparent variants)
+- **Flipper Zero** — detected by known service UUIDs
 - **CatHack / Apple Juice** — BLE spam tool detection
 - **Tesla** — detected via iBeacon UUID, GATT service, and name pattern matching
 - **LightBlue** — app-based BLE testing tool
+- **Drones** — ASTM Remote ID detection via SDO service UUID 0xFFFA
 - **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters, messages)
 
 ### PwnBeacon
@@ -82,6 +103,20 @@ Decodes manufacturer data for Apple, Google, Samsung, Epson, and more. Also pars
 
 - **Dual GPS support** — Grove UART and LoRa cap GPS (Cardputer only for LoRa)
 - **WiGLE CSV export** — log devices with location for mapping and analysis
+- **GeoJSON export** — RSSI heat map for direct import into QGIS or Google Maps
+
+### Web Dashboard
+
+Real-time BLE device discovery via WiFi Access Point and WebSocket:
+
+- **Live device cards** — RSSI signal strength with color coding (green/amber/red), device type tags (CONN, iBeacon, PWN, NOTIFY, SUS)
+- **Trace log** — color-coded by category (scan, gatt, security, beacon, notify, privacy)
+- **Stats bar** — live counters for Spotted / Suspicious / Beacons / PwnBeacons
+- **Device filter** — filter cards by name or MAC address
+- **Log replay** — load and replay a recorded `sniffed.log` from SD card into the UI
+- **Settings panel** — configure device name, face, WiFi SSID and password
+- **Auto-reconnect** — WebSocket reconnects automatically after BLE scan interruptions
+- **Display sleep** — display turns off automatically when a web client connects to save resources
 
 ### Logging
 
@@ -93,7 +128,7 @@ All findings are logged to multiple channels simultaneously:
 | **SD card** | Per-category log files (Cardputer only) |
 | **Web dashboard** | Real-time via WiFi AP and WebSocket |
 
-Logs are organized into categories: Scan, GATT, Privacy, Security, Beacon, Control, GPS, System, Target, and Notify. Each device gets a **session ID** for cross-log correlation.
+Log categories: Scan, GATT, Privacy, Security, Beacon, Control, GPS, System, Target, Notify. Each device gets a **session ID** for cross-log correlation.
 
 ### XP System
 
@@ -105,12 +140,12 @@ GhostBLE gamifies the scanning process with experience points:
 | GATT connection success | +0.5 |
 | Characteristic subscription | +1.0 |
 | PwnBeacon detected | +1.0 |
-| UINT/FLOAT payload decoded | +1.0 |
-| Notify data received | +1.5 |
+| Notify data (unknown char) | +1.5 |
 | Manufacturer data decoded | +2.0 |
 | Suspicious device found | +2.0 |
 | Known characteristic decoded | +2.5 |
 | iBeacon parsed | +3.0 |
+| Eddystone beacon decoded | +3.0 |
 
 XP is persisted to the SD card (Cardputer) and shown on the display with level progression.
 
@@ -121,6 +156,7 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 - **Expressions** — happy, sad, angry, glasses (detective), thug life, sleeping, hearts, and more
 - **Speech bubbles** — context-aware messages for idle, scan start, wardriving, suspicious finds, and level-ups
 - **Screenshot capture** — press ENTER on Cardputer to save the current display to SD
+- **Display sleep** — NibBLEs pauses animations when a web client is connected
 
 ---
 
@@ -132,28 +168,44 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 |-----|--------|
 | **Long press BtnA** (1s) | Toggle BLE scanning on/off |
 | **ENTER** | Capture screenshot to SD card |
-| **FN** | Toggle WiFi AP and web server |
+| **FN** | Toggle WiFi AP and web dashboard |
 | **TAB** | Toggle wardriving mode |
 | **DEL** | Switch GPS source (Grove / LoRa) |
-| **H** | Help Control |
-| **S** | SCAN Mode |
-| **M** | Marker in logfile |
+| **H** | Show help overlay |
+| **S** | Scan mode |
+| **M** | Place marker in log file |
 
-### M5StickC Plus 2 / M5StickS3 (Buttons)
+### M5StickS3 (Buttons)
 
 | Button | Action |
 |--------|--------|
-| **BtnA short press** | Toggle WiFi AP and web server |
+| **BtnA short press** | Toggle WiFi AP and web dashboard |
 | **BtnA long press** (1s) | Toggle BLE scanning on/off |
 | **BtnB short press** | Toggle wardriving mode |
 | **BtnB long press** (1s) | Switch GPS source |
 
-### Web Interface
+### Web Dashboard
 
-1. Enable WiFi (press **FN** on Cardputer or **BtnA** on StickC/StickS3)
+1. Enable WiFi (**FN** on Cardputer or **BtnA** on StickS3)
 2. Connect to WiFi AP **`GhostBLE`** (password: **`ghostble123!`**)
 3. Open **`192.168.4.1`** in a browser
-4. View real-time device discovery logs via WebSocket
+4. Use the **▶ REPLAY LOG** button in Settings to replay a recorded session from SD card
+
+---
+
+## Architecture
+
+GhostBLE uses a layered architecture with namespaced context objects replacing global variables:
+
+```
+src/app/context/
+├── scan_context.*      # BLE scan state, device dedup, counters (thread-safe atomics)
+├── ui_context.*        # NibBLEs animations, display state, FreeRTOS task handles
+├── network_context.*   # WiFi/WebSocket, wardriving, GPS, WiGLE logger
+└── device_context.*    # DeviceConfig, XPManager, beacon counters
+```
+
+Threading model: BLE scanning runs on Core 1 via FreeRTOS. Variables shared between cores use `std::atomic<>`. UI and network operations run on Core 0 (Arduino loop).
 
 ---
 
@@ -165,13 +217,10 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 # Cardputer
 pio run -e ghostble -t upload
 
-# M5StickC Plus 2
-pio run -e ghostble-stickcplus2 -t upload
-
 # M5StickS3
 pio run -e ghostble-sticks3 -t upload
 
-# Google Test
+# Run unit tests (native / Google Test)
 pio test -e native -v
 ```
 
@@ -179,8 +228,8 @@ pio test -e native -v
 
 1. Install the **M5Stack board package** via Board Manager
 2. Select the appropriate board for your device
-3. Install the required libraries via Library Manager:
-   - `M5Cardputer` / `M5StickCPlus2` / `M5Unified` — hardware abstraction (depends on device)
+3. Install required libraries via Library Manager:
+   - `M5Cardputer` / `M5Unified` — hardware abstraction
    - `NimBLE-Arduino` — BLE stack
    - `ESPAsyncWebServer`, `AsyncTCP` — web dashboard
    - `TinyGPSPlus` — GPS parsing
@@ -192,54 +241,26 @@ pio test -e native -v
 
 ```
 [#17] Advertised Services (1):
-     - fe78 (Unknown Service)
-[#17] 🔓 Connected and discovered attributes: be:e9:2f:33:47:f1
+     - fe78 (Member Service — Woan Technology)
+[#17] Connected and discovered attributes: be:e9:2f:33:47:f1
 [#17] Reading Generic Access Service (0x1800)
-   Device found: ENVY Photo 6200 series [be:e9:2f:33:47:f1]
-   Generic Access Service found (0x1800)
-     Read value of generic access info
-     Device Name: ENVY Photo 6200 series
-     Appearance: Unknown (0x0)
-     PPCP - Min: 6, Max: 6, Latency: 0, Timeout: 2000
-     Central Address Resolution: Not Supported
-     Generic Attribute Service detected (0x1801)
-     Service Changed: Supported (indicate)
-     Unknown Service (0xfe78)
-       Char 73fd8f50-626c-4f9b-a52e-b1d226efcf8d [RN] (len=4) = C0 A8 B2 35 (192.168.178.53)
-       Char 262040ed-6f79-41bb-b657-bff4cb49195a [RN] (len=16) = 2A 02  ... (2A02:8071:2287:5B20:BEE9:2FFF:FE33:C7F1)
-       Char 58633f16-5cad-46bd-978d-fa0ad01a45ea [R] (len=16) = 0C 76 32 66 4E A8 51 21 6D CA D9 B8 50 B3 E9 3D 
-       Char 380c09f8-9665-417a-bb2b-06cb6a76e784 [R] (len=6) = 00 00 00 00 00 00 
-       Char 8fe0b1c0-ea32-11e5-a4fc-0002a5d5c51b [RN] (len=58) = 01 20 E2 F8 8D C4 24 90 AE 79 A8 DF 86 8E 47 ...
-       Char 17d096e0-ea1f-11e5-9dbc-0002a5d5c51b [RN] (len=51) = 00 00 ...
-     Unknown Service (0xfe77)
-       Char aec832f7-7dff-4d6e-9b65-5b5bcf753941 [R] (len=1) = 00 
-       Char 8cec8341-c2b8-4744-b491-6826c665f187 [W]
-       Char d87a143d-16f7-4c20-9b73-2e24a8dfbcac [R] (len=1) = 00 
-       Char c4be737a-c1ed-44a4-b115-b28bddba8f45 [RNI] (len=1) = 00 
-     Unknown Service (0x7365a0ae-e596-129d-d84a-88db1ffbcc04)
-       Char 1c7cfacb-7818-c09c-9345-04602070e0cc [RW] (len=1) = 00 
-       Char ddbb8ffd-d1b6-bbb5-0f47-87a23630038b [RNI] (len=1) = 00 
-[#17] Descriptor [73fd8f50-626c-4f9b-a52e-b1d226efcf8d]: IPv4 Address
-[#17] Descriptor [262040ed-6f79-41bb-b657-bff4cb49195a]: IPv6 Address
-[#17] Descriptor [58633f16-5cad-46bd-978d-fa0ad01a45ea]: Device UUID
-[#17] Descriptor [380c09f8-9665-417a-bb2b-06cb6a76e784]: P2P Device ID
-[#17] Descriptor [8fe0b1c0-ea32-11e5-a4fc-0002a5d5c51b]: Wi-Fi Infrastructure
-[#17] Descriptor [17d096e0-ea1f-11e5-9dbc-0002a5d5c51b]: Micro Ap Configuration
-[#17] No Target detected in gatt with address: be:e9:2f:33:47:f1
-[#17] Device Infos
-   Adress:  be:e9:2f:33:47:f1
-   Name:    ENVY Photo 6200 series
-   Manuf.:  Sony Ericsson Mobile Communications
+   Device Name: ENVY Photo 6200 series
+   Appearance: Unknown (0x0)
+[#17] Device info
+   Address:  be:e9:2f:33:47:f1
+   Name:     ENVY Photo 6200 series
+   Manuf.:   HP, Inc.
    Raw GATT:
-     - ENVY Photo 6200 series
      - IPv4 Address = (192.168.178.53)
      - IPv6 Address = (2A02:8071:2287:5B20:BEE9:2FFF:FE33:C7F1)
      - Device UUID
-     - P2P Device ID
-     - Wi-Fi Infrastructure
-     - Micro Ap Configuration
-   Distance: 19.95 m
-   RSSI: -95
+   Distance: ~19.95 m
+   RSSI:     -95 dBm
+[#17] Exposure summary
+   Device type:       Printer / IoT Device
+   Identity exposure: HIGH — IP address leaked via GATT
+   Tracking risk:     HIGH — static MAC + identity data
+   Privacy level:     VERY POOR
 ```
 
 ---
@@ -249,60 +270,40 @@ pio test -e native -v
 ```
 GhostBLE/
 ├── src/
-│
-│   ├── app/                 # Application Layer (Use Cases)
-│   │   ├── context/
-│   │   ├── gamification/
+│   ├── app/
+│   │   ├── context/         # Scan, UI, Network, Device context
+│   │   ├── gamification/    # XP system
 │   │   └── interaction/
-│   │
-│   ├── assets/              # Assets / Resources
-│   │   ├── nibblesAngry
-│   │   └── ...
-│   │
-│   ├── config/              # Configuration
-│   │   ├── app_config
-│   │   ├── detection_config
-│   │   ├── signal_config
-│   │   └── ...
-│   │
-│   ├── core/                # Domain Layer (Core Logic)
-│   │   ├── analycer/
-│   │   ├── detection/
-│   │   ├── filtering/
-│   │   ├── fingerprint/
-│   │   ├── models/
-│   │   ├── parsing/
-│   │   └── privacy/
-│   │
-│   ├── infrastructure/      # Infrastructure Layer
-│   │   ├── ble/
-│   │   ├── gps/
-│   │   ├── logging/
-│   │   ├── platform/
-│   │   ├── storage/
-│   │   └── wardrive/        # Hardware (M5, ESP32 etc.)
-│   │
-│   ├── ui/                  # Presentation Layer
-│   │   ├── expressions/
-│   │   ├── icons/
-│   │   └── overlay/
-│   │
-│   ├── utils/               
-│   │   └── models/
-│   │
-│   ├── web/                 # WebSocket-Dashboard
-│   │   └── ui/
-│   │
-│   └── main.cpp             # Entry Point
-│
-├── tests/                   # Tests / Unit Tests
+│   ├── assets/              # NibBLEs sprite assets
+│   ├── config/              # App, detection, signal config
+│   ├── core/
+│   │   ├── analyzer/        # Exposure, security, privacy analyzers
+│   │   ├── detection/       # Known device detection
+│   │   ├── fingerprint/     # Device fingerprinting
+│   │   ├── models/          # DeviceInfo, ExposureResult
+│   │   └── parsing/         # Appearance, service, SDO, Eddystone parsers
+│   ├── infrastructure/
+│   │   ├── ble/             # Scanner, GATT handlers, Eddystone
+│   │   ├── gps/             # GPS manager
+│   │   ├── logging/         # Multi-target logger
+│   │   ├── platform/        # Hardware abstraction
+│   │   └── wardriving/      # WiGLE logger
+│   ├── ui/
+│   │   ├── expression/      # NibBLEs animations
+│   │   ├── icons/           # Status icons
+│   │   └── overlay/         # Draw helpers
+│   └── web/                 # Web dashboard, WebSender, LogReplayer
+├── test/
+│   ├── mocks/               # Arduino stubs for native builds
+│   └── test_exposure/       # Google Test suite for exposure analyzer
+└── platformio.ini
 ```
 
 ---
 
 ## Contributing
 
-PRs and suggestions welcome! This is a learning-focused BLE project, and your ideas are appreciated.
+PRs and suggestions welcome. This is a learning-focused BLE privacy project — ideas, bug reports, and new device signatures are all appreciated.
 
 ## License
 
