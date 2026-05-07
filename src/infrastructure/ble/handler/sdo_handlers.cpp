@@ -7,7 +7,6 @@ static unsigned long lastDroneAlert = 0;
 static const unsigned long DRONE_ALERT_COOLDOWN = 5000; // 5s
 
 // ===== Drone Handler =====
-
 void SdoHandlers::handleDrone(const SdoContext* ctx) {
 
     unsigned long now = millis();
@@ -42,7 +41,6 @@ void SdoHandlers::handleDrone(const SdoContext* ctx) {
 }
 
 // ===== FIDO Handler =====
-
 void SdoHandlers::handleFido(const SdoContext* ctx) {
 
     String msg = "     [SDO] FIDO Security Device detected";
@@ -58,7 +56,6 @@ void SdoHandlers::handleFido(const SdoContext* ctx) {
 }
 
 // ===== Matter Handler =====
-
 void SdoHandlers::handleMatter(const SdoContext* ctx) {
 
     String msg = "     [SDO] Matter IoT device detected";

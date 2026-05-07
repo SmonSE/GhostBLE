@@ -371,22 +371,18 @@ static bool parseDeviceInfo(
     }
 
     // --- SDO detection via primary service UUID (if present) ---
-    if (device->haveServiceUUID()) {
-
-        NimBLEUUID uuid = device->getServiceUUID();
-
+    int svcCountSdo = device->getServiceUUIDCount();
+    for (int s = 0; s < svcCountSdo; s++) {
+        NimBLEUUID svcUUID = device->getServiceUUID(s);
         uint16_t uuid16;
-
-        if (SdoHandlers::extract16BitUUID(uuid, uuid16)) {
-
-            if (uuid16 >= 0xFFF0) {
-
-                SdoResult result; 
-
-                if (SdoServiceParser::parse(uuid16, result)) {
-
-                    LOG(LOG_GATT, "     [BLE] SDO Match: " + String(result.name));
-                }
+        if (SdoHandlers::extract16BitUUID(svcUUID, uuid16)) {
+            SdoResult result;
+            if (SdoServiceParser::parse(uuid16, result)) {
+                // Kontext mitgeben für Drone-Alert
+                SdoContext ctx;
+                ctx.rssi = ScanContext::rssi.load();
+                ctx.mac  = ScanContext::addrStr.c_str();
+                ctx.name = localName.c_str();
             }
         }
     }
