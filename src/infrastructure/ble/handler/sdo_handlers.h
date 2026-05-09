@@ -6,6 +6,8 @@ struct SdoContext {
     int rssi;
     String mac;
     String name;
+    const uint8_t* serviceData;
+    size_t      serviceDataLen;
 };
 
 // ===== Handler Interface =====
