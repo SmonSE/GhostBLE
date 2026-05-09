@@ -85,6 +85,35 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 - **Drones** — ASTM Remote ID detection via SDO service UUID 0xFFFA
 - **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters, messages)
 
+### Drone Remote ID (ASTM F3411-22a)
+
+When a drone broadcasting Remote ID is detected via BLE service `0xFFFA`:
+
+```
+[#3] SDO Match: ASTM Remote ID (ASTM Remote ID)
+[#3] ASTM F3411 Remote ID (v2)
+   Type:        Helicopter / Multirotor
+   Serial:      1ZNDBK20D00089
+   Operator ID: DEU-HH-123456
+   Status:      Airborne
+   Drone GPS:   48.123456, 8.654321
+   Alt (geo):   87.5 m
+   Alt (baro):  85.0 m
+   Height:      42.0 m (above takeoff)
+   Speed H:     3.5 m/s
+   Speed V:     0.0 m/s
+   Heading:     270 deg
+   H-Acc:       <10 m
+   Pilot GPS:   48.120000, 8.650000    ← pilot standing here
+   Pilot Alt:   382.5 m
+   EU Class:    C1
+   Description: Delivery drone — authorized flight
+```
+
+> Remote ID is mandatory for drones >250g in the EU (2019/947) and US (FAA Part 89)
+> since 2023. GhostBLE decodes all six ASTM F3411-22a message types: Basic ID,
+> Location, Authentication, Self-ID, System (operator GPS), and Operator ID.
+
 ### PwnBeacon
 
 GhostBLE acts as both a PwnBeacon **client** (scanner) and **server** (advertiser), compatible with [PwnBook](https://github.com/pfefferle/PwnBook) and [Palnagotchi](https://github.com/pfefferle/palnagotchi):
