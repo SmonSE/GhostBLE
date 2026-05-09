@@ -1,43 +1,43 @@
 #include "sdo_handlers.h"
-
 #include "infrastructure/logging/logger.h"
-
+#include "core/parsing/drone_id_parser.h"
+#include "app/context/device_context.h"
+#include "app/context/scan_context.h"
 
 static unsigned long lastDroneAlert = 0;
-static const unsigned long DRONE_ALERT_COOLDOWN = 5000; // 5s
+static const unsigned long DRONE_ALERT_COOLDOWN = 5000;
 
-// ===== Drone Handler =====
 void SdoHandlers::handleDrone(const SdoContext* ctx) {
-
     unsigned long now = millis();
-
-    if (now - lastDroneAlert < DRONE_ALERT_COOLDOWN) {
-        return;
-    }
-
+    if (now - lastDroneAlert < DRONE_ALERT_COOLDOWN) return;
     lastDroneAlert = now;
 
-    String msg = "     [SDO] Drone detected (ASTM Remote ID)";
-    
-    if (ctx) {
-        msg += " | RSSI: " + String(ctx->rssi);
-        msg += " | MAC: " + ctx->mac;
+    // Parse Remote ID payload if available
+    if (ctx && ctx->serviceData && ctx->serviceDataLen > 0) {
+        DroneIDResult drone = parseDroneID(ctx->serviceData, ctx->serviceDataLen);
+
+        if (drone.valid) {
+            LOG(LOG_BEACON, "[SDO] " + drone.summary());
+            DeviceContext::xpManager.awardXP(5.0f);  // +5.0 XP: Drone ID decoded
+
+            if (drone.isEmergency()) {
+                ScanContext::susDevice++;
+                LOG(LOG_TARGET, "[SDO] !!! DRONE EMERGENCY STATUS !!!");
+            }
+
+            if (drone.hasOperator()) {
+                LOG(LOG_GPS, "[SDO] Pilot location: "
+                    + String(drone.system.operatorLat, 6) + ", "
+                    + String(drone.system.operatorLon, 6));
+            }
+            return;
+        }
     }
 
+    // Fallback: no payload or unparseable
+    String msg = "[SDO] Drone detected (ASTM Remote ID)";
+    if (ctx) msg += " | RSSI: " + String(ctx->rssi) + " | MAC: " + ctx->mac;
     LOG(LOG_GATT, msg);
-
-    // ===== GhostBLE Hooks =====
-
-    // UI Highlight
-    // UI::showDroneAlert();
-
-    // Global State
-    // SystemState::droneDetected = true;
-
-    // Sound (falls vorhanden)
-    // Sound::play(SOUND_ALERT);
-
-    // später: Remote ID Payload parsen
 }
 
 // ===== FIDO Handler =====

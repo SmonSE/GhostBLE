@@ -452,6 +452,29 @@ static bool parseDeviceInfo(
                    + " (" + getServiceName(shortUUID) + ")"
                    + "\n       Data: " + bytesToHexString(svcData);
 
+            // UUID extrahieren
+            uint16_t uuid16 = 0;
+            bool hasUuid16 = SdoHandlers::extract16BitUUID(svcDataUUID, uuid16);
+
+            // SDO-Check (nur für 16-bit UUIDs >= 0xFFF0)
+            if (hasUuid16) {
+                SdoResult result;
+                if (SdoServiceParser::parse(uuid16, result)) {
+                    LOG(LOG_GATT, devTag + "[SDO] " + String(result.name));
+
+                    SdoContext ctx;
+                    ctx.rssi           = ScanContext::rssi.load();
+                    ctx.mac            = ScanContext::addrStr.c_str();
+                    ctx.name           = localName.c_str();
+                    ctx.serviceData    = (const uint8_t*)svcData.data();
+                    ctx.serviceDataLen = svcData.size();
+
+                    if (result.uuid == 0xFFFA) SdoHandlers::handleDrone(&ctx);
+                    if (result.uuid == 0xFFFD) SdoHandlers::handleFido(&ctx);
+                    if (result.uuid == 0xFFF6) SdoHandlers::handleMatter(&ctx);
+                }
+            }    
+
             // PwnBeacon service data payload
             if (svcDataUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
                 pwnBeacon = PwnBeaconServiceHandler::parseAdvertisement(
@@ -468,6 +491,7 @@ static bool parseDeviceInfo(
                         "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint));
                 }
             }
+
         }
         LOG(LOG_GATT, sdLog);
     }
@@ -697,7 +721,7 @@ void scanForDevices() {
     }
 
     pScan->clearResults();
-    pScan->setActiveScan(true);
+    pScan->setActiveScan(UIContext::isEvilModeActive.load()); // set by evil mode that user device to active scan for more aggressive fingerprinting
     pScan->setInterval(BLE_SCAN_INTERVAL);
     pScan->setWindow(BLE_SCAN_WINDOW);
     delay(100);  // brief stability delay before scan
