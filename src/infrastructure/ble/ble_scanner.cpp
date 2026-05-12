@@ -523,6 +523,28 @@ static bool connectAndReadGATT(
     // Run all registered GATT service handlers (DeviceInfo, Battery, etc.)
     String serviceOutput = GATTServiceRegistry::runDiscoveredHandlers(pClient);
 
+    // ── Evil Mode — pClient ist hier garantiert verbunden ──
+    if (UIContext::isEvilModeActive.load()) {
+        if (EvilMode::isGoveeDevice(localName) || EvilMode::hasGoveeService(pClient)) {
+
+            int currentRssi = ScanContext::rssi.load();
+
+            // 85 dBm was working in tests, but add some buffer for variability — only trigger if really close
+            if (currentRssi < -90) {
+                LOG(LOG_TARGET, devTag + "😈 Govee found but too far for Evil Mode ("
+                    + String(currentRssi) + " dBm, need > -90)");
+            } else {
+                LOG(LOG_TARGET, devTag + "😈 GOVEE DETECTED! Activating Evil Mode...");
+
+                if (EvilMode::executeAttack(pClient, devTag)) {
+                    nibblesSpeechShowCustom("Hehe! Yellow!");
+                    DeviceContext::xpManager.awardXP(10.0f);
+                    // ... expression task
+                }
+            }
+        }
+    }
+
     // Read 2A00 directly if localName is still empty
     if (localName.isEmpty()) {
         NimBLERemoteService* gasSvc = pClient->getService("1800");
@@ -760,12 +782,12 @@ void scanForDevices() {
     for (int i = 0; i < results.getCount(); i++) {
         const NimBLEAdvertisedDevice* device = results.getDevice(i);
 
-        if (NetworkContext::displayEnabled) {
-            showFindingCounter(
-                ScanContext::targetConnects.load(),
-                ScanContext::susDevice.load(),
-                ScanContext::allSpottedDevice.load());
-        }
+        //if (NetworkContext::displayEnabled) {
+        //    showFindingCounter(
+        //        ScanContext::targetConnects.load(),
+        //        ScanContext::susDevice.load(),
+        //        ScanContext::allSpottedDevice.load());
+        //}
 
         // --- Per-device risk flags (reset each iteration) ---
         bool hasCustomService           = false;
@@ -909,7 +931,6 @@ void scanForDevices() {
         //  GATT connection branch
         // ---------------------------------------------------------------
         if (ScanContext::is_connectable && pClient->connect(*device)) {
-
             // get Device scan count
             int remaining = results.getCount() - i;
           
@@ -950,31 +971,6 @@ void scanForDevices() {
                     }
                     
                     vTaskDelay(pdMS_TO_TICKS(3000));  // Let user see the warning
-                }
-
-                // ============================================================
-                // EVIL MODE: Check if this is a Govee device and attack it!
-                // ============================================================
-                if (UIContext::isEvilModeActive.load()) {
-                    if (EvilMode::isGoveeDevice(localName) || EvilMode::hasGoveeService(pClient)) {
-                        LOG(LOG_TARGET, devTag + "😈 GOVEE DETECTED! Activating Evil Mode...");
-                        
-                        if (EvilMode::executeAttack(pClient, devTag)) {
-                            // Success! Show evil speech bubble
-                            nibblesSpeechShowCustom("Hehe! Yellow!");
-                            DeviceContext::xpManager.awardXP(10.0f);  // +10 XP for evil mode success
-                            
-                            // Show evil expression
-                            if (!UIContext::isAngryTaskRunning.load()) {
-                                if (xTaskCreatePinnedToCore(showAngryExpressionTask, "EvilFace",
-                                    4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
-                                    LOG(LOG_SYSTEM, "Failed to create EvilFace task");
-                                    UIContext::isAngryTaskRunning.store(false);
-                                }
-                            }
-                            vTaskDelay(pdMS_TO_TICKS(3000));  // Let user see the evil success
-                        }
-                    }
                 }
 
                 // --- Apple model resolution ---
@@ -1101,14 +1097,11 @@ void scanForDevices() {
                         UIContext::isGlassesTaskRunning.store(false);
                     }
                 }
-                dev = {};
                 delay(1000);  // brief pause for stable UI flow
-
             } else {
                 // Connected but attribute discovery failed (device likely rejected)
                 LOG(LOG_GATT, devTag + "Connected but attribute discovery failed: " + address);
             }
-
         } else {
           // ---------------------------------------------------------------
           //  Connection failed branch
@@ -1244,17 +1237,16 @@ void scanForDevices() {
               }
           }
           delay(1000);
-          dev = {};
-      }
+        }
 
         // --- Wardriving: log device with GPS coordinates if fix is valid ---
-        if (NetworkContext::wardrivingEnabled) {
-            NetworkContext::gpsManager.update();  // refresh before reading
+        if (NetworkContext::wardrivingEnabled.load()) {
+            NetworkContext::gpsManager.update();
 
             if (NetworkContext::gpsManager.isValid()) {
                 NetworkContext::wigleLogger.logDevice(
-                    address,
-                    localName.length() > 0 ? localName : String(dev.name.c_str()),
+                    address.c_str(),
+                    displayName.length() > 0 ? displayName.c_str() : String(dev.name.c_str()),
                     currentRSSI,
                     NetworkContext::gpsManager.getLatitude(),
                     NetworkContext::gpsManager.getLongitude(),
@@ -1264,7 +1256,8 @@ void scanForDevices() {
                 );
             }
         }
-
+        // --- Clean up per-device data and disconnect ---
+        dev = {};
         // --- Clean up NimBLE client ---
         if (pClient != nullptr && pClient->isConnected()) {
             pClient->disconnect();
@@ -1316,7 +1309,7 @@ void scanForDevices() {
         LOG(LOG_SCAN, "  Writable noAuth: " + String(ScanContext::writableNoAuthCount.load()));
     }
 
-    if (NetworkContext::wardrivingEnabled) {
+    if (NetworkContext::wardrivingEnabled.load()) {
         LOG(LOG_SCAN, "  WiGLE log:  " + String(NetworkContext::wigleLogger.getLoggedCount()));
         NetworkContext::wigleLogger.flush();
     }

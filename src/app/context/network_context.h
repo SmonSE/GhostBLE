@@ -38,7 +38,7 @@ extern bool displayEnabled;   // Websocket active -> Display sleep
 //  atomic: ScanTask read wardrivingEnabled for decission
 //  if GPS-Koordinates should be logged.
 // ------------------------------------------------------------
-extern bool wardrivingEnabled;
+extern std::atomic<bool> wardrivingEnabled;
 
 // ------------------------------------------------------------
 //  GPS  (only loop() have access)

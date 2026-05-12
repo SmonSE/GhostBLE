@@ -42,7 +42,7 @@ void Screenshot::capture() {
 #ifdef DEVICE_CARDPUTER
     M5Cardputer.Display.readRect(0, 0, width, height, buffer);
 #else
-    M5.Display.readRect(0, 0, width, height, buffer);
+    M5.Lcd.readRect(0, 0, width, height, buffer);
 #endif
     pending = true;
 

@@ -129,28 +129,28 @@ void updateBatteryState() {
 // ----------------------------------------------------------------
 void drawHeart(int x, int y, uint16_t color) {
     int s = 2;
-    M5.Display.fillRect(x+2*s, y+0*s, s, s, color);
-    M5.Display.fillRect(x+3*s, y+0*s, s, s, color);
-    M5.Display.fillRect(x+6*s, y+0*s, s, s, color);
-    M5.Display.fillRect(x+7*s, y+0*s, s, s, color);
-    M5.Display.fillRect(x+1*s, y+1*s, s, s, color);
-    M5.Display.fillRect(x+4*s, y+1*s, s, s, color);
-    M5.Display.fillRect(x+5*s, y+1*s, s, s, color);
-    M5.Display.fillRect(x+8*s, y+1*s, s, s, color);
-    M5.Display.fillRect(x+0*s, y+2*s, s, s, color);
-    M5.Display.fillRect(x+9*s, y+2*s, s, s, color);
-    M5.Display.fillRect(x+1*s, y+3*s, s, s, color);
-    M5.Display.fillRect(x+8*s, y+3*s, s, s, color);
-    M5.Display.fillRect(x+2*s, y+4*s, s, s, color);
-    M5.Display.fillRect(x+7*s, y+4*s, s, s, color);
-    M5.Display.fillRect(x+3*s, y+5*s, s, s, color);
-    M5.Display.fillRect(x+6*s, y+5*s, s, s, color);
-    M5.Display.fillRect(x+4*s, y+6*s, s, s, color);
-    M5.Display.fillRect(x+5*s, y+6*s, s, s, color);
+    M5.Lcd.fillRect(x+2*s, y+0*s, s, s, color);
+    M5.Lcd.fillRect(x+3*s, y+0*s, s, s, color);
+    M5.Lcd.fillRect(x+6*s, y+0*s, s, s, color);
+    M5.Lcd.fillRect(x+7*s, y+0*s, s, s, color);
+    M5.Lcd.fillRect(x+1*s, y+1*s, s, s, color);
+    M5.Lcd.fillRect(x+4*s, y+1*s, s, s, color);
+    M5.Lcd.fillRect(x+5*s, y+1*s, s, s, color);
+    M5.Lcd.fillRect(x+8*s, y+1*s, s, s, color);
+    M5.Lcd.fillRect(x+0*s, y+2*s, s, s, color);
+    M5.Lcd.fillRect(x+9*s, y+2*s, s, s, color);
+    M5.Lcd.fillRect(x+1*s, y+3*s, s, s, color);
+    M5.Lcd.fillRect(x+8*s, y+3*s, s, s, color);
+    M5.Lcd.fillRect(x+2*s, y+4*s, s, s, color);
+    M5.Lcd.fillRect(x+7*s, y+4*s, s, s, color);
+    M5.Lcd.fillRect(x+3*s, y+5*s, s, s, color);
+    M5.Lcd.fillRect(x+6*s, y+5*s, s, s, color);
+    M5.Lcd.fillRect(x+4*s, y+6*s, s, s, color);
+    M5.Lcd.fillRect(x+5*s, y+6*s, s, s, color);
 }
 
 void clearHearts() {
-    M5.Display.fillRect(25, 24, 40, 30, 0x00C4);
+    M5.Lcd.fillRect(25, 24, 40, 30, 0x00C4);
 }
 
 // ----------------------------------------------------------------
@@ -450,7 +450,7 @@ void drawStatusIcons(int x, int y) {
         drawScanIcon(x + 15, y + 1, SCAN_OFF, 3);
     }
 
-    if (NetworkContext::wardrivingEnabled) {  // wardrivingEnabled → network_context later
+    if (NetworkContext::wardrivingEnabled.load()) {  // wardrivingEnabled → network_context later
         bool hasFix = NetworkContext::gpsManager.isValid();
         int  gpsX   = x + 30;
 
@@ -475,36 +475,127 @@ void drawStats(int sniffed, int sus, int spotted, int x, int y) {
     M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3); M5.Lcd.printf("Sus %-4d", sus);
 }
 
-void drawXPBar(int x, int y) {
+void drawXPBar(int x, int y)
+{
+    static uint32_t lastLevel = UINT32_MAX;
+    static int lastPercentStep = -1;
+    static String lastTitle = "";
+
+    uint32_t level = DeviceContext::xpManager.getLevel();
+
+    // only redraw every 10%
+    int percentStep =
+        DeviceContext::xpManager.getProgressPercent() / 10;
+
+    String title = DeviceContext::xpManager.getTitle();
+
+    bool levelChanged   = (level != lastLevel);
+    bool percentChanged = (percentStep != lastPercentStep);
+    bool titleChanged   = (title != lastTitle);
+
+    // nothing visible changed
+    if (!levelChanged && !percentChanged && !titleChanged) {
+        return;
+    }
+
+    lastLevel = level;
+    lastPercentStep = percentStep;
+    lastTitle = title;
+
+    // REAL percent for drawing
+    int realPercent =
+        DeviceContext::xpManager.getProgressPercent();
+
     M5.Lcd.setTextColor(GREEN, 0x00C4);
-    M5.Lcd.setCursor(x, y);
-    M5.Lcd.printf("LV%u", DeviceContext::xpManager.getLevel());
 
-    M5.Lcd.drawRect(XP_BAR_X, y, XP_BAR_W, XP_BAR_H, GREEN);
-    int fillW = (XP_BAR_W - 2) * DeviceContext::xpManager.getProgressPercent() / 100;
-    if (fillW > 0)          M5.Lcd.fillRect(XP_BAR_X + 1,         y + 1, fillW,              XP_BAR_H - 2, GREEN);
-    if (fillW < XP_BAR_W-2) M5.Lcd.fillRect(XP_BAR_X + 1 + fillW, y + 1, XP_BAR_W - 2 - fillW, XP_BAR_H - 2, BLACK);
+    // --------------------------------------------------------
+    // Level
+    // --------------------------------------------------------
+    if (levelChanged) {
+        M5.Lcd.fillRect(x, y, 50, 16, 0x00C4);
 
-    M5.Lcd.fillRect(TITLE_TEXT_X, y, 140, 16, 0x00C4);
-    M5.Lcd.setTextColor(GREEN);
-    M5.Lcd.setCursor(TITLE_TEXT_X, y);
-    M5.Lcd.print(DeviceContext::xpManager.getTitle());
+        M5.Lcd.setCursor(x, y);
+        M5.Lcd.printf("LV%u", level);
+    }
+
+    // --------------------------------------------------------
+    // XP Bar
+    // --------------------------------------------------------
+    if (percentChanged || levelChanged) {
+
+        M5.Lcd.drawRect(XP_BAR_X, y, XP_BAR_W, XP_BAR_H, GREEN);
+
+        int fillW =
+            (XP_BAR_W - 2) * realPercent / 100;
+
+        if (fillW > 0) {
+            M5.Lcd.fillRect(
+                XP_BAR_X + 1,
+                y + 1,
+                fillW,
+                XP_BAR_H - 2,
+                GREEN
+            );
+        }
+
+        if (fillW < XP_BAR_W - 2) {
+            M5.Lcd.fillRect(
+                XP_BAR_X + 1 + fillW,
+                y + 1,
+                XP_BAR_W - 2 - fillW,
+                XP_BAR_H - 2,
+                BLACK
+            );
+        }
+    }
+
+    // --------------------------------------------------------
+    // Title
+    // --------------------------------------------------------
+    if (titleChanged) {
+
+        M5.Lcd.fillRect(
+            TITLE_TEXT_X,
+            y,
+            140,
+            16,
+            0x00C4
+        );
+
+        M5.Lcd.setTextColor(GREEN);
+
+        M5.Lcd.setCursor(TITLE_TEXT_X, y);
+
+        M5.Lcd.print(title);
+    }
 }
 
 void showEvilMode() {
+    static bool lastState = false;
+
+    bool currentState = UIContext::isEvilModeActive;
+
+    // nothing changed
+    if (currentState == lastState) {
+        return;
+    }
+
+    lastState = currentState;
+
     int cx = 15;
     int cy = 22;
 
-    if(UIContext::isEvilModeActive){
-      M5.Lcd.fillCircle(cx - 6, cy, 2, 0x4208);
-      M5.Lcd.fillCircle(cx + 6, cy, 2, 0x4208);
-      M5.Lcd.fillCircle(cx - 6, cy, 1, RED);
-      M5.Lcd.fillCircle(cx + 6, cy, 1, RED);
-      M5.Lcd.drawLine(cx - 10, cy - 6, cx - 2, cy - 2, RED);
-      M5.Lcd.drawLine(cx + 2, cy - 2, cx + 10, cy - 6, RED);
+    if (currentState) {
+        M5.Lcd.fillCircle(cx - 6, cy, 2, 0x4208);
+        M5.Lcd.fillCircle(cx + 6, cy, 2, 0x4208);
+
+        M5.Lcd.fillCircle(cx - 6, cy, 1, RED);
+        M5.Lcd.fillCircle(cx + 6, cy, 1, RED);
+
+        M5.Lcd.drawLine(cx - 10, cy - 6, cx - 2, cy - 2, RED);
+        M5.Lcd.drawLine(cx + 2, cy - 2, cx + 10, cy - 6, RED);
     } else {
-      // clear full face area
-      M5.Lcd.fillRect(cx - 12, cy - 8, 24, 16, 0x00C4);
+        M5.Lcd.fillRect(cx - 12, cy - 8, 24, 16, 0x00C4);
     }
 }
 

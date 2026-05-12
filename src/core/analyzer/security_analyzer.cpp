@@ -14,15 +14,12 @@ static bool isSensitiveService(const std::string& uuid) {
 
 // Well-known DFU / firmware update service UUIDs
 static bool isDFUService(const std::string& uuid) {
-    // Nordic DFU
-    if (uuid.find("fe59") != std::string::npos) return true;
-    // Legacy Nordic DFU
+    if (uuid.find("fe59") != std::string::npos) return true;       // Nordic DFU
     if (uuid.find("1530") != std::string::npos &&
-        uuid.find("1234") != std::string::npos) return true;
-    // ESP32 OTA
-    if (uuid.find("d804b643") != std::string::npos) return true;
-    // STM DFU
-    if (uuid.find("0000fe20") != std::string::npos) return true;
+        uuid.find("1234") != std::string::npos) return true;       // Legacy Nordic DFU
+    if (uuid.find("d804b643") != std::string::npos) return true;   // ESP32 OTA
+    if (uuid.find("0000fe20") != std::string::npos) return true;   // STM DFU
+    if (uuid.find("02f00000") != std::string::npos) return true;   // ← Govee OTA
     return false;
 }
 
@@ -116,6 +113,18 @@ SecurityResult analyzeDeviceSecurity(NimBLEClient* pClient, const DeviceInfo& de
                         "write-no-response characteristic (" + charUuid + ")"
                     });
                 }
+
+                // Govee unauthenticated OTA write
+                std::string charUuid = ch->getUUID().toString();
+                if (charUuid.find("ff01") != std::string::npos &&
+                    svcUuid.find("02f00000") != std::string::npos) {
+                    result.hasDFUService = true;
+                    result.findings.push_back({
+                        "HIGH", "DFU_EXPOSED",
+                        "Govee unauthenticated OTA write (0xff01) — "
+                        "firmware update possible without pairing"
+                    });
+                }   
             }
         }
     }
