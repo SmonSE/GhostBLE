@@ -493,7 +493,6 @@ void drawXPBar(int x, int y)
     bool percentChanged = (percentStep != lastPercentStep);
     bool titleChanged   = (title != lastTitle);
 
-    // nothing visible changed
     if (!levelChanged && !percentChanged && !titleChanged) {
         return;
     }
@@ -513,7 +512,6 @@ void drawXPBar(int x, int y)
     // --------------------------------------------------------
     if (levelChanged) {
         M5.Lcd.fillRect(x, y, 50, 16, 0x00C4);
-
         M5.Lcd.setCursor(x, y);
         M5.Lcd.printf("LV%u", level);
     }
@@ -553,7 +551,6 @@ void drawXPBar(int x, int y)
     // Title
     // --------------------------------------------------------
     if (titleChanged) {
-
         M5.Lcd.fillRect(
             TITLE_TEXT_X,
             y,
@@ -561,11 +558,8 @@ void drawXPBar(int x, int y)
             16,
             0x00C4
         );
-
         M5.Lcd.setTextColor(GREEN);
-
         M5.Lcd.setCursor(TITLE_TEXT_X, y);
-
         M5.Lcd.print(title);
     }
 }
@@ -575,34 +569,26 @@ void showResearchMode() {
 
     bool currentState = UIContext::isResearchModeActive;
 
-    // nothing changed
     if (currentState == lastState) {
         return;
     }
-
     lastState = currentState;
 
-    int cx = 15;
+    int cx = 10;
     int cy = 22;
 
-    if (currentState) {
-        M5.Lcd.fillCircle(cx - 6, cy, 2, 0x4208);
-        M5.Lcd.fillCircle(cx + 6, cy, 2, 0x4208);
+    uint16_t col = currentState ? 0x07FF : 0x4208; // cyan / gray
 
-        M5.Lcd.fillCircle(cx - 6, cy, 1, RED);
-        M5.Lcd.fillCircle(cx + 6, cy, 1, RED);
-
-        M5.Lcd.drawLine(cx - 10, cy - 6, cx - 2, cy - 2, RED);
-        M5.Lcd.drawLine(cx + 2, cy - 2, cx + 10, cy - 6, RED);
-    } else {
-        M5.Lcd.fillRect(cx - 12, cy - 8, 24, 16, 0x00C4);
-    }
+    M5.Lcd.drawCircle(cx, cy, 4, col);
+    M5.Lcd.drawLine(cx + 3, cy + 3, cx + 6, cy + 6, col);
 }
 
 void showFindingCounter(int sniffed, int sus, int spotted) {
     updateBatteryState();
 
     M5.Lcd.setTextSize(1);
+    M5.Lcd.drawCircle(10, 22, 4, 0x4208);       // grayed out magnifying glass (default state)
+    M5.Lcd.drawLine(13, 25, 16, 28, 0x4208);    // grayed out magnifying glass (default state)
     drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
     drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, UIContext::isChargingState.load());
     drawStats(sniffed, sus, spotted, STATS_X, STATS_Y_START);
