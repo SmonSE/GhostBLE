@@ -25,7 +25,7 @@ std::atomic<bool> isHappyTaskRunning{false};
 std::atomic<bool> isThugLifeTaskRunning{false};
 std::atomic<bool> isSpeechBubbleActive{false};
 
-std::atomic<bool> isEvilModeActive{false};
+std::atomic<bool> isResearchModeActive{false};
 
 // ------------------------------------------------------------
 //  Overlay-State

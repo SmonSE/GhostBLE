@@ -14,7 +14,7 @@ void showAngryExpressionTask(void* parameter);
 void showHappyExpressionTask(void* parameter);
 void showSadExpressionTask(void* parameter);
 void showThugLifeExpressionTask(void* parameter);
-void showEvilMode();
+void showResearchMode();
 void showFindingCounter(int sniffed, int susDevice, int spotted);
 void drawHeart(int x, int y, uint16_t color);
 void clearHearts();

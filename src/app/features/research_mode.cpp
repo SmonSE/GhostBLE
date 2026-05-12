@@ -1,13 +1,13 @@
-#include "evil_mode.h"
+#include "research_mode.h"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "infrastructure/logging/logger.h"
 
-namespace EvilMode {
+namespace ResearchMode {
 
 // ── Stats instance ────────────────────────────────────────────
-EvilStats stats;
+ResearchStats stats;
 
 // ============================================================
 //  Internal helpers
@@ -43,19 +43,19 @@ static bool goveeWrite(NimBLEClient*  pClient,
                        const String&  devTag,
                        const char*    label) {
     if (!pClient || !pClient->isConnected()) {
-        LOG(LOG_TARGET, devTag + "Evil: client not connected");
+        LOG(LOG_TARGET, devTag + "Research: client not connected");
         return false;
     }
 
     NimBLERemoteService* svc = pClient->getService(GOVEE_SERVICE_UUID);
     if (!svc) {
-        LOG(LOG_TARGET, devTag + "Evil: Govee service not found");
+        LOG(LOG_TARGET, devTag + "Research: Govee service not found");
         return false;
     }
 
     NimBLERemoteCharacteristic* ch = svc->getCharacteristic(GOVEE_CHAR_UUID);
     if (!ch || !ch->canWrite()) {
-        LOG(LOG_TARGET, devTag + "Evil: characteristic not writable");
+        LOG(LOG_TARGET, devTag + "Research: characteristic not writable");
         return false;
     }
 
@@ -139,7 +139,7 @@ bool executeAttack(NimBLEClient* pClient, const String& devTag) {
     // Without this Govee disconnects within ~500ms
     cmdKeepAlive(cmd);
     if (!goveeWrite(pClient, cmd, devTag, "Keep-Alive")) {
-        LOG(LOG_TARGET, devTag + "Evil: keep-alive failed — aborting");
+        LOG(LOG_TARGET, devTag + "Research: keep-alive failed — aborting");
         stats.failedAttacks++;
         return false;
     }
@@ -160,7 +160,7 @@ bool executeAttack(NimBLEClient* pClient, const String& devTag) {
     bool ok = goveeWrite(pClient, cmd, devTag, "Color YELLOW (#FFEB3B)");
 
     if (!ok) {
-        LOG(LOG_TARGET, devTag + "Evil: yellow failed — aborting");
+        LOG(LOG_TARGET, devTag + "Research: yellow failed — aborting");
         stats.failedAttacks++;
         return false;
     }
@@ -188,7 +188,7 @@ bool executeAttack(NimBLEClient* pClient, const String& devTag) {
 }
 
 String getStatsString() {
-    String s = "EVIL MODE STATS:\n";
+    String s = "RESEARCH MODE STATS:\n";
     s += "   Govee found:  " + String(stats.goveeDevicesFound) + "\n";
     s += "   Successful:   " + String(stats.successfulAttacks) + "\n";
     s += "   Failed:       " + String(stats.failedAttacks) + "\n";
@@ -200,7 +200,7 @@ String getStatsString() {
 }
 
 void resetStats() {
-    stats = EvilStats{};
+    stats = ResearchStats{};
 }
 
-} // namespace EvilMode
+} // namespace ResearchMode

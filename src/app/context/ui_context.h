@@ -44,7 +44,7 @@ extern std::atomic<bool> isHappyTaskRunning;
 extern std::atomic<bool> isThugLifeTaskRunning;
 extern std::atomic<bool> isSpeechBubbleActive;
 
-extern std::atomic<bool> isEvilModeActive;
+extern std::atomic<bool> isResearchModeActive;
 
 // ------------------------------------------------------------
 //  Overlay-State  (nur loop() read/write)
