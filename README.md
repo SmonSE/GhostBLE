@@ -134,6 +134,15 @@ Decodes manufacturer data for Apple, Google, Samsung, Epson, and more. Also pars
 - **WiGLE CSV export** — log devices with location for mapping and analysis
 - **GeoJSON export** — RSSI heat map for direct import into QGIS or Google Maps
 
+### Start Wardriving
+
+1. Power on GhostBLE
+2. Press `TAB`
+3. Select GPS source with `DEL`
+   - Grove GPS
+   - LoRa GPS
+4. Press `BtnG0` to start wardriving
+
 ### Web Dashboard
 
 Real-time BLE device discovery via WiFi Access Point and WebSocket:
