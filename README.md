@@ -208,9 +208,9 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 | **FN** | Toggle WiFi AP and web dashboard |
 | **TAB** | Toggle wardriving mode |
 | **DEL** | Switch GPS source (Grove / LoRa) |
-| **H** | Show help overlay |
-| **S** | Scan mode |
 | **M** | Place marker in log file |
+| **R** | Research mode |
+| **S** | Scan mode |
 
 ### M5StickS3 (Buttons)
 

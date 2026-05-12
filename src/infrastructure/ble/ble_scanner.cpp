@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "app/features/evil_mode.h"
+#include "app/features/research_mode.h"
 #include "app/features/meta_glasses.h"
 
 #include "app/context/device_context.h"
@@ -523,20 +523,20 @@ static bool connectAndReadGATT(
     // Run all registered GATT service handlers (DeviceInfo, Battery, etc.)
     String serviceOutput = GATTServiceRegistry::runDiscoveredHandlers(pClient);
 
-    // ── Evil Mode — pClient ist hier garantiert verbunden ──
-    if (UIContext::isEvilModeActive.load()) {
-        if (EvilMode::isGoveeDevice(localName) || EvilMode::hasGoveeService(pClient)) {
+    // ── Research Mode — pClient ist hier garantiert verbunden ──
+    if (UIContext::isResearchModeActive.load()) {
+        if (ResearchMode::isGoveeDevice(localName) || ResearchMode::hasGoveeService(pClient)) {
 
             int currentRssi = ScanContext::rssi.load();
 
             // 85 dBm was working in tests, but add some buffer for variability — only trigger if really close
             if (currentRssi < -90) {
-                LOG(LOG_TARGET, devTag + "😈 Govee found but too far for Evil Mode ("
+                LOG(LOG_TARGET, devTag + "😈 Govee found but too far for Research Mode ("
                     + String(currentRssi) + " dBm, need > -90)");
             } else {
-                LOG(LOG_TARGET, devTag + "😈 GOVEE DETECTED! Activating Evil Mode...");
+                LOG(LOG_TARGET, devTag + "😈 GOVEE DETECTED! Activating Research Mode...");
 
-                if (EvilMode::executeAttack(pClient, devTag)) {
+                if (ResearchMode::executeAttack(pClient, devTag)) {
                     nibblesSpeechShowCustom("Hehe! Yellow!");
                     DeviceContext::xpManager.awardXP(10.0f);
                     // ... expression task
@@ -728,8 +728,8 @@ void scanForDevices() {
     // ============================================================
     MetaGlasses::resetStats();
     
-    if (UIContext::isEvilModeActive.load()) {
-        EvilMode::resetStats();
+    if (UIContext::isResearchModeActive.load()) {
+        ResearchMode::resetStats();
     }
 
     ScanContext::scanIsRunning.store(true);
@@ -743,7 +743,7 @@ void scanForDevices() {
     }
 
     pScan->clearResults();
-    pScan->setActiveScan(UIContext::isEvilModeActive.load()); // set by evil mode that user device to active scan for more aggressive fingerprinting
+    pScan->setActiveScan(UIContext::isResearchModeActive.load()); // set by research mode that user device to active scan for more aggressive fingerprinting
     pScan->setInterval(BLE_SCAN_INTERVAL);
     pScan->setWindow(BLE_SCAN_WINDOW);
     delay(100);  // brief stability delay before scan
@@ -1107,8 +1107,8 @@ void scanForDevices() {
           //  Connection failed branch
           // ---------------------------------------------------------------
 
-          // EVIL MODE: Check by name even without connection
-          if (UIContext::isEvilModeActive.load() && EvilMode::isGoveeDevice(localName)) {
+          // RESEARCH MODE: Check by name even without connection
+          if (UIContext::isResearchModeActive.load() && ResearchMode::isGoveeDevice(localName)) {
               LOG(LOG_TARGET, devTag + "😈 Govee detected but connection failed!");
               nibblesSpeechShowCustom("So close!");
           }
@@ -1291,13 +1291,13 @@ void scanForDevices() {
         }
     }
 
-    // Evil Mode Statistics
-    if (UIContext::isEvilModeActive.load() && (EvilMode::stats.goveeDevicesFound > 0 || 
-        EvilMode::stats.successfulAttacks > 0 || EvilMode::stats.failedAttacks > 0)) {
-        LOG(LOG_SCAN, "  --- Evil Mode ---");
-        LOG(LOG_SCAN, "  Govee found:    " + String(EvilMode::stats.goveeDevicesFound));
-        LOG(LOG_SCAN, "  Attacks OK:     " + String(EvilMode::stats.successfulAttacks));
-        LOG(LOG_SCAN, "  Attacks FAIL:   " + String(EvilMode::stats.failedAttacks));
+    // Research Mode Statistics
+    if (UIContext::isResearchModeActive.load() && (ResearchMode::stats.goveeDevicesFound > 0 || 
+        ResearchMode::stats.successfulAttacks > 0 || ResearchMode::stats.failedAttacks > 0)) {
+        LOG(LOG_SCAN, "  --- Research Mode ---");
+        LOG(LOG_SCAN, "  Govee found:    " + String(ResearchMode::stats.goveeDevicesFound));
+        LOG(LOG_SCAN, "  Attacks OK:     " + String(ResearchMode::stats.successfulAttacks));
+        LOG(LOG_SCAN, "  Attacks FAIL:   " + String(ResearchMode::stats.failedAttacks));
     }
 
     if (ScanContext::highFindingsCount.load()           > 0 ||

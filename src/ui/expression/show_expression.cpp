@@ -171,7 +171,7 @@ void clearSpeechBubble() {
         );
     }
 
-    if(UIContext::isEvilModeActive) 
+    if(UIContext::isResearchModeActive) 
     {
       int r = random(2);
       if (r == 0) {
@@ -224,7 +224,7 @@ void showHelpOverlay() {
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn TAB      Wardriving"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn DEL      GPS Source"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn E        Evil Mode"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn R        Research Mode"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M        Marker set"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn S        Scan Mode"); y += lineH;
     //M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn H        This Help"); y += lineH;
@@ -258,7 +258,7 @@ void dismissHelpOverlay() {
                       nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
-    showEvilMode();
+    showResearchMode();
     showScanIcon();
 
     showFindingCounter(
@@ -570,10 +570,10 @@ void drawXPBar(int x, int y)
     }
 }
 
-void showEvilMode() {
+void showResearchMode() {
     static bool lastState = false;
 
-    bool currentState = UIContext::isEvilModeActive;
+    bool currentState = UIContext::isResearchModeActive;
 
     // nothing changed
     if (currentState == lastState) {
@@ -607,7 +607,7 @@ void showFindingCounter(int sniffed, int sus, int spotted) {
     drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, UIContext::isChargingState.load());
     drawStats(sniffed, sus, spotted, STATS_X, STATS_Y_START);
     drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y);
-    showEvilMode();
+    showResearchMode();
 
     WebSender::sendStats();
 }

@@ -281,14 +281,14 @@ void loop() {
           }
           return;
         }
-        if ((key == 'e' || key == 'E')) {
-          LOG(LOG_CONTROL, "E pressed — toggling evil mode");
-          if(!UIContext::isEvilModeActive) {
-            UIContext::isEvilModeActive = true;
-            showEvilMode();
+        if ((key == 'r' || key == 'R')) {
+          LOG(LOG_CONTROL, "E pressed — toggling research mode");
+          if(!UIContext::isResearchModeActive) {
+            UIContext::isResearchModeActive = true;
+            showResearchMode();
           } else {
-            UIContext::isEvilModeActive = false;
-            showEvilMode();
+            UIContext::isResearchModeActive = false;
+            showResearchMode();
           }
           return;
         }
@@ -502,7 +502,7 @@ void toggleWardriving() {
   Serial.printf("call toggleWardriving\n");
     if (NetworkContext::wardrivingEnabled.load()) {
         Serial.printf("Toggle Wardrive enabled\n");
-        UIContext::isEvilModeActive = false; // disable evil mode when wardriving off
+        UIContext::isResearchModeActive = false; // disable research mode when wardriving off
         NetworkContext::wardrivingEnabled.store(false);
         delay(100); // ensure any ongoing logging finishes before stopping GPS and file
         NetworkContext::wigleLogger.end();
@@ -520,7 +520,7 @@ void toggleWardriving() {
         showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
     } else {
         Serial.printf("Toggle Wardrive enabled\n");
-        UIContext::isEvilModeActive = true; // enable evil mode for wardriving to get aggressive setup
+        UIContext::isResearchModeActive = true; // enable research mode for wardriving to get aggressive setup
         //logEnableCategory(LOG_GPS);
         NetworkContext::gpsManager.begin(GPSSource::GROVE);
         NetworkContext::wigleLogger.begin();

@@ -1,11 +1,11 @@
-#ifndef EVIL_MODE_H
-#define EVIL_MODE_H
+#ifndef RESEARCH_MODE_H
+#define RESEARCH_MODE_H
 
 #include <NimBLEDevice.h>
 #include <Arduino.h>
 
 // ===========================================================================
-//  Evil Mode (Govee Chaos)
+//  Research Mode (Govee Chaos)
 //  Detects Govee BLE devices and sends color commands.
 //
 //  Protocol: Govee H61xx / H62xx series (and rebrands iHoment / Minger)
@@ -23,21 +23,21 @@
 //           KunaalKumar/Govee-H6072-Reverse-Engineering
 // ===========================================================================
 
-namespace EvilMode {
+namespace ResearchMode {
 
 // ── UUIDs ────────────────────────────────────────────────────
 constexpr const char* GOVEE_SERVICE_UUID = "00010203-0405-0607-0809-0a0b0c0d1910";
 constexpr const char* GOVEE_CHAR_UUID    = "00010203-0405-0607-0809-0a0b0c0d2b11";
 
 // ── Statistics ───────────────────────────────────────────────
-struct EvilStats {
+struct ResearchStats {
     uint16_t goveeDevicesFound = 0;
     uint16_t successfulAttacks = 0;
     uint16_t failedAttacks     = 0;
     uint32_t lastAttackTime    = 0;
 };
 
-extern EvilStats stats;
+extern ResearchStats stats;
 
 // ── Detection ────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ bool hasGoveeService(NimBLEClient* pClient);
 
 // ── Attack ───────────────────────────────────────────────────
 
-// Execute the full Evil Mode sequence on a connected Govee device.
+// Execute the full Research Mode sequence on a connected Govee device.
 // Sends Keep-Alive → Power ON → Brightness 100% → NibBLEs Yellow
 // → romantic scene → restore white.
 // Returns true on success.
@@ -63,6 +63,6 @@ String getStatsString();
 // Resets all counters
 void resetStats();
 
-} // namespace EvilMode
+} // namespace ResearchMode
 
-#endif // EVIL_MODE_H
+#endif // RESEARCH_MODE_H

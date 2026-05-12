@@ -38,8 +38,8 @@ static const char* idleMessages[] = {
 };
 static const int idleMessageCount = sizeof(idleMessages) / sizeof(idleMessages[0]);
 
-static const char* evilMessages[] = {
-    "Evil mode active",
+static const char* researchMessages[] = {
+    "Research mode on",
     "Chaos engaged",
     "Lets break things",
     "I regret nothing",
@@ -56,7 +56,7 @@ static const char* evilMessages[] = {
     "Now it gets fun",
     "Why not?"
 };
-static const int evilMessageCount = sizeof(evilMessages) / sizeof(evilMessages[0]);
+static const int researchMessageCount = sizeof(researchMessages) / sizeof(researchMessages[0]);
 
 static const char* scanStartMessages[] = {
     "Lets go!",
@@ -157,7 +157,7 @@ static void clearThoughtBubble() {
         );
     }
 
-    if(UIContext::isEvilModeActive) 
+    if(UIContext::isResearchModeActive) 
     {
         int r = random(2);
         if (r == 0) {
@@ -232,9 +232,9 @@ void nibblesSpeechUpdate(unsigned long currentTime) {
 
     // Check if idle long enough
     if (currentTime - lastEventTime >= IDLE_TIMEOUT_MS && !ScanContext::bleScanEnabled) {
-        if(UIContext::isEvilModeActive) {
+        if(UIContext::isResearchModeActive) {
             // idleMessage
-            const char* msg = pickRandom(evilMessages, evilMessageCount);  
+            const char* msg = pickRandom(researchMessages, researchMessageCount);  
             showMumble(msg);
         } else {
             // idleMessage
