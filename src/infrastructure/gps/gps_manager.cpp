@@ -11,7 +11,7 @@ void GPSManager::begin(GPSSource source) {
     currentSource = source;
     initSerial(source);
 
-    NetworkContext::wardrivingEnabled = true;
+    NetworkContext::wardrivingEnabled.store(true);
 }
 
 void GPSManager::switchSource(GPSSource source) {

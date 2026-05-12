@@ -119,13 +119,12 @@ bool buttonBHeld = false;
 bool buttonBShortHandled = false;
 #endif
 
-// GPS and wardriving
-GPSManager gpsManager;
-WigleLogger wigleLogger;
-
 void setup() {
   hardwareBegin();
-  Serial.begin(115200);
+  #if DEBUG_SERIAL
+    Serial.begin(115200);
+    Serial.println("Debug active");
+  #endif
   delay(500);
 
 #if defined(CARDPUTER) 
@@ -192,10 +191,9 @@ void setup() {
   NetworkContext::isWebLogActive = false;
   logEnableTarget(TARGET_WEB);
 
-  ws.textAll("BLE_SCAN_READY");
+  //ws.textAll("BLE_SCAN_READY");
 
   nibblesSpeechBegin();
-
 
   ScanContext::scanIsRunning = false;
 
@@ -303,7 +301,7 @@ void loop() {
 
             char msg[160];
 
-            if (NetworkContext::wardrivingEnabled && hasFix) {
+            if (NetworkContext::wardrivingEnabled.load() && hasFix) {
                 snprintf(msg, sizeof(msg),
                         "[MARKER #%d][GPS] Time:%s SAT:%u Lat: %.6f Lon: %.6f",
                         DeviceContext::pointer.load(),
@@ -402,8 +400,8 @@ void loop() {
 #endif
 
   // Update GPS if wardriving is active
-  if (NetworkContext::wardrivingEnabled) {
-    gpsManager.update();
+  if (NetworkContext::wardrivingEnabled.load()) {
+    NetworkContext::gpsManager.update();
 
     // Refresh GPS status bar every second
     static unsigned long lastGPSDisplayUpdate = 0;
@@ -449,7 +447,7 @@ void onLongPress() {
     //nibblesSpeechShow(SpeechContext::SCAN_START); //to much for queue!
     //delay(1000);
     LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
-    ws.textAll("BLE_SCAN_ON");
+    //ws.textAll("BLE_SCAN_ON");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     delay(1000);
@@ -459,7 +457,7 @@ void onLongPress() {
   }
   else {
     LOG(LOG_CONTROL,"⏹️ BLE Scan DISABLED");
-    ws.textAll("BLE_SCAN_OFF");
+    //ws.textAll("BLE_SCAN_OFF");
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
@@ -501,13 +499,15 @@ void toggleWiFi() {
 }
 
 void toggleWardriving() {
-  printf("call toggleWardriving\n");
-    if (NetworkContext::wardrivingEnabled) {
-        printf("Toggle Wardrive enabled (if)\n");
-        NetworkContext::wardrivingEnabled = false;
-        wigleLogger.end();
+  Serial.printf("call toggleWardriving\n");
+    if (NetworkContext::wardrivingEnabled.load()) {
+        Serial.printf("Toggle Wardrive enabled\n");
+        UIContext::isEvilModeActive = false; // disable evil mode when wardriving off
+        NetworkContext::wardrivingEnabled.store(false);
+        delay(100); // ensure any ongoing logging finishes before stopping GPS and file
+        NetworkContext::wigleLogger.end();
         LOG(LOG_CONTROL, "Wardriving OFF (" +
-        String(wigleLogger.getLoggedCount()) + " logged)");
+        String(NetworkContext::wigleLogger.getLoggedCount()) + " logged)");
         logDisableCategory(LOG_GPS);
         
         if (random(2) == 0) {
@@ -519,12 +519,14 @@ void toggleWardriving() {
         }
         showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
     } else {
-        printf("Toggle Wardrive enabled (else)\n");
-        logEnableCategory(LOG_GPS);
-        gpsManager.begin(GPSSource::GROVE);
-        wigleLogger.begin();
-        LOG(LOG_CONTROL, "Wardriving ON  (" + String(gpsManager.getSourceName()) + ")");
-        LOG(LOG_CONTROL, "  File: " + wigleLogger.getFilename());
+        Serial.printf("Toggle Wardrive enabled\n");
+        UIContext::isEvilModeActive = true; // enable evil mode for wardriving to get aggressive setup
+        //logEnableCategory(LOG_GPS);
+        NetworkContext::gpsManager.begin(GPSSource::GROVE);
+        NetworkContext::wigleLogger.begin();
+        delay(100); // ensure wigle logger is ready before enabling wardriving
+        LOG(LOG_CONTROL, "Wardriving ON  (" + String(NetworkContext::gpsManager.getSourceName()) + ")");
+        LOG(LOG_CONTROL, "  File: " + NetworkContext::wigleLogger.getFilename());
 
         if (random(2) == 0) {
           drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
@@ -535,7 +537,7 @@ void toggleWardriving() {
         }
         showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
     }
-    ws.textAll(NetworkContext::wardrivingEnabled ? "WARDRIVE_ON" : "WARDRIVE_OFF");
+    //ws.textAll(NetworkContext::wardrivingEnabled.load() ? "WARDRIVE_ON" : "WARDRIVE_OFF");
 }
 
 void switchGPSSource()  { NetworkContext::switchGPSSource();  }

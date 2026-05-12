@@ -82,6 +82,7 @@ bool initLogger(int sdCsPin) {
     logDisableCategory(LOG_SCAN);
     logDisableCategory(LOG_BEACON);
     logDisableCategory(LOG_NOTIFY);
+    logDisableCategory(LOG_GPS);
 
     // Default: all categories route to all targets
     // (actual output filtered by enabledTargets)

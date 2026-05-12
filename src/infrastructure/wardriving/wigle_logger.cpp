@@ -35,6 +35,9 @@ bool WigleLogger::openFile() {
     }
 
     writeHeader();
+    file.flush();
+    delay(10);
+    
     initialized = true;
     LOG(LOG_SYSTEM, "WigleLogger: Logging to " + filename);
     return true;
@@ -64,21 +67,52 @@ String WigleLogger::escapeCSV(const String& value) {
     return value;
 }
 
-void WigleLogger::logDevice(const String& mac, const String& name, int rssi,
-                            double lat, double lon, double alt, float hdop,
-                            const String& timestamp) {
-    if (!active) return;
+void WigleLogger::logDevice(const String& mac,
+                            const String& name,
+                            int rssi,
+                            double lat,
+                            double lon,
+                            double alt,
+                            float hdop,
+                            const String& timestamp)
+{
+    if (!active) {
+        return;
+    }
 
-    // Lazily create the file on first device log (only when GPS is valid)
-    if (!initialized && !openFile()) return;
+    // protect complete logging operation
+    if (!xSemaphoreTake(logMutex, pdMS_TO_TICKS(250))) {
+        return;
+    }
 
-    // Estimate accuracy from HDOP (rough: HDOP * 5 meters)
+    // --------------------------------------------------------
+    // Lazy file creation
+    // --------------------------------------------------------
+
+    if (!initialized) {
+        if (!openFile()) {
+            xSemaphoreGive(logMutex);
+            return;
+        }
+    }
+
+    // --------------------------------------------------------
+    // Accuracy estimation
+    // --------------------------------------------------------
+
     float accuracy = hdop * 5.0f;
-    if (accuracy > 999.0f) accuracy = 999.0f;
 
-    // MAC,SSID,AuthMode,FirstSeen,Channel,RSSI,Lat,Lon,Alt,Accuracy,Type
+    if (accuracy > 999.0f) {
+        accuracy = 999.0f;
+    }
+
+    // --------------------------------------------------------
+    // Build COMPLETE line first
+    // --------------------------------------------------------
+
     String line;
-    line.reserve(200);
+    line.reserve(256);
+
     line += mac;
     line += ",";
     line += escapeCSV(name.length() > 0 ? name : "<unknown>");
@@ -94,15 +128,25 @@ void WigleLogger::logDevice(const String& mac, const String& name, int rssi,
     line += String(alt, 1);
     line += ",";
     line += String(accuracy, 1);
-    line += ",BLE";
+    line += ",BLE\n";
 
-    file.println(line);
+    // --------------------------------------------------------
+    // Single write operation
+    // --------------------------------------------------------
+
+    file.print(line);
+
     loggedCount++;
 
-    // Flush every 10 entries to balance performance and safety
-    if (loggedCount % 10 == 0) {
+    // --------------------------------------------------------
+    // Periodic flush
+    // --------------------------------------------------------
+
+    if ((loggedCount % 10) == 0) {
         file.flush();
     }
+
+    xSemaphoreGive(logMutex);
 }
 
 void WigleLogger::flush() {

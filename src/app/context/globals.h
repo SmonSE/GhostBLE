@@ -9,6 +9,7 @@
 
 #include "app/gamification/xp_manager.h"
 
+#define DEBUG_SERIAL 0
 
 extern String devTag;
 extern String localName;

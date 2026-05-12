@@ -63,7 +63,7 @@ static void onWsEvent(AsyncWebSocket*       wsServer,
         }
     } else if (type == WS_EVT_DISCONNECT) {
         Serial.println("WebSocket client disconnected");
-        M5.Display.wakeup();
+        M5.Lcd.wakeup();
         NetworkContext::displayEnabled = true;
         delay(100);
     }
@@ -81,7 +81,7 @@ bool displayEnabled  = true;
 // ------------------------------------------------------------
 //  Wardriving
 // ------------------------------------------------------------
-bool wardrivingEnabled = false;
+std::atomic<bool> wardrivingEnabled{false};
 
 // ------------------------------------------------------------
 //  GPS + WiGLE-Logger
@@ -146,7 +146,7 @@ void stopWebServer() {
 }
 
 bool switchGPSSource() {
-    if (!wardrivingEnabled) {
+    if (!wardrivingEnabled.load()) {
         LOG(LOG_CONTROL, "Enable wardriving first.");
         printf("Enable wardriving first.\n");
         return false;

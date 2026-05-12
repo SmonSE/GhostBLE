@@ -38,7 +38,7 @@ void drawBars(int x, int y, int level) {
 
     uint16_t color = (i < level) ? activeColor : TFT_DARKGREY;
 
-    M5.Display.fillRect(
+    M5.Lcd.fillRect(
       x + i * (barWidth + spacing),
       y - barHeight,
       barWidth,
