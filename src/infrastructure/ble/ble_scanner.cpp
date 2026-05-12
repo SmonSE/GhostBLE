@@ -531,10 +531,10 @@ static bool connectAndReadGATT(
 
             // 85 dBm was working in tests, but add some buffer for variability — only trigger if really close
             if (currentRssi < -90) {
-                LOG(LOG_TARGET, devTag + "😈 Govee found but too far for Research Mode ("
+                LOG(LOG_TARGET, devTag + "🔍 Govee found but too far for Research Mode ("
                     + String(currentRssi) + " dBm, need > -90)");
             } else {
-                LOG(LOG_TARGET, devTag + "😈 GOVEE DETECTED! Activating Research Mode...");
+                LOG(LOG_TARGET, devTag + "🔍 GOVEE DETECTED! Activating Research Mode...");
 
                 if (ResearchMode::executeAttack(pClient, devTag)) {
                     nibblesSpeechShowCustom("Hehe! Yellow!");
@@ -1109,7 +1109,7 @@ void scanForDevices() {
 
           // RESEARCH MODE: Check by name even without connection
           if (UIContext::isResearchModeActive.load() && ResearchMode::isGoveeDevice(localName)) {
-              LOG(LOG_TARGET, devTag + "😈 Govee detected but connection failed!");
+              LOG(LOG_TARGET, devTag + "🔍 Govee detected but connection failed!");
               nibblesSpeechShowCustom("So close!");
           }
 
