@@ -28,7 +28,7 @@ void Screenshot::init() {
 }
 
 void Screenshot::capture() {
-    if (pending) return; // no spam
+    if (pending) return;
 
     if (!buffer) {
         buffer = (uint16_t*)malloc(width * height * sizeof(uint16_t));
