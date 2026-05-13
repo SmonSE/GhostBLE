@@ -24,7 +24,6 @@ std::atomic<bool> isSadTaskRunning{false};
 std::atomic<bool> isHappyTaskRunning{false};
 std::atomic<bool> isThugLifeTaskRunning{false};
 std::atomic<bool> isSpeechBubbleActive{false};
-
 std::atomic<bool> isResearchModeActive{false};
 
 // ------------------------------------------------------------

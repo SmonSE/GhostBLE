@@ -535,6 +535,7 @@ void toggleWardriving() {
           drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                         nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
         }
+        showResearchMode();
         showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
     }
     //ws.textAll(NetworkContext::wardrivingEnabled.load() ? "WARDRIVE_ON" : "WARDRIVE_OFF");
