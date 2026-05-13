@@ -77,11 +77,11 @@ void Screenshot::handle() {
 #ifdef DEVICE_CARDPUTER
         M5Cardputer.Display.fillRect(88, 0, 80, 12, 0x00C4);
         M5Cardputer.Display.setCursor(90, 0);
-        M5Cardputer.Display.println("PrtScn saved");
+        M5Cardputer.Display.println("Picture saved");
 #else
         M5.Lcd.fillRect(88, 0, 80, 12, 0x00C4);
         M5.Lcd.setCursor(90, 0);
-        M5.Lcd.println("PrtScn saved");
+        M5.Lcd.println("Picture saved");
 #endif
     }
 
