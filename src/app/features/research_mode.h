@@ -32,9 +32,9 @@ constexpr const char* GOVEE_CHAR_UUID    = "00010203-0405-0607-0809-0a0b0c0d2b11
 // ── Statistics ───────────────────────────────────────────────
 struct ResearchStats {
     uint16_t goveeDevicesFound = 0;
-    uint16_t successfulAttacks = 0;
-    uint16_t failedAttacks     = 0;
-    uint32_t lastAttackTime    = 0;
+    uint16_t successfulValidations = 0;
+    uint16_t failedValidations = 0;
+    uint32_t lastValidationTime = 0;
 };
 
 extern ResearchStats stats;
@@ -47,13 +47,13 @@ bool isGoveeDevice(const String& name);
 // Returns true if the connected client exposes the Govee control service
 bool hasGoveeService(NimBLEClient* pClient);
 
-// ── Attack ───────────────────────────────────────────────────
+// ── Interaction ─────────────────────────────────────────────
 
 // Execute the full Research Mode sequence on a connected Govee device.
 // Sends Keep-Alive → Power ON → Brightness 100% → NibBLEs Yellow
 // → romantic scene → restore white.
 // Returns true on success.
-bool executeAttack(NimBLEClient* pClient, const String& devTag);
+bool executeInteraction(NimBLEClient* pClient, const String& devTag);
 
 // ── Stats ─────────────────────────────────────────────────────
 

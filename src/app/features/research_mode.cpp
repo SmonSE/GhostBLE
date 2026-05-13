@@ -4,6 +4,9 @@
 #include <freertos/task.h>
 #include "infrastructure/logging/logger.h"
 
+// Example implementation for BLE protocol research.
+// Only use with devices you own or are authorized to test.
+
 namespace ResearchMode {
 
 // ── Stats instance ────────────────────────────────────────────
@@ -130,7 +133,7 @@ bool hasGoveeService(NimBLEClient* pClient) {
     return svc->getCharacteristic(GOVEE_CHAR_UUID) != nullptr;
 }
 
-bool executeAttack(NimBLEClient* pClient, const String& devTag) {
+bool executeInteraction(NimBLEClient* pClient, const String& devTag) {
     stats.goveeDevicesFound++;
 
     uint8_t cmd[20];
@@ -140,7 +143,7 @@ bool executeAttack(NimBLEClient* pClient, const String& devTag) {
     cmdKeepAlive(cmd);
     if (!goveeWrite(pClient, cmd, devTag, "Keep-Alive")) {
         LOG(LOG_TARGET, devTag + "Research: keep-alive failed — aborting");
-        stats.failedAttacks++;
+        stats.failedValidations++;
         return false;
     }
     vTaskDelay(pdMS_TO_TICKS(300));
@@ -161,7 +164,7 @@ bool executeAttack(NimBLEClient* pClient, const String& devTag) {
 
     if (!ok) {
         LOG(LOG_TARGET, devTag + "Research: yellow failed — aborting");
-        stats.failedAttacks++;
+        stats.failedValidations++;
         return false;
     }
 
@@ -182,19 +185,19 @@ bool executeAttack(NimBLEClient* pClient, const String& devTag) {
     cmdColor(cmd, 0xFF, 0xFF, 0xFF);
     goveeWrite(pClient, cmd, devTag, "Restore WHITE");
 
-    stats.successfulAttacks++;
-    stats.lastAttackTime = millis();
+    stats.successfulValidations++;
+    stats.lastValidationTime = millis();
     return true;
 }
 
 String getStatsString() {
     String s = "RESEARCH MODE STATS:\n";
     s += "   Govee found:  " + String(stats.goveeDevicesFound) + "\n";
-    s += "   Successful:   " + String(stats.successfulAttacks) + "\n";
-    s += "   Failed:       " + String(stats.failedAttacks) + "\n";
-    if (stats.lastAttackTime > 0) {
-        s += "   Last attack:  "
-           + String((millis() - stats.lastAttackTime) / 1000) + "s ago";
+    s += "   Successful:   " + String(stats.successfulValidations) + "\n";
+    s += "   Failed:       " + String(stats.failedValidations) + "\n";
+    if (stats.lastValidationTime > 0) {
+        s += "   Last validation:  "
+           + String((millis() - stats.lastValidationTime) / 1000) + "s ago";
     }
     return s;
 }

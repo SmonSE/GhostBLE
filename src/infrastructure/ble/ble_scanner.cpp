@@ -536,7 +536,7 @@ static bool connectAndReadGATT(
             } else {
                 LOG(LOG_TARGET, devTag + "🔍 GOVEE DETECTED! Activating Research Mode...");
 
-                if (ResearchMode::executeAttack(pClient, devTag)) {
+                if (ResearchMode::executeInteraction(pClient, devTag)) {
                     nibblesSpeechShowCustom("Hehe! Yellow!");
                     DeviceContext::xpManager.awardXP(10.0f);
                     // ... expression task
@@ -600,7 +600,7 @@ static bool connectAndReadGATT(
             if (charUuid == UUID_MODEL_NUMBER)                            dev.gattHasModelInfo    = true;
             if (charUuid == UUID_MANUFACTURER_NAME || charUuid == UUID_SERIAL_NUMBER) dev.gattHasIdentityInfo = true;
 
-            // Track writable characteristics (potential attack surface)
+            // Track writable characteristics
             if (characteristic->canWrite() || characteristic->canWriteNoResponse()) {
                 hasWritableChar = true;
             }
@@ -1293,11 +1293,11 @@ void scanForDevices() {
 
     // Research Mode Statistics
     if (UIContext::isResearchModeActive.load() && (ResearchMode::stats.goveeDevicesFound > 0 || 
-        ResearchMode::stats.successfulAttacks > 0 || ResearchMode::stats.failedAttacks > 0)) {
+        ResearchMode::stats.successfulValidations > 0 || ResearchMode::stats.failedValidations > 0)) {
         LOG(LOG_SCAN, "  --- Research Mode ---");
         LOG(LOG_SCAN, "  Govee found:    " + String(ResearchMode::stats.goveeDevicesFound));
-        LOG(LOG_SCAN, "  Attacks OK:     " + String(ResearchMode::stats.successfulAttacks));
-        LOG(LOG_SCAN, "  Attacks FAIL:   " + String(ResearchMode::stats.failedAttacks));
+        LOG(LOG_SCAN, "  Interactions OK:     " + String(ResearchMode::stats.successfulValidations));
+        LOG(LOG_SCAN, "  Interactions FAIL:   " + String(ResearchMode::stats.failedValidations));
     }
 
     if (ScanContext::highFindingsCount.load()           > 0 ||

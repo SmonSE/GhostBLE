@@ -63,8 +63,8 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 
 ### Security Analysis
 
-- Detects **writable characteristics** without authentication (potential attack surface)
-- Identifies **DFU** and **UART** services (expanded attack surface)
+- Analyzes writable **BLE characteristics** and access permissions
+- Enumerates **DFU** and **UART** services for protocol inspection and diagnostics
 - Checks for **encryption** on sensitive services
 - Builds **device fingerprints** from advertised UUIDs and GATT profiles
 - **Pairing / bonding state detection** — distinguishes open from bonded devices via ATT error codes
