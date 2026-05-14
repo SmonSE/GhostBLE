@@ -6,6 +6,7 @@
 
 #include "app/features/research_mode.h"
 #include "app/features/meta_glasses.h"
+#include "app/features/flock_detection.h"
 
 #include "app/context/device_context.h"
 #include "app/context/network_context.h"
@@ -384,6 +385,27 @@ static bool parseDeviceInfo(
                 ctx.mac  = ScanContext::addrStr.c_str();
                 ctx.name = localName.c_str();
             }
+        }
+    }
+
+    FlockDetection::FlockResult flock = FlockDetection::detect(
+        device, localName, manufacturerId);
+
+    if (flock.detected) {
+        FlockDetection::logDetection(devTag, flock,
+            ScanContext::addrStr.c_str(),
+            ScanContext::rssi.load());
+
+        // To Exposure Scoring
+        ScanContext::susDevice++;
+        DeviceContext::xpManager.awardXP(5.0f);  // +5 XP: surveillance device
+
+        // NibBLEs warning the user by tone if it is activated in the UI
+        nibblesSpeechShowCustom("Flock cam!");
+
+        if (!UIContext::isAngryTaskRunning.load()) {
+            xTaskCreatePinnedToCore(showAngryExpressionTask, "FlockWarn",
+                4096, NULL, 5, &UIContext::angryTaskHandle, 1);
         }
     }
 
