@@ -7,6 +7,7 @@
 #include "config/ui_config.h"
 #include "app/context/scan_context.h"
 #include "app/context/ui_context.h"
+#include "ui/menu/menu_controller.h"
 
 #include "assets/nibblesAngry.h"
 #include "assets/nibblesFront.h"
@@ -141,6 +142,7 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
 
 static void clearThoughtBubble() {
     // Clear thought bubble area
+    if (MenuController::isOpen()) return; 
     UIContext::isSpeechBubbleActive = false;
 
     // Hintergrund unter der Bubble wiederherstellen
@@ -186,6 +188,7 @@ static void clearThoughtBubble() {
 }
 
 static void showMumble(const char* message) {
+    if (MenuController::isOpen()) return; 
     if(!ScanContext::scanIsRunning){
         // Clear any previous bubble and draw sleep expression
         M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 22, 0x00C4);
