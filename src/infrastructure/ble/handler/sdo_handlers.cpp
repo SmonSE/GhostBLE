@@ -1,8 +1,12 @@
 #include "sdo_handlers.h"
+#include <M5Unified.h>
+
 #include "infrastructure/logging/logger.h"
 #include "core/parsing/drone_id_parser.h"
 #include "app/context/device_context.h"
 #include "app/context/scan_context.h"
+
+#include "ui/menu/menu_controller.h"
 
 static unsigned long lastDroneAlert = 0;
 static const unsigned long DRONE_ALERT_COOLDOWN = 5000;
@@ -20,8 +24,19 @@ void SdoHandlers::handleDrone(const SdoContext* ctx) {
             LOG(LOG_BEACON, "[SDO] " + drone.summary());
             DeviceContext::xpManager.awardXP(5.0f);  // +5.0 XP: Drone ID decoded
 
+            // ← Audio alert
+            auto* ms = MenuController::getState();
+            if (ms->audioEnabled && ms->audioDrone) {
+                M5.Speaker.setVolume(128);
+                M5.Speaker.tone(2093, 150);  // hoher Ton = Drohne
+                delay(200);
+                M5.Speaker.tone(1568, 150);
+                delay(200);
+                M5.Speaker.tone(2093, 150);
+            }
+
+            ScanContext::susDevice++;
             if (drone.isEmergency()) {
-                ScanContext::susDevice++;
                 LOG(LOG_TARGET, "[SDO] !!! DRONE EMERGENCY STATUS !!!");
             }
 

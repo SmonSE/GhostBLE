@@ -9,6 +9,7 @@
 #include "config/ui_config.h"
 #include "ui/overlay/draw_overlay.h"
 #include "ui/icons/scan_icon.h"
+#include "ui/menu/menu_controller.h"
 #include "infrastructure/gps/gps_manager.h"
 #include "web/web_sender.h"
 
@@ -97,6 +98,7 @@ void drawBatteryIcon(int x, int y, int percent, bool charging) {
 //  Battery state — writes to UIContext
 // ----------------------------------------------------------------
 void updateBatteryState() {
+    if (MenuController::isOpen()) return;
     int  rawVoltage  = M5.Power.getBatteryVoltage();
     bool chargingNow = M5.Power.isCharging();
     bool usbConnected = (rawVoltage > 4200);
@@ -157,6 +159,7 @@ void clearHearts() {
 //  Speech bubble
 // ----------------------------------------------------------------
 void clearSpeechBubble() {
+    if (MenuController::isOpen()) return;
     int srcX    = BUBBLE_X - NIBBLES_FRONT_X;
     int srcY    = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
     int restoreH = BUBBLE_RECT_H + BUBBLE_TRI_H + 3;
@@ -207,18 +210,19 @@ void clearSpeechBubble() {
 //  Help overlay — reads/writes UIContext::helpOverlayVisible
 // ----------------------------------------------------------------
 void showHelpOverlay() {
+    if (MenuController::isOpen()) return;
     UIContext::helpOverlayVisible = true;
 
     M5.Lcd.fillScreen(0x00C4);
     M5.Lcd.setTextSize(1);
 
     M5.Lcd.setTextColor(GREEN, 0x00C4);
-    M5.Lcd.setCursor(80, 4);
+    M5.Lcd.setCursor(80, 3);
     M5.Lcd.print("-- CONTROLS --");
 
     M5.Lcd.setTextColor(WHITE, 0x00C4);
     int y            = 20;
-    const int lineH  = 13;
+    const int lineH  = 11;
 
 #if HAS_KEYBOARD
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
@@ -226,10 +230,10 @@ void showHelpOverlay() {
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn TAB      Wardriving"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn DEL      GPS Source"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn R        Research Mode"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn A        Audio Alerts"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M        Marker set"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn R        Research Mode"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn S        Scan Mode"); y += lineH;
-    //M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn H        This Help"); y += lineH;
 #endif
 
 #if HAS_TWO_BUTTONS
@@ -246,6 +250,7 @@ void showHelpOverlay() {
 }
 
 void dismissHelpOverlay() {
+    if (MenuController::isOpen()) return;
     UIContext::helpOverlayVisible = false;
 
     M5.Lcd.fillScreen(0x00C4);
@@ -274,6 +279,7 @@ void dismissHelpOverlay() {
 //  Expression tasks — alle schreiben in UIContext::
 // ----------------------------------------------------------------
 void showGlassesExpressionTask(void* parameter) {
+    if (MenuController::isOpen()) return;
     UIContext::isGlassesTaskRunning.store(true);
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
 
@@ -326,6 +332,7 @@ void showGlassesExpressionTask(void* parameter) {
 }
 
 void showAngryExpressionTask(void* parameter) {
+    if (MenuController::isOpen()) return;
     UIContext::isAngryTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
@@ -353,6 +360,7 @@ void showAngryExpressionTask(void* parameter) {
 }
 
 void showSadExpressionTask(void* parameter) {
+    if (MenuController::isOpen()) return; 
     UIContext::isSadTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
@@ -389,6 +397,7 @@ void showSadExpressionTask(void* parameter) {
 }
 
 void showThugLifeExpressionTask(void* parameter) {
+    if (MenuController::isOpen()) return;
     UIContext::isThugLifeTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
@@ -415,6 +424,7 @@ void showThugLifeExpressionTask(void* parameter) {
 }
 
 void showHappyExpressionTask(void* parameter) {
+    if (MenuController::isOpen()) return;
     UIContext::isHappyTaskRunning.store(true);
     vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -442,6 +452,7 @@ void showHappyExpressionTask(void* parameter) {
 //  Status bar
 // ----------------------------------------------------------------
 void drawStatusIcons(int x, int y) {
+    if (MenuController::isOpen()) return;
     drawWifiIcon(x, y, NetworkContext::isWebLogActive);  // isWebLogActive → network_context later
 
     if (ScanContext::bleScanEnabled.load()) {
@@ -470,14 +481,14 @@ void drawStatusIcons(int x, int y) {
 
 void drawStats(int sniffed, int sus, int spotted, int x, int y) {
     M5.Lcd.setTextColor(WHITE, 0x00C4);
-    M5.Lcd.setCursor(x, y);                        M5.Lcd.printf("Spt %-4d", spotted);
+    M5.Lcd.setCursor(x, y);                         M5.Lcd.printf("Spt %-4d", spotted);
     M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);     M5.Lcd.printf("Snf %-4d", sniffed);
     M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 2); M5.Lcd.printf("Bcn %-4d", ScanContext::beaconsFound.load());
     M5.Lcd.setTextColor(RED, 0x00C4);
     M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3); M5.Lcd.printf("Sus %-4d", sus);
 }
 
-void drawXPBar(int x, int y)
+void drawXPBar(int x, int y, bool forceRedraw = false)
 {
     static uint32_t lastLevel = UINT32_MAX;
     static int lastPercentStep = -1;
@@ -485,7 +496,6 @@ void drawXPBar(int x, int y)
 
     uint32_t level = DeviceContext::xpManager.getLevel();
 
-    // only redraw every 10%
     int percentStep =
         DeviceContext::xpManager.getProgressPercent() / 10;
 
@@ -495,7 +505,10 @@ void drawXPBar(int x, int y)
     bool percentChanged = (percentStep != lastPercentStep);
     bool titleChanged   = (title != lastTitle);
 
-    if (!levelChanged && !percentChanged && !titleChanged) {
+    if (!forceRedraw &&
+        !levelChanged &&
+        !percentChanged &&
+        !titleChanged) {
         return;
     }
 
@@ -512,7 +525,7 @@ void drawXPBar(int x, int y)
     // --------------------------------------------------------
     // Level
     // --------------------------------------------------------
-    if (levelChanged) {
+    if (levelChanged || forceRedraw) {
         M5.Lcd.fillRect(x, y, 50, 16, 0x00C4);
         M5.Lcd.setCursor(x, y);
         M5.Lcd.printf("LV%u", level);
@@ -521,7 +534,7 @@ void drawXPBar(int x, int y)
     // --------------------------------------------------------
     // XP Bar
     // --------------------------------------------------------
-    if (percentChanged || levelChanged) {
+    if (percentChanged || levelChanged || forceRedraw) {
 
         M5.Lcd.drawRect(XP_BAR_X, y, XP_BAR_W, XP_BAR_H, GREEN);
 
@@ -552,7 +565,7 @@ void drawXPBar(int x, int y)
     // --------------------------------------------------------
     // Title
     // --------------------------------------------------------
-    if (titleChanged) {
+    if (titleChanged || forceRedraw) {
         M5.Lcd.fillRect(
             TITLE_TEXT_X,
             y,
@@ -579,13 +592,14 @@ void showResearchMode() {
 }
 
 void showFindingCounter(int sniffed, int sus, int spotted) {
+    if (MenuController::isOpen()) return;
     updateBatteryState();
 
     M5.Lcd.setTextSize(1);
     drawStatusIcons(STATUS_ICON_X, STATUS_BAR_Y);
     drawBatteryIcon(215, STATUS_BAR_Y, displayedPercent, UIContext::isChargingState.load());
     drawStats(sniffed, sus, spotted, STATS_X, STATS_Y_START);
-    drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y);
+    drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y, false);
     showResearchMode();
 
     WebSender::sendStats();

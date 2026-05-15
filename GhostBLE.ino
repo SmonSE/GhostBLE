@@ -38,7 +38,10 @@
 #include "src/ui/overlay/draw_overlay.h"
 #include "src/ui/expression/show_expression.h"
 
+#include "ui/menu/menu_controller.h"
 
+
+static MenuState menuState;  // globale Instanz
 TaskHandle_t scanTaskHandle = NULL;
 
 #if HAS_KEYBOARD
@@ -121,6 +124,7 @@ bool buttonBShortHandled = false;
 
 void setup() {
   hardwareBegin();
+  MenuController::init(&menuState);
   #if DEBUG_SERIAL
     Serial.begin(115200);
     Serial.println("Debug active");
@@ -241,6 +245,7 @@ void loop() {
 #endif
     return;  // skip all other processing while help is visible
   }
+  
 
 #if HAS_KEYBOARD
   // Cardputer keyboard input
@@ -268,6 +273,14 @@ void loop() {
       }
       // 'h' key opens help overlay
       for (auto key : status.word) {
+        if (key == 'a' || key == 'A') {
+          if (MenuController::isOpen()) {
+              MenuController::close();
+          } else {
+              MenuController::open();
+          }
+          return;
+        }
         if (key == 'h' || key == 'H') {
           LOG(LOG_CONTROL, "H pressed — showing help");
           showHelpOverlay();
@@ -320,6 +333,24 @@ void loop() {
             LOG(LOG_GATT, msg);
             return;
         }
+      }
+      if (MenuController::isOpen()) {
+
+        for (auto key : status.word) {
+            if (key == ';') {
+                MenuController::navigateUp();
+            }
+            if (key == '.') {
+                MenuController::navigateDown();
+            }
+            if (key == ',') {
+                MenuController::selectCurrent();
+            }
+            if (key == '/') {
+                MenuController::selectCurrent();
+            }
+        }
+        return;
       }
     }
   }
@@ -436,6 +467,10 @@ void loop() {
     }
     lastUsbState = usbConnected;
   }
+
+
+
+  
   // Let system handle BLE, GPIO, etc.
   yield();
 }
@@ -444,12 +479,12 @@ void onLongPress() {
   ScanContext::bleScanEnabled = !ScanContext::bleScanEnabled;
 
   if (ScanContext::bleScanEnabled) {
-    //nibblesSpeechShow(SpeechContext::SCAN_START); //to much for queue!
-    //delay(1000);
     LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
-    //ws.textAll("BLE_SCAN_ON");
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+    if(!MenuController::isOpen()) {
+          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
+    }
+    
     delay(1000);
     logNewBoot();
     delay(500);
@@ -457,11 +492,11 @@ void onLongPress() {
   }
   else {
     LOG(LOG_CONTROL,"⏹️ BLE Scan DISABLED");
-    //ws.textAll("BLE_SCAN_OFF");
-    drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                  nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
+    if(!MenuController::isOpen()) {
+      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                    nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
+    }
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
-    //nibblesSpeechShow(SpeechContext::SCAN_STOP); //to much for queue!
     stopBleScan();   // THIS is the important part
   }
 }
@@ -473,12 +508,14 @@ void toggleWiFi() {
     NetworkContext::wifiStarted = false;
     NetworkContext::isWebLogActive = false;
     logDisableTarget(TARGET_WEB);
-    if (random(2) == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-    } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    if(!MenuController::isOpen()) {
+      if (random(2) == 0) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+      } else {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+      }
     }
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter); // optional: Icon ON
   } else {
@@ -486,12 +523,14 @@ void toggleWiFi() {
     startWebLogServer();
     NetworkContext::isWebLogActive = true;
     logEnableTarget(TARGET_WEB);
-    if (random(2) == 0) {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-    } else {
-      drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                    nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+    if(!MenuController::isOpen()) {
+      if (random(2) == 0) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+      } else {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+      }
     }
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter); // optional: Icon ON
   }
@@ -510,12 +549,14 @@ void toggleWardriving() {
         String(NetworkContext::wigleLogger.getLoggedCount()) + " logged)");
         logDisableCategory(LOG_GPS);
         
-        if (random(2) == 0) {
-          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                        nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-        } else {
-          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                        nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+        if(!MenuController::isOpen()) {
+          if (random(2) == 0) {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                          nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+          } else {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                          nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+          }
         }
         showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
     } else {
@@ -528,12 +569,14 @@ void toggleWardriving() {
         LOG(LOG_CONTROL, "Wardriving ON  (" + String(NetworkContext::gpsManager.getSourceName()) + ")");
         LOG(LOG_CONTROL, "  File: " + NetworkContext::wigleLogger.getFilename());
 
-        if (random(2) == 0) {
-          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                    nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-        } else {
-          drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                        nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+        if(!MenuController::isOpen()) {
+          if (random(2) == 0) {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                          nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
+          } else {
+            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
+                          nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
+          }
         }
         showResearchMode();
         showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);

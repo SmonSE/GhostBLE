@@ -14,6 +14,8 @@
 #include "app/context/ui_context.h"
 #include "app/context/network_context.h"
 
+#include "ui/menu/menu_controller.h"
+
 #include "core/parsing/appearance_parser.h"
 
 #include "gattServices/notify_handler.h"
@@ -400,6 +402,17 @@ static bool parseDeviceInfo(
         ScanContext::susDevice++;
         DeviceContext::xpManager.awardXP(5.0f);  // +5 XP: surveillance device
 
+        // ← Audio alert
+        auto* ms = MenuController::getState();
+        if (ms->audioEnabled && ms->audioFlock) {
+            M5.Speaker.setVolume(128);
+            M5.Speaker.tone(440, 300);   // tiefer Ton = Warnung
+            delay(350);
+            M5.Speaker.tone(440, 300);
+            delay(350);
+            M5.Speaker.tone(440, 300);
+        }
+
         // NibBLEs warning the user by tone if it is activated in the UI
         nibblesSpeechShowCustom("Flock cam!");
 
@@ -668,6 +681,15 @@ static bool connectAndReadGATT(
             ScanContext::targetFound = true;
             ScanContext::susDevice++;
             DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
+
+            // ← Audio alert
+            auto* ms = MenuController::getState();
+            if (ms->audioEnabled && ms->audioSuspicious) {
+                M5.Speaker.setVolume(128);
+                M5.Speaker.tone(1760, 200);
+                delay(250);
+                M5.Speaker.tone(1760, 200);
+            }
 
             LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
             nibblesSpeechShow(SpeechContext::SUSPICIOUS);
@@ -979,6 +1001,18 @@ void scanForDevices() {
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
                     DeviceContext::xpManager.awardXP(10.0f);  // +10 XP confirmed Meta
+
+                    auto* ms = MenuController::getState();
+                    if (ms->audioEnabled && ms->audioEvilMode) {
+                        M5.Speaker.setVolume(128);
+                        M5.Speaker.tone(523, 100);   // C
+                        delay(120);
+                        M5.Speaker.tone(659, 100);   // E
+                        delay(120);
+                        M5.Speaker.tone(784, 100);   // G
+                        delay(120);
+                        M5.Speaker.tone(1047, 200);  // C hoch — Erfolgs-Jingle
+                    }
                     
                     // Show warning
                     nibblesSpeechShowCustom("Recording?");
@@ -1173,6 +1207,15 @@ void scanForDevices() {
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
                     DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
+
+                    // ← Audio alert
+                    auto* ms = MenuController::getState();
+                    if (ms->audioEnabled && ms->audioSuspicious) {
+                        M5.Speaker.setVolume(128);
+                        M5.Speaker.tone(1760, 200);
+                        delay(250);
+                        M5.Speaker.tone(1760, 200);
+                    }
 
                     LOG(LOG_TARGET, devTag + "!!! Target detected (no GATT) !!!");
                     LOG(LOG_GATT, devTag + "!!! Target detected (no GATT) !!!");

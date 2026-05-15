@@ -28,4 +28,4 @@ void drawGPSIcon(int x, int y, bool hasFix);
 void drawScanIcon(int x, int y, ScanState state, int radius);
 void drawWifiIcon(int x, int y, bool active);
 void drawStats(int sniffed, int susDevice, int spotted, int x, int y);
-void drawXPBar(int x, int y);
+void drawXPBar(int x, int y, bool forceRedraw);
