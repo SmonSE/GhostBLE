@@ -826,13 +826,6 @@ void scanForDevices() {
     for (int i = 0; i < results.getCount(); i++) {
         const NimBLEAdvertisedDevice* device = results.getDevice(i);
 
-        //if (NetworkContext::displayEnabled) {
-        //    showFindingCounter(
-        //        ScanContext::targetConnects.load(),
-        //        ScanContext::susDevice.load(),
-        //        ScanContext::allSpottedDevice.load());
-        //}
-
         // --- Per-device risk flags (reset each iteration) ---
         bool hasCustomService           = false;
         bool hasWeakName                = false;
@@ -897,6 +890,7 @@ void scanForDevices() {
             }
         }
 
+        displayName.clear();
         String modelName;
         if (!modelIdentifier.isEmpty()) {
             modelName    = getAppleModelName(modelIdentifier);
@@ -1245,11 +1239,6 @@ void scanForDevices() {
 
                   LOG(LOG_GATT, devTag + "Manufacturer: " + manufacturerName.c_str() + "(" + manufacturerId + ")");
               }
-
-              // TX Power
-              //if (device->haveTXPower()) {
-              //    LOG(LOG_GATT, devTag + "TX: " + String(device->getTXPower()));
-              //}
 
               // Appearance
               if (device->haveAppearance()) {

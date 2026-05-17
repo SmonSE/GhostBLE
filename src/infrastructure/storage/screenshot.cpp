@@ -31,14 +31,18 @@ void Screenshot::capture() {
     if (pending) return;
 
     if (!buffer) {
+#ifdef BOARD_HAS_PSRAM
+        buffer = (uint16_t*)ps_malloc(width * height * sizeof(uint16_t));
+        LOG(LOG_SYSTEM, "[Screenshot] Buffer allocated in PSRAM");
+#else
         buffer = (uint16_t*)malloc(width * height * sizeof(uint16_t));
+#endif
         if (!buffer) {
-            Serial.println("[Screenshot] No RAM!");
+            LOG(LOG_SYSTEM, "[Screenshot] No RAM for buffer!");
             return;
         }
     }
 
-    // Direct read from display framebuffer
 #ifdef DEVICE_CARDPUTER
     M5Cardputer.Display.readRect(0, 0, width, height, buffer);
 #else
@@ -46,7 +50,7 @@ void Screenshot::capture() {
 #endif
     pending = true;
 
-    Serial.println("[Screenshot] Captured");
+    LOG(LOG_SYSTEM, "[Screenshot] Captured");
 }
 
 void Screenshot::handle() {
