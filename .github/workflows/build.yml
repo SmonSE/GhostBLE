@@ -4,7 +4,7 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-  
+
 permissions:
   contents: write
 
@@ -13,37 +13,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout Repository
+      # =====================================================
+      # Checkout
+      # =====================================================
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Setup Python
+      # =====================================================
+      # Python
+      # =====================================================
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.x"
 
-      # Install dependencies
+      # =====================================================
+      # Install PlatformIO
+      # =====================================================
       - name: Install dependencies
         run: |
           pip install platformio esptool
 
-      # Build firmware
-      - name: Build
-        run: pio run
+      # =====================================================
+      # Build Cardputer
+      # =====================================================
+      - name: Build Cardputer
+        run: pio run -e ghostble
 
-      # Detect build folder dynamically
-      - name: Get build path
-        run: |
-          BUILD_DIR=$(ls -d .pio/build/* | head -n 1)
-          echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
+      # =====================================================
+      # Build StickS3
+      # =====================================================
+      - name: Build StickS3
+        run: pio run -e ghostble_sticks3
 
-      # Merge binaries (M5Burner compatible)
-      - name: Merge binaries
+      # =====================================================
+      # Create output folder
+      # =====================================================
+      - name: Create firmware folder
+        run: mkdir firmware
+
+      # =====================================================
+      # Merge Cardputer Firmware
+      # =====================================================
+      - name: Merge Cardputer binaries
         run: |
+          BUILD_DIR=.pio/build/ghostble
+
           if [ -f "$BUILD_DIR/boot_app0.bin" ]; then
-            echo "Using boot_app0.bin"
-            python -m esptool --chip esp32s3 merge-bin -o merged.bin \
+            python -m esptool --chip esp32s3 merge-bin \
+              -o firmware/GhostBLE-Cardputer.bin \
               --flash-mode dio \
               --flash-freq 40m \
               --flash-size 8MB \
@@ -52,8 +70,8 @@ jobs:
               0xE000 $BUILD_DIR/boot_app0.bin \
               0x10000 $BUILD_DIR/firmware.bin
           else
-            echo "boot_app0.bin NOT found → building without it"
-            python -m esptool --chip esp32s3 merge-bin -o merged.bin \
+            python -m esptool --chip esp32s3 merge-bin \
+              -o firmware/GhostBLE-Cardputer.bin \
               --flash-mode dio \
               --flash-freq 40m \
               --flash-size 8MB \
@@ -62,19 +80,52 @@ jobs:
               0x10000 $BUILD_DIR/firmware.bin
           fi
 
-      # Rename with version
-      - name: Rename merged binary
+      # =====================================================
+      # Merge StickS3 Firmware
+      # =====================================================
+      - name: Merge StickS3 binaries
+        run: |
+          BUILD_DIR=.pio/build/ghostble_sticks3
+
+          if [ -f "$BUILD_DIR/boot_app0.bin" ]; then
+            python -m esptool --chip esp32s3 merge-bin \
+              -o firmware/GhostBLE-StickS3.bin \
+              --flash-mode dio \
+              --flash-freq 40m \
+              --flash-size 8MB \
+              0x0 $BUILD_DIR/bootloader.bin \
+              0x8000 $BUILD_DIR/partitions.bin \
+              0xE000 $BUILD_DIR/boot_app0.bin \
+              0x10000 $BUILD_DIR/firmware.bin
+          else
+            python -m esptool --chip esp32s3 merge-bin \
+              -o firmware/GhostBLE-StickS3.bin \
+              --flash-mode dio \
+              --flash-freq 40m \
+              --flash-size 8MB \
+              0x0 $BUILD_DIR/bootloader.bin \
+              0x8000 $BUILD_DIR/partitions.bin \
+              0x10000 $BUILD_DIR/firmware.bin
+          fi
+
+      # =====================================================
+      # Rename with Version
+      # =====================================================
+      - name: Add version to filenames
         run: |
           VERSION=${{ github.event.release.tag_name }}
-          mv merged.bin GhostBLE-${VERSION}.bin
 
-      # Upload to GitHub Release
+          mv firmware/GhostBLE-Cardputer.bin \
+             firmware/GhostBLE-Cardputer-${VERSION}.bin
+
+          mv firmware/GhostBLE-StickS3.bin \
+             firmware/GhostBLE-StickS3-${VERSION}.bin
+
+      # =====================================================
+      # Upload Release Assets
+      # =====================================================
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            GhostBLE-*.bin
-            ${{ env.BUILD_DIR }}/firmware.bin
-            ${{ env.BUILD_DIR }}/bootloader.bin
-            ${{ env.BUILD_DIR }}/partitions.bin
-            ${{ env.BUILD_DIR }}/boot_app0.bin
+          files: firmware/*.bin
+          

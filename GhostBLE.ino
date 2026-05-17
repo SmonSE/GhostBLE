@@ -44,9 +44,6 @@
 static MenuState menuState;  // globale Instanz
 TaskHandle_t scanTaskHandle = NULL;
 
-#if HAS_KEYBOARD
-auto keys = M5Cardputer.Keyboard.keysState();
-#endif
 
 void scanTask(void* parameter) {
   while (true) {
@@ -55,52 +52,7 @@ void scanTask(void* parameter) {
       nibblesSpeechNotifyEvent();
       scanForDevices();
     }
-
     vTaskDelay(pdMS_TO_TICKS(200)); // wichtig für Stabilität
-  }
-}
-
-void onWsEvent(AsyncWebSocket *server, AsyncWebSocketClient *client,
-               AwsEventType type, void *arg, uint8_t *data, size_t len) {
-  if (type == WS_EVT_CONNECT) {
-    LOG(LOG_SYSTEM, "WebSocket client connected: " + String(client->id()));
-  } else if (type == WS_EVT_DATA) {
-    AwsFrameInfo *info = (AwsFrameInfo*)arg;
-    if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-      data[len] = '\0';
-      String msg = String((char*)data);
-      String reply = deviceConfig.handleMessage(msg);
-      if (reply.length() > 0) {
-        client->text(reply);
-      }
-    }
-  }
-}
-
-void playMysteryBoot() {
-  M5.Speaker.setVolume(60);
-
-  int notes[] = { 440, 622, 880, 740, 1046 };
-  int durations[] = { 180, 120, 150, 220, 300 };
-
-  for (int i = 0; i < 5; i++) {
-    M5.Speaker.tone(notes[i], durations[i]);
-    delay(durations[i] + 40);
-  }
-
-  // low bass finish
-  M5.Speaker.tone(220, 400);
-}
-
-void playNotificationPro() {
-  M5.Speaker.setVolume(40);
-
-  int notes[] = { 1568, 1865, 2093 }; // G6, A#6, C7
-  int dur = 80;
-
-  for (int i = 0; i < 3; i++) {
-    M5.Speaker.tone(notes[i], dur);
-    delay(dur + 40);
   }
 }
 
@@ -131,24 +83,26 @@ void setup() {
   #endif
   delay(500);
 
-#if defined(CARDPUTER) 
-  Screenshot::init();
-#endif
+  #ifdef BOARD_HAS_PSRAM
+    if (psramFound()) {
+        LOG(LOG_SYSTEM, "PSRAM: " + String(ESP.getPsramSize() / 1024) + " KB");
+    }
+  #endif
+
+  #if defined(CARDPUTER) 
+    Screenshot::init();
+  #endif
 
   M5.Lcd.setSwapBytes(true);
-
   LOG(LOG_SYSTEM, "GhostBLE starting...");
 
-  //taskMutex = xSemaphoreCreateMutex();
   UIContext::init();
 
   M5.Lcd.setRotation(1);
-
   M5.Lcd.fillScreen(0x00C4);
   delay(250);
 
   DeviceContext::deviceConfig.begin();
-
   NimBLEDevice::init(deviceConfig.getName().c_str());
   registerGATTServiceHandlers();
   LOG(LOG_SYSTEM, "BLE initialized successfully.");
@@ -194,13 +148,9 @@ void setup() {
 
   NetworkContext::isWebLogActive = false;
   logEnableTarget(TARGET_WEB);
-
-  //ws.textAll("BLE_SCAN_READY");
-
   nibblesSpeechBegin();
 
   ScanContext::scanIsRunning = false;
-
   delay(500);
 
   // To Update Wifi Logo to ON
@@ -226,7 +176,6 @@ void loop() {
   unsigned long currentTime = millis();
 
   // ===== Input Handling =====
-
   // When help overlay is visible, any input dismisses it
   if (UIContext::helpOverlayVisible) {
 #if HAS_KEYBOARD
@@ -356,79 +305,70 @@ void loop() {
   }
 #endif
 
-  // Button A: long press (1s) = toggle BLE scan
-  //           short press = toggle WiFi (on 2-button devices)
-  //           3s hold = help overlay (on 2-button devices)
-#if defined(CARDPUTER)
-  if (M5Cardputer.BtnA.isPressed()) {
-    if (!buttonAHeld) {
-      if (buttonAPressStart == 0) {
-        buttonAPressStart = currentTime;
-      } else if (currentTime - buttonAPressStart >= LONG_PRESS_MS) {
-        buttonAHeld = true;
-        onLongPress();
-      }
-    }
-  } else {
-    buttonAPressStart = 0;
-    buttonAHeld = false;
-  }
-#else
+// ================================================================
+//  StickS3 Button Handling
+//  BtnA short  = Research Mode toggle
+//  BtnA 3s     = BLE Scan toggle
+//  BtnB short  = WiFi toggle
+//  BtnB 3s     = Menu open/close
+// ================================================================
+#if !defined(CARDPUTER)
+  // ── Button A ─────────────────────────────────────────────────
   if (M5.BtnA.isPressed()) {
     if (!buttonAHeld) {
       if (buttonAPressStart == 0) {
         buttonAPressStart = currentTime;
       } else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
-        // 3s hold: show help overlay
+        // 3s hold — BLE scan toggle
         buttonAHeld = true;
-        LOG(LOG_CONTROL, "BtnA 3s hold — showing help");
-        showHelpOverlay();
+        LOG(LOG_CONTROL, "BtnA 3s — BLE scan toggle");
+        onLongPress();
       }
-      // Note: 1s BLE toggle deferred to release to distinguish from 3s help
     }
   } else {
     if (buttonAPressStart > 0 && !buttonAHeld) {
       unsigned long held = currentTime - buttonAPressStart;
-      if (held >= LONG_PRESS_MS) {
-        // Released between 1-3s: toggle BLE scan
-        LOG(LOG_CONTROL, "BtnA long press");
-        onLongPress();
-      } else {
-        // Short press: toggle WiFi
-        LOG(LOG_CONTROL, "BtnA short press");
-        toggleWiFi();
+      if (held < LONG_PRESS_MS) {
+        // Short press — Research Mode toggle
+        LOG(LOG_CONTROL, "BtnA short — Research Mode toggle");
+        UIContext::isResearchModeActive = !UIContext::isResearchModeActive;
+        showResearchMode();
       }
+      // between LONG_PRESS_MS and HELP_LONG_PRESS_MS — ignore
     }
     buttonAPressStart = 0;
-    buttonAHeld = false;
+    buttonAHeld       = false;
   }
-#endif
 
-#if HAS_TWO_BUTTONS
-  // Button B: long press = switch GPS source
-  //           short press = toggle wardriving
+  // ── Button B ─────────────────────────────────────────────────
+  #if HAS_TWO_BUTTONS
   if (M5.BtnB.isPressed()) {
     if (!buttonBHeld) {
       if (buttonBPressStart == 0) {
         buttonBPressStart = currentTime;
-      } else if (currentTime - buttonBPressStart >= LONG_PRESS_MS) {
+      } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+        // 3s hold — Menu open/close
         buttonBHeld = true;
-        buttonBShortHandled = true;
-        LOG(LOG_CONTROL, "BtnB long press");
-        NetworkContext::switchGPSSource();
+        LOG(LOG_CONTROL, "BtnB 3s — toggle wifi");
+        toggleWiFi();
       }
     }
   } else {
-    // Short press detection: was pressed but not held long enough
     if (buttonBPressStart > 0 && !buttonBHeld) {
-      LOG(LOG_CONTROL, "BtnB short press");
-      NetworkContext::toggleWardriving();
+      unsigned long held = currentTime - buttonBPressStart;
+      if (held < LONG_PRESS_MS) {
+        // Short press — WiFi toggle
+        LOG(LOG_CONTROL, "BtnB short — toggleScanMode");
+        toggleScanMode();
+      }
+      // between LONG_PRESS_MS and HELP_LONG_PRESS_MS — ignore
     }
     buttonBPressStart = 0;
-    buttonBHeld = false;
+    buttonBHeld       = false;
     buttonBShortHandled = false;
   }
-#endif
+  #endif  // HAS_TWO_BUTTONS
+#endif // !CARDPUTER
 
   // Update GPS if wardriving is active
   if (NetworkContext::wardrivingEnabled.load()) {
@@ -441,7 +381,6 @@ void loop() {
       showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     }
   }
-
   // NibBLEs speech system (idle mumbling)
   nibblesSpeechUpdate(currentTime);
 
@@ -467,10 +406,6 @@ void loop() {
     }
     lastUsbState = usbConnected;
   }
-
-
-
-  
   // Let system handle BLE, GPIO, etc.
   yield();
 }
@@ -517,7 +452,7 @@ void toggleWiFi() {
                       nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
       }
     }
-    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter); // optional: Icon ON
+    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice); // optional: Icon ON
   } else {
     LOG(LOG_CONTROL,"WIFI / WEB SERVER ON");
     startWebLogServer();
@@ -532,7 +467,7 @@ void toggleWiFi() {
                       nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
       }
     }
-    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter); // optional: Icon ON
+    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice); // optional: Icon ON
   }
 
 }
@@ -558,11 +493,10 @@ void toggleWardriving() {
                           nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
           }
         }
-        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
+        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     } else {
         Serial.printf("Toggle Wardrive enabled\n");
         UIContext::isResearchModeActive = true; // enable research mode for wardriving to get aggressive setup
-        //logEnableCategory(LOG_GPS);
         NetworkContext::gpsManager.begin(GPSSource::GROVE);
         NetworkContext::wigleLogger.begin();
         delay(100); // ensure wigle logger is ready before enabling wardriving
@@ -579,9 +513,8 @@ void toggleWardriving() {
           }
         }
         showResearchMode();
-        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
+        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     }
-    //ws.textAll(NetworkContext::wardrivingEnabled.load() ? "WARDRIVE_ON" : "WARDRIVE_OFF");
 }
 
 void switchGPSSource()  { NetworkContext::switchGPSSource();  }
