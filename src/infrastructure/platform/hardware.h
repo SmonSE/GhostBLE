@@ -13,20 +13,6 @@
   #error "No hardware platform defined. Set build flag: CARDPUTER, M5STICKCPLUS2, or M5STICKS3"
 #endif
 
-// ===== Platform feature flags =====
-#if defined(CARDPUTER)
-  #define HAS_KEYBOARD   1
-  #define HAS_SD_CARD    1
-#else
-  #define HAS_KEYBOARD   0
-  #define HAS_SD_CARD    0
-#endif
-
-#if defined(M5STICKCPLUS2) || defined(M5STICKS3)
-  #define HAS_TWO_BUTTONS 1
-#else
-  #define HAS_TWO_BUTTONS 0
-#endif
 
 // ===== API =====
 void hardwareBegin();

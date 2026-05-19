@@ -25,9 +25,13 @@
 
 namespace ResearchMode {
 
-// ── UUIDs ────────────────────────────────────────────────────
-constexpr const char* GOVEE_SERVICE_UUID = "00010203-0405-0607-0809-0a0b0c0d1910";
-constexpr const char* GOVEE_CHAR_UUID    = "00010203-0405-0607-0809-0a0b0c0d2b11";
+// Bulb-Serie (H6006, H6009, GVH6006 etc.)
+constexpr const char* GOVEE_BULB_SERVICE_UUID = "00010203-0405-0607-0809-0a0b0c0d1910";
+constexpr const char* GOVEE_BULB_CHAR_UUID    = "18ee2ef5-263d-4559-959f-4f9c429f9d11";
+
+// Strip-Serie (H6102, H6159 etc.) — bereits vorhanden
+constexpr const char* GOVEE_STRIP_SERVICE_UUID = "00010203-0405-0607-0809-0a0b0c0d1910";
+constexpr const char* GOVEE_STRIP_CHAR_UUID    = "00010203-0405-0607-0809-0a0b0c0d2b11";
 
 // ── Statistics ───────────────────────────────────────────────
 struct ResearchStats {

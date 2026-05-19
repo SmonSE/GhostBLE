@@ -41,24 +41,30 @@ static void buildCmd(uint8_t* out,
 
 // Write a 20-byte command to the Govee control characteristic.
 // Returns true on success.
-static bool goveeWrite(NimBLEClient*  pClient,
-                       const uint8_t* cmd20,
-                       const String&  devTag,
-                       const char*    label) {
-    if (!pClient || !pClient->isConnected()) {
-        LOG(LOG_TARGET, devTag + "Research: client not connected");
-        return false;
+static bool goveeWrite(NimBLEClient* pClient, const uint8_t* cmd20,
+                       const String& devTag, const char* label) {
+    if (!pClient || !pClient->isConnected()) return false;
+
+    NimBLERemoteCharacteristic* ch = nullptr;
+
+    // Try Bulb-Service (0xFFF6) first
+    NimBLERemoteService* bulbSvc = pClient->getService(GOVEE_BULB_SERVICE_UUID);
+    if (bulbSvc) {
+        ch = bulbSvc->getCharacteristic(GOVEE_BULB_CHAR_UUID);
+        if (ch && !ch->canWrite()) ch = nullptr;
     }
 
-    NimBLERemoteService* svc = pClient->getService(GOVEE_SERVICE_UUID);
-    if (!svc) {
-        LOG(LOG_TARGET, devTag + "Research: Govee service not found");
-        return false;
+    // Fallback: Strip-Service
+    if (!ch) {
+        NimBLERemoteService* stripSvc = pClient->getService(GOVEE_STRIP_SERVICE_UUID);
+        if (stripSvc) {
+            ch = stripSvc->getCharacteristic(GOVEE_STRIP_CHAR_UUID);
+            if (ch && !ch->canWrite() && !ch->canWriteNoResponse()) ch = nullptr;
+        }
     }
 
-    NimBLERemoteCharacteristic* ch = svc->getCharacteristic(GOVEE_CHAR_UUID);
-    if (!ch || !ch->canWrite()) {
-        LOG(LOG_TARGET, devTag + "Research: characteristic not writable");
+    if (!ch) {
+        LOG(LOG_TARGET, devTag + "Evil: no writable characteristic found");
         return false;
     }
 
@@ -118,6 +124,7 @@ bool isGoveeDevice(const String& name) {
     if (name.isEmpty()) return false;
     if (name.startsWith("Govee_"))   return true;
     if (name.startsWith("GV-"))      return true;
+    if (name.startsWith("GVH"))      return true;
     if (name.startsWith("H6"))       return true;
     if (name.startsWith("H7"))       return true;
     if (name.startsWith("ihoment_")) return true;
@@ -128,9 +135,22 @@ bool isGoveeDevice(const String& name) {
 
 bool hasGoveeService(NimBLEClient* pClient) {
     if (!pClient || !pClient->isConnected()) return false;
-    NimBLERemoteService* svc = pClient->getService(GOVEE_SERVICE_UUID);
-    if (!svc) return false;
-    return svc->getCharacteristic(GOVEE_CHAR_UUID) != nullptr;
+
+    // Bulb-Serie: Service 0xFFF6 + Char 18ee2ef5...11 [W]
+    NimBLERemoteService* bulbSvc = pClient->getService(GOVEE_BULB_SERVICE_UUID);
+    if (bulbSvc) {
+        NimBLERemoteCharacteristic* ch = bulbSvc->getCharacteristic(GOVEE_BULB_CHAR_UUID);
+        if (ch && ch->canWrite()) return true;
+    }
+
+    // Strip-Serie: Service 00010203... + Char 2b11 [RWN]
+    NimBLERemoteService* stripSvc = pClient->getService(GOVEE_STRIP_SERVICE_UUID);
+    if (stripSvc) {
+        NimBLERemoteCharacteristic* ch = stripSvc->getCharacteristic(GOVEE_STRIP_CHAR_UUID);
+        if (ch && (ch->canWrite() || ch->canWriteNoResponse())) return true;
+    }
+
+    return false;
 }
 
 bool executeInteraction(NimBLEClient* pClient, const String& devTag) {
