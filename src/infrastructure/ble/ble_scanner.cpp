@@ -824,6 +824,8 @@ void scanForDevices() {
     //  Per-device processing loop
     // ===================================================================
     for (int i = 0; i < results.getCount(); i++) {
+        dev = {};
+        displayName.clear();
         const NimBLEAdvertisedDevice* device = results.getDevice(i);
 
         // --- Per-device risk flags (reset each iteration) ---
@@ -890,7 +892,6 @@ void scanForDevices() {
             }
         }
 
-        displayName.clear();
         String modelName;
         if (!modelIdentifier.isEmpty()) {
             modelName    = getAppleModelName(modelIdentifier);
@@ -1310,8 +1311,6 @@ void scanForDevices() {
                 );
             }
         }
-        // --- Clean up per-device data and disconnect ---
-        dev = {};
         // --- Clean up NimBLE client ---
         if (pClient != nullptr && pClient->isConnected()) {
             pClient->disconnect();
@@ -1376,8 +1375,6 @@ void scanForDevices() {
 
     // Clear any stale speech bubble that may have been skipped due to queuing
     clearSpeechBubble();
-    dev = {};
-    displayName.clear();
 
     ScanContext::scanIsRunning.store(false);
 }
