@@ -120,15 +120,18 @@ void setup() {
   digitalWrite(LORA_CS_PIN, HIGH);
   #endif
 
-  #if HAS_SD_CARD
-  if (!initLogger(SD_CS_PIN)) {
-    drawThoughtBubble("NO SD CARD!", 125, 18);
-    while (1);
-  }
-  #else
-  // No SD card on this device — initialize logger without SD
-  initLogger(-1);
-  #endif
+#if HAS_SD_CARD
+    #if defined(M5STICKS3)
+        // Custom SPI pins for externally wired SD card
+        SPI.begin(SD_CLK_PIN, SD_MISO_PIN, SD_MOSI_PIN, SD_CS_PIN);
+    #endif
+    if (!initLogger(SD_CS_PIN)) {
+        drawThoughtBubble("NO SD CARD!", 125, 18);
+        vTaskDelay(pdMS_TO_TICKS(3000));  // 3s anzeigen dann weitermachen
+    }
+#else
+    initLogger(-1);
+#endif
 
   DeviceContext::xpManager.begin();
 
@@ -306,13 +309,33 @@ void loop() {
 #endif
 
 // ================================================================
+//  Cardputer Button Handling
+// Button A: long press (1s) = toggle BLE scan
+//           short press = toggle WiFi (on 2-button devices)
+//           3s hold = help overlay (on 2-button devices)
+// ================================================================ 
+#if defined(CARDPUTER)
+  if (M5Cardputer.BtnA.isPressed()) {
+    if (!buttonAHeld) {
+      if (buttonAPressStart == 0) {
+        buttonAPressStart = currentTime;
+      } else if (currentTime - buttonAPressStart >= LONG_PRESS_MS) {
+        buttonAHeld = true;
+        onLongPress();
+      }
+    }
+  } else {
+    buttonAPressStart = 0;
+    buttonAHeld = false;
+  }
+// ================================================================
 //  StickS3 Button Handling
 //  BtnA short  = Research Mode toggle
 //  BtnA 3s     = BLE Scan toggle
 //  BtnB short  = WiFi toggle
 //  BtnB 3s     = Menu open/close
-// ================================================================
-#if !defined(CARDPUTER)
+// ================================================================  
+#else
   // ── Button A ─────────────────────────────────────────────────
   if (M5.BtnA.isPressed()) {
     if (!buttonAHeld) {
