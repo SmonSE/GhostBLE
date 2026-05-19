@@ -153,6 +153,27 @@ bool hasGoveeService(NimBLEClient* pClient) {
     return false;
 }
 
+// RGBWW Bulb Color Command — 5 Kanäle statt 3
+// 33 05 02 R G B WW CW FF 7F 00...00 | xor
+// WW = Warm White (0-255)
+// CW = Cold White (0-255)
+static void cmdColorRGBWW(uint8_t* out,
+                          uint8_t r, uint8_t g, uint8_t b,
+                          uint8_t ww = 0, uint8_t cw = 0) {
+    memset(out, 0, 20);
+    out[0]  = 0x33;
+    out[1]  = 0x05;
+    out[2]  = 0x02;
+    out[3]  = r;
+    out[4]  = g;
+    out[5]  = b;
+    out[6]  = ww;   // Warm White
+    out[7]  = cw;   // Cold White
+    out[8]  = 0xFF;
+    out[9]  = 0x7F;
+    out[19] = goveeXOR(out);
+}
+
 bool executeInteraction(NimBLEClient* pClient, const String& devTag) {
     stats.goveeDevicesFound++;
 
@@ -179,7 +200,7 @@ bool executeInteraction(NimBLEClient* pClient, const String& devTag) {
     vTaskDelay(pdMS_TO_TICKS(200));
 
     // Step 4: NibBLEs Yellow (#FFEB3B)
-    cmdColor(cmd, 0xFF, 0xEB, 0x3B);
+    cmdColorRGBWW(cmd, 0xFF, 0xEB, 0x3B, 0, 0);   // reines RGB Yellow
     bool ok = goveeWrite(pClient, cmd, devTag, "Color YELLOW (#FFEB3B)");
 
     if (!ok) {
@@ -202,7 +223,7 @@ bool executeInteraction(NimBLEClient* pClient, const String& devTag) {
     vTaskDelay(pdMS_TO_TICKS(2000));
 
     // Step 7: Restore white
-    cmdColor(cmd, 0xFF, 0xFF, 0xFF);
+    cmdColorRGBWW(cmd, 0, 0, 0, 0, 255);
     goveeWrite(pClient, cmd, devTag, "Restore WHITE");
 
     stats.successfulValidations++;
