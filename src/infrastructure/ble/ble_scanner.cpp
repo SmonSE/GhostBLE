@@ -892,20 +892,6 @@ void scanForDevices() {
             }
         }
 
-        String modelName;
-        if (!modelIdentifier.isEmpty()) {
-            modelName    = getAppleModelName(modelIdentifier);
-            displayName  = modelName;
-            dev.name = std::string(modelName.c_str()); 
-            dev.displayName = std::string(modelName.c_str()); 
-        } else if (manufacturerName == "Apple Inc.") {
-            modelName         = "Apple Device";
-            dev.displayName   = "Apple Device";  
-        } else {
-            dev.name          = localName.c_str();  
-        } 
-        dev.manufacturer  = manufacturerName.c_str();
-
         ScanContext::allSpottedDevice++;
         DeviceContext::xpManager.awardXP(0.1f);  // +0.1 XP: new device discovered
 
@@ -1317,7 +1303,7 @@ void scanForDevices() {
         }
         NimBLEDevice::deleteClient(pClient);
         pClient = nullptr;
-
+        delay(1000);  // brief delay to ensure clean disconnection before next iteration
     }  // end per-device loop
 
     // =======================================================================
