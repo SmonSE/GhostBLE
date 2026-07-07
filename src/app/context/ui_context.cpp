@@ -1,5 +1,8 @@
 #include "ui_context.h"
 
+#include "ui/expression/show_expression.h"
+#include "config/ui_config.h"
+
 namespace UIContext {
 
 // ------------------------------------------------------------
@@ -51,6 +54,12 @@ bool isAnyExpressionRunning() {
            isSadTaskRunning.load()      ||
            isHappyTaskRunning.load()    ||
            isThugLifeTaskRunning.load();
+}
+
+void hideHelpOverlay() {
+    UIContext::helpOverlayVisible = false;
+    // Alle UI-Elemente, die vom Overlay überdeckt wurden, zwingend neu zeichnen
+    drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y, true);
 }
 
 void stopExpressionTask(std::atomic<bool>& runningFlag,

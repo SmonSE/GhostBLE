@@ -12,6 +12,7 @@
 #include "ui/menu/menu_controller.h"
 #include "infrastructure/gps/gps_manager.h"
 #include "web/web_sender.h"
+#include "infrastructure/platform/hardware_config.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesGlasses.h"
@@ -273,6 +274,8 @@ void dismissHelpOverlay() {
         ScanContext::susDevice.load(),
         ScanContext::allSpottedDevice.load()
     );
+
+    drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y, true);
 }
 
 // ----------------------------------------------------------------

@@ -234,8 +234,13 @@ void loop() {
           return;
         }
         if (key == 'h' || key == 'H') {
-          LOG(LOG_CONTROL, "H pressed — showing help");
-          showHelpOverlay();
+          if (UIContext::helpOverlayVisible) {
+            LOG(LOG_CONTROL, "H pressed — closing help");
+            UIContext::hideHelpOverlay();
+          } else {
+            LOG(LOG_CONTROL, "H pressed — showing help");
+            showHelpOverlay();
+          }
           return;
         }
         // Scan Mode Toggle

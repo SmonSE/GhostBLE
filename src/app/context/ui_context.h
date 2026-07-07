@@ -69,6 +69,8 @@ void init();
 // Usefull if competing Animations-Tasks.
 bool isAnyExpressionRunning();
 
+void hideHelpOverlay();
+
 // Stopps running Task gracefully (check Handle + Flag).
 // expression: Pointer at atomic<bool>-Flag of Tasks
 // handle:     Pointer at associated TaskHandle_t

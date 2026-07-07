@@ -18,10 +18,10 @@
   #define HAS_SPEAKER     1
   #define HAS_TWO_BUTTONS 1
   // Externe SD-Karte via SPI (manuell verdrahtet)
-  #define SD_CS_PIN       8        // G7 // G8
-  #define SD_MOSI_PIN     1        // G6 // G1
-  #define SD_CLK_PIN      0        // G5 // G0
-  #define SD_MISO_PIN     4        // G4 / /G4
+  #define SD_CS_PIN       8        // G8
+  #define SD_MOSI_PIN     1        // G1
+  #define SD_CLK_PIN      0        // G0
+  #define SD_MISO_PIN     4        // G4
 #elif defined(M5STICKCPLUS2)
   #define HAS_KEYBOARD  0
   #define HAS_SD_CARD   0
