@@ -18,7 +18,7 @@ A friendly mascot named **NibBLEs** guides you through the scanning process on t
 1. Flash the firmware (see [Building & Flashing](#building--flashing))
 2. Insert a **microSD card** (required on Cardputer for logging and XP)
 3. Power on — NibBLEs greets you on the display
-4. **Long press BtnA** (1 second) to start scanning
+4. **Long press BtnG0** (1 second) to start scanning
 5. Watch devices appear on the display and in the logs
 
 ---
