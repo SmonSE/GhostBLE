@@ -1,4 +1,4 @@
-<h1 align="left">
+<h1 align="center">
   <img src="./logoConverter/GhostBLE_icon.png" width="120" valign="middle"> 
 </h1>
 
