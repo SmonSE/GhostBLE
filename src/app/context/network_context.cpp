@@ -99,20 +99,14 @@ void startWebServer() {
     String ssid = deviceConfig.getWifiSSID();
     String pass = deviceConfig.getWifiPassword();
 
-    // Guard: empty credentials crashes WiFi.softAP()
-    //if (ssid.isEmpty()) ssid = "GhostBLE";
-    //if (pass.isEmpty()) pass = "ghostble123";
-
-    //WiFi.mode(WIFI_AP);
-    //WiFi.softAP(ssid.c_str(), pass.c_str());
+    if (ssid.isEmpty()) ssid = "GhostBLE";
+    if (pass.isEmpty()) pass = "ghostble123!";
 
     WiFi.mode(WIFI_AP);
-    WiFi.softAP(deviceConfig.getWifiSSID().c_str(),
-                deviceConfig.getWifiPassword().c_str());
+    WiFi.softAP(ssid.c_str(), pass.c_str());
 
     LOG(LOG_CONTROL, "SoftAP started — IP: " + WiFi.softAPIP().toString());
 
-    // WebSocket-Events and handler for server.begin() registration
     ws.onEvent(onWsEvent);
     server.addHandler(&ws);
 
