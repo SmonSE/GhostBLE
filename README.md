@@ -1,4 +1,4 @@
-# GhostBLE
+# GhostBLE ![](logoConverter/GhostBLE_icon.png)
 
 **A BLE privacy scanner for M5Stack devices**
 
