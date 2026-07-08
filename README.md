@@ -4,7 +4,7 @@
 
 **A BLE privacy scanner for M5Stack devices**
 
-GhostBLE discovers nearby Bluetooth Low Energy devices, analyzes their privacy posture, and flags potential security concerns. Built for security researchers, tinkerers, and educators interested in BLE privacy, device fingerprinting, and wireless reconnaissance.
+GhostBLE discovers nearby Bluetooth Low Energy devices, analyzes their privacy posture, and flags potential security concerns. Built for security researchers, ethical hackers, and reverse engineers exploring BLE protocols, as well as tinkerers and educators interested in device fingerprinting, GATT service analysis, and wireless reconnaissance.
 
 A friendly mascot named **NibBLEs** guides you through the scanning process on the built-in display.
 
