@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="./logoConverter/GhostBLE_icon.png" width="120" valign="middle"> 
+  <img src="./logoConverter/GhostBLE_icon.png" width="160" valign="middle"> 
 </h1>
 
 **A BLE privacy scanner for M5Stack devices**
