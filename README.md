@@ -81,9 +81,10 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 - **Flipper Zero** — detected by known service UUIDs
 - **CatHack / Apple Juice** — BLE spam tool detection
 - **Tesla** — detected via iBeacon UUID, GATT service, and name pattern matching
-- **LightBlue** — app-based BLE testing tool
+- **LightBlue** — app-based BLE testing tool detected by known service UUIDs
 - **Drones** — ASTM Remote ID detection via SDO service UUID 0xFFFA
 - **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters, messages)
+- **XiaoBiscuit** — detected by known service UUIDs
 
 ### Drone Remote ID (ASTM F3411-22a)
 
