@@ -1,4 +1,6 @@
-# GhostBLE
+<h1 align="center">
+  <img src="./logoConverter/GhostBLE_icon.png" width="160" valign="middle">
+</h1>
 
 **A BLE privacy scanner for M5Stack devices**
 
@@ -277,7 +279,7 @@ pio test -e native -v
 ---
 
 ## Sample Output
-
+### Printer Epson
 ```
 [#17] Advertised Services (1):
      - fe78 (Member Service — Woan Technology)
@@ -301,7 +303,60 @@ pio test -e native -v
    Tracking risk:     HIGH — static MAC + identity data
    Privacy level:     VERY POOR
 ```
-
+### Garmin Venu2
+```
+[#3] Advertised services (1):
+     - 180d (Heart Rate Service)
+[#3] Connected and discovered attributes: 90:f1:57:f6:15:ac
+[#3] Reading Generic Access Service (0x1800)
+   Device found: Venu 2 [90:f1:57:f6:15:ac]
+   Generic Access Service found (0x1800)
+     Read value of generic access info
+     Device Name: Venu 2
+     Appearance: Sports Watch (0xc1)
+     PPCP - Min: 24, Max: 36, Latency: 0, Timeout: 400
+     Central Address Resolution: Not Supported
+     Generic Attribute Service detected (0x1801)
+     Service Changed: Supported (indicate)
+   Heart Rate Service
+     Heart Rate Service found (0x180D)
+     Subscribed to Heart Rate notifications
+     ❤️ Heart Rate: 73 bpm
+     ❤️ Heart Rate: 72 bpm
+     ❤️ Heart Rate: 71 bpm
+     ❤️ Heart Rate: 71 bpm
+     ❤️ Heart Rate: 69 bpm
+     ❤️ Heart Rate: 69 bpm
+     ❤️ Heart Rate: 66 bpm
+     ❤️ Heart Rate: 66 bpm
+     Unknown Service (0x6a4e8022-667b-11e3-949a-0800200c9a66)
+       Char 6a4e4c80-667b-11e3-949a-0800200c9a66 []
+       Char 6a4ecd28-667b-11e3-949a-0800200c9a66 [RN]
+     Unknown Service (0x6a4e2800-667b-11e3-949a-0800200c9a66)
+       Char 6a4e2803-667b-11e3-949a-0800200c9a66 [RW]
+       Char 6a4e2810-667b-11e3-949a-0800200c9a66 [RWN]
+       Char 6a4e2820-667b-11e3-949a-0800200c9a66 [W]
+       Char 6a4e2811-667b-11e3-949a-0800200c9a66 [RWN]
+       Char 6a4e2821-667b-11e3-949a-0800200c9a66 [W]
+       Char 6a4e2812-667b-11e3-949a-0800200c9a66 [RWN]
+       Char 6a4e2822-667b-11e3-949a-0800200c9a66 [W]
+       Char 6a4e2813-667b-11e3-949a-0800200c9a66 [RWN]
+       Char 6a4e2823-667b-11e3-949a-0800200c9a66 [W]
+       Char 6a4e2814-667b-11e3-949a-0800200c9a66 [RWN]
+       Char 6a4e2824-667b-11e3-949a-0800200c9a66 [W]
+     Unknown Service (0x1814)
+       Char 0x2a54 [R] (len=2) = 00 00 
+       Char 0x2a53 [N]
+[#3] No target detected via GATT: 90:f1:57:f6:15:ac
+[#3] Device info
+   Address:  90:f1:57:f6:15:ac
+   Name:     Venu 2
+   Manuf.:   
+   Raw GATT:
+     - Venu 2
+   Distance: ~1.00 m
+   RSSI:     -69 dBm
+```
 ---
 
 ## Project Structure
