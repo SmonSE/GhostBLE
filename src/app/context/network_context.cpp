@@ -103,8 +103,8 @@ void startWebServer() {
     //if (ssid.isEmpty()) ssid = "GhostBLE";
     //if (pass.isEmpty()) pass = "ghostble123";
 
-    WiFi.mode(WIFI_AP);
-    WiFi.softAP(ssid.c_str(), pass.c_str());
+    //WiFi.mode(WIFI_AP);
+    //WiFi.softAP(ssid.c_str(), pass.c_str());
 
     WiFi.mode(WIFI_AP);
     WiFi.softAP(deviceConfig.getWifiSSID().c_str(),
