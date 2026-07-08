@@ -1,12 +1,12 @@
 # GhostBLE
 
-![](logoConverter/rawConverter/anyone_here.png)    ![](logoConverter/rawConverter/thugLife.png)    ![](logoConverter/rawConverter/jbl_headphone.png)
-
 **A BLE privacy scanner for M5Stack devices**
 
 GhostBLE discovers nearby Bluetooth Low Energy devices, analyzes their privacy posture, and flags potential security concerns. Built for security researchers, ethical hackers, and reverse engineers exploring BLE protocols, as well as tinkerers and educators interested in device fingerprinting, GATT service analysis, and wireless reconnaissance.
 
 A friendly mascot named **NibBLEs** guides you through the scanning process on the built-in display.
+
+![](logoConverter/rawConverter/anyone_here.png)    ![](logoConverter/rawConverter/thugLife.png)    ![](logoConverter/rawConverter/jbl_headphone.png)
 
 > [!WARNING]
 > GhostBLE is intended for legal and authorized security testing, education, and privacy research only. Use of this software for any malicious or unauthorized activities is strictly prohibited. The developers assume no liability for misuse. Use at your own risk.
