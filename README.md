@@ -277,7 +277,7 @@ pio test -e native -v
 ---
 
 ## Sample Output
-
+###Printer
 ```
 [#17] Advertised Services (1):
      - fe78 (Member Service — Woan Technology)
@@ -301,6 +301,7 @@ pio test -e native -v
    Tracking risk:     HIGH — static MAC + identity data
    Privacy level:     VERY POOR
 ```
+###Garmin Venu2
 ```
 [#3] Advertised services (1):
      - 180d (Heart Rate Service)
