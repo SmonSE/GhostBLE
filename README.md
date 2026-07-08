@@ -204,11 +204,12 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 
 | Key | Action |
 |-----|--------|
-| **Long press BtnA** (1s) | Toggle BLE scanning on/off |
+| **Long press BtnG0** (1s) | Toggle BLE scanning on/off |
 | **ENTER** | Capture screenshot to SD card |
 | **FN** | Toggle WiFi AP and web dashboard |
 | **TAB** | Toggle wardriving mode |
 | **DEL** | Switch GPS source (Grove / LoRa) |
+| **A** | Open audio menu for alarm handling |
 | **M** | Place marker in log file |
 | **R** | Research mode |
 | **S** | Scan mode |
