@@ -6,25 +6,25 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
 
   // 0. CATHACK / BRUCE Signatur
   if ((name == "esp32" || name == "ESP32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0" || name == "Keyboard_e9" || name == "BruceNet")) {
-    LOG(LOG_TARGET, "🎯 Device with ESP32 Hardware detected");
+    LOG(LOG_TARGET, "Device with ESP32 Hardware detected");
     return true;
   }
 
   if ((deviceInfoService == "esp32" || deviceInfoService == "n/a" || deviceInfoService == "<no name>" || deviceInfoService == "Keyboard_a0" || deviceInfoService == "Keyboard_e9" || deviceInfoService == "BruceNet")) {
-    LOG(LOG_TARGET, "🎯 Device with ESP32 Hardware detected");
+    LOG(LOG_TARGET, "Device with ESP32 Hardware detected");
     return true;
   }
 
   // 1. LIGHTBLUE APP UUIDs
   if (serviceUuid == LIGHTBLUE_APP_SERVICE_UUID) {
-    LOG(LOG_TARGET, "🎯 Device with LIGHT BLUE APP detected");
+    LOG(LOG_TARGET, "Device with LIGHT BLUE APP detected");
     return true;
   }
 
   // 2. CATHACK-Signatur
   if (serviceUuid == CATHACK_SERVICE_UUID_3 &&
       (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
-    LOG(LOG_TARGET, "🎯 Device with CATHACK Firmware detected");
+    LOG(LOG_TARGET, "Device with CATHACK Firmware detected");
     return true;
   }
 
@@ -40,15 +40,15 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   }
   // Detection
   if (uuid == "0x3081") {
-      LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Black)");
+      LOG(LOG_TARGET, "FLIPPER ZERO detected (Black)");
       return true;
   }
   if (uuid == "0x3082") {
-      LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (White)");
+      LOG(LOG_TARGET, "FLIPPER ZERO detected (White)");
       return true;
   }
   if (uuid == "0x3083") {
-      LOG(LOG_TARGET, "🐬 FLIPPER ZERO detected (Transparent)");
+      LOG(LOG_TARGET, "FLIPPER ZERO detected (Transparent)");
       return true;
   }
 
@@ -58,11 +58,22 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     return false;
   }
 
+  // 5. XIAO BISCUIT
+  String uuidLower = serviceUuid;
+  uuidLower.toLowerCase();
+  if (uuidLower == XIAO_BISCUIT_SERVICE_UUID || uuidLower == XIAO_BISCUIT_SERVICE_UUID_2) {
+    LOG(LOG_TARGET, "XIAO BISCUIT detected (service UUID match)");
+    return true;
+  }
+  if (name == "Xiao Biscuit") {
+    LOG(LOG_TARGET, "XIAO BISCUIT detected (name match)");
+    return true;
+  }
+
   return false;
 }
 
 // --- Tesla vehicle detection ---
-
 static bool isHexChar(char c) {
   return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
 }
@@ -92,4 +103,28 @@ bool isTeslaDevice(const String& name, const String& serviceUuid) {
   }
 
   return false;
+}
+
+bool isXiaoBiscuitDevice(const String& name, const String& serviceUuid) {
+  String uuidLower = serviceUuid;
+  uuidLower.toLowerCase();
+
+  if (uuidLower == XIAO_BISCUIT_SERVICE_UUID || uuidLower == XIAO_BISCUIT_SERVICE_UUID_2) {
+    return true;
+  }
+  if (name == "Xiao Biscuit") {
+    return true;
+  }
+  return false;
+}
+
+bool isFlipperDevice(const String& serviceUuid) {
+  String uuid = serviceUuid;
+  uuid.toLowerCase();
+
+  if (uuid.length() >= 8) {
+    uuid = uuid.substring(4, 8);
+  }
+
+  return (uuid == "0x3081" || uuid == "0x3082" || uuid == "0x3083");
 }

@@ -187,10 +187,9 @@ static void clearThoughtBubble() {
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
 }
 
-static void showMumble(const char* message) {
+static void showMumble(const char* message, bool force = false) {
     if (MenuController::isOpen()) return; 
-    if(!ScanContext::scanIsRunning){
-        // Clear any previous bubble and draw sleep expression
+    if(force || !ScanContext::scanIsRunning){
         M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 22, 0x00C4);
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                     nibblesSleep, NIBBLESSLEEP_WIDTH, NIBBLESSLEEP_HEIGHT, NIBBLES_SLEEP_X, NIBBLES_SLEEP_Y);
@@ -281,7 +280,7 @@ void nibblesSpeechShow(SpeechContext context) {
     }
 
     if (msg) {
-        showMumble(msg);
+        showMumble(msg, true);
         lastEventTime = now;
     }
 }
@@ -295,7 +294,7 @@ void nibblesSpeechShowCustom(const char* message) {
     }
 
     if (message) {
-        showMumble(message);
+        showMumble(message, true);
         lastEventTime = now;
     }
 }

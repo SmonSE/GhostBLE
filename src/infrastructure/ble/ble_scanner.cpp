@@ -51,6 +51,30 @@ static const char* teslaMsgs[] = {
 static constexpr int TESLA_MSG_COUNT = sizeof(teslaMsgs) / sizeof(teslaMsgs[0]);
 
 // ---------------------------------------------------------------------------
+//  Xiao Biscuit speech bubble messages — chosen at random on detection.
+// ---------------------------------------------------------------------------
+static const char* biscuitMsgs[] = {
+    "Ooo Biscuit!",
+    "Hey Biscuit!",
+    "Biscuit spotted!",
+    "Sniff Biscuit!",
+    "Biscuit ping!"
+};
+static constexpr int BISCUIT_MSG_COUNT = sizeof(biscuitMsgs) / sizeof(biscuitMsgs[0]);
+
+// ---------------------------------------------------------------------------
+//  Flipper Zero speech bubble messages — chosen at random on detection.
+// ---------------------------------------------------------------------------
+static const char* flipperMsgs[] = {
+    "Oh! Flipper!",
+    "Ooo Flipper!",
+    "Hey Flipper!",
+    "Sniff Flipper!",
+    "Flipper ping!"
+};
+static constexpr int FLIPPER_MSG_COUNT = sizeof(flipperMsgs) / sizeof(flipperMsgs[0]);
+
+// ---------------------------------------------------------------------------
 //  Heart animation task flag.
 //  atomic: heartTask runs on Core 1, read from Core 0.
 // ---------------------------------------------------------------------------
@@ -401,15 +425,16 @@ static bool parseDeviceInfo(
         // To Exposure Scoring
         ScanContext::susDevice++;
         DeviceContext::xpManager.awardXP(5.0f);  // +5 XP: surveillance device
+        delay(1000);
 
         // ← Audio alert
         auto* ms = MenuController::getState();
         if (ms->audioEnabled && ms->audioFlock) {
-            M5.Speaker.setVolume(128);
+            M5.Speaker.setVolume(120);
             M5.Speaker.tone(440, 300);   // tiefer Ton = Warnung
-            delay(350);
+            while (M5.Speaker.isPlaying()) { delay(5); }
             M5.Speaker.tone(440, 300);
-            delay(350);
+            while (M5.Speaker.isPlaying()) { delay(5); }
             M5.Speaker.tone(440, 300);
         }
 
@@ -566,10 +591,10 @@ static bool connectAndReadGATT(
 
             // 85 dBm was working in tests, but add some buffer for variability — only trigger if really close
             if (currentRssi < -90) {
-                LOG(LOG_TARGET, devTag + "🔍 Govee found but too far for Research Mode ("
+                LOG(LOG_TARGET, devTag + "Govee found but too far for Research Mode ("
                     + String(currentRssi) + " dBm, need > -90)");
             } else {
-                LOG(LOG_TARGET, devTag + "🔍 GOVEE DETECTED! Activating Research Mode...");
+                LOG(LOG_TARGET, devTag + "GOVEE DETECTED! Activating Research Mode...");
 
                 if (ResearchMode::executeInteraction(pClient, devTag)) {
                     nibblesSpeechShowCustom("Hehe! Yellow!");
@@ -673,6 +698,21 @@ static bool connectAndReadGATT(
         if (isTeslaDevice("", serviceUuid.c_str())) {
             LOG(LOG_TARGET, devTag + "Tesla vehicle detected via GATT service");
             nibblesSpeechShowCustom(teslaMsgs[random(TESLA_MSG_COUNT)]);
+            delay(1000);
+        }
+
+        // --- Xiao Biscuit detection via GATT service UUID ---
+        if (isXiaoBiscuitDevice(localName, serviceUuid.c_str())) {
+            LOG(LOG_TARGET, devTag + "Xiao Biscuit detected via GATT service");
+            nibblesSpeechShowCustom(biscuitMsgs[random(BISCUIT_MSG_COUNT)]);
+            delay(1000);
+        }
+
+        // --- Flipper Zero detection via GATT service UUID ---
+        if (isFlipperDevice(serviceUuid.c_str())) {
+            LOG(LOG_TARGET, devTag + "Flipper Zero detected via GATT service");
+            nibblesSpeechShowCustom(flipperMsgs[random(FLIPPER_MSG_COUNT)]);
+            delay(1000);
         }
 
         // --- Known / suspicious target detection ---
@@ -685,14 +725,15 @@ static bool connectAndReadGATT(
             // ← Audio alert
             auto* ms = MenuController::getState();
             if (ms->audioEnabled && ms->audioSuspicious) {
-                M5.Speaker.setVolume(128);
-                M5.Speaker.tone(1760, 200);
-                delay(250);
-                M5.Speaker.tone(1760, 200);
+                M5.Speaker.setVolume(120);
+                M5.Speaker.tone(1800, 160);
+                while (M5.Speaker.isPlaying()) { delay(5); }
+                M5.Speaker.tone(1400, 180);
+                while (M5.Speaker.isPlaying()) { delay(5); }
+                M5.Speaker.tone(1000, 200);
             }
 
             LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
-            nibblesSpeechShow(SpeechContext::SUSPICIOUS);
             vTaskDelay(pdMS_TO_TICKS(2000));
 
             if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled) {
@@ -902,6 +943,12 @@ void scanForDevices() {
             nibblesSpeechShowCustom(teslaMsg.c_str());
         }
 
+        // --- Xiao Biscuit detection via GATT service UUID ---
+        if (isXiaoBiscuitDevice(localName, "")) {
+            LOG(LOG_TARGET, devTag + "Xiao Biscuit detected: " + localName);
+            nibblesSpeechShowCustom(biscuitMsgs[random(BISCUIT_MSG_COUNT)]);
+        }
+
         if (!ScanContext::is_connectable) {
             LOG(LOG_SCAN, devTag + "Device is not connectable.");
         }
@@ -982,16 +1029,17 @@ void scanForDevices() {
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
                     DeviceContext::xpManager.awardXP(10.0f);  // +10 XP confirmed Meta
+                    delay(1000);
 
                     auto* ms = MenuController::getState();
                     if (ms->audioEnabled && ms->audioEvilMode) {
-                        M5.Speaker.setVolume(128);
+                        M5.Speaker.setVolume(120);
                         M5.Speaker.tone(523, 100);   // C
-                        delay(120);
+                        while (M5.Speaker.isPlaying()) { delay(5); }
                         M5.Speaker.tone(659, 100);   // E
-                        delay(120);
+                        while (M5.Speaker.isPlaying()) { delay(5); }
                         M5.Speaker.tone(784, 100);   // G
-                        delay(120);
+                        while (M5.Speaker.isPlaying()) { delay(5); }
                         M5.Speaker.tone(1047, 200);  // C hoch — Erfolgs-Jingle
                     }
                     
@@ -1146,7 +1194,7 @@ void scanForDevices() {
 
           // RESEARCH MODE: Check by name even without connection
           if (UIContext::isResearchModeActive.load() && ResearchMode::isGoveeDevice(localName)) {
-              LOG(LOG_TARGET, devTag + "🔍 Govee detected but connection failed!");
+              LOG(LOG_TARGET, devTag + "Govee detected but connection failed!");
               nibblesSpeechShowCustom("So close!");
           }
 
@@ -1188,19 +1236,20 @@ void scanForDevices() {
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
                     DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
+                    delay(1000);
 
                     // ← Audio alert
                     auto* ms = MenuController::getState();
                     if (ms->audioEnabled && ms->audioSuspicious) {
-                        M5.Speaker.setVolume(128);
+                        M5.Speaker.setVolume(120);
                         M5.Speaker.tone(1760, 200);
-                        delay(250);
+                        while (M5.Speaker.isPlaying()) { delay(5); }
                         M5.Speaker.tone(1760, 200);
                     }
 
                     LOG(LOG_TARGET, devTag + "!!! Target detected (no GATT) !!!");
                     LOG(LOG_GATT, devTag + "!!! Target detected (no GATT) !!!");
-                    nibblesSpeechShow(SpeechContext::SUSPICIOUS);
+                    //nibblesSpeechShow(SpeechContext::SUSPICIOUS);
                     vTaskDelay(pdMS_TO_TICKS(2000));
 
                     if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled) {
