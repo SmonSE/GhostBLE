@@ -32,9 +32,9 @@ struct MenuState {
     // AUDIO (master + per-category)
     bool audioEnabled      = true;
     bool audioSuspicious   = true;
-    bool audioFlock        = false;
+    bool audioFlock        = true;
     bool audioDrone        = false;
-    bool audioFlipper      = false;
+    bool audioFlipper      = true;
     bool audioPwnBeacon    = true;
     bool audioEvilMode     = false;
 };

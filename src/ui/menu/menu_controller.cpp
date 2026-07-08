@@ -2,6 +2,7 @@
 
 #include <M5Unified.h>
 #include "infrastructure/logging/logger.h"
+#include "infrastructure/platform/hardware_config.h"
 #include "app/context/device_context.h"
 #include "app/context/scan_context.h"
 #include "app/context/network_context.h"
@@ -312,11 +313,11 @@ void draw() {
 
     // Status bar at bottom
     M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
-    M5.Lcd.setTextColor(COL_HINT, COL_STATUSBAR);
+    M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
     M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
 
 #if HAS_KEYBOARD
-    M5.Lcd.print("arr navigate  ENTER toggle  FN close");
+    M5.Lcd.print("  Arrow navigate / A close");
 #else
     M5.Lcd.print("A:down  B:toggle  M5(long):close");
 #endif

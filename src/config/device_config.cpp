@@ -1,9 +1,15 @@
 #include "device_config.h"
 #include "infrastructure/logging/logger.h"
+#include "app/context/ui_context.h"
 
 DeviceConfig deviceConfig;
 
 void DeviceConfig::begin() {
+    if(UIContext::isResearchModeActive) 
+    {
+
+    }
+    
     prefs.begin("ghostble", true);  // read-only
     name = prefs.getString("name", "NibBLEs");
     face = prefs.getString("face", "(◕‿◕)");

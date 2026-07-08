@@ -227,8 +227,10 @@ void loop() {
       for (auto key : status.word) {
         if (key == 'a' || key == 'A') {
           if (MenuController::isOpen()) {
+              LOG(LOG_CONTROL, "A pressed — closing audio menu");
               MenuController::close();
           } else {
+              LOG(LOG_CONTROL, "A pressed — showing audio menu");
               MenuController::open();
           }
           return;
@@ -252,7 +254,7 @@ void loop() {
           return;
         }
         if ((key == 'r' || key == 'R')) {
-          LOG(LOG_CONTROL, "E pressed — toggling research mode");
+          LOG(LOG_CONTROL, "R pressed — toggling research mode");
           if(!UIContext::isResearchModeActive) {
             UIContext::isResearchModeActive = true;
             showResearchMode();
