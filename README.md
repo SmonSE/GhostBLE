@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="./logoConverter/GhostBLE_banner.png" width="1600" valign="middle">
+  <img src="./logoConverter/GhostBLE_banner.png" width="2200" valign="middle">
 </h1>
 
 **A BLE privacy scanner for M5Stack devices**
@@ -230,7 +230,7 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 1. Enable WiFi (**FN** on Cardputer or **BtnA** on StickS3)
 2. Connect to WiFi AP **`GhostBLE`** (password: **`ghostble123!`**)
 3. Open **`192.168.4.1`** in a browser
-4. Use the **▶ REPLAY LOG** button in Settings to replay a recorded session from SD card
+4. Change Settings for wifissid, wifipwd and device name 
 
 ---
 
