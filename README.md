@@ -35,11 +35,11 @@ A friendly mascot named **NibBLEs** guides you through the scanning process on t
 All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboard, and PwnBeacon. The Cardputer adds keyboard controls, SD card logging, XP persistence, and screenshot capture.
 
 ### 3D printed Cardputer & M5Stick S3 cases
-[M5 Stack Cardputer ADV Hardcase LoRa Cap](https://makerworld.com/de/models/1810263)
-[M5 Cardputer Gaming Case – Gameboy Edition](https://makerworld.com/de/models/2417770)
-[M5Stick S3 SD-Card Expansion Case](https://makerworld.com/de/models/2834473)
-[M5Stick S3 - Minimalist Case](https://makerworld.com/de/models/2826069)
-[M5Stick S3 Backpack Case](https://makerworld.com/de/models/2905806)
+- [M5 Stack Cardputer ADV Hardcase LoRa Cap](https://makerworld.com/de/models/1810263)
+- [M5 Cardputer Gaming Case – Gameboy Edition](https://makerworld.com/de/models/2417770)
+- [M5Stick S3 SD-Card Expansion Case](https://makerworld.com/de/models/2834473)
+- [M5Stick S3 - Minimalist Case](https://makerworld.com/de/models/2826069)
+- [M5Stick S3 Backpack Case](https://makerworld.com/de/models/2905806)
 
 ---
 
