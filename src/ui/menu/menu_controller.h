@@ -23,7 +23,8 @@ enum class MenuItemType {
     Action,     // execute immediately (no checkbox)
     Section,    // non-selectable header row
     ValueInfo,  // read-only label + value (e.g. "LV12")
-    Spacer      // empty row for spacing
+    Spacer,     // empty row for spacing
+    Slider      // interactive slider
 };
 
 // ── All toggleable state in one struct ───────────────────────
@@ -53,6 +54,8 @@ bool isOpen();
 // Navigation — call from loop() key handlers
 void navigateUp();
 void navigateDown();
+void adjustLeft();
+void adjustRight();
 void selectCurrent();   // toggle or execute current item
 
 // Draw — call when menu is open and state changes

@@ -227,10 +227,10 @@ void showHelpOverlay() {
 
 #if HAS_KEYBOARD
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn ENTER    Screenshot"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn TAB      Wardriving"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn DEL      GPS Source"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn I        Image/Screenshot"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M        Main Menu"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn P        Pointer in log"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn R        Research Mode"); y += lineH;

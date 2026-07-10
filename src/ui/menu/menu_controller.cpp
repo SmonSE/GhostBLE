@@ -57,12 +57,19 @@ static constexpr uint16_t COL_HINT      = 0x2945;   // dim hint text
 struct MenuItem {
     MenuItemType  type;
     const char*   label;
-    bool*         value;        // für einfache bool* (Audio-Flags in MenuState)
-    bool          (*getState)();// optional: liefert aktuellen Zustand für Checkbox-Anzeige (atomics)
+    bool*         value;
+    bool          (*getState)();
     bool          subItem;
     bool*         parentOn;
-    void          (*action)();  // Action ODER Toggle-mit-Side-Effect
+    void          (*action)();
     const char*   valueHint;
+
+    // ── Slider-spezifisch ──────────────────────────────────
+    uint8_t*      sliderValue = nullptr;   // Pointer auf den Wert (z.B. Helligkeit)
+    uint8_t       sliderMin   = 0;
+    uint8_t       sliderMax   = 255;
+    uint8_t       sliderStep  = 17;        // ~15 Schritte über 0-255
+    void          (*onSliderChange)(uint8_t) = nullptr;  // z.B. M5.Lcd.setBrightness
 };
 
 // ── State ─────────────────────────────────────────────────────
@@ -84,6 +91,13 @@ static void beep(int freq, int dur) {
         M5.Speaker.tone(freq, dur);
     }
 #endif
+}
+
+// ── Brightness ───────────────────────────────────────────────
+static uint8_t brightness_ = 128;
+
+static void applyBrightness(uint8_t val) {
+    M5.Lcd.setBrightness(val);
 }
 
 // Build item table — called in init()
@@ -111,6 +125,19 @@ static void buildItems() {
 
     auto info = [&](const char* label, const char* hint) {
     items_[itemCount_++] = { MenuItemType::ValueInfo, label, nullptr, nullptr, false, nullptr, nullptr, hint };
+    };
+
+    auto slider = [&](const char* label, uint8_t& val, uint8_t minV, uint8_t maxV,
+                   uint8_t step, void (*onChange)(uint8_t) = nullptr) {
+        MenuItem item{};
+        item.type            = MenuItemType::Slider;
+        item.label           = label;
+        item.sliderValue     = &val;
+        item.sliderMin       = minV;
+        item.sliderMax       = maxV;
+        item.sliderStep      = step;
+        item.onSliderChange  = onChange;
+        items_[itemCount_++] = item;
     };
 
     // ── SCAN ─────────────────────────────────────────────────
@@ -147,9 +174,10 @@ static void buildItems() {
     toggle("Flipper Zero",    s.audioFlipper,    true, &s.audioEnabled);
     toggle("PwnBeacon",       s.audioPwnBeacon,  true, &s.audioEnabled);
 
-    // ── ACTIONS ──────────────────────────────────────────────
-    //section("ACTIONS");
-    //action("Screenshot", []() { Screenshot::capture(); });
+
+    // ── DISPLAY ──────────────────────────────────────────────
+    section("DISPLAY");
+    slider("Brightness", brightness_, 10, 255, 17, applyBrightness);
 }
 
 // ── Drawing helpers ───────────────────────────────────────────
@@ -161,6 +189,35 @@ static void drawCheckbox(int x, int y, bool on) {
     } else {
         M5.Lcd.drawRect(x, y, sz, sz, COL_OFF);
     }
+}
+
+static void drawSlider(int rowY, const MenuItem& item, bool selected) {
+    int barW = 60;
+    int barH = 3;
+    int barX = MENU_W - barW - 40;   // rechts ausgerichtet, mit Platz für Wert-Text daneben
+    int barY = rowY + 4;
+
+    // Balken-Hintergrund
+    M5.Lcd.drawRect(barX, barY, barW, barH + 2, COL_OFF);
+
+    // Gefüllter Anteil
+    uint8_t val = *item.sliderValue;
+    int fillW = ((val - item.sliderMin) * (barW - 2)) /
+                (item.sliderMax - item.sliderMin);
+    if (fillW > 0) {
+        M5.Lcd.fillRect(barX + 1, barY + 1, fillW, barH, COL_ON);
+    }
+
+    // Cursor "|" an der aktuellen Position
+    int cursorX = barX + fillW;
+    M5.Lcd.setTextColor(selected ? COL_LABEL_SEL : COL_CURSOR, COL_BG);
+    M5.Lcd.setCursor(cursorX, rowY + 2);
+    M5.Lcd.print("|");
+
+    // Wert als Zahl rechts vom Balken
+    M5.Lcd.setTextColor(COL_VALUE, COL_BG);
+    M5.Lcd.setCursor(barX + barW + 8, rowY + 2);
+    M5.Lcd.print(String(val));
 }
 
 static void drawRow(int rowY, const MenuItem& item, bool selected) {
@@ -198,6 +255,8 @@ static void drawRow(int rowY, const MenuItem& item, bool selected) {
         bool isOn = item.value ? *item.value
                   : (item.getState ? item.getState() : false);
         drawCheckbox(rightX, rowY + 2, isOn);
+    } else if (item.type == MenuItemType::Slider) {
+        drawSlider(rowY, item, selected); 
     } else if (item.valueHint) {
         M5.Lcd.setTextColor(COL_VALUE, bg);
         int hintW = strlen(item.valueHint) * 6;
@@ -280,6 +339,34 @@ void navigateDown() {
     draw();
 }
 
+void adjustLeft() {
+    if (!menuOpen_ || cursorIdx_ < 0 || cursorIdx_ >= itemCount_) return;
+    MenuItem& item = items_[cursorIdx_];
+    if (item.type != MenuItemType::Slider || !item.sliderValue) return;
+
+    int newVal = (int)*item.sliderValue - item.sliderStep;
+    if (newVal < item.sliderMin) newVal = item.sliderMin;
+    *item.sliderValue = (uint8_t)newVal;
+
+    if (item.onSliderChange) item.onSliderChange(*item.sliderValue);
+    beep(880, 30);
+    draw();
+}
+
+void adjustRight() {
+    if (!menuOpen_ || cursorIdx_ < 0 || cursorIdx_ >= itemCount_) return;
+    MenuItem& item = items_[cursorIdx_];
+    if (item.type != MenuItemType::Slider || !item.sliderValue) return;
+
+    int newVal = (int)*item.sliderValue + item.sliderStep;
+    if (newVal > item.sliderMax) newVal = item.sliderMax;
+    *item.sliderValue = (uint8_t)newVal;
+
+    if (item.onSliderChange) item.onSliderChange(*item.sliderValue);
+    beep(1760, 30);
+    draw();
+}
+
 void selectCurrent() {
     if (!menuOpen_ || cursorIdx_ < 0 || cursorIdx_ >= itemCount_) return;
 
@@ -329,22 +416,10 @@ void draw() {
     M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
 
 #if HAS_KEYBOARD
-    M5.Lcd.print(" ^:up  v:down  < >:enable/disable");
+    M5.Lcd.print(" ^:up  v:down  ok:enable/disable");
 #else
     M5.Lcd.print("A:down  B:toggle  M5(long):close");
 #endif
-    /*
-    if (scrollOff_ > 0) {
-        M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
-        M5.Lcd.setCursor(MENU_W - 14, MENU_H - ROW_H + 2);
-        M5.Lcd.print("^");
-    }
-    if (scrollOff_ + ROWS_VISIBLE < itemCount_) {
-        M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
-        M5.Lcd.setCursor(MENU_W - 8, MENU_H - ROW_H + 2);
-        M5.Lcd.print("v");
-    }
-    */
 }
 
 MenuState* getState() { return state_; }
