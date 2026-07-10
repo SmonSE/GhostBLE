@@ -139,6 +139,37 @@ void stopWebServer() {
     LOG(LOG_CONTROL, "WiFi fully stopped.");
 }
 
+// network_context.cpp
+bool isGPSSourceGrove() {
+    return gpsManager.getSource() == GPSSource::GROVE;
+}
+
+bool isGPSSourceLora() {
+    return gpsManager.getSource() == GPSSource::LORA_CAP;
+}
+
+void setGPSSourceGrove() {
+    if (!wardrivingEnabled.load()) {
+        LOG(LOG_CONTROL, "Enable wardriving first.");
+        return;
+    }
+    gpsManager.switchSource(GPSSource::GROVE);
+    LOG(LOG_CONTROL, "GPS source: " + String(gpsManager.getSourceName()));
+}
+
+void setGPSSourceLora() {
+#if defined(LORA_CS_PIN)
+    if (!wardrivingEnabled.load()) {
+        LOG(LOG_CONTROL, "Enable wardriving first.");
+        return;
+    }
+    gpsManager.switchSource(GPSSource::LORA_CAP);
+    LOG(LOG_CONTROL, "GPS source: " + String(gpsManager.getSourceName()));
+#else
+    LOG(LOG_CONTROL, "LoRa GPS not available on this device.");
+#endif
+}
+
 bool switchGPSSource() {
     if (!wardrivingEnabled.load()) {
         LOG(LOG_CONTROL, "Enable wardriving first.");
