@@ -206,8 +206,13 @@ void loop() {
       auto status = M5Cardputer.Keyboard.keysState();
 
       if (status.enter) {
-        LOG(LOG_CONTROL, "ENTER pressed");
-        Screenshot::capture();
+        if (MenuController::isOpen()) {
+            LOG(LOG_CONTROL, "ENTER pressed — menu select");
+            MenuController::selectCurrent();
+        } else {
+            LOG(LOG_CONTROL, "ENTER pressed");
+            Screenshot::capture();
+        }
       }
       if (status.fn && !ScanContext::bleScanEnabled) {
         LOG(LOG_CONTROL, "FN pressed");
@@ -233,6 +238,11 @@ void loop() {
               LOG(LOG_CONTROL, "M pressed — showing main menu");
               MenuController::open();
           }
+          return;
+        }
+        if (key == 'i' || key == 'I') {
+            LOG(LOG_CONTROL, "I pressed");
+            Screenshot::capture();
           return;
         }
         if (key == 'h' || key == 'H') {
@@ -294,7 +304,6 @@ void loop() {
         }
       }
       if (MenuController::isOpen()) {
-
         for (auto key : status.word) {
             if (key == ';') {
                 MenuController::navigateUp();
@@ -303,10 +312,10 @@ void loop() {
                 MenuController::navigateDown();
             }
             if (key == ',') {
-                MenuController::selectCurrent();
+                MenuController::adjustLeft();
             }
             if (key == '/') {
-                MenuController::selectCurrent();
+                MenuController::adjustRight();
             }
         }
         return;
