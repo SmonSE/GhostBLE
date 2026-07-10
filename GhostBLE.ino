@@ -225,12 +225,12 @@ void loop() {
       }
       // 'h' key opens help overlay
       for (auto key : status.word) {
-        if (key == 'a' || key == 'A') {
+        if (key == 'm' || key == 'M') {
           if (MenuController::isOpen()) {
-              LOG(LOG_CONTROL, "A pressed — closing audio menu");
+              LOG(LOG_CONTROL, "M pressed — closing main menu");
               MenuController::close();
           } else {
-              LOG(LOG_CONTROL, "A pressed — showing audio menu");
+              LOG(LOG_CONTROL, "M pressed — showing main menu");
               MenuController::open();
           }
           return;
@@ -264,8 +264,8 @@ void loop() {
           }
           return;
         }
-        if ((key == 'm' || key == 'M') && ScanContext::bleScanEnabled) {
-            LOG(LOG_CONTROL, "M pressed — marker set");
+        if ((key == 'p' || key == 'P') && ScanContext::bleScanEnabled) {
+            LOG(LOG_CONTROL, "P pressed — pointer set");
 
             bool hasFix = NetworkContext::gpsManager.isValid();
 

@@ -50,7 +50,7 @@ void applyScanMode() {
 void toggleScanMode() {
   currentMode = (ScanMode)((currentMode + 1) % 3);
   // Serial print mode:
-  Serial.println("CurrentMode: " + currentMode);
+  Serial.println("CurrentMode: " + String(currentMode));
   applyScanMode();
 }
 

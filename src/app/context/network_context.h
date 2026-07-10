@@ -65,4 +65,9 @@ void stopWebServer();
 // Return false if Wardriving isn't active.
 bool switchGPSSource();
 
+bool isGPSSourceGrove();
+bool isGPSSourceLora();
+void setGPSSourceGrove();
+void setGPSSourceLora();
+
 } // namespace NetworkContext
