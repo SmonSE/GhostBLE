@@ -16,6 +16,9 @@ void MenuSettings::begin() {
     MenuController::setAudioFlipper   (prefs.getBool("audioFlip", true));
     MenuController::setAudioPwnBeacon (prefs.getBool("audioPwn",  true));
 
+    uint8_t alarmVol = prefs.getUChar("alarmVol", 150);
+    MenuController::setAlarmVolumeSilent(alarmVol);
+
     uint8_t brightness = prefs.getUChar("brightness", 128);
     MenuController::setBrightness(brightness);
 
@@ -44,6 +47,7 @@ void MenuSettings::save() {
     prefs.putBool("audioFlip", MenuController::getAudioFlipper());
     prefs.putBool("audioPwn",  MenuController::getAudioPwnBeacon());
     prefs.putUChar("brightness", MenuController::getBrightness());
+    prefs.putUChar("alarmVol", MenuController::getAlarmVolume());
 
     prefs.putBool("research",  MenuController::getResearchMode());
     prefs.putBool("wifi",      MenuController::getWifiEnabled());

@@ -75,6 +75,10 @@ void setWifiEnabled(bool v);
 bool getWardriving();
 void setWardriving(bool v);
 
+uint8_t getAlarmVolume();
+void    setAlarmVolume(uint8_t val);
+void    setAlarmVolumeSilent(uint8_t val);
+
 uint8_t getBrightness();
 void    setBrightness(uint8_t val);
 
