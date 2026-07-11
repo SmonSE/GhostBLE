@@ -4,14 +4,36 @@
 
 DeviceConfig deviceConfig;
 
+bool stealthMode = false;
+
 void DeviceConfig::begin() {
-    prefs.begin("ghostble", true);  // read-only
+    prefs.begin("ghostble", true);
     name = prefs.getString("name", "NibBLEs");
     face = prefs.getString("face", "(◕‿◕)");
     wifiSSID = prefs.getString("wifiSSID", "GhostBLE");
     wifiPassword = prefs.getString("wifiPass", "ghostble123!");
+    stealthMode = prefs.getBool("stealth", false);   // NEU
     prefs.end();
     LOG(LOG_SYSTEM, "Device name: " + name + "  face: " + face);
+}
+
+bool DeviceConfig::getStealthMode() const { return stealthMode; }
+
+void DeviceConfig::setStealthMode(bool v) {
+    stealthMode = v;
+    prefs.begin("ghostble", false);
+    prefs.putBool("stealth", v);
+    prefs.end();
+}
+
+String DeviceConfig::getEffectiveBleName() const {
+    if (!stealthMode) return name;
+
+    // Generischer, unauffälliger Name — sieht aus wie x-beliebiges IoT-Gerät
+    uint32_t chipId = (uint32_t)(ESP.getEfuseMac() & 0xFFFFFF);
+    char buf[24];
+    snprintf(buf, sizeof(buf), "ESP32_%06X", chipId);
+    return String(buf);
 }
 
 String DeviceConfig::getName() const { return name; }

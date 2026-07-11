@@ -103,13 +103,19 @@ void setup() {
   delay(250);
 
   DeviceContext::deviceConfig.begin();
-  NimBLEDevice::init(deviceConfig.getName().c_str());
+  NimBLEDevice::init(DeviceContext::deviceConfig.getEffectiveBleName().c_str());
+
   registerGATTServiceHandlers();
   LOG(LOG_SYSTEM, "BLE initialized successfully.");
 
   // Start PwnBeacon advertising so other devices can discover us
-  PwnBeaconServiceHandler::startAdvertising(deviceConfig.getName(), deviceConfig.getFace());
-
+  if (!DeviceContext::deviceConfig.getStealthMode()) {
+      PwnBeaconServiceHandler::startAdvertising(
+          DeviceContext::deviceConfig.getName(),
+          DeviceContext::deviceConfig.getFace()
+      );
+  }
+  
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
   delay(200);

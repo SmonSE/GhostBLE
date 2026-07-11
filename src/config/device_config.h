@@ -12,6 +12,9 @@ public:
     String getWifiPassword() const;
     bool set(const String& key, const String& value);
     String handleMessage(const String& msg);
+    bool getStealthMode() const;
+    void setStealthMode(bool v);
+    String getEffectiveBleName() const;
 
 private:
     Preferences prefs;
