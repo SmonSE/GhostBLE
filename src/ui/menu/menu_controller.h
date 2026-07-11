@@ -2,6 +2,7 @@
 #define MENU_CONTROLLER_H
 
 #include <Arduino.h>
+#include "config/menu_settings.h"
 
 // ============================================================
 //  GhostBLE Menu Controller
@@ -45,6 +46,37 @@ namespace MenuController {
 
 // Initialise — call once in setup()
 void init(MenuState* state);
+MenuState* getState();
+
+bool getAudioEnabled();
+void setAudioEnabled(bool v);
+
+bool getAudioSuspicious();
+void setAudioSuspicious(bool v);
+
+bool getAudioFlock();
+void setAudioFlock(bool v);
+
+bool getAudioDrone();
+void setAudioDrone(bool v);
+
+bool getAudioFlipper();
+void setAudioFlipper(bool v);
+
+bool getAudioPwnBeacon();
+void setAudioPwnBeacon(bool v);
+
+bool getResearchMode();
+void setResearchMode(bool v);
+
+bool getWifiEnabled();
+void setWifiEnabled(bool v);
+
+bool getWardriving();
+void setWardriving(bool v);
+
+uint8_t getBrightness();
+void    setBrightness(uint8_t val);
 
 // Open / close the menu overlay
 void open();
@@ -58,11 +90,11 @@ void adjustLeft();
 void adjustRight();
 void selectCurrent();   // toggle or execute current item
 
+uint8_t getBrightness();
+void    setBrightness(uint8_t val);
+
 // Draw — call when menu is open and state changes
 void draw();
-
-// Returns current state pointer (read by ble_scanner, GhostBLE.ino etc.)
-MenuState* getState();
 
 } // namespace MenuController
 

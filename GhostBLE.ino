@@ -76,7 +76,7 @@ bool buttonBShortHandled = false;
 
 void setup() {
   hardwareBegin();
-  MenuController::init(&menuState);
+
   #if DEBUG_SERIAL
     Serial.begin(115200);
     Serial.println("Debug active");
@@ -133,6 +133,9 @@ void setup() {
     initLogger(-1);
 #endif
 
+  MenuController::init(&menuState);
+  menuSettings.begin();   // ← load stored values
+  
   DeviceContext::xpManager.begin();
 
   drawThoughtBubble("HI I'M NIBBLES", BUBBLE_X, THOUGHT_BUBBLE_Y);
