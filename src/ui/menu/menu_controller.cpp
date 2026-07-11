@@ -9,6 +9,8 @@
 #include "app/context/ui_context.h"
 #include "app/context/globals.h"
 
+#include "config/menu_settings.h"
+
 #include "config/ui_config.h"
 #include "config/scan_config.h"
 
@@ -100,6 +102,57 @@ static void applyBrightness(uint8_t val) {
     M5.Lcd.setBrightness(val);
 }
 
+bool getAudioEnabled()     { return state_ ? state_->audioEnabled     : true; }
+bool getAudioSuspicious()  { return state_ ? state_->audioSuspicious  : true; }
+bool getAudioFlock()       { return state_ ? state_->audioFlock       : true; }
+bool getAudioDrone()       { return state_ ? state_->audioDrone       : true; }
+bool getAudioFlipper()     { return state_ ? state_->audioFlipper     : true; }
+bool getAudioPwnBeacon()   { return state_ ? state_->audioPwnBeacon   : true; }
+
+void setAudioEnabled(bool v)    { if (state_) state_->audioEnabled    = v; }
+void setAudioSuspicious(bool v) { if (state_) state_->audioSuspicious = v; }
+void setAudioFlock(bool v)      { if (state_) state_->audioFlock      = v; }
+void setAudioDrone(bool v)      { if (state_) state_->audioDrone      = v; }
+void setAudioFlipper(bool v)    { if (state_) state_->audioFlipper    = v; }
+void setAudioPwnBeacon(bool v)  { if (state_) state_->audioPwnBeacon  = v; }
+
+uint8_t getBrightness() {
+    return brightness_;
+}
+
+void setBrightness(uint8_t val) {
+    brightness_ = val;
+    applyBrightness(val);
+}
+
+bool getResearchMode() {
+    return UIContext::isResearchModeActive.load();
+}
+
+void setResearchMode(bool v) {
+    if (UIContext::isResearchModeActive.load() == v) return;
+    UIContext::isResearchModeActive.store(v);
+    showResearchMode();
+}
+
+bool getWifiEnabled() {
+    return NetworkContext::wifiStarted;
+}
+
+void setWifiEnabled(bool v) {
+    if (NetworkContext::wifiStarted == v) return;
+    toggleWiFi();
+}
+
+bool getWardriving() {
+    return NetworkContext::wardrivingEnabled.load();
+}
+
+void setWardriving(bool v) {
+    if (NetworkContext::wardrivingEnabled.load() == v) return;
+    toggleWardriving();
+}
+
 // Build item table — called in init()
 static void buildItems() {
     itemCount_ = 0;
@@ -108,11 +161,9 @@ static void buildItems() {
     auto section = [&](const char* label) {
         items_[itemCount_++] = { MenuItemType::Section, label, nullptr, nullptr, false, nullptr, nullptr, nullptr };
     };
-    // einfacher Toggle (bool* aus MenuState — unverändert wie bisher)
     auto toggle = [&](const char* label, bool& val, bool sub = false, bool* parent = nullptr) {
         items_[itemCount_++] = { MenuItemType::Toggle, label, &val, nullptr, sub, parent, nullptr, nullptr };
     };
-    // Toggle mit atomarem Getter + Action-Funktion (Side-Effect inklusive)
     auto toggleAction = [&](const char* label, bool (*getter)(), void (*fn)(), bool sub = false, bool* parent = nullptr) {
         items_[itemCount_++] = { MenuItemType::Toggle, label, nullptr, getter, sub, parent, fn, nullptr };
     };
@@ -122,11 +173,9 @@ static void buildItems() {
     auto spacer = [&]() {
         items_[itemCount_++] = { MenuItemType::Spacer, "", nullptr, nullptr, false, nullptr, nullptr, nullptr };
     };
-
     auto info = [&](const char* label, const char* hint) {
-    items_[itemCount_++] = { MenuItemType::ValueInfo, label, nullptr, nullptr, false, nullptr, nullptr, hint };
+        items_[itemCount_++] = { MenuItemType::ValueInfo, label, nullptr, nullptr, false, nullptr, nullptr, hint };
     };
-
     auto slider = [&](const char* label, uint8_t& val, uint8_t minV, uint8_t maxV,
                    uint8_t step, void (*onChange)(uint8_t) = nullptr) {
         MenuItem item{};
@@ -142,24 +191,23 @@ static void buildItems() {
 
     // ── SCAN ─────────────────────────────────────────────────
     section("SCAN");
-    //toggleAction("BLE Scan", []() { return ScanContext::bleScanEnabled.load(); }, toggleScanMode);
-    toggleAction("Research Mode", []() { return UIContext::isResearchModeActive.load(); }, []() {
-        bool newVal = !UIContext::isResearchModeActive.load();
-        UIContext::isResearchModeActive.store(newVal);
-        showResearchMode();
-    });
+    toggleAction("Research Mode",
+        []() { return getResearchMode(); },
+        []() { setResearchMode(!getResearchMode()); });
 
     // ── WIRELESS ─────────────────────────────────────────────
     section("WIRELESS");
-    toggleAction("WiFi Web UI", []() { return NetworkContext::wifiStarted; }, toggleWiFi);
+    toggleAction("WiFi Web UI",
+        []() { return getWifiEnabled(); },
+        []() { setWifiEnabled(!getWifiEnabled()); });
 
     // ── WARDRIVE ─────────────────────────────────────────────
     section("WARDRIVE");
-    toggleAction("Wardriving", []() { return NetworkContext::wardrivingEnabled.load(); }, toggleWardriving);
+    toggleAction("Wardriving",
+        []() { return getWardriving(); },
+        []() { setWardriving(!getWardriving()); });
 
-    // "GPS Source" als reine Info-Zeile / Sub-Section-Label
     info("GPS Source", "");
-
     toggleAction("Grove", []() { return NetworkContext::isGPSSourceGrove(); }, NetworkContext::setGPSSourceGrove, true);
     #if defined(LORA_CS_PIN)
     toggleAction("LoRa Cap", []() { return NetworkContext::isGPSSourceLora(); }, NetworkContext::setGPSSourceLora, true);
@@ -173,7 +221,6 @@ static void buildItems() {
     toggle("Drone",           s.audioDrone,      true, &s.audioEnabled);
     toggle("Flipper Zero",    s.audioFlipper,    true, &s.audioEnabled);
     toggle("PwnBeacon",       s.audioPwnBeacon,  true, &s.audioEnabled);
-
 
     // ── DISPLAY ──────────────────────────────────────────────
     section("DISPLAY");
@@ -286,11 +333,12 @@ void open() {
 
 void close() {
     menuOpen_ = false;
-    // Redraw normal UI
+
+    menuSettings.save();
+
     M5.Lcd.fillScreen(0x00C4);
     drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
     drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    // All other stuff needs to be set here also XP bar missing
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     showScanIcon();
     drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y, true);
