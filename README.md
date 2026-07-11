@@ -124,7 +124,7 @@ When a drone broadcasting Remote ID is detected via BLE service `0xFFFA`:
 > since 2023. GhostBLE decodes all six ASTM F3411-22a message types: Basic ID,
 > Location, Authentication, Self-ID, System (operator GPS), and Operator ID.
 
-### PwnBeacon
+### PwnBeacon (not working in stealth mode)
 
 GhostBLE acts as both a PwnBeacon **client** (scanner) and **server** (advertiser), compatible with [PwnBook](https://github.com/pfefferle/PwnBook) and [Palnagotchi](https://github.com/pfefferle/palnagotchi):
 
