@@ -27,7 +27,7 @@ void SdoHandlers::handleDrone(const SdoContext* ctx) {
             // ← Audio alert
             auto* ms = MenuController::getState();
             if (ms->audioEnabled && ms->audioDrone) {
-                M5.Speaker.setVolume(128);
+                M5.Speaker.setVolume(MenuController::getAlarmVolume());
                 M5.Speaker.tone(2093, 150);  // hoher Ton = Drohne
                 delay(200);
                 M5.Speaker.tone(1568, 150);

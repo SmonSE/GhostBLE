@@ -95,6 +95,14 @@ static void beep(int freq, int dur) {
 #endif
 }
 
+// ── Audio Volume ─────────────────────────────────────────────
+static uint8_t alarmVolume_ = 150;   // standard volume for alerts (0-255)
+
+static void applyAlarmVolume(uint8_t val) {
+    M5.Speaker.setVolume(val);
+    M5.Speaker.tone(1200, 80);   // short beep to confirm volume change
+}
+
 // ── Brightness ───────────────────────────────────────────────
 static uint8_t brightness_ = 128;
 
@@ -115,6 +123,19 @@ void setAudioFlock(bool v)      { if (state_) state_->audioFlock      = v; }
 void setAudioDrone(bool v)      { if (state_) state_->audioDrone      = v; }
 void setAudioFlipper(bool v)    { if (state_) state_->audioFlipper    = v; }
 void setAudioPwnBeacon(bool v)  { if (state_) state_->audioPwnBeacon  = v; }
+
+uint8_t getAlarmVolume() {
+    return alarmVolume_;
+}
+
+void setAlarmVolume(uint8_t val) {
+    alarmVolume_ = val;
+    applyAlarmVolume(val);
+}
+
+void setAlarmVolumeSilent(uint8_t val) {
+    alarmVolume_ = val;
+}
 
 uint8_t getBrightness() {
     return brightness_;
@@ -216,11 +237,15 @@ static void buildItems() {
     // ── AUDIO ALERTS ─────────────────────────────────────────
     section("AUDIO ALERTS");
     toggle("Audio",           s.audioEnabled);
-    toggle("Suspicious",      s.audioSuspicious, true, &s.audioEnabled);
-    toggle("Flock camera",    s.audioFlock,      true, &s.audioEnabled);
-    toggle("Drone",           s.audioDrone,      true, &s.audioEnabled);
-    toggle("Flipper Zero",    s.audioFlipper,    true, &s.audioEnabled);
-    toggle("PwnBeacon",       s.audioPwnBeacon,  true, &s.audioEnabled);
+    toggle(" Suspicious",      s.audioSuspicious, true, &s.audioEnabled);
+    toggle(" Flock camera",    s.audioFlock,      true, &s.audioEnabled);
+    toggle(" Drone",           s.audioDrone,      true, &s.audioEnabled);
+    toggle(" Flipper Zero",    s.audioFlipper,    true, &s.audioEnabled);
+    toggle(" PwnBeacon",       s.audioPwnBeacon,  true, &s.audioEnabled);
+    
+    // ── AUDIO ALERTS ─────────────────────────────────────────
+    section("ALERTS VOLUME");
+    slider("Volume",          alarmVolume_, 30, 255, 25, applyAlarmVolume);
 
     // ── DISPLAY ──────────────────────────────────────────────
     section("DISPLAY");

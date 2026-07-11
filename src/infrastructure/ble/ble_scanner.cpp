@@ -430,7 +430,7 @@ static bool parseDeviceInfo(
         // ← Audio alert
         auto* ms = MenuController::getState();
         if (ms->audioEnabled && ms->audioFlock) {
-            M5.Speaker.setVolume(120);
+            M5.Speaker.setVolume(MenuController::getAlarmVolume());
             M5.Speaker.tone(440, 300);   // tiefer Ton = Warnung
             while (M5.Speaker.isPlaying()) { delay(5); }
             M5.Speaker.tone(440, 300);
@@ -725,7 +725,7 @@ static bool connectAndReadGATT(
             // ← Audio alert
             auto* ms = MenuController::getState();
             if (ms->audioEnabled && ms->audioSuspicious) {
-                M5.Speaker.setVolume(120);
+                M5.Speaker.setVolume(MenuController::getAlarmVolume());
                 M5.Speaker.tone(1800, 160);
                 while (M5.Speaker.isPlaying()) { delay(5); }
                 M5.Speaker.tone(1400, 180);
@@ -1033,7 +1033,7 @@ void scanForDevices() {
 
                     auto* ms = MenuController::getState();
                     if (ms->audioEnabled && ms->audioEvilMode) {
-                        M5.Speaker.setVolume(120);
+                        M5.Speaker.setVolume(MenuController::getAlarmVolume());
                         M5.Speaker.tone(523, 100);   // C
                         while (M5.Speaker.isPlaying()) { delay(5); }
                         M5.Speaker.tone(659, 100);   // E
@@ -1241,7 +1241,7 @@ void scanForDevices() {
                     // ← Audio alert
                     auto* ms = MenuController::getState();
                     if (ms->audioEnabled && ms->audioSuspicious) {
-                        M5.Speaker.setVolume(120);
+                        M5.Speaker.setVolume(MenuController::getAlarmVolume());
                         M5.Speaker.tone(1760, 200);
                         while (M5.Speaker.isPlaying()) { delay(5); }
                         M5.Speaker.tone(1760, 200);
