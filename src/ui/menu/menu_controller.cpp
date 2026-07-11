@@ -216,6 +216,17 @@ static void buildItems() {
         []() { return getResearchMode(); },
         []() { setResearchMode(!getResearchMode()); });
 
+    // ── PRIVACY ──────────────────────────────────────────────
+    section("PRIVACY");
+    toggleAction("Stealth Mode (reboot required)",
+        []() { return DeviceContext::deviceConfig.getStealthMode(); },
+        []() {
+            bool newVal = !DeviceContext::deviceConfig.getStealthMode();
+            DeviceContext::deviceConfig.setStealthMode(newVal);
+            // Hinweis: wird erst nach Neustart vollständig wirksam,
+            // da NimBLEDevice::init() nur einmalig beim Boot läuft
+        });    
+
     // ── WIRELESS ─────────────────────────────────────────────
     section("WIRELESS");
     toggleAction("WiFi Web UI",
