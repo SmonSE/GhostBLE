@@ -48,6 +48,12 @@ void logDisableCategory(LogCategory category);
 // Log a message with the given category. The system will route it to the appropriate targets
 void logNewBoot(); 
 
+bool logIsCategoryEnabled(LogCategory category);
+void logToggleCategory(LogCategory category);
+
+uint16_t logGetEnabledCategories();
+void     logSetEnabledCategories(uint16_t mask);
+
 // ===== Logging Functions =====
 
 // Unified log: writes to configured targets based on category
