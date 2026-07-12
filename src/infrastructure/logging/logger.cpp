@@ -211,3 +211,23 @@ void LOG(LogCategory category, const String& msg) {
         }
     }
 }
+
+bool logIsCategoryEnabled(LogCategory category) {
+    return (enabledCategories & (uint16_t)category) != 0;
+}
+
+void logToggleCategory(LogCategory category) {
+    if (logIsCategoryEnabled(category)) {
+        logDisableCategory(category);
+    } else {
+        logEnableCategory(category);
+    }
+}
+
+uint16_t logGetEnabledCategories() {
+    return enabledCategories;
+}
+
+void logSetEnabledCategories(uint16_t mask) {
+    enabledCategories = mask;
+}

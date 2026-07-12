@@ -55,6 +55,21 @@ static constexpr uint16_t COL_STATUSBAR = 0x5ACB;   // very dark for status bar
 static constexpr uint16_t COL_HINT      = 0x2945;   // dim hint text
 
 
+#define LOG_TOGGLE_PAIR(Name, Category) \
+    static bool getLog##Name() { return logIsCategoryEnabled(Category); } \
+    static void toggleLog##Name() { logToggleCategory(Category); }
+
+LOG_TOGGLE_PAIR(Scan,     LOG_SCAN)
+LOG_TOGGLE_PAIR(Gatt,     LOG_GATT)
+LOG_TOGGLE_PAIR(Privacy,  LOG_PRIVACY)
+LOG_TOGGLE_PAIR(Security, LOG_SECURITY)
+LOG_TOGGLE_PAIR(Beacon,   LOG_BEACON)
+LOG_TOGGLE_PAIR(Control,  LOG_CONTROL)
+LOG_TOGGLE_PAIR(Gps,      LOG_GPS)
+LOG_TOGGLE_PAIR(System,   LOG_SYSTEM)
+LOG_TOGGLE_PAIR(Target,   LOG_TARGET)
+LOG_TOGGLE_PAIR(Notify,   LOG_NOTIFY)
+
 // ── Menu item definition ──────────────────────────────────────
 struct MenuItem {
     MenuItemType  type;
@@ -261,6 +276,19 @@ static void buildItems() {
     // ── DISPLAY ──────────────────────────────────────────────
     section("DISPLAY");
     slider("Brightness", brightness_, 10, 255, 17, applyBrightness);
+
+    // ── LOGGING ──────────────────────────────────────────────
+    section("LOGGING");
+    //toggleAction("Scan",     getLogScan,     toggleLogScan);
+    toggleAction("Sniffed",  getLogGatt,     toggleLogGatt);
+    toggleAction("Privacy",  getLogPrivacy,  toggleLogPrivacy);
+    toggleAction("Security", getLogSecurity, toggleLogSecurity);
+    toggleAction("Beacon",   getLogBeacon,   toggleLogBeacon);
+    //toggleAction("Control",  getLogControl,  toggleLogControl);
+    toggleAction("GPS Data",      getLogGps,      toggleLogGps);
+    //toggleAction("System",   getLogSystem,   toggleLogSystem);
+    toggleAction("Target",   getLogTarget,   toggleLogTarget);
+    //toggleAction("Notify",   getLogNotify,   toggleLogNotify);
 }
 
 // ── Drawing helpers ───────────────────────────────────────────
@@ -500,7 +528,7 @@ void draw() {
     M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
 
 #if HAS_KEYBOARD
-    M5.Lcd.print(" ^:up  v:down  ok:enable/disable");
+    M5.Lcd.print(" ^:up v:down ok:enable/disable m:close");
 #else
     M5.Lcd.print("A:down  B:toggle  M5(long):close");
 #endif

@@ -26,13 +26,14 @@ void MenuSettings::begin() {
     bool wifi       = prefs.getBool("wifi",      false);
     bool wardriving = prefs.getBool("wardrive",  false);
 
+    uint16_t logMask = prefs.getUShort("logMask", logGetEnabledCategories());  // ← VOR prefs.end()
+
     prefs.end();
 
-    // Seiteneffekt-behaftete Toggles NACH prefs.end(), falls die
-    // aufgerufenen Funktionen selbst NVS/SD zugreifen (Konfliktvermeidung)
     MenuController::setResearchMode(research);
     MenuController::setWifiEnabled(wifi);
     MenuController::setWardriving(wardriving);
+    logSetEnabledCategories(logMask);   // ← Setzen bleibt nach prefs.end(), das ist okay
 
     LOG(LOG_SYSTEM, "Menu settings loaded");
 }
@@ -52,6 +53,8 @@ void MenuSettings::save() {
     prefs.putBool("research",  MenuController::getResearchMode());
     prefs.putBool("wifi",      MenuController::getWifiEnabled());
     prefs.putBool("wardrive",  MenuController::getWardriving());
+
+    prefs.putUShort("logMask", logGetEnabledCategories());
 
     prefs.end();
     LOG(LOG_CONTROL, "Menu settings saved to NVS");
