@@ -7,6 +7,7 @@
 
 #include "infrastructure/logging/logger.h"
 #include "config/device_config.h"
+#include "app/context/device_context.h"
 
 // === Server state ===
 static NimBLEServer* pServer = nullptr;
@@ -265,7 +266,7 @@ void PwnBeaconServiceHandler::updateCounters(uint16_t pwndRun, uint16_t pwndTot)
 
     // Update identity JSON with new counters
     if (identChr) {
-        identChr->setValue(buildIdentityJson(advDeviceName, faceChr ? faceChr->getValue().c_str() : deviceConfig.getFace().c_str()));
+        identChr->setValue(buildIdentityJson(advDeviceName, faceChr ? faceChr->getValue().c_str() : DeviceContext::deviceConfig.getFace().c_str()));
     }
 
     // Rebuild and restart advertising with updated counters

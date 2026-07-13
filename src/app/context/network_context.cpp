@@ -56,7 +56,7 @@ static void onWsEvent(AsyncWebSocket*       wsServer,
             info->len == len && info->opcode == WS_TEXT) {
 
             String msg((char*)data, len);   // sicher: kein Null-Terminator-Hack
-            String reply = deviceConfig.handleMessage(msg);
+            String reply = DeviceContext::deviceConfig.handleMessage(msg);
             if (reply.length() > 0) {
                 client->text(reply);
             }
@@ -96,8 +96,8 @@ WigleLogger wigleLogger;
 void startWebServer() {
     if (wifiStarted) return;  // Guard: do not start twice
 
-    String ssid = deviceConfig.getWifiSSID();
-    String pass = deviceConfig.getWifiPassword();
+    String ssid = DeviceContext::deviceConfig.getWifiSSID();
+    String pass = DeviceContext::deviceConfig.getWifiPassword();
 
     if (ssid.isEmpty()) ssid = "GhostBLE";
     if (pass.isEmpty()) pass = "ghostble123!";

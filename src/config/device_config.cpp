@@ -2,9 +2,6 @@
 #include "infrastructure/logging/logger.h"
 #include "app/context/ui_context.h"
 
-DeviceConfig deviceConfig;
-
-bool stealthMode = false;
 
 void DeviceConfig::begin() {
     prefs.begin("ghostble", true);
@@ -73,7 +70,11 @@ bool DeviceConfig::set(const String& key, const String& value) {
 
 String DeviceConfig::handleMessage(const String& msg) {
     if (msg == "GET_CONFIG") {
-        return "CONFIG:" + name + "\t" + face + "\t" + wifiSSID;
+        String json = "{\"type\":\"config\",\"data\":{";
+        json += "\"name\":\"" + name + "\",";
+        json += "\"face\":\"" + face + "\",";
+        json += "\"ssid\":\"" + wifiSSID + "\"}}";
+        return json;
     }
 
     if (!msg.startsWith("SET_")) return "";
@@ -89,3 +90,4 @@ String DeviceConfig::handleMessage(const String& msg) {
 
     return key + "_SET:" + value;
 }
+
