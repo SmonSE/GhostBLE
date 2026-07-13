@@ -22,6 +22,5 @@ private:
     String face;
     String wifiSSID;
     String wifiPassword;
+    bool   stealthMode = false;
 };
-
-extern DeviceConfig deviceConfig;
