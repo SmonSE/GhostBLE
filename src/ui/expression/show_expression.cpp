@@ -238,11 +238,10 @@ void showHelpOverlay() {
 #endif
 
 #if HAS_TWO_BUTTONS
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnA       WiFi On/Off"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnA       Menu: down"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnA  BLE Scan"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnB       Wardriving"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnB  GPS Source"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold M5 3s This Help"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnB       Menu: select"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnB  Open/Close Menu"); y += lineH;
 #endif
 
     M5.Lcd.setTextColor(0x7BEF, 0x00C4);

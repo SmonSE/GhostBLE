@@ -85,6 +85,7 @@ void    setBrightness(uint8_t val);
 // Open / close the menu overlay
 void open();
 void close();
+void closeSilent();
 bool isOpen();
 
 // Navigation — call from loop() key handlers

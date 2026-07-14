@@ -227,10 +227,10 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 
 | Button | Action |
 |--------|--------|
-| **BtnA short press** | Toggle WiFi AP and web dashboard |
-| **BtnA long press** (1s) | Toggle BLE scanning on/off |
-| **BtnB short press** | Toggle wardriving mode |
-| **BtnB long press** (1s) | Switch GPS source |
+| **BtnA short press** | Navigate down in Main Menu |
+| **BtnA long press** (3s) | Toggle BLE scanning on/off |
+| **BtnB short press** | Select / toggle item in Main Menu |
+| **BtnB long press** (3s) | Open / close Main Menu |
 
 ### Web Dashboard
 
