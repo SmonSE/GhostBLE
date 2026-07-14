@@ -160,7 +160,7 @@ void setup() {
   showScanIcon();
 
   logEnableTarget(TARGET_WEB);
-  
+
   nibblesSpeechBegin();
 
   ScanContext::scanIsRunning = false;
@@ -356,19 +356,26 @@ void loop() {
   }
 // ================================================================
 //  StickS3 Button Handling
-//  BtnA short  = Research Mode toggle
-//  BtnA 3s     = BLE Scan toggle
-//  BtnB short  = WiFi toggle
-//  BtnB 3s     = Menu open/close
-// ================================================================  
+//    BtnA short = navigate down (menu open only)
+//    BtnA 3s    = BLE Scan toggle
+//    BtnB short = select / toggle / increase slider (menu open only)
+//    BtnB 3s    = open/close Main Menu
+// ================================================================
 #else
+  // ── Help overlay dismiss (any button) ──────────────────────
+  if (UIContext::helpOverlayVisible) {
+    if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed()) {
+      LOG(LOG_CONTROL, "Button pressed — closing help");
+      UIContext::hideHelpOverlay();
+    }
+    return;
+  }
   // ── Button A ─────────────────────────────────────────────────
   if (M5.BtnA.isPressed()) {
     if (!buttonAHeld) {
       if (buttonAPressStart == 0) {
         buttonAPressStart = currentTime;
       } else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
-        // 3s hold — BLE scan toggle
         buttonAHeld = true;
         LOG(LOG_CONTROL, "BtnA 3s — BLE scan toggle");
         onLongPress();
@@ -378,12 +385,11 @@ void loop() {
     if (buttonAPressStart > 0 && !buttonAHeld) {
       unsigned long held = currentTime - buttonAPressStart;
       if (held < LONG_PRESS_MS) {
-        // Short press — Research Mode toggle
-        LOG(LOG_CONTROL, "BtnA short — Research Mode toggle");
-        UIContext::isResearchModeActive = !UIContext::isResearchModeActive;
-        showResearchMode();
+        if (MenuController::isOpen()) {
+          LOG(LOG_CONTROL, "BtnA short — menu navigate down");
+          MenuController::navigateDown();
+        }
       }
-      // between LONG_PRESS_MS and HELP_LONG_PRESS_MS — ignore
     }
     buttonAPressStart = 0;
     buttonAHeld       = false;
@@ -396,21 +402,25 @@ void loop() {
       if (buttonBPressStart == 0) {
         buttonBPressStart = currentTime;
       } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
-        // 3s hold — Menu open/close
         buttonBHeld = true;
-        LOG(LOG_CONTROL, "BtnB 3s — toggle wifi");
-        toggleWiFi();
+        if (MenuController::isOpen()) {
+          LOG(LOG_CONTROL, "BtnB 3s — closing menu");
+          MenuController::close();
+        } else {
+          LOG(LOG_CONTROL, "BtnB 3s — opening menu");
+          MenuController::open();
+        }
       }
     }
   } else {
     if (buttonBPressStart > 0 && !buttonBHeld) {
       unsigned long held = currentTime - buttonBPressStart;
       if (held < LONG_PRESS_MS) {
-        // Short press — WiFi toggle
-        LOG(LOG_CONTROL, "BtnB short — toggleScanMode");
-        toggleScanMode();
+        if (MenuController::isOpen()) {
+          LOG(LOG_CONTROL, "BtnB short — menu select/toggle");
+          MenuController::selectCurrent();
+        }
       }
-      // between LONG_PRESS_MS and HELP_LONG_PRESS_MS — ignore
     }
     buttonBPressStart = 0;
     buttonBHeld       = false;

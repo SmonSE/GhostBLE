@@ -28,6 +28,7 @@ extern void toggleWiFi();
 extern void toggleWardriving();
 extern void switchGPSSource();
 extern void onLongPress();
+extern void showHelpOverlay();
 
 namespace MenuController {
 
@@ -225,6 +226,13 @@ static void buildItems() {
         items_[itemCount_++] = item;
     };
 
+    // ── HELP ─────────────────────────────────────────────────
+    section("HELP");
+    action("Show Help", []() {
+        MenuController::closeSilent();
+        showHelpOverlay();
+    });
+
     // ── SCAN ─────────────────────────────────────────────────
     section("SCAN");
     toggleAction("Research Mode",
@@ -408,6 +416,11 @@ void close() {
     drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y, true);
 }
 
+void closeSilent() {
+    menuOpen_ = false;
+    menuSettings.save();
+}
+
 bool isOpen() { return menuOpen_; }
 
 static void ensureCursorVisible() {
@@ -486,17 +499,23 @@ void selectCurrent() {
 
     if (item.type == MenuItemType::Toggle) {
         if (item.value) {
-            // einfacher bool* Toggle (Audio-Flags)
             *item.value = !(*item.value);
             beep(*item.value ? 1760 : 880, 60);
             LOG(LOG_CONTROL, String("[Menu] ") + item.label + ((*item.value) ? " ON" : " OFF"));
         } else if (item.action) {
-            // atomic-backed Toggle mit Side-Effect
             item.action();
             bool nowOn = item.getState ? item.getState() : false;
             beep(nowOn ? 1760 : 880, 60);
             LOG(LOG_CONTROL, String("[Menu] ") + item.label + (nowOn ? " ON" : " OFF"));
         }
+    } else if (item.type == MenuItemType::Slider && item.sliderValue) {
+        int newVal = (int)*item.sliderValue + item.sliderStep;
+        if (newVal > item.sliderMax) newVal = item.sliderMin;   // ← Wrap-Around
+        *item.sliderValue = (uint8_t)newVal;
+
+        if (item.onSliderChange) item.onSliderChange(*item.sliderValue);
+        beep(1046, 40);
+        LOG(LOG_CONTROL, String("[Menu] ") + item.label + " = " + String(*item.sliderValue));
     } else if (item.type == MenuItemType::Action && item.action) {
         beep(1046, 60);
         item.action();
