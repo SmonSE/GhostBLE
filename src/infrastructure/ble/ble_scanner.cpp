@@ -13,6 +13,7 @@
 #include "app/context/scan_context.h"
 #include "app/context/ui_context.h"
 #include "app/context/network_context.h"
+#include "app/context/sus_log_context.h"
 
 #include "ui/menu/menu_controller.h"
 
@@ -441,9 +442,15 @@ static bool parseDeviceInfo(
         // NibBLEs warning the user by tone if it is activated in the UI
         nibblesSpeechShowCustom("Flock cam!");
 
-        if (!UIContext::isAngryTaskRunning.load()) {
-            xTaskCreatePinnedToCore(showAngryExpressionTask, "FlockWarn",
-                4096, NULL, 5, &UIContext::angryTaskHandle, 1);
+        if (!UIContext::isAngryTaskRunning.load()) { 
+            UIContext::isAngryTaskRunning.store(true);
+
+            if (xTaskCreatePinnedToCore( showAngryExpressionTask, "FlockWarn", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
+            {
+                UIContext::isAngryTaskRunning.store(false);
+                UIContext::angryTaskHandle = nullptr;
+                LOG(LOG_SYSTEM, "Failed to create FlockWarn task");
+            }
         }
     }
 
@@ -475,8 +482,14 @@ static bool parseDeviceInfo(
                 isPwnBeacon = true;
                 DeviceContext::beaconsFound++;
                 DeviceContext::pwnbeaconsFound++;
+
                 if (!heartTaskRunning.load()) {
-                    xTaskCreatePinnedToCore(heartTask, "Heart", 2048, NULL, 1, NULL, 1);
+                    heartTaskRunning.store(true);
+
+                    if (xTaskCreatePinnedToCore( heartTask, "Heart", 2048, nullptr, 1, nullptr, 1) != pdPASS)
+                    {
+                        heartTaskRunning.store(false);
+                    }
                 }
                 LOG(LOG_BEACON, devTag + "PwnBeacon detected (service UUID)!");
             }
@@ -716,11 +729,14 @@ static bool connectAndReadGATT(
         }
 
         // --- Known / suspicious target detection ---
+        String targetLabel;
         if (isTargetDevice(localName.c_str(), address.c_str(),
-                           serviceUuid.c_str(), deviceInfoService.c_str())) {
+                        serviceUuid.c_str(), deviceInfoService.c_str(), targetLabel)) {
             ScanContext::targetFound = true;
             ScanContext::susDevice++;
             DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
+
+            SusLog::add(targetLabel.c_str(), address.c_str(), (int8_t)ScanContext::rssi.load());
 
             // ← Audio alert
             auto* ms = MenuController::getState();
@@ -736,14 +752,19 @@ static bool connectAndReadGATT(
             LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
             vTaskDelay(pdMS_TO_TICKS(2000));
 
-            if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled) {
-                if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace",
-                    4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
+            if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled)
+            {
+                UIContext::isAngryTaskRunning.store(true);
+
+                if (xTaskCreatePinnedToCore( showAngryExpressionTask, "AngryFace", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
+                {
                     LOG(LOG_SYSTEM, "Failed to create AngryFace task");
                     UIContext::isAngryTaskRunning.store(false);
+                    UIContext::angryTaskHandle = nullptr;
                 }
             }
-            return true;  // target found — caller breaks loop
+
+            return true; // target found — caller breaks loop
         }else {
           ScanContext::targetFound = false;  // ← Only reset if NOT a target
         }
@@ -853,11 +874,15 @@ void scanForDevices() {
     nibblesSpeechNotifyEvent();
 
     // Trigger happy expression at start of fruitful scan
-    if (!UIContext::isHappyTaskRunning.load() && NetworkContext::displayEnabled) {
-        if (xTaskCreatePinnedToCore(showHappyExpressionTask, "HappyFace",
-            4096, NULL, 2, &UIContext::happyTaskHandle, 1) != pdPASS) {
+    if (!UIContext::isHappyTaskRunning.load() && NetworkContext::displayEnabled)
+    {
+        UIContext::isHappyTaskRunning.store(true);
+
+        if (xTaskCreatePinnedToCore( showHappyExpressionTask, "HappyFace", 4096, nullptr, 2, &UIContext::happyTaskHandle, 1) != pdPASS)
+        {
             LOG(LOG_SYSTEM, "Failed to create HappyFace task");
             UIContext::isHappyTaskRunning.store(false);
+            UIContext::happyTaskHandle = nullptr;
         }
     }
 
@@ -971,11 +996,15 @@ void scanForDevices() {
                       dev.hasNotifyData);
 
             // Sad expression: device visible but unreachable
-            if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load()) {
-                if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace",
-                    4096, NULL, 3, &UIContext::sadTaskHandle, 1) != pdPASS) {
+            if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load())
+            {
+                UIContext::isSadTaskRunning.store(true);
+
+                if (xTaskCreatePinnedToCore( showSadExpressionTask, "SadFace", 4096, nullptr, 3, &UIContext::sadTaskHandle, 1) != pdPASS)
+                {
                     LOG(LOG_SYSTEM, "Failed to create SadFace task");
                     UIContext::isSadTaskRunning.store(false);
+                    UIContext::sadTaskHandle = nullptr;
                 }
             }
             continue;
@@ -1048,14 +1077,17 @@ void scanForDevices() {
                     
                     // Angry face (privacy concern!)
                     if (!UIContext::isAngryTaskRunning.load()) {
-                        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "MetaWarning",
-                            4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
+                        UIContext::isAngryTaskRunning.store(true);
+
+                        if (xTaskCreatePinnedToCore( showAngryExpressionTask, "MetaWarning", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
+                        {
                             LOG(LOG_SYSTEM, "Failed to create MetaWarning task");
                             UIContext::isAngryTaskRunning.store(false);
+                            UIContext::angryTaskHandle = nullptr;
                         }
                     }
-                    
-                    vTaskDelay(pdMS_TO_TICKS(3000));  // Let user see the warning
+
+                    vTaskDelay(pdMS_TO_TICKS(3000)); // let the user see the warning for a moment
                 }
 
                 // --- Apple model resolution ---
@@ -1175,14 +1207,19 @@ void scanForDevices() {
                       dev.hasNotifyData);
 
                 // Glasses expression: detective mode after successful GATT read
-                if (!UIContext::isGlassesTaskRunning.load() && !UIContext::isAngryTaskRunning.load()) {
-                    if (xTaskCreatePinnedToCore(showGlassesExpressionTask, "BLEGlasses",
-                        4096, NULL, 4, &UIContext::glassesTaskHandle, 1) != pdPASS) {
+                if (!UIContext::isGlassesTaskRunning.load() && !UIContext::isAngryTaskRunning.load())
+                {
+                    UIContext::isGlassesTaskRunning.store(true);
+
+                    if (xTaskCreatePinnedToCore( showGlassesExpressionTask, "BLEGlasses", 4096, nullptr, 4, &UIContext::glassesTaskHandle, 1) != pdPASS)
+                    {
                         LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
                         UIContext::isGlassesTaskRunning.store(false);
+                        UIContext::glassesTaskHandle = nullptr;
                     }
                 }
-                delay(1000);  // brief pause for stable UI flow
+
+                delay(1000);
             } else {
                 // Connected but attribute discovery failed (device likely rejected)
                 LOG(LOG_GATT, devTag + "Connected but attribute discovery failed: " + address);
@@ -1232,11 +1269,14 @@ void scanForDevices() {
 
                 // --- Known / suspicious target detection (advertisement-based) ---
                 // Note: deviceInfoService are empty here since we didn't connect
-                if (isTargetDevice(localName.c_str(), address.c_str(), uuidStr.c_str(), "")) {
+                String targetLabel;
+                if (isTargetDevice(localName.c_str(), address.c_str(), uuidStr.c_str(), "", targetLabel)) {
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
                     DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
                     delay(1000);
+
+                    SusLog::add(targetLabel.c_str(), address.c_str(), (int8_t)ScanContext::rssi.load());
 
                     // ← Audio alert
                     auto* ms = MenuController::getState();
@@ -1252,11 +1292,15 @@ void scanForDevices() {
                     //nibblesSpeechShow(SpeechContext::SUSPICIOUS);
                     vTaskDelay(pdMS_TO_TICKS(2000));
 
-                    if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled) {
-                        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace",
-                            4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
+                    if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled)
+                    {
+                        UIContext::isAngryTaskRunning.store(true);
+
+                        if (xTaskCreatePinnedToCore( showAngryExpressionTask, "AngryFace", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
+                        {
                             LOG(LOG_SYSTEM, "Failed to create AngryFace task");
                             UIContext::isAngryTaskRunning.store(false);
+                            UIContext::angryTaskHandle = nullptr;
                         }
                     }
                 } else {
@@ -1319,9 +1363,12 @@ void scanForDevices() {
                     dev.hasNotifyData);
 
           // Sad expression: device visible but connection rejected
-          if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load()) {
-              if (xTaskCreatePinnedToCore(showSadExpressionTask, "SadFace",
-                  4096, NULL, 3, &UIContext::sadTaskHandle, 1) != pdPASS) {
+          if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load())
+          {
+              UIContext::isSadTaskRunning.store(true);
+
+              if (xTaskCreatePinnedToCore( showSadExpressionTask, "SadFace", 4096, NULL, 3, &UIContext::sadTaskHandle, 1) != pdPASS)
+              {
                   LOG(LOG_SYSTEM, "Failed to create SadFace task");
                   UIContext::isSadTaskRunning.store(false);
               }

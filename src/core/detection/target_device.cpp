@@ -2,21 +2,24 @@
 #include "config/detection_config.h"
 #include "infrastructure/logging/logger.h"
 
-bool isTargetDevice(String name, String address, String serviceUuid, String deviceInfoService) {
+bool isTargetDevice(String name, String address, String serviceUuid, String deviceInfoService, String& outLabel) {
 
   // 0. CATHACK / BRUCE Signatur
   if ((name == "esp32" || name == "ESP32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0" || name == "Keyboard_e9" || name == "BruceNet")) {
+    outLabel = "ESP32 Hardware";
     LOG(LOG_TARGET, "Device with ESP32 Hardware detected");
     return true;
   }
 
   if ((deviceInfoService == "esp32" || deviceInfoService == "n/a" || deviceInfoService == "<no name>" || deviceInfoService == "Keyboard_a0" || deviceInfoService == "Keyboard_e9" || deviceInfoService == "BruceNet")) {
+    outLabel = "ESP32 Hardware";
     LOG(LOG_TARGET, "Device with ESP32 Hardware detected");
     return true;
   }
 
   // 1. LIGHTBLUE APP UUIDs
   if (serviceUuid == LIGHTBLUE_APP_SERVICE_UUID) {
+    outLabel = "LIGHT BLUE APP";
     LOG(LOG_TARGET, "Device with LIGHT BLUE APP detected");
     return true;
   }
@@ -24,6 +27,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   // 2. CATHACK-Signatur
   if (serviceUuid == CATHACK_SERVICE_UUID_3 &&
       (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
+    outLabel = "CATHACK Firmware";
     LOG(LOG_TARGET, "Device with CATHACK Firmware detected");
     return true;
   }
@@ -40,20 +44,22 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   }
   // Detection
   if (uuid == "0x3081") {
+      outLabel = "FLIPPER ZERO (Black)";
       LOG(LOG_TARGET, "FLIPPER ZERO detected (Black)");
       return true;
   }
   if (uuid == "0x3082") {
-      LOG(LOG_TARGET, "FLIPPER ZERO detected (White)");
+      outLabel = "FLIPPER ZERO (White)";
       return true;
   }
   if (uuid == "0x3083") {
-      LOG(LOG_TARGET, "FLIPPER ZERO detected (Transparent)");
+      outLabel = "FLIPPER ZERO (Transparent)";
       return true;
   }
 
   // 4. PWNBEACON (PwnGrid over BLE)
   if (serviceUuid == PWNBEACON_SERVICE_UUID) {
+    outLabel = "PWNBEACON (PwnGrid/Pwnagotchi)";
     LOG(LOG_TARGET, "👾 PWNBEACON detected (PwnGrid/Pwnagotchi)");
     return false;
   }
@@ -62,10 +68,12 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   String uuidLower = serviceUuid;
   uuidLower.toLowerCase();
   if (uuidLower == XIAO_BISCUIT_SERVICE_UUID || uuidLower == XIAO_BISCUIT_SERVICE_UUID_2) {
+    outLabel = "XIAO BISCUIT";
     LOG(LOG_TARGET, "XIAO BISCUIT detected (service UUID match)");
     return true;
   }
   if (name == "Xiao Biscuit") {
+    outLabel = "XIAO BISCUIT";
     LOG(LOG_TARGET, "XIAO BISCUIT detected (name match)");
     return true;
   }

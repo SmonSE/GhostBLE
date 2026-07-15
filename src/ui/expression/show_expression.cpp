@@ -10,6 +10,7 @@
 #include "ui/overlay/draw_overlay.h"
 #include "ui/icons/scan_icon.h"
 #include "ui/menu/menu_controller.h"
+#include "ui/susview/sus_device_view.h"
 #include "infrastructure/gps/gps_manager.h"
 #include "web/web_sender.h"
 #include "infrastructure/platform/hardware_config.h"
@@ -99,7 +100,7 @@ void drawBatteryIcon(int x, int y, int percent, bool charging) {
 //  Battery state — writes to UIContext
 // ----------------------------------------------------------------
 void updateBatteryState() {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
     int  rawVoltage  = M5.Power.getBatteryVoltage();
     bool chargingNow = M5.Power.isCharging();
     bool usbConnected = (rawVoltage > 4200);
@@ -160,7 +161,7 @@ void clearHearts() {
 //  Speech bubble
 // ----------------------------------------------------------------
 void clearSpeechBubble() {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
     int srcX    = BUBBLE_X - NIBBLES_FRONT_X;
     int srcY    = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
     int restoreH = BUBBLE_RECT_H + BUBBLE_TRI_H + 3;
@@ -211,7 +212,7 @@ void clearSpeechBubble() {
 //  Help overlay — reads/writes UIContext::helpOverlayVisible
 // ----------------------------------------------------------------
 void showHelpOverlay() {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
     UIContext::helpOverlayVisible = true;
 
     M5.Lcd.fillScreen(0x00C4);
@@ -250,7 +251,9 @@ void showHelpOverlay() {
 }
 
 void dismissHelpOverlay() {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+        return;
+    }
     UIContext::helpOverlayVisible = false;
 
     M5.Lcd.fillScreen(0x00C4);
@@ -281,7 +284,11 @@ void dismissHelpOverlay() {
 //  Expression tasks — alle schreiben in UIContext::
 // ----------------------------------------------------------------
 void showGlassesExpressionTask(void* parameter) {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+        UIContext::isGlassesTaskRunning.store(false);
+        UIContext::glassesTaskHandle = nullptr;
+        vTaskDelete(NULL);
+    }
     UIContext::isGlassesTaskRunning.store(true);
     drawOverlay(nibblesGlasses, NIBBLESGLASSES_WIDTH, NIBBLESGLASSES_HEIGHT, 76, 52);
 
@@ -330,11 +337,16 @@ void showGlassesExpressionTask(void* parameter) {
 
     clearSpeechBubble();
     UIContext::isGlassesTaskRunning.store(false);
+    UIContext::glassesTaskHandle = nullptr;
     vTaskDelete(NULL);
 }
 
 void showAngryExpressionTask(void* parameter) {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+        UIContext::isAngryTaskRunning.store(false);
+        UIContext::angryTaskHandle = nullptr;
+        vTaskDelete(NULL);
+    }
     UIContext::isAngryTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesAngry, NIBBLESANGRY_WIDTH, NIBBLESANGRY_HEIGHT, 83, 60);
@@ -358,11 +370,16 @@ void showAngryExpressionTask(void* parameter) {
 
     clearSpeechBubble();
     UIContext::isAngryTaskRunning.store(false);
+    UIContext::angryTaskHandle = nullptr;
     vTaskDelete(NULL);
 }
 
 void showSadExpressionTask(void* parameter) {
-    if (MenuController::isOpen()) return; 
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+        UIContext::isSadTaskRunning.store(false);
+        UIContext::sadTaskHandle = nullptr;
+        vTaskDelete(NULL);
+    }
     UIContext::isSadTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
@@ -394,12 +411,18 @@ void showSadExpressionTask(void* parameter) {
     );
 
     clearSpeechBubble();
+
     UIContext::isSadTaskRunning.store(false);
+    UIContext::sadTaskHandle = nullptr;
     vTaskDelete(NULL);
 }
 
 void showThugLifeExpressionTask(void* parameter) {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+        UIContext::isThugLifeTaskRunning.store(false);
+        UIContext::thugLifeTaskHandle = nullptr;
+        vTaskDelete(NULL);
+    }
     UIContext::isThugLifeTaskRunning.store(true);
     drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
@@ -422,11 +445,16 @@ void showThugLifeExpressionTask(void* parameter) {
     );
 
     UIContext::isThugLifeTaskRunning.store(false);
+    UIContext::thugLifeTaskHandle = nullptr;
     vTaskDelete(NULL);
 }
 
 void showHappyExpressionTask(void* parameter) {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+        UIContext::isHappyTaskRunning.store(false);
+        UIContext::happyTaskHandle = nullptr;
+        vTaskDelete(NULL);
+    }
     UIContext::isHappyTaskRunning.store(true);
     vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -447,6 +475,7 @@ void showHappyExpressionTask(void* parameter) {
 
     clearSpeechBubble();
     UIContext::isHappyTaskRunning.store(false);
+    UIContext::happyTaskHandle = nullptr;
     vTaskDelete(NULL);
 }
 
@@ -454,7 +483,7 @@ void showHappyExpressionTask(void* parameter) {
 //  Status bar
 // ----------------------------------------------------------------
 void drawStatusIcons(int x, int y) {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
     drawWifiIcon(x, y, NetworkContext::isWebLogActive);  // isWebLogActive → network_context later
 
     if (ScanContext::bleScanEnabled.load()) {
@@ -594,7 +623,7 @@ void showResearchMode() {
 }
 
 void showFindingCounter(int sniffed, int sus, int spotted) {
-    if (MenuController::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
     updateBatteryState();
 
     M5.Lcd.setTextSize(1);
