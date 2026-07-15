@@ -26,10 +26,10 @@ void DeviceConfig::setStealthMode(bool v) {
 String DeviceConfig::getEffectiveBleName() const {
     if (!stealthMode) return name;
 
-    // Generischer, unauffälliger Name — sieht aus wie x-beliebiges IoT-Gerät
+    // Generate a unique name based on the ESP32 chip ID (last 3 bytes of MAC address)
     uint32_t chipId = (uint32_t)(ESP.getEfuseMac() & 0xFFFFFF);
     char buf[24];
-    snprintf(buf, sizeof(buf), "ESP32_%06X", chipId);
+    snprintf(buf, sizeof(buf), "IOT_%06X", chipId);
     return String(buf);
 }
 

@@ -37,6 +37,7 @@
 #include "src/ui/icons/scan_icon.h"
 #include "src/ui/overlay/draw_overlay.h"
 #include "src/ui/expression/show_expression.h"
+#include "src/ui/susview/sus_device_view.h"
 
 #include "ui/menu/menu_controller.h"
 
@@ -242,8 +243,11 @@ void loop() {
       for (auto key : status.word) {
         if (key == 'm' || key == 'M') {
           if (MenuController::isOpen()) {
-              LOG(LOG_CONTROL, "M pressed — closing main menu");
-              MenuController::close();
+            LOG(LOG_CONTROL, "M pressed — closing main menu");
+            if (SusDeviceView::isOpen()) {
+              SusDeviceView::close();
+            }
+            MenuController::close();
           } else {
               LOG(LOG_CONTROL, "M pressed — showing main menu");
               MenuController::open();
@@ -370,6 +374,27 @@ void loop() {
     }
     return;
   }
+  
+  // ── Sus Device View dismiss/navigate ────────────────────────
+  if (SusDeviceView::isOpen()) {
+    if (M5.BtnA.wasPressed()) {
+      SusDeviceView::navigateNext();
+    }
+    if (M5.BtnB.isPressed()) {
+      if (buttonBPressStart == 0) {
+        buttonBPressStart = currentTime;
+      } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+        LOG(LOG_CONTROL, "BtnB 3s — closing sus device view");
+        SusDeviceView::close();
+        MenuController::open();
+        buttonBPressStart = 0;
+      }
+    } else {
+      buttonBPressStart = 0;
+    }
+    return;
+  }
+
   // ── Button A ─────────────────────────────────────────────────
   if (M5.BtnA.isPressed()) {
     if (!buttonAHeld) {
@@ -405,6 +430,9 @@ void loop() {
         buttonBHeld = true;
         if (MenuController::isOpen()) {
           LOG(LOG_CONTROL, "BtnB 3s — closing menu");
+          if (SusDeviceView::isOpen()) {
+            SusDeviceView::close();
+          }
           MenuController::close();
         } else {
           LOG(LOG_CONTROL, "BtnB 3s — opening menu");
@@ -474,7 +502,7 @@ void onLongPress() {
 
   if (ScanContext::bleScanEnabled) {
     LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
-    if(!MenuController::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
           drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     }
@@ -486,7 +514,7 @@ void onLongPress() {
   }
   else {
     LOG(LOG_CONTROL,"⏹️ BLE Scan DISABLED");
-    if(!MenuController::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     }
@@ -502,7 +530,7 @@ void toggleWiFi() {
     NetworkContext::wifiStarted = false;
     NetworkContext::isWebLogActive = false;
     logDisableTarget(TARGET_WEB);
-    if(!MenuController::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
       if (random(2) == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                       nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
@@ -518,7 +546,7 @@ void toggleWiFi() {
     NetworkContext::wifiStarted = true;
     NetworkContext::isWebLogActive = true;
     logEnableTarget(TARGET_WEB);
-    if(!MenuController::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
       if (random(2) == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                       nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
@@ -544,7 +572,7 @@ void toggleWardriving() {
         String(NetworkContext::wigleLogger.getLoggedCount()) + " logged)");
         logDisableCategory(LOG_GPS);
         
-        if(!MenuController::isOpen()) {
+        if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
           if (random(2) == 0) {
             drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                           nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
@@ -563,7 +591,7 @@ void toggleWardriving() {
         LOG(LOG_CONTROL, "Wardriving ON  (" + String(NetworkContext::gpsManager.getSourceName()) + ")");
         LOG(LOG_CONTROL, "  File: " + NetworkContext::wigleLogger.getFilename());
 
-        if(!MenuController::isOpen()) {
+        if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
           if (random(2) == 0) {
             drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                           nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);

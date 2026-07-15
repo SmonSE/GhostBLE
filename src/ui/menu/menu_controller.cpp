@@ -18,6 +18,7 @@
 #include "ui/expression/show_expression.h"
 #include "ui/menu/menu_controller.h"
 #include "ui/icons/scan_icon.h"
+#include "ui/susview/sus_device_view.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"
@@ -231,6 +232,13 @@ static void buildItems() {
     action("Show Help", []() {
         MenuController::closeSilent();
         showHelpOverlay();
+    });
+
+    // im buildItems():
+    section("SUSPICIOUS DEVICES");
+    action("View Sus Log", []() {
+        MenuController::closeSilent();
+        SusDeviceView::open();
     });
 
     // ── SCAN ─────────────────────────────────────────────────

@@ -13,10 +13,11 @@ SemaphoreHandle_t taskMutex = NULL;
 // ------------------------------------------------------------
 //  Animations-Task-Handles
 // ------------------------------------------------------------
-TaskHandle_t glassesTaskHandle = NULL;
-TaskHandle_t angryTaskHandle   = NULL;
-TaskHandle_t happyTaskHandle   = NULL;
-TaskHandle_t sadTaskHandle     = NULL;
+TaskHandle_t glassesTaskHandle  = NULL;
+TaskHandle_t angryTaskHandle    = NULL;
+TaskHandle_t happyTaskHandle    = NULL;
+TaskHandle_t sadTaskHandle      = NULL;
+TaskHandle_t thugLifeTaskHandle = NULL;
 
 // ------------------------------------------------------------
 //  Animations-Flags

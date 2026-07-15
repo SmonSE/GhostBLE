@@ -33,6 +33,7 @@ extern TaskHandle_t glassesTaskHandle;
 extern TaskHandle_t angryTaskHandle;
 extern TaskHandle_t happyTaskHandle;
 extern TaskHandle_t sadTaskHandle;
+extern TaskHandle_t thugLifeTaskHandle;
 
 // ------------------------------------------------------------
 //  Animations-Flags  (Core 1 write ↔ Core 0 read → atomic)
