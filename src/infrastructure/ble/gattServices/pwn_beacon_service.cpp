@@ -264,12 +264,17 @@ void PwnBeaconServiceHandler::updateCounters(uint16_t pwndRun, uint16_t pwndTot)
     advPwndRun = pwndRun;
     advPwndTot = pwndTot;
 
-    // Update identity JSON with new counters
-    // here get the name loaded from json or from deviceConfig, if not available
-    // Needs to be blocked with stealthMode check, otherwise it will update the identity json even if stealth mode is enabled
-    // If stealthMode is active advDevieName shoukd be empty, face should also empty!
-    if(!DeviceContext::deviceConfig.getStealthMode()) {
-        identChr->setValue(buildIdentityJson(advDeviceName, faceChr ? faceChr->getValue().c_str() : DeviceContext::deviceConfig.getFace().c_str()));
+    Serial.printf("identChr=%p faceChr=%p pServer=%p pwnService=%p\n", identChr, faceChr, pServer, pwnService);
+
+    if (!identChr) {
+        //Serial.println("identChr == nullptr");
+        return;
+    }
+
+    if (!DeviceContext::deviceConfig.getStealthMode()) {
+        identChr->setValue(buildIdentityJson(
+            advDeviceName,
+            faceChr ? faceChr->getValue().c_str() : DeviceContext::deviceConfig.getFace().c_str()));
     } else {
         identChr->setValue(buildIdentityJson("", ""));
     }
