@@ -212,11 +212,17 @@ static float estimateDistance(int txPower, int rssi) {
 //  Helper: check if a raw string is printable ASCII (32–126).
 //  Used to filter binary garbage from GATT characteristic values.
 // ===========================================================================
-static bool isPrintableText(const std::string& s) {
-    if (s.empty()) return false;
-    for (char c : s) {
-        if (c < 32 || c > 126) return false;
+static bool isPrintableText(const std::string& s)
+{
+    if (s.empty())
+        return false;
+
+    for (unsigned char c : s)
+    {
+        if (c < 32 || c > 126)
+            return false;
     }
+
     return true;
 }
 
@@ -682,9 +688,11 @@ static bool connectAndReadGATT(
             NimBLERemoteDescriptor* userDesc = characteristic->getDescriptor(NimBLEUUID("2901"));
             if (userDesc) {
                 std::string descValue = userDesc->readValue();
+                while (!descValue.empty() && descValue.back() == '\0') {
+                    descValue.pop_back();
+                }
                 if (!descValue.empty() && isPrintableText(descValue)) {
-                    LOG(LOG_GATT, devTag + "Descriptor [" + String(charUuid.c_str()) + "]: "
-                        + String(descValue.c_str()));
+                    LOG(LOG_GATT, devTag + "Descriptor [" + String(charUuid.c_str()) + "]: " + String(descValue.c_str()));
                     ScanContext::nameList.push_back(descValue);
                     DeviceContext::xpManager.awardXP(1.0f);  // +1.0 XP: known characteristic decoded
                 }
@@ -692,12 +700,16 @@ static bool connectAndReadGATT(
 
             // Read characteristic value — only process printable ASCII
             std::string rawValue = characteristic->readValue();
+            while (!rawValue.empty() && rawValue.back() == '\0') {
+                rawValue.pop_back();
+            }
             if (!rawValue.empty() && isPrintableText(rawValue)) {
+                LOG(LOG_GATT, devTag + "Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
                 dev.gattHasName = true;
                 ScanContext::nameList.push_back(rawValue);
 
-                if (looksLikePersonalName(rawValue))    dev.gattHasPersonalName  = true;
-                if (looksLikeIdentityData(rawValue))    dev.gattHasIdentityInfo  = true;
+                if (looksLikePersonalName(rawValue))    dev.gattHasPersonalName = true;
+                if (looksLikeIdentityData(rawValue))    dev.gattHasIdentityInfo = true;
                 if (looksLikeEnvironmentName(rawValue)) dev.gattHasEnvironmentName = true;
             }
         }
