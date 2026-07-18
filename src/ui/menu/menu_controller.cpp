@@ -8,6 +8,7 @@
 #include "app/context/network_context.h"
 #include "app/context/ui_context.h"
 #include "app/context/globals.h"
+#include "app/context/device_finder.h"
 
 #include "config/menu_settings.h"
 
@@ -19,6 +20,7 @@
 #include "ui/menu/menu_controller.h"
 #include "ui/icons/scan_icon.h"
 #include "ui/susview/sus_device_view.h"
+#include "ui/finder/finder_list_view.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"

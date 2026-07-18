@@ -9,6 +9,7 @@
 #include "app/context/ui_context.h"
 #include "app/context/network_context.h"
 #include "app/context/device_context.h"
+#include "app/context/device_finder.h"
 #include "app/interaction/nibbles_speech.h"
 
 #include "src/assets/nibblesFront.h"
@@ -38,6 +39,8 @@
 #include "src/ui/overlay/draw_overlay.h"
 #include "src/ui/expression/show_expression.h"
 #include "src/ui/susview/sus_device_view.h"
+#include "src/ui/finder/finder_list_view.h"
+#include "src/ui/finder/approach_view.h"
 
 #include "ui/menu/menu_controller.h"
 
@@ -189,8 +192,12 @@ void loop() {
   hardwareUpdate();
   unsigned long currentTime = millis();
 
+  // ── Approach View — periodischer Scan + Redraw, unabhängig von Tasteneingaben ──
+  if (ApproachView::isOpen()) {
+    ApproachView::update();
+  }
+
   // ===== Input Handling =====
-  // When help overlay is visible, any input dismisses it
   if (UIContext::helpOverlayVisible) {
 #if HAS_KEYBOARD
     if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
@@ -208,7 +215,40 @@ void loop() {
 #endif
     return;  // skip all other processing while help is visible
   }
-  
+
+
+  // ── Approach View — höchste Priorität nach Help ────────────
+  if (ApproachView::isOpen()) {
+#if HAS_KEYBOARD
+    if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
+      auto status = M5Cardputer.Keyboard.keysState();
+      for (auto key : status.word) {
+        if (key == '`' || key == 'c' || key == 'C') {
+          LOG(LOG_CONTROL, "Closing Approach View");
+          ApproachView::close();
+          break;
+        }
+      }
+    }
+#endif
+    return;   // während Approach View offen ist, KEINE andere Taste verarbeiten
+  }
+
+  // ── Finder List View ─────────────────────────────────────────
+  if (FinderListView::isOpen()) {
+#if HAS_KEYBOARD
+    if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
+      auto status = M5Cardputer.Keyboard.keysState();
+      for (auto key : status.word) {
+        if (key == '.') FinderListView::navigateNext();
+        if (key == '/') FinderListView::selectCurrent();
+        if (key == '`' || key == 'c' || key == 'C') FinderListView::close();
+        if (key == 'f' || key == 'F') FinderListView::refresh();
+      }
+    }
+#endif
+    return;
+  }
 
 #if HAS_KEYBOARD
   // Cardputer keyboard input
@@ -252,6 +292,12 @@ void loop() {
               LOG(LOG_CONTROL, "M pressed — showing main menu");
               MenuController::open();
           }
+          return;
+        }
+        if (key == 'f' || key == 'F') {
+          LOG(LOG_CONTROL, "F pressed — Find Device");
+          FinderListView::drawScanning(); 
+          DeviceFinder::startFinderFlow();
           return;
         }
         if (key == 'i' || key == 'I') {
