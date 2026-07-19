@@ -1028,9 +1028,11 @@ void scanForDevices() {
                 }
 
                 // ============================================================
-                // META RAY-BAN GATT SERVICE CHECK (neu hinzufügen!)
+                // META RAY-BAN GATT SERVICE CHECK
                 // ============================================================
-                if (MetaGlasses::hasMetaGATTService(pClient)) {
+                uint8_t metaAdConfidence = MetaGlasses::detectMetaGlasses(device, localName, manufacturerId);
+
+                if (metaAdConfidence > 0 && MetaGlasses::hasMetaGATTService(pClient)) {
                     LOG(LOG_TARGET, devTag + "👓 Meta Ray-Ban GATT service confirmed!");
                     
                     String generation = MetaGlasses::detectGeneration(localName, true);
@@ -1042,37 +1044,32 @@ void scanForDevices() {
                     // Mark as suspicious target
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
-                    DeviceContext::xpManager.awardXP(10.0f);  // +10 XP confirmed Meta
+                    DeviceContext::xpManager.awardXP(10.0f);
                     delay(1000);
 
                     auto* ms = MenuController::getState();
                     if (ms->audioEnabled && ms->audioEvilMode) {
                         M5.Speaker.setVolume(MenuController::getAlarmVolume());
-                        M5.Speaker.tone(523, 100);   // C
+                        M5.Speaker.tone(523, 100);
                         while (M5.Speaker.isPlaying()) { delay(5); }
-                        M5.Speaker.tone(659, 100);   // E
+                        M5.Speaker.tone(659, 100);
                         while (M5.Speaker.isPlaying()) { delay(5); }
-                        M5.Speaker.tone(784, 100);   // G
+                        M5.Speaker.tone(784, 100);
                         while (M5.Speaker.isPlaying()) { delay(5); }
-                        M5.Speaker.tone(1047, 200);  // C hoch — Erfolgs-Jingle
+                        M5.Speaker.tone(1047, 200);
                     }
                     
-                    // Show warning
                     nibblesSpeechShowCustom("Recording?");
                     
-                    // Angry face (privacy concern!)
                     if (!UIContext::isAngryTaskRunning.load()) {
-                        UIContext::isAngryTaskRunning.store(true);
-
-                        if (xTaskCreatePinnedToCore( showAngryExpressionTask, "MetaWarning", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
-                        {
+                        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "MetaWarning",
+                            4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
                             LOG(LOG_SYSTEM, "Failed to create MetaWarning task");
                             UIContext::isAngryTaskRunning.store(false);
-                            UIContext::angryTaskHandle = nullptr;
                         }
                     }
-
-                    vTaskDelay(pdMS_TO_TICKS(3000)); // let the user see the warning for a moment
+                    
+                    vTaskDelay(pdMS_TO_TICKS(3000));
                 }
 
                 // --- Apple model resolution ---
@@ -1392,7 +1389,7 @@ void scanForDevices() {
     LOG(LOG_SCAN, "  PwnBeacons: " + String(DeviceContext::pwnbeaconsFound.load()));
 
     // ============================================================
-    // META RAY-BAN STATISTICS (neu hinzufügen!)
+    // META RAY-BAN STATISTICS
     // ============================================================
     if (MetaGlasses::stats.glassesFound > 0) {
         LOG(LOG_SCAN, "  --- 👓 Meta Ray-Ban ---");
