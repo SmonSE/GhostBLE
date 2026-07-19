@@ -148,18 +148,18 @@ void drawScanning() {
     M5.Lcd.drawFastHLine(4, 18, 232, GREEN);
     delay(500);
 
-    // Terminal-Zeilen nacheinander einblenden
+    // Terminal rows with typewriter effect
     typeText(8, 32, "> BLE Adapter........ ", GREEN, BG, 4);
     typeText(M5.Lcd.getCursorX(), 32, "OK", CYAN, BG, 30);
-    delay(000);
+    delay(100);
 
     typeText(8, 46, "> Privacy Engine..... ", GREEN, BG, 4);
     typeText(M5.Lcd.getCursorX(), 46, "READY", CYAN, BG, 30);
-    delay(000);
+    delay(100);
 
     typeText(8, 60, "> Device Scan........ ", GREEN, BG, 4);
     typeText(M5.Lcd.getCursorX(), 60, "RUNNING", CYAN, BG, 30);
-    delay(1000);
+    delay(500);
 
     M5.Lcd.setTextColor(GREEN, BG);
     M5.Lcd.setCursor(8, 86);
@@ -168,34 +168,6 @@ void drawScanning() {
     M5.Lcd.setTextColor(GREY, BG);
     M5.Lcd.setCursor(8, 102);
     M5.Lcd.print("> Duration: ~10 seconds");
-
-    /*
-    // Animierter Spinner + Punkte-Ellipse, ca. 1.5s
-    const char* frames[] = {"|", "/", "-", "\\"};
-    for (int cycle = 0; cycle < 60; cycle++) {
-        M5.Lcd.fillRect(8, 112, 220, 12, BG);   // Spinner-Zeile löschen
-
-        M5.Lcd.setTextColor(GREEN, BG);
-        M5.Lcd.setCursor(8, 112);
-        M5.Lcd.print(frames[cycle % 4]);
-
-        M5.Lcd.setCursor(20, 112);
-        int dots = (cycle % 4) + 1;
-        for (int d = 0; d < dots; d++) M5.Lcd.print(".");
-
-        delay(150);
-    }
-
-    // Blinkender Cursor am Ende
-    for (int i = 0; i < 3; i++) {
-        M5.Lcd.setTextColor(GREEN, BG);
-        M5.Lcd.setCursor(8, 122);
-        M5.Lcd.print("_");
-        delay(200);
-        M5.Lcd.fillRect(8, 122, 8, 10, BG);
-        delay(200);
-    }
-    */
 
     M5.Lcd.setTextColor(GREEN, BG);
     M5.Lcd.setCursor(8, 122);

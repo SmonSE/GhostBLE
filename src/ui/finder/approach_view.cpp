@@ -20,20 +20,20 @@ static bool    lastFound_     = false;
 static unsigned long lastScanTime_ = 0;
 static unsigned long lastBeepTime_ = 0;
 
-// ── Farben (RGB565) ─────────────────────────────────────────
-static constexpr uint16_t COL_BG_DARK   = 0x0120;   // dunkelgrün — Kapsel-Innenfläche
-static constexpr uint16_t COL_GRID      = 0x0360;   // gedämpftes Grün — Raster
-static constexpr uint16_t COL_BORDER    = 0x07E0;   // helles Grün — Kapsel-Rahmen
-static constexpr uint16_t COL_SCREEN_BG = 0x0020;   // Seitenhintergrund
+// ── Color (RGB565) ─────────────────────────────────────────
+static constexpr uint16_t COL_BG_DARK   = 0x0120;
+static constexpr uint16_t COL_GRID      = 0x0360;
+static constexpr uint16_t COL_BORDER    = 0x07E0;
+static constexpr uint16_t COL_SCREEN_BG = 0x0020;
 static constexpr uint16_t COL_TEXT_DIM  = 0x2945;
 
-// ── Kapsel-Geometrie ────────────────────────────────────────
+// ── Geometry ────────────────────────────────────────
 static constexpr int CAP_X = 20;
 static constexpr int CAP_Y = 18;
 static constexpr int CAP_W = 200;
 static constexpr int CAP_H = 88;
 static constexpr int CAP_R = 40;
-static constexpr int GRID_STEP = 12; // Abstand der Rasterlinien
+static constexpr int GRID_STEP = 12;
 
 // ============================================================
 //  Helpers
@@ -50,9 +50,9 @@ static unsigned long percentToBeepInterval(int pct) {
 }
 
 static uint16_t signalColor(int pct) {
-    if (pct > 66) return 0x07E0;   // grün
-    if (pct > 33) return 0xFFE0;   // gelb
-    return 0xF800;                 // rot
+    if (pct > 66) return 0x07E0;   // green
+    if (pct > 33) return 0xFFE0;   // yellow
+    return 0xF800;                 // red
 }
 
 static void drawGrid() {
@@ -66,7 +66,7 @@ static void drawGrid() {
     M5.Lcd.clearClipRect();
 }
 
-// ── Fadenkreuz-Größe ────────────────────────────────────────
+// ── Crosshair-Size ────────────────────────────────────────
 static constexpr int CROSSHAIR_SIZE = 8;
 
 static void drawCapsuleFrame() {
@@ -74,7 +74,6 @@ static void drawCapsuleFrame() {
     drawGrid();
     M5.Lcd.drawRoundRect(CAP_X, CAP_Y, CAP_W, CAP_H, CAP_R, COL_BORDER);
 
-    // Rotes Fadenkreuz in der Kapsel-Mitte — markiert 100% / Ziel erreicht
     int ccx = CAP_X + CAP_W / 2;
     int ccy = CAP_Y + CAP_H / 2;
     M5.Lcd.drawLine(ccx - CROSSHAIR_SIZE, ccy, ccx + CROSSHAIR_SIZE, ccy, 0xF800);
@@ -94,19 +93,19 @@ static void drawStatic() {
     M5.Lcd.print(targetName_);
 
     M5.Lcd.setTextColor(COL_TEXT_DIM, COL_SCREEN_BG);
-    M5.Lcd.setCursor(4, 12);
+    M5.Lcd.setCursor(120, 2);
     M5.Lcd.print(targetMac_);
 
     drawCapsuleFrame();
 
     M5.Lcd.setTextColor(COL_TEXT_DIM, COL_SCREEN_BG);
     M5.Lcd.setCursor(4, 125);
-    M5.Lcd.print("BtnB(hold)/ESC: stop");
+    M5.Lcd.print("C / ESC back to list");
 }
 
 
 static void drawDynamic(int8_t rssi, bool found) {
-    drawCapsuleFrame();   // löscht + zeichnet Raster+Rahmen+Fadenkreuz neu
+    drawCapsuleFrame();
 
     M5.Lcd.fillRect(0, 108, 240, 14, COL_SCREEN_BG);
 
@@ -120,16 +119,15 @@ static void drawDynamic(int8_t rssi, bool found) {
     int pct = rssiToPercent(rssi);
     uint16_t col = signalColor(pct);
 
-    // Zielpunkt: je näher (höher pct), desto näher am Kapsel-Mittelpunkt
-    // mit leichtem Zufalls-Jitter fürs "lebendige" Radar-Gefühl
+    // Targetpoint: nearer = closer to center, farther = further away
     int ccx = CAP_X + CAP_W / 2;
     int ccy = CAP_Y + CAP_H / 2;
-    int maxR = min(CAP_W, CAP_H) / 1 - 8;   // Rand-Abstand, damit Punkt nicht am Kapselrand klebt Wert:6 war gut
+    int maxR = min(CAP_W, CAP_H) / 1 - 8; // 6px to border, 2px to crosshair
 
     int dist = map(pct, 0, 100, maxR, 4);
     float angle = random(0, 360) * PI / 180.0f;
     int px = ccx + (int)(dist * cos(angle));
-    int py = ccy + (int)(dist * sin(angle) * 0.5f);   // *0.5 da Kapsel breiter als hoch (Ellipsen-Anpassung)
+    int py = ccy + (int)(dist * sin(angle) * 0.5f);
 
     M5.Lcd.setClipRect(CAP_X, CAP_Y, CAP_W, CAP_H);
     M5.Lcd.fillCircle(px, py, 4, col);
@@ -141,8 +139,8 @@ static void drawDynamic(int8_t rssi, bool found) {
     M5.Lcd.printf("%3d%%  %d dBm", pct, rssi);
 
     M5.Lcd.setCursor(150, 110);
-    if (rssi > lastDrawnRssi_ + 2)      M5.Lcd.print("^ closer");
-    else if (rssi < lastDrawnRssi_ - 2) M5.Lcd.print("v farther");
+    if (rssi > lastDrawnRssi_ + 2)       M5.Lcd.print("^ closer");
+    else if (rssi < lastDrawnRssi_ - 2)  M5.Lcd.print("v farther");
     else                                 M5.Lcd.print("- steady");
 }
 
@@ -185,8 +183,6 @@ void open(const char* mac, const char* name) {
 
 void close() {
     open_ = false;
-
-    // Here should be the find list view called, but it is not implemented yet.
     FinderListView::open();
 }
 
@@ -200,7 +196,6 @@ void update() {
         staticDrawn_ = true;
     }
 
-    // Piepton läuft unabhängig vom Scan-Takt, jeden update()-Aufruf geprüft
     beepIfNeeded(smoothedRssi_, lastFound_);
 
     unsigned long now = millis();
