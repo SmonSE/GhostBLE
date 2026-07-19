@@ -4,7 +4,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "app/features/research_mode.h"
 #include "app/features/meta_glasses.h"
 #include "app/features/flock_detection.h"
 
@@ -602,28 +601,6 @@ static bool connectAndReadGATT(
     // Run all registered GATT service handlers (DeviceInfo, Battery, etc.)
     String serviceOutput = GATTServiceRegistry::runDiscoveredHandlers(pClient);
 
-    // ── Research Mode — pClient ist hier garantiert verbunden ──
-    if (UIContext::isResearchModeActive.load()) {
-        if (ResearchMode::isGoveeDevice(localName) || ResearchMode::hasGoveeService(pClient)) {
-
-            int currentRssi = ScanContext::rssi.load();
-
-            // 85 dBm was working in tests, but add some buffer for variability — only trigger if really close
-            if (currentRssi < -90) {
-                LOG(LOG_TARGET, devTag + "Govee found but too far for Research Mode ("
-                    + String(currentRssi) + " dBm, need > -90)");
-            } else {
-                LOG(LOG_TARGET, devTag + "GOVEE DETECTED! Activating Research Mode...");
-
-                if (ResearchMode::executeInteraction(pClient, devTag)) {
-                    nibblesSpeechShowCustom("Hehe! Yellow!");
-                    DeviceContext::xpManager.awardXP(10.0f);
-                    // ... expression task
-                }
-            }
-        }
-    }
-
     // Read 2A00 directly if localName is still empty
     if (localName.isEmpty()) {
         NimBLERemoteService* gasSvc = pClient->getService("1800");
@@ -845,10 +822,6 @@ void scanForDevices() {
     // OPTIONAL: Reset statistics
     // ============================================================
     MetaGlasses::resetStats();
-    
-    if (UIContext::isResearchModeActive.load()) {
-        ResearchMode::resetStats();
-    }
 
     ScanContext::scanIsRunning.store(true);
 
@@ -1240,13 +1213,6 @@ void scanForDevices() {
           // ---------------------------------------------------------------
           //  Connection failed branch
           // ---------------------------------------------------------------
-
-          // RESEARCH MODE: Check by name even without connection
-          if (UIContext::isResearchModeActive.load() && ResearchMode::isGoveeDevice(localName)) {
-              LOG(LOG_TARGET, devTag + "Govee detected but connection failed!");
-              nibblesSpeechShowCustom("So close!");
-          }
-
           // --- Apple model resolution ---
           // Scan nameList for Apple model identifiers (e.g. "iPhone17,3")
           String modelIdentifier;
@@ -1436,15 +1402,6 @@ void scanForDevices() {
         if (!MetaGlasses::stats.lastModelDetected.isEmpty()) {
             LOG(LOG_SCAN, "  Last model:     " + MetaGlasses::stats.lastModelDetected);
         }
-    }
-
-    // Research Mode Statistics
-    if (UIContext::isResearchModeActive.load() && (ResearchMode::stats.goveeDevicesFound > 0 || 
-        ResearchMode::stats.successfulValidations > 0 || ResearchMode::stats.failedValidations > 0)) {
-        LOG(LOG_SCAN, "  --- Research Mode ---");
-        LOG(LOG_SCAN, "  Govee found:    " + String(ResearchMode::stats.goveeDevicesFound));
-        LOG(LOG_SCAN, "  Interactions OK:     " + String(ResearchMode::stats.successfulValidations));
-        LOG(LOG_SCAN, "  Interactions FAIL:   " + String(ResearchMode::stats.failedValidations));
     }
 
     if (ScanContext::highFindingsCount.load()           > 0 ||
