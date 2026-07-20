@@ -110,6 +110,16 @@ void updateBatteryState() {
     if (smoothedVoltage == 0) smoothedVoltage = rawVoltage;
     smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;
 
+    // ← DEBUG
+    Serial.printf("BATT: raw=%d smoothed=%.1f isCharging=%d usbConnected=%d chargingNow=%d displayedPct=%d newPct=%d\n",
+        rawVoltage,
+        smoothedVoltage,
+        M5.Power.isCharging(),
+        usbConnected,
+        chargingNow,
+        displayedPercent,
+        voltageToPercent((int)smoothedVoltage));
+
     // Debounce USB disconnect
     if (UIContext::isChargingState.load() && !chargingNow) {
         usbDisconnectTime = millis();

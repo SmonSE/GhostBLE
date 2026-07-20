@@ -78,6 +78,14 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     return true;
   }
 
+  // 6. POTENTIAL CARD SKIMMER (generic serial BLE module names)
+  if (name == "HC-03" || name == "HC-05" || name == "HC-06" ||
+      name == "HM-10" || name == "HM-19") {
+    outLabel = "Possible Card Skimmer";
+    LOG(LOG_TARGET, "Possible card skimmer module detected: " + name);
+    return true;
+  }
+
   return false;
 }
 
