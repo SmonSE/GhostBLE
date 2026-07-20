@@ -681,7 +681,7 @@ static bool connectAndReadGATT(
                 rawValue.pop_back();
             }
             if (!rawValue.empty() && isPrintableText(rawValue)) {
-                LOG(LOG_GATT, devTag + "Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
+                LOG(LOG_GATT, devTag + "  Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
                 dev.gattHasName = true;
                 ScanContext::nameList.push_back(rawValue);
 
