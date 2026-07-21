@@ -8,19 +8,32 @@
 
 String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
     String timeStr = "";
-
     if (!pClient) return timeStr;
 
-    // Standard BLE Current Time Service (0x1805)
+    NimBLERemoteCharacteristic* pChar = nullptr;
+
+    // Erst: Standard-Weg über Service 0x1805 versuchen
     NimBLERemoteService* timeService = pClient->getService("1805");
-    if (!timeService) {
-        return timeStr;
+    if (timeService) {
+        pChar = timeService->getCharacteristic("2A2B");
+        if (pChar) {
+            LOG(LOG_SCAN, "     Current Time Service detected (0x1805)");
+        }
     }
 
-    LOG(LOG_GATT,"     Current Time Service detected (0x1805)");
+    // Fallback: Manche Geräte (z.B. Xiaomi Wearables) exponieren 2A2B
+    // unter einem proprietären Service statt 0x1805 — alle Services durchsuchen
+    if (!pChar) {
+        for (auto& svc : pClient->getServices()) {
+            NimBLERemoteCharacteristic* candidate = svc->getCharacteristic("2A2B");
+            if (candidate) {
+                pChar = candidate;
+                LOG(LOG_SCAN, "     Current Time char found under non-standard service");
+                break;
+            }
+        }
+    }
 
-    // Current Time Characteristic (0x2A2B)
-    NimBLERemoteCharacteristic* pChar = timeService->getCharacteristic("2A2B");
     if (!pChar || !pChar->canRead()) {
         return timeStr;
     }
@@ -30,7 +43,6 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
         return timeStr;
     }
 
-    // Current Time format: year(2) month(1) day(1) hours(1) minutes(1) seconds(1)
     uint16_t year = (uint8_t)raw[0] | ((uint8_t)raw[1] << 8);
     uint8_t month = raw[2];
     uint8_t day = raw[3];
@@ -43,10 +55,23 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
              year, month, day, hours, minutes, seconds);
 
     timeStr = "Device Time: " + String(timeBuf) + "\n";
-    LOG(LOG_GATT,"     Device Time: " + String(timeBuf));
+    LOG(LOG_SCAN, "     Device Time: " + String(timeBuf));
 
-    // Day of Week (0x2A09) if available
-    NimBLERemoteCharacteristic* pDow = timeService->getCharacteristic("2A09");
+    NimBLERemoteCharacteristic* pDow = nullptr;
+    if (timeService) {
+        pDow = timeService->getCharacteristic("2A09");
+    }
+    if (!pDow) {
+        // Auch Day-of-Week ggf. im selben proprietären Service suchen
+        for (auto& svc : pClient->getServices()) {
+            NimBLERemoteCharacteristic* candidate = svc->getCharacteristic("2A09");
+            if (candidate) {
+                pDow = candidate;
+                break;
+            }
+        }
+    }
+
     if (pDow && pDow->canRead()) {
         std::string dowRaw = pDow->readValue();
         if (!dowRaw.empty()) {
@@ -55,7 +80,7 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
             uint8_t dow = dowRaw[0];
             if (dow >= 1 && dow <= 7) {
                 timeStr += "Day of Week: " + String(days[dow]) + "\n";
-                LOG(LOG_GATT,"     Day of Week: " + String(days[dow]));
+                LOG(LOG_SCAN, "     Day of Week: " + String(days[dow]));
             }
         }
     }
