@@ -15,6 +15,38 @@ A friendly mascot named **NibBLEs** guides you through the scanning process on t
 
 ---
 
+## 🔒 BLE Privacy Awareness — Do's & Don'ts
+
+BLE advertising can be read by anyone nearby — no pairing, no authentication, 
+no permission needed. GhostBLE exists to find these leaks; here's how to fix 
+your own.
+
+### BLE Don'ts
+- Don't put your **real name**, **address**, or **function** in a device name
+  (e.g. "Garage Door", "John's Front Door Lock").
+- Don't leave **vehicle license plates** or **owner names** in your car's BLE
+  name — during testing, a Tesla was found broadcasting its owner's full name
+  *and* license plate in plain text.
+- Don't keep factory-default names on smart home / IoT devices.
+- Don't assume "nobody's scanning" — any phone with a free app (nRF Connect,
+  LightBlue) sees exactly what GhostBLE sees.
+
+### BLE Do's
+- Use a **generic, non-identifying** device name ("Device 42", not "Anna's Car").
+- Turn Bluetooth **off** when not in use.
+- Change your phone's Bluetooth name manually:
+  - **Android:** Settings → Bluetooth → Device name
+  - **iOS:** Settings → General → About → Name
+- **Scan your own environment** periodically — devices you own may be leaking
+  more than you think.
+- Keep IoT firmware updated and change default pairing PINs where possible.
+
+### Why it matters
+BLE advertising needs no connection to be read. A name is often the easiest,
+most overlooked privacy leak in daily life.
+
+---
+
 ## Quick Start
 
 1. Flash the firmware (see [Building & Flashing](#building--flashing))
