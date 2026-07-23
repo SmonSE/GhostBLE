@@ -126,8 +126,30 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 - **Drones** — ASTM Remote ID detection via SDO service UUID 0xFFFA
 - **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters, messages)
 - **XiaoBiscuit** — detected by known service UUIDs
+- **Card Skimmer** - detected by known device names
 
-### Drone Remote ID (ASTM F3411-22a)
+## Card Skimmer Detection
+
+Bluetooth card skimmers are a growing threat — FICO reported a **700%+ 
+increase** in skimming incidents in a single year, and researchers using 
+BLE scanners have found dozens of hidden skimmers at gas pumps and ATMs, 
+some undetected for months.
+
+Many of these skimmers use cheap, off-the-shelf BLE serial modules 
+(HC-05, HC-06, HM-10, etc.) to transmit stolen card data wirelessly — 
+often left with their **factory-default name**, since changing it isn't 
+necessary for the skimmer to work.
+
+GhostBLE flags these generic module names as a **possible indicator**, 
+not proof. These modules are also widely used in harmless DIY/Arduino 
+projects, so a match should raise suspicion — especially near a card 
+reader or ATM — not trigger alarm on its own.
+
+**If GhostBLE flags a device near a payment terminal:** don't insert your 
+card, and report it to the location owner or authorities. Never open or 
+tamper with the terminal yourself.
+
+### Drone Remote detection ID (ASTM F3411-22a)
 
 When a drone broadcasting Remote ID is detected via BLE service `0xFFFA`:
 
