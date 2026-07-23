@@ -15,7 +15,7 @@ A friendly mascot named **NibBLEs** guides you through the scanning process on t
 
 ---
 
-## 🔒 BLE Privacy Awareness — Do's & Don'ts
+## BLE Privacy Awareness — Do's & Don'ts
 
 BLE advertising can be read by anyone nearby — no pairing, no authentication, 
 no permission needed. GhostBLE exists to find these leaks; here's how to fix 
