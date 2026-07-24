@@ -4,12 +4,13 @@
 
 // Speech context categories
 enum class SpeechContext {
-    IDLE,
     SCAN_START,
     SCAN_STOP,
     WARDRIVING,
     SUSPICIOUS,
-    LEVEL_UP
+    LEVEL_UP,
+    IDLE,
+    WELCOME_BACK
 };
 
 // Initialize the speech system (call in setup)

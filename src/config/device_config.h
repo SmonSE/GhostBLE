@@ -6,6 +6,8 @@
 class DeviceConfig {
 public:
     void begin();
+    bool getFirstBootDone() const;
+    void setFirstBootDone(bool v);
     String getName() const;
     String getFace() const;
     String getWifiSSID() const;
@@ -23,4 +25,5 @@ private:
     String wifiSSID;
     String wifiPassword;
     bool   stealthMode = false;
+    bool   firstBootDone = false;
 };

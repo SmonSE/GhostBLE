@@ -148,18 +148,25 @@ void setup() {
   
   DeviceContext::xpManager.begin();
 
-  drawThoughtBubble("HI I'M NIBBLES", BUBBLE_X, THOUGHT_BUBBLE_Y);
-  vTaskDelay(pdMS_TO_TICKS(2000));
+if (!DeviceContext::deviceConfig.getFirstBootDone()) {
+      drawThoughtBubble("HI I'M NIBBLES", BUBBLE_X, THOUGHT_BUBBLE_Y);
+      vTaskDelay(pdMS_TO_TICKS(2000));
 
-  clearSpeechBubble();
-#if HAS_KEYBOARD
-  drawThoughtBubble("PRESS H FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
-#else
-  drawThoughtBubble("HOLD M5 FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
-#endif
-  vTaskDelay(pdMS_TO_TICKS(3000));
+      clearSpeechBubble();
+  #if HAS_KEYBOARD
+      drawThoughtBubble("PRESS H FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
+  #else
+      drawThoughtBubble("HOLD M5 FOR HELP!", BUBBLE_X, THOUGHT_BUBBLE_Y);
+  #endif
+      vTaskDelay(pdMS_TO_TICKS(3000));
+      clearSpeechBubble();
 
-  clearSpeechBubble();
+    DeviceContext::deviceConfig.setFirstBootDone(true);
+} else {
+    nibblesSpeechShow(SpeechContext::WELCOME_BACK);
+    vTaskDelay(pdMS_TO_TICKS(2000));
+    clearSpeechBubble();
+}
 
   showScanIcon();
 
