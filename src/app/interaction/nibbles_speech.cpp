@@ -42,6 +42,16 @@ static const char* idleMessages[] = {
 };
 static const int idleMessageCount = sizeof(idleMessages) / sizeof(idleMessages[0]);
 
+static const char* welcomeBackMessages[] = {
+    "Hi again!",
+    "Miss me?",
+    "Back for more?",
+    "Ready to scan!",
+    "Let's go again!",
+    "Hey you're back!"
+};
+static const int welcomeBackMessageCount = sizeof(welcomeBackMessages) / sizeof(welcomeBackMessages[0]);
+
 static const char* researchMessages[] = {
     "Research mode on",
     "Chaos engaged",
@@ -256,7 +266,6 @@ void nibblesSpeechUpdate(unsigned long currentTime) {
 void nibblesSpeechShow(SpeechContext context) {
     unsigned long now = millis();
 
-    // Check cooldown
     if (lastSpeechTime > 0 && (now - lastSpeechTime < SPEECH_COOLDOWN_MS)) {
         return;
     }
@@ -281,6 +290,9 @@ void nibblesSpeechShow(SpeechContext context) {
             break;
         case SpeechContext::IDLE:
             msg = pickRandom(idleMessages, idleMessageCount);
+            break;
+        case SpeechContext::WELCOME_BACK:
+            msg = pickRandom(welcomeBackMessages, welcomeBackMessageCount);
             break;
     }
 

@@ -9,9 +9,19 @@ void DeviceConfig::begin() {
     face = prefs.getString("face", "(◕‿◕)");
     wifiSSID = prefs.getString("wifiSSID", "GhostBLE");
     wifiPassword = prefs.getString("wifiPass", "ghostble123!");
-    stealthMode = prefs.getBool("stealth", false);   // NEU
+    stealthMode = prefs.getBool("stealth", false);
+    firstBootDone = prefs.getBool("firstBoot", false);
     prefs.end();
     LOG(LOG_SYSTEM, "Device name: " + name + "  face: " + face);
+}
+
+bool DeviceConfig::getFirstBootDone() const { return firstBootDone; }
+
+void DeviceConfig::setFirstBootDone(bool v) {
+    firstBootDone = v;
+    prefs.begin("ghostble", false);
+    prefs.putBool("firstBoot", v);
+    prefs.end();
 }
 
 bool DeviceConfig::getStealthMode() const { return stealthMode; }
