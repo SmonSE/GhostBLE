@@ -408,7 +408,13 @@ static bool parseDeviceInfo(
             DeviceContext::xpManager.awardXP(3.0f);
 
             if (isOfflineFinding) {
-                LOG(LOG_TARGET, devTag + "Find My Tracker detected (offline finding mode)");
+                float estDist = powf(10.0f, (float)(DISTANCE_CONSTANT - ScanContext::rssi.load()) / (float)RSSI_CONSTANT);
+
+                LOG(LOG_TARGET, devTag + "Find My Tracker detected (offline finding mode)\n"
+                    "   Address:  " + String(ScanContext::addrStr.c_str()) + "\n"
+                    "   RSSI:     " + String(ScanContext::rssi.load()) + " dBm\n"
+                    "   Distance: ~" + String(estDist, 2) + " m");
+
                 isSecurityOrTrackingDevice = true;
 
                 SusLog::add("Find My Tracker", ScanContext::addrStr.c_str(), (int8_t)ScanContext::rssi.load());
@@ -423,7 +429,7 @@ static bool parseDeviceInfo(
 
                 nibblesSpeechShowCustom("Tracker?!");
             } else {
-                LOG(LOG_GATT, devTag + "   Apple Find My beacon (online device)");
+                LOG(LOG_GATT, devTag + "Apple Find My beacon (online device)");
             }
         }
 
