@@ -14,6 +14,7 @@
 #include "infrastructure/gps/gps_manager.h"
 #include "web/web_sender.h"
 #include "infrastructure/platform/hardware_config.h"
+#include "config/version.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesGlasses.h"
@@ -225,6 +226,9 @@ void showHelpOverlay() {
     if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
     UIContext::helpOverlayVisible = true;
 
+    int y            = 18;
+    const int lineH  = 11;
+
     M5.Lcd.fillScreen(0x00C4);
     M5.Lcd.setTextSize(1);
 
@@ -232,15 +236,19 @@ void showHelpOverlay() {
     M5.Lcd.setCursor(80, 3);
     M5.Lcd.print("-- CONTROLS --");
 
+    // Version
+    M5.Lcd.setTextColor(0x8C71, 0x00C4);
+    M5.Lcd.setCursor(10, y); y += 15;
+    M5.Lcd.print(GHOSTBLE_VERSION);
+    M5.Lcd.print("       ");
+    M5.Lcd.print(GHOSTBLE_BUILD_DATE);
+
     M5.Lcd.setTextColor(WHITE, 0x00C4);
-    int y            = 20;
-    const int lineH  = 11;
 
 #if HAS_KEYBOARD
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn TAB      Wardriving"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn DEL      GPS Source"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn F        BLE Device Finder"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn I        Image/Screenshot"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M        Main Menu"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn P        Pointer in log"); y += lineH;
