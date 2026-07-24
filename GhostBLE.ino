@@ -369,6 +369,14 @@ void loop() {
             return;
         }
       }
+      if (SusDeviceView::isOpen()) {
+          for (auto key : status.word) {
+              if (key == '.') SusDeviceView::navigateNext();
+              if (key == '/') SusDeviceView::selectCurrent();
+              if (key == ',' || key == 'm' || key == 'M' || key == 0x1B) SusDeviceView::close();
+          }
+          return;
+      }
       if (MenuController::isOpen()) {
         for (auto key : status.word) {
             if (key == ';') {

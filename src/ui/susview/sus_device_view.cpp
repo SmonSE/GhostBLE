@@ -2,6 +2,7 @@
 #include "sus_device_view.h"
 #include <M5Unified.h>
 #include "app/context/sus_log_context.h"
+#include "ui/finder/approach_view.h"
 
 namespace SusDeviceView {
 
@@ -33,6 +34,16 @@ void navigateNext() {
     if (total == 0) return;
     cursorIdx_ = (cursorIdx_ + 1) % total;
     draw();
+}
+
+void selectCurrent() {
+    if (!menuOpen_) return;
+    int total = SusLog::count();
+    if (total == 0) return;
+
+    const auto& e = SusLog::get(cursorIdx_);
+    close();
+    ApproachView::open(e.mac, e.label);
 }
 
 void draw() {
@@ -78,7 +89,8 @@ void draw() {
 
     M5.Lcd.setTextColor(0x2945, 0x0020);
     M5.Lcd.setCursor(4, 125);
-    M5.Lcd.print("v:next  M:close");
+    M5.Lcd.print("v:next >:locate  M:close");
+
 }
 
 } // namespace SusDeviceView
