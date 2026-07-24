@@ -188,6 +188,26 @@ static IBeaconInfo parseIBeacon(const std::string& mfg) {
     return info;
 }
 
+// ============================================================
+//  Apple Find My Tracker Detection
+//  Source: TU Darmstadt OpenHaystack research, Adam Catley reverse engineering
+//  Note: Cannot distinguish AirTag specifically from other Find My
+//        accessories (AirPods case, Chipolo, Pebblebee, etc.) — Apple
+//        designs all Find My devices to look identical in BLE advertising.
+// ============================================================
+static bool detectAppleFindMy(const std::string& mfg, bool& isOfflineFinding) {
+    isOfflineFinding = false;
+
+    if (mfg.size() < 3) return false;
+    if ((uint8_t)mfg[0] != 0x4C || (uint8_t)mfg[1] != 0x00) return false;
+
+    uint8_t continuityType = (uint8_t)mfg[2];
+    if (continuityType != 0x12) return false;
+
+    isOfflineFinding = (mfg.size() >= 25);
+    return true;
+}
+
 // ===========================================================================
 //  Helper: estimate physical distance from TX power and RSSI.
 //  Returns -1.0 for invalid/unrealistic values.
@@ -377,6 +397,33 @@ static bool parseDeviceInfo(
                 
                 // Show speech bubble
                 nibblesSpeechShowCustom("Meta Glasses!");
+            }
+        }
+
+        // ============================================================
+        // APPLE FIND MY TRACKER DETECTION
+        // ============================================================
+        bool isOfflineFinding = false;
+        if (detectAppleFindMy(mfg, isOfflineFinding)) {
+            DeviceContext::xpManager.awardXP(3.0f);
+
+            if (isOfflineFinding) {
+                LOG(LOG_TARGET, devTag + "Find My Tracker detected (offline finding mode)");
+                isSecurityOrTrackingDevice = true;
+
+                SusLog::add("Find My Tracker", ScanContext::addrStr.c_str(), (int8_t)ScanContext::rssi.load());
+
+                auto* ms = MenuController::getState();
+                if (ms->audioEnabled && ms->audioSuspicious) {
+                    M5.Speaker.setVolume(MenuController::getAlarmVolume());
+                    M5.Speaker.tone(1200, 150);
+                    while (M5.Speaker.isPlaying()) { delay(5); }
+                    M5.Speaker.tone(1200, 150);
+                }
+
+                nibblesSpeechShowCustom("Tracker?!");
+            } else {
+                LOG(LOG_GATT, devTag + "   Apple Find My beacon (online device)");
             }
         }
 
