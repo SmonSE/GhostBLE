@@ -117,7 +117,7 @@ void draw() {
         y += 22;
     }
 
-    M5.Lcd.setTextColor(0x2945, 0x0020);
+    M5.Lcd.setTextColor(0xFFFF, 0x0020);
     M5.Lcd.setCursor(4, 125);
     M5.Lcd.print("v:next  >:select  c:close");
     //M5.Lcd.print("BtnA:next  BtnB:select  hold:close");

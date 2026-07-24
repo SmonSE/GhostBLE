@@ -268,8 +268,7 @@ void loop() {
             LOG(LOG_CONTROL, "ENTER pressed — menu select");
             MenuController::selectCurrent();
         } else {
-            LOG(LOG_CONTROL, "ENTER pressed");
-            Screenshot::capture();
+            LOG(LOG_CONTROL, "ENTER pressed — no menu open");
         }
       }
       if (status.fn && !ScanContext::bleScanEnabled) {
@@ -554,7 +553,7 @@ void onLongPress() {
   ScanContext::bleScanEnabled = !ScanContext::bleScanEnabled;
 
   if (ScanContext::bleScanEnabled) {
-    LOG(LOG_CONTROL,"▶️ BLE Scan ENABLED");
+    LOG(LOG_CONTROL,"BLE Scan ENABLED");
     if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
           drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
@@ -566,7 +565,7 @@ void onLongPress() {
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
   }
   else {
-    LOG(LOG_CONTROL,"⏹️ BLE Scan DISABLED");
+    LOG(LOG_CONTROL,"BLE Scan DISABLED");
     if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
