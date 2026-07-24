@@ -79,12 +79,31 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   }
 
   // 6. POTENTIAL CARD SKIMMER (generic serial BLE module names)
-  if (name == "HC-03" || name == "HC-05" || name == "HC-06" ||
+  if (name == "HC-03" || name == "HC-05" || name == "HC-06" || name == "HC-08" ||
       name == "HM-10" || name == "HM-19") {
     outLabel = "Possible Card Skimmer";
-    LOG(LOG_TARGET, "Possible card skimmer module detected: " + name);
+    LOG(LOG_TARGET, "CS: Possible card skimmer module detected: " + name);
     return true;
   }
+
+  // RNBT-XXXX name prefix (Roving Networks default naming)
+  if (name.startsWith("RNBT-")) {
+    outLabel = "Possible Card Skimmer (RN module)";
+    LOG(LOG_TARGET, "CS: Possible RN Bluetooth module detected: " + name);
+    return true;
+  }
+
+  // Roving Networks OUI — verified real MAC prefix (SparkFun-confirmed)
+  String macLower = address;
+  macLower.toLowerCase();
+  if (macLower.startsWith("00:06:66")) {
+    outLabel = "Possible Card Skimmer (RN OUI)";
+    LOG(LOG_TARGET, "CS: Possible Roving Networks MAC prefix detected: " + address);
+    return true;
+  }
+
+return false;
+
 
   return false;
 }
