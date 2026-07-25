@@ -36,6 +36,8 @@ void close() {
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     showScanIcon();
     drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y, true);
+
+    // Here is different solution maybe better!
 }
 
 bool isOpen() { return open_; }
@@ -66,6 +68,14 @@ void navigateNext() {
     draw();
 }
 
+void navigatePrev() {
+    if (!open_) return;
+    int total = DeviceFinder::count();
+    if (total == 0) return;
+    cursorIdx_ = (cursorIdx_ - 1 + total) % total;
+    draw();
+}
+
 void selectCurrent() {
     if (!open_) return;
     int total = DeviceFinder::count();
@@ -90,7 +100,7 @@ void draw() {
         M5.Lcd.setCursor(4, 20);
         M5.Lcd.print("No devices found");
         M5.Lcd.setCursor(4, 125);
-        M5.Lcd.print("c: close");
+        M5.Lcd.print(" f:refresh  esc:close");
         return;
     }
 
@@ -119,7 +129,7 @@ void draw() {
 
     M5.Lcd.setTextColor(0xFFFF, 0x0020);
     M5.Lcd.setCursor(4, 125);
-    M5.Lcd.print("v:next  >:select  c:close");
+    M5.Lcd.print(" ^:up  v:down  ok:select  esc:close");
     //M5.Lcd.print("BtnA:next  BtnB:select  hold:close");
 }
 

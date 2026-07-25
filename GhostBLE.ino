@@ -220,179 +220,157 @@ void loop() {
     if (M5.BtnB.wasPressed()) { dismissHelpOverlay(); return; }
 #endif
 #endif
-    return;  // skip all other processing while help is visible
-  }
-
-
-  // ── Approach View — höchste Priorität nach Help ────────────
-  if (ApproachView::isOpen()) {
-#if HAS_KEYBOARD
-    if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
-      auto status = M5Cardputer.Keyboard.keysState();
-      for (auto key : status.word) {
-        if (key == '`' || key == 'c' || key == 'C') {
-          LOG(LOG_CONTROL, "Closing Approach View");
-          ApproachView::close();
-          break;
-        }
-      }
-    }
-#endif
-    return;   // während Approach View offen ist, KEINE andere Taste verarbeiten
-  }
-
-  // ── Finder List View ─────────────────────────────────────────
-  if (FinderListView::isOpen()) {
-#if HAS_KEYBOARD
-    if (M5Cardputer.Keyboard.isChange() && M5Cardputer.Keyboard.isPressed()) {
-      auto status = M5Cardputer.Keyboard.keysState();
-      for (auto key : status.word) {
-        if (key == '.') FinderListView::navigateNext();
-        if (key == '/') FinderListView::selectCurrent();
-        if (key == '`' || key == 'c' || key == 'C') FinderListView::close();
-        if (key == 'f' || key == 'F') FinderListView::refresh();
-      }
-    }
-#endif
     return;
   }
 
 #if HAS_KEYBOARD
-  // Cardputer keyboard input
   if (M5Cardputer.Keyboard.isChange()) {
     if (M5Cardputer.Keyboard.isPressed()) {
       auto status = M5Cardputer.Keyboard.keysState();
 
+      // ── ENTER: confirm/select — routed to whichever view is active ──
       if (status.enter) {
-        if (MenuController::isOpen()) {
-            LOG(LOG_CONTROL, "ENTER pressed — menu select");
-            MenuController::selectCurrent();
-        } else {
-            LOG(LOG_CONTROL, "ENTER pressed — no menu open");
+        if (FinderListView::isOpen()) {
+          LOG(LOG_CONTROL, "ENTER — finder select");
+          FinderListView::selectCurrent();
+        } else if (SusDeviceView::isOpen()) {
+          LOG(LOG_CONTROL, "ENTER — sus device select");
+          SusDeviceView::selectCurrent();
+        } else if (MenuController::isOpen()) {
+          LOG(LOG_CONTROL, "ENTER — menu select");
+          MenuController::selectCurrent();
+        }
+        return;
+      }
+
+      // ── ESC: one step back — closes innermost open view first ──
+      for (auto key : status.word) {
+        if (key == '`') {
+          if (ApproachView::isOpen()) {
+            LOG(LOG_CONTROL, "ESC — closing Approach View");
+            ApproachView::close();
+          } else if (FinderListView::isOpen()) {
+            LOG(LOG_CONTROL, "ESC — closing Finder List View");
+            FinderListView::close();
+          } else if (SusDeviceView::isOpen()) {
+            LOG(LOG_CONTROL, "ESC — closing Sus Device View");
+            SusDeviceView::close();
+          } else if (MenuController::isOpen()) {
+            LOG(LOG_CONTROL, "ESC — closing Main Menu");
+            MenuController::close();
+          }
+          return;
         }
       }
+
+      // ── Approach View: nur ESC wirkt, sonst nichts weiter verarbeiten ──
+      if (ApproachView::isOpen()) {
+        return;
+      }
+
+      // ── Finder List View: uniforme Navigation + eigene Refresh-Taste ──
+      if (FinderListView::isOpen()) {
+        for (auto key : status.word) {
+          if (key == ';') FinderListView::navigatePrev();
+          if (key == '.') FinderListView::navigateNext();
+          if (key == 'f' || key == 'F') FinderListView::refresh();
+        }
+        return;
+      }
+
+      // ── Sus Device View: uniforme Navigation ──
+      if (SusDeviceView::isOpen()) {
+        for (auto key : status.word) {
+          if (key == ';') SusDeviceView::navigatePrev();
+          if (key == '.') SusDeviceView::navigateNext();
+          if (key == '`') SusDeviceView::close();
+        }
+        return;
+      }
+
+      // ── Main Menu: uniforme Navigation + Slider-Adjust ──
+      if (MenuController::isOpen()) {
+        for (auto key : status.word) {
+          if (key == ';') MenuController::navigateUp();
+          if (key == '.') MenuController::navigateDown();
+          if (key == ',') MenuController::adjustLeft();
+          if (key == '/') MenuController::adjustRight();
+        }
+        return;
+      }
+
+      // ── Nichts offen: globale Shortcuts ──
       if (status.fn && !ScanContext::bleScanEnabled) {
         LOG(LOG_CONTROL, "FN pressed");
         toggleWiFi();
       }
-      if (status.tab && !ScanContext::bleScanEnabled){
+      if (status.tab && !ScanContext::bleScanEnabled) {
         LOG(LOG_CONTROL, "TAB pressed");
-        printf("Toggle Wardrive\n");
         toggleWardriving();
       }
-      if (status.del && !ScanContext::bleScanEnabled){
+      if (status.del && !ScanContext::bleScanEnabled) {
         LOG(LOG_CONTROL, "DEL pressed");
-        printf("switchGPSSource\n");
         NetworkContext::switchGPSSource();
       }
-      // 'h' key opens help overlay
+
       for (auto key : status.word) {
         if (key == 'm' || key == 'M') {
-          if (MenuController::isOpen()) {
-            LOG(LOG_CONTROL, "M pressed — closing main menu");
-            if (SusDeviceView::isOpen()) {
-              SusDeviceView::close();
-            }
-            MenuController::close();
-          } else {
-              LOG(LOG_CONTROL, "M pressed — showing main menu");
-              MenuController::open();
-          }
+          LOG(LOG_CONTROL, "M pressed — showing main menu");
+          MenuController::open();
           return;
         }
         if (key == 'f' || key == 'F') {
           LOG(LOG_CONTROL, "F pressed — Find Device");
-          FinderListView::drawScanning(); 
+          FinderListView::drawScanning();
           DeviceFinder::startFinderFlow();
           return;
         }
         if (key == 'i' || key == 'I') {
-            LOG(LOG_CONTROL, "I pressed");
-            Screenshot::capture();
+          LOG(LOG_CONTROL, "I pressed");
+          Screenshot::capture();
           return;
         }
         if (key == 'h' || key == 'H') {
-          if (UIContext::helpOverlayVisible) {
-            LOG(LOG_CONTROL, "H pressed — closing help");
-            UIContext::hideHelpOverlay();
-          } else {
-            LOG(LOG_CONTROL, "H pressed — showing help");
-            showHelpOverlay();
-          }
+          LOG(LOG_CONTROL, "H pressed — showing help");
+          showHelpOverlay();
           return;
         }
-        // Scan Mode Toggle
-        if ((key == 's' || key == 'S')) {
+        if (key == 's' || key == 'S') {
           LOG(LOG_CONTROL, "S pressed — toggling scan mode");
-          if(!ScanContext::bleScanEnabled) {
+          if (!ScanContext::bleScanEnabled) {
             toggleScanMode();
           }
           return;
         }
-        if ((key == 'r' || key == 'R')) {
+        if (key == 'r' || key == 'R') {
           LOG(LOG_CONTROL, "R pressed — toggling research mode");
-          if(!UIContext::isResearchModeActive) {
-            UIContext::isResearchModeActive = true;
-            showResearchMode();
-          } else {
-            UIContext::isResearchModeActive = false;
-            showResearchMode();
-          }
+          UIContext::isResearchModeActive = !UIContext::isResearchModeActive;
+          showResearchMode();
           return;
         }
         if ((key == 'p' || key == 'P') && ScanContext::bleScanEnabled) {
-            LOG(LOG_CONTROL, "P pressed — pointer set");
+          LOG(LOG_CONTROL, "P pressed — pointer set");
 
-            bool hasFix = NetworkContext::gpsManager.isValid();
+          bool hasFix = NetworkContext::gpsManager.isValid();
+          DeviceContext::pointer++;
 
-            DeviceContext::pointer++;
-
-            char msg[160];
-
-            if (NetworkContext::wardrivingEnabled.load() && hasFix) {
-                snprintf(msg, sizeof(msg),
-                        "[MARKER #%d][GPS] Time:%s SAT:%u Lat: %.6f Lon: %.6f",
-                        DeviceContext::pointer.load(),
-                        NetworkContext::gpsManager.getTimestamp().c_str(),
-                        NetworkContext::gpsManager.getSatellites(),
-                        NetworkContext::gpsManager.getLatitude(),
-                        NetworkContext::gpsManager.getLongitude());
-            } else {
-                snprintf(msg, sizeof(msg),
-                        "[MARKER #%d][NO GPS]",
-                        DeviceContext::pointer.load());
-            }
-
-            drawPointer(DeviceContext::pointer.load());  // Update on-screen pointer count immediately
-
-            LOG(LOG_GATT, msg);
-            return;
-        }
-      }
-      if (SusDeviceView::isOpen()) {
-          for (auto key : status.word) {
-              if (key == '.') SusDeviceView::navigateNext();
-              if (key == '/') SusDeviceView::selectCurrent();
-              if (key == ',' || key == 'm' || key == 'M' || key == 0x1B) SusDeviceView::close();
+          char msg[160];
+          if (NetworkContext::wardrivingEnabled.load() && hasFix) {
+            snprintf(msg, sizeof(msg),
+                    "[MARKER #%d][GPS] Time:%s SAT:%u Lat: %.6f Lon: %.6f",
+                    DeviceContext::pointer.load(),
+                    NetworkContext::gpsManager.getTimestamp().c_str(),
+                    NetworkContext::gpsManager.getSatellites(),
+                    NetworkContext::gpsManager.getLatitude(),
+                    NetworkContext::gpsManager.getLongitude());
+          } else {
+            snprintf(msg, sizeof(msg), "[MARKER #%d][NO GPS]", DeviceContext::pointer.load());
           }
+
+          drawPointer(DeviceContext::pointer.load());
+          LOG(LOG_GATT, msg);
           return;
-      }
-      if (MenuController::isOpen()) {
-        for (auto key : status.word) {
-            if (key == ';') {
-                MenuController::navigateUp();
-            }
-            if (key == '.') {
-                MenuController::navigateDown();
-            }
-            if (key == ',') {
-                MenuController::adjustLeft();
-            }
-            if (key == '/') {
-                MenuController::adjustRight();
-            }
         }
-        return;
       }
     }
   }

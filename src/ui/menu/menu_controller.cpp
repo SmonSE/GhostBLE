@@ -557,7 +557,7 @@ void draw() {
     M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
 
 #if HAS_KEYBOARD
-    M5.Lcd.print(" ^:up v:down ok:enable/disable m:close");
+    M5.Lcd.print(" ^:up  v:down  ok:select  esc:close");
 #else
     M5.Lcd.print("A:down  B:toggle  M5(long):close");
 #endif

@@ -5,6 +5,7 @@ namespace SusDeviceView {
     void open();
     void close();
     void navigateNext();
+    void navigatePrev();
     void selectCurrent();
     bool isOpen();
     void draw();

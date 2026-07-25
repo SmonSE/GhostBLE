@@ -48,7 +48,17 @@ static const char* welcomeBackMessages[] = {
     "Back for more?",
     "Ready to scan!",
     "Let's go again!",
-    "Hey you're back!"
+    "Hey you're back!",
+    "Reboot squad!",
+    "Systems go!",
+    "Loading me...",
+    "I'm baaack!",
+    "Round two!",
+    "Still ghosting!",
+    "Let's find stuff!",
+    "Powered up!",
+    "Awake again!",
+    "Ready, set, scan!"
 };
 static const int welcomeBackMessageCount = sizeof(welcomeBackMessages) / sizeof(welcomeBackMessages[0]);
 
