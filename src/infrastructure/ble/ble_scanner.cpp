@@ -911,19 +911,6 @@ void scanForDevices() {
     LOG(LOG_SCAN, "Devices found: " + String(results.getCount()));
     nibblesSpeechNotifyEvent();
 
-    // Trigger happy expression at start of fruitful scan
-    if (!UIContext::isHappyTaskRunning.load() && NetworkContext::displayEnabled)
-    {
-        UIContext::isHappyTaskRunning.store(true);
-
-        if (xTaskCreatePinnedToCore( showHappyExpressionTask, "HappyFace", 4096, nullptr, 2, &UIContext::happyTaskHandle, 1) != pdPASS)
-        {
-            LOG(LOG_SYSTEM, "Failed to create HappyFace task");
-            UIContext::isHappyTaskRunning.store(false);
-            UIContext::happyTaskHandle = nullptr;
-        }
-    }
-
     // ===================================================================
     //  Per-device processing loop
     // ===================================================================
