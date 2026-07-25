@@ -4,6 +4,7 @@ namespace FinderListView {
     void open();
     void close();
     void navigateNext();
+    void navigatePrev();
     void selectCurrent();
     bool isOpen();
     void refresh();

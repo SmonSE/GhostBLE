@@ -3,6 +3,7 @@
 #include <M5Unified.h>
 #include "app/context/sus_log_context.h"
 #include "ui/finder/approach_view.h"
+#include "ui/menu/menu_controller.h"
 
 namespace SusDeviceView {
 
@@ -24,6 +25,7 @@ void open() {
 
 void close() {
     menuOpen_ = false;
+    MenuController::open();
 }
 
 bool isOpen() { return menuOpen_; }
@@ -33,6 +35,14 @@ void navigateNext() {
     int total = SusLog::count();
     if (total == 0) return;
     cursorIdx_ = (cursorIdx_ + 1) % total;
+    draw();
+}
+
+void navigatePrev() {
+    if (!menuOpen_) return;
+    int total = SusLog::count();
+    if (total == 0) return;
+    cursorIdx_ = (cursorIdx_ - 1 + total) % total;
     draw();
 }
 
@@ -60,7 +70,7 @@ void draw() {
         M5.Lcd.setCursor(4, 20);
         M5.Lcd.print("No suspicious devices yet");
         M5.Lcd.setCursor(4, 125);
-        M5.Lcd.print("M: close");
+        M5.Lcd.print("^:up  v:down  ok:select  esc:close");
         return;
     }
 
@@ -89,7 +99,7 @@ void draw() {
 
     M5.Lcd.setTextColor(0x2945, 0x0020);
     M5.Lcd.setCursor(4, 125);
-    M5.Lcd.print("v:next >:locate  M:close");
+    M5.Lcd.print("^:up  v:down  ok:select  esc:close");
 
 }
 

@@ -15,6 +15,8 @@
 #include "web/web_sender.h"
 #include "infrastructure/platform/hardware_config.h"
 #include "config/version.h"
+#include "ui/finder/finder_list_view.h"
+#include "ui/finder/approach_view.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesGlasses.h"
@@ -101,7 +103,8 @@ void drawBatteryIcon(int x, int y, int percent, bool charging) {
 //  Battery state — writes to UIContext
 // ----------------------------------------------------------------
 void updateBatteryState() {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) return;
+
     int  rawVoltage  = M5.Power.getBatteryVoltage();
     bool chargingNow = M5.Power.isCharging();
     bool usbConnected = (rawVoltage > 4200);
@@ -172,7 +175,7 @@ void clearHearts() {
 //  Speech bubble
 // ----------------------------------------------------------------
 void clearSpeechBubble() {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) return;
     int srcX    = BUBBLE_X - NIBBLES_FRONT_X;
     int srcY    = BUBBLE_RECT_Y - NIBBLES_FRONT_Y;
     int restoreH = BUBBLE_RECT_H + BUBBLE_TRI_H + 3;
@@ -223,7 +226,7 @@ void clearSpeechBubble() {
 //  Help overlay — reads/writes UIContext::helpOverlayVisible
 // ----------------------------------------------------------------
 void showHelpOverlay() {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) return;
     UIContext::helpOverlayVisible = true;
 
     int y            = 18;
@@ -269,7 +272,7 @@ void showHelpOverlay() {
 }
 
 void dismissHelpOverlay() {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) {
         return;
     }
     UIContext::helpOverlayVisible = false;
@@ -302,7 +305,7 @@ void dismissHelpOverlay() {
 //  Expression tasks — alle schreiben in UIContext::
 // ----------------------------------------------------------------
 void showGlassesExpressionTask(void* parameter) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) {
         UIContext::isGlassesTaskRunning.store(false);
         UIContext::glassesTaskHandle = nullptr;
         vTaskDelete(NULL);
@@ -360,7 +363,7 @@ void showGlassesExpressionTask(void* parameter) {
 }
 
 void showAngryExpressionTask(void* parameter) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) {
         UIContext::isAngryTaskRunning.store(false);
         UIContext::angryTaskHandle = nullptr;
         vTaskDelete(NULL);
@@ -393,7 +396,7 @@ void showAngryExpressionTask(void* parameter) {
 }
 
 void showSadExpressionTask(void* parameter) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) {
         UIContext::isSadTaskRunning.store(false);
         UIContext::sadTaskHandle = nullptr;
         vTaskDelete(NULL);
@@ -436,7 +439,7 @@ void showSadExpressionTask(void* parameter) {
 }
 
 void showThugLifeExpressionTask(void* parameter) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) {
         UIContext::isThugLifeTaskRunning.store(false);
         UIContext::thugLifeTaskHandle = nullptr;
         vTaskDelete(NULL);
@@ -468,14 +471,14 @@ void showThugLifeExpressionTask(void* parameter) {
 }
 
 void showHappyExpressionTask(void* parameter) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) {
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) {
         UIContext::isHappyTaskRunning.store(false);
         UIContext::happyTaskHandle = nullptr;
         vTaskDelete(NULL);
     }
     UIContext::isHappyTaskRunning.store(true);
     vTaskDelay(pdMS_TO_TICKS(1000));
-
+    
     int r = esp_random() % 2;
     if (r == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
@@ -501,7 +504,7 @@ void showHappyExpressionTask(void* parameter) {
 //  Status bar
 // ----------------------------------------------------------------
 void drawStatusIcons(int x, int y) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) return;
     drawWifiIcon(x, y, NetworkContext::isWebLogActive);  // isWebLogActive → network_context later
 
     if (ScanContext::bleScanEnabled.load()) {
@@ -641,7 +644,7 @@ void showResearchMode() {
 }
 
 void showFindingCounter(int sniffed, int sus, int spotted) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen()) return;
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) return;
     updateBatteryState();
 
     M5.Lcd.setTextSize(1);
