@@ -117,7 +117,7 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 - **Appearance parser** — full subcategory decoding (190+ entries from Section 2.6): watches, medical devices, domestic appliances, vehicles, industrial tools, cookware and more
 - **SDO Service parser** — Section 3.10 special services: Matter (0xFFF6), Zigbee Direct (0xFFF7), ASTM Drone Remote ID (0xFFFA), Thread (0xFFFB), AirFuel (0xFFFC), FIDO U2F (0xFFFD)
 
-### Known Device Detection
+### Known Suspicious Device Detection
 
 - **Flipper Zero** — detected by known service UUIDs
 - **CatHack / Apple Juice** — BLE spam tool detection
@@ -128,7 +128,23 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 - **XiaoBiscuit** — detected by known service UUIDs
 - **Card Skimmer** - detected by known device names
 
-## Card Skimmer Detection
+### Locate Suspicious Devices
+
+Found a Find My Tracker, skimmer, or other flagged device? GhostBLE doesn't 
+just detect it — it helps you find exactly where it is.
+
+1. Open **Sus Devices** from the Main Menu to see everything GhostBLE has 
+   flagged (name, MAC, signal strength, time detected).
+2. Select any entry with **ENTER** — the main scan pauses automatically, and 
+   its MAC address is handed off to **Finder Mode**.
+3. Finder Mode scans specifically for that device, showing a live radar 
+   display and an accelerating beep as you get closer — walk around and 
+   home in on it, no more guessing.
+
+Perfect for tracking down a hidden AirTag, a suspicious BLE module near a 
+card reader, or any device you've flagged as worth a closer look.
+
+### Card Skimmer Detection
 
 Bluetooth card skimmers are a growing threat — FICO reported a **700%+ 
 increase** in skimming incidents in a single year, and researchers using 
