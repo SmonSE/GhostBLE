@@ -70,7 +70,11 @@ void draw() {
         M5.Lcd.setCursor(4, 20);
         M5.Lcd.print("No suspicious devices yet");
         M5.Lcd.setCursor(4, 125);
+#if HAS_KEYBOARD
         M5.Lcd.print("^:up  v:down  ok:select  esc:close");
+#else
+        M5.Lcd.print("A:next  B:select  Hold B:back");
+#endif
         return;
     }
 
@@ -99,8 +103,11 @@ void draw() {
 
     M5.Lcd.setTextColor(0x2945, 0x0020);
     M5.Lcd.setCursor(4, 125);
+#if HAS_KEYBOARD
     M5.Lcd.print("^:up  v:down  ok:select  esc:close");
-
+#else
+    M5.Lcd.print("A:next  B:select  Hold B:back");
+#endif
 }
 
 } // namespace SusDeviceView

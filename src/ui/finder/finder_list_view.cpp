@@ -96,12 +96,16 @@ void draw() {
     M5.Lcd.printf("FOUND DEVICES (%d)", DeviceFinder::count());
 
     if (DeviceFinder::count() == 0) {
-        M5.Lcd.setTextColor(0x8C71, 0x0020);
-        M5.Lcd.setCursor(4, 20);
-        M5.Lcd.print("No devices found");
-        M5.Lcd.setCursor(4, 125);
-        M5.Lcd.print(" f:refresh  esc:close");
-        return;
+            M5.Lcd.setTextColor(0x8C71, 0x0020);
+            M5.Lcd.setCursor(4, 20);
+            M5.Lcd.print("No devices found");
+            M5.Lcd.setCursor(4, 125);
+    #if HAS_KEYBOARD
+            M5.Lcd.print(" f:refresh  esc:close");
+    #else
+            M5.Lcd.print(" Hold A:refresh B:back");
+    #endif
+            return;    
     }
 
     int total = DeviceFinder::count();
@@ -129,8 +133,11 @@ void draw() {
 
     M5.Lcd.setTextColor(0xFFFF, 0x0020);
     M5.Lcd.setCursor(4, 125);
+#if HAS_KEYBOARD
     M5.Lcd.print(" ^:up  v:down  ok:select  esc:close");
-    //M5.Lcd.print("BtnA:next  BtnB:select  hold:close");
+#else
+    M5.Lcd.print(" A:next  B:select  Hold B:back");
+#endif
 }
 
 static void typeText(int x, int y, const char* text, uint16_t color, uint16_t bg, int delayMs = 8) {

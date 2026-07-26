@@ -243,6 +243,14 @@ static void buildItems() {
         SusDeviceView::open();
     });
 
+    // ── DEVICE FINDER ────────────────────────────────────────
+    section("DEVICE FINDER");
+    action("Find Device", []() {
+        MenuController::closeSilent();
+        FinderListView::drawScanning();
+        DeviceFinder::startFinderFlow();
+    });
+
     // ── SCAN ─────────────────────────────────────────────────
     section("SCAN");
     toggleAction("Research Mode",
@@ -559,7 +567,7 @@ void draw() {
 #if HAS_KEYBOARD
     M5.Lcd.print(" ^:up  v:down  ok:select  esc:close");
 #else
-    M5.Lcd.print("A:down  B:toggle  M5(long):close");
+    M5.Lcd.print("A:down  B:select  Hold B:back");
 #endif
 }
 

@@ -260,10 +260,10 @@ void showHelpOverlay() {
 #endif
 
 #if HAS_TWO_BUTTONS
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnA       Menu: down"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnA       Next / +"); y += lineH;
     M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnA  BLE Scan"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnB       Menu: select"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnB  Open/Close Menu"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("BtnB       Select"); y += lineH;
+    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnB  Open/Back/Close"); y += lineH;
 #endif
 
     M5.Lcd.setTextColor(0x7BEF, 0x00C4);
