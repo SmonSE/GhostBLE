@@ -15,6 +15,8 @@
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"
 
+#include "infrastructure/platform/hardware_config.h"
+
 
 namespace FinderListView {
 

@@ -6,6 +6,8 @@
 #include "ui/menu/menu_controller.h"
 #include "ui/finder/finder_list_view.h"
 
+#include "infrastructure/platform/hardware_config.h"
+
 
 namespace ApproachView {
 

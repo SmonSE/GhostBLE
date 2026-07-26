@@ -1,9 +1,14 @@
 // sus_device_view.cpp
 #include "sus_device_view.h"
 #include <M5Unified.h>
+
 #include "app/context/sus_log_context.h"
+
 #include "ui/finder/approach_view.h"
 #include "ui/menu/menu_controller.h"
+
+#include "infrastructure/platform/hardware_config.h"
+
 
 namespace SusDeviceView {
 
