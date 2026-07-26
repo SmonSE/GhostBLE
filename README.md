@@ -303,6 +303,31 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 | **BtnB short press** | Select / toggle item in Main Menu |
 | **BtnB long press** (3s) | Open / close Main Menu |
 
+### M5StickS3 — External SD Card Wiring
+
+The M5StickS3 has no built-in SD slot, so an external SPI Micro SD reader 
+module is wired directly to the available GPIOs.
+
+| SD Reader Pin | M5StickS3 GPIO | Define             |
+|----------------|----------------|---------------------|
+| CS             | G8             | `SD_CS_PIN`         |
+| MOSI           | G1             | `SD_MOSI_PIN`       |
+| SCK            | G0             | `SD_CLK_PIN`        |
+| MISO           | G4             | `SD_MISO_PIN`       |
+| GND            | GND            | —                   |
+| VCC            | 3V3            | —                   |
+
+```cpp
+#define SD_CS_PIN    8   // G8
+#define SD_MOSI_PIN  1   // G1
+#define SD_CLK_PIN   0   // G0
+#define SD_MISO_PIN  4   // G4
+```
+
+> ⚠️ These GPIOs are shared with other peripherals on some board revisions 
+> (e.g. LoRa module). GhostBLE deselects the LoRa chip select pin before 
+> initializing the SD card to free the shared SPI bus — see `setup()`.
+
 ### Web Dashboard
 
 1. Enable WiFi (**FN** on Cardputer or **BtnA** on StickS3)
