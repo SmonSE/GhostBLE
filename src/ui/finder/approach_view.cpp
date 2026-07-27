@@ -7,6 +7,7 @@
 #include "ui/finder/finder_list_view.h"
 
 #include "infrastructure/platform/hardware_config.h"
+#include "infrastructure/ble/ble_scanner.h"
 
 
 namespace ApproachView {
@@ -14,6 +15,7 @@ namespace ApproachView {
 // ── State ────────────────────────────────────────────────────
 static bool    open_          = false;
 static bool    staticDrawn_   = false;
+static bool    scanStopped_   = false;
 static String  targetMac_;
 static String  targetName_;
 static int8_t  smoothedRssi_  = -100;
@@ -44,7 +46,7 @@ static constexpr int GRID_STEP = 12;
 static int rssiToPercent(int8_t rssi) {
 
     //return constrain(map(rssi, -88, -40, 0, 100), 0, 100);
-    return constrain(map(rssi, -90, -42, 0, 100), 0, 100);
+    return constrain(map(rssi, -90, -30, 0, 100), 0, 100);
 }
 
 static unsigned long percentToBeepInterval(int pct) {
@@ -172,8 +174,14 @@ static void beepIfNeeded(int8_t rssi, bool found) {
 // ============================================================
 
 void open(const char* mac, const char* name) {
+    if (ScanContext::bleScanEnabled.load()) {
+        LOG(LOG_CONTROL, "Approach View — stopping main scan");
+        stopBleScan();
+    }
+
     open_          = true;
     staticDrawn_   = false;
+    scanStopped_   = false;
     targetMac_     = mac;
     targetName_    = name;
     smoothedRssi_  = -100;
@@ -185,10 +193,19 @@ void open(const char* mac, const char* name) {
 
 void close() {
     open_ = false;
-    FinderListView::open();
+    //FinderListView::open();
+    //FinderListView::draw();
+    MenuController::open();
 }
 
 bool isOpen() { return open_; }
+
+static void drawPausingMessage() {
+    M5.Lcd.fillRect(0, 108, 240, 14, COL_SCREEN_BG);
+    M5.Lcd.setTextColor(0xFFE0, COL_SCREEN_BG);   // gelb, gut sichtbar
+    M5.Lcd.setCursor(4, 110);
+    M5.Lcd.print("Pausing main scan...");
+}
 
 void update() {
     if (!open_) return;
@@ -196,6 +213,31 @@ void update() {
     if (!staticDrawn_) {
         drawStatic();
         staticDrawn_ = true;
+    }
+
+    if (!scanStopped_) {
+        if (ScanContext::bleScanEnabled.load()) {
+            LOG(LOG_CONTROL, "Approach View — stopping main scan");
+            stopBleScan();
+        }
+
+        LOG(LOG_CONTROL, "Approach View — waiting, scanIsRunning=" + String(ScanContext::scanIsRunning.load()));
+
+        unsigned long waitStart = millis();
+        int dots = 0;
+        while (ScanContext::scanIsRunning.load() && (millis() - waitStart < 8000)) {
+            M5.Lcd.fillRect(0, 108, 240, 14, COL_SCREEN_BG);
+            M5.Lcd.setTextColor(0xFFE0, COL_SCREEN_BG);
+            M5.Lcd.setCursor(4, 110);
+            M5.Lcd.print("Pausing main scan");
+            for (int i = 0; i < (dots % 4); i++) M5.Lcd.print(".");
+            dots++;
+            vTaskDelay(pdMS_TO_TICKS(250));
+        }
+
+        scanStopped_  = true;
+        lastScanTime_ = millis();
+        return;
     }
 
     beepIfNeeded(smoothedRssi_, lastFound_);
@@ -222,7 +264,7 @@ void update() {
     }
 
     if (found) {
-        smoothedRssi_ = (smoothedRssi_ * 3 + rssi) / 4;   // Glättung
+        smoothedRssi_ = (smoothedRssi_ * 3 + rssi) / 4;
     }
     lastFound_ = found;
 

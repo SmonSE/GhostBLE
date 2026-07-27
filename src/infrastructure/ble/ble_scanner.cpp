@@ -273,6 +273,7 @@ void stopBleScan() {
     LOG(LOG_SCAN, "Stopping BLE scan...");
     NimBLEDevice::getScan()->stop();
     ScanContext::bleScanEnabled.store(false);
+    ScanContext::scanCancelRequested.store(true);
 }
 
 // ===========================================================================
@@ -915,6 +916,12 @@ void scanForDevices() {
     //  Per-device processing loop
     // ===================================================================
     for (int i = 0; i < results.getCount(); i++) {
+        // ── Cooporative abort — someone with exclusive access requested ──
+        if (ScanContext::scanCancelRequested.load()) {
+            LOG(LOG_SCAN, "Scan cancelled mid-loop (" + String(i) + "/" + String(results.getCount()) + " devices processed)");
+            break;
+        }
+
         dev = {};
         displayName.clear();
         const NimBLEAdvertisedDevice* device = results.getDevice(i);
@@ -1415,7 +1422,7 @@ void scanForDevices() {
         NimBLEDevice::deleteClient(pClient);
         pClient = nullptr;
         delay(1000);  // brief delay to ensure clean disconnection before next iteration
-    }  // end per-device loop
+    }   // end per-device loop
 
     // =======================================================================
     //  Scan summary
@@ -1464,5 +1471,6 @@ void scanForDevices() {
     // Clear any stale speech bubble that may have been skipped due to queuing
     clearSpeechBubble();
 
+    ScanContext::scanCancelRequested.store(false);
     ScanContext::scanIsRunning.store(false);
 }

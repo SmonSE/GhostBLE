@@ -5,6 +5,8 @@
 #include "app/context/scan_context.h"
 #include "ui/finder/finder_list_view.h"
 #include "infrastructure/logging/logger.h"
+#include "infrastructure/ble/ble_scanner.h"
+
 
 namespace DeviceFinder {
 
@@ -40,14 +42,7 @@ int count() { return count_; }
 const FoundDevice& get(int index) { return list_[index]; }
 
 void startFinderFlow() {
-    bool wasScanning = ScanContext::bleScanEnabled.load();
-    if (wasScanning) {
-        LOG(LOG_CONTROL, "Find Device — stopping main scan");
-        ScanContext::bleScanEnabled.store(false);
-        vTaskDelay(pdMS_TO_TICKS(300));
-    }
-
-    LOG(LOG_CONTROL, "Find Device — scanning 10s...");
+    LOG(LOG_CONTROL, "Find Device — scanning 5s...");
     scan5s();
 
     FinderListView::open();
