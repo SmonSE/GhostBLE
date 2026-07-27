@@ -16,6 +16,7 @@
 #include "assets/nibblesHappy.h"
 
 #include "infrastructure/platform/hardware_config.h"
+#include "infrastructure/ble/ble_scanner.h"
 
 
 namespace FinderListView {
@@ -24,6 +25,11 @@ static bool open_ = false;
 static int  cursorIdx_ = 0;
 
 void open() {
+    if (ScanContext::bleScanEnabled.load()) {
+        LOG(LOG_CONTROL, "Approach View — stopping main scan");
+        stopBleScan();
+    }
+    
     open_ = true;
     cursorIdx_ = 0;
     draw();
@@ -47,14 +53,8 @@ bool isOpen() { return open_; }
 void refresh() {
     if (!open_) return;
 
-    //LOG(LOG_CONTROL, "Finder — refreshing scan");
+    LOG(LOG_CONTROL, "Finder — refreshing scan");
     drawScanning();
-
-    bool wasScanning = ScanContext::bleScanEnabled.load();
-    if (wasScanning) {
-        ScanContext::bleScanEnabled.store(false);
-        vTaskDelay(pdMS_TO_TICKS(300));
-    }
 
     DeviceFinder::scan5s();
 

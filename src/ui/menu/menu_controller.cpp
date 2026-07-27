@@ -238,7 +238,7 @@ static void buildItems() {
 
     // im buildItems():
     section("SUSPICIOUS DEVICES");
-    action("View Sus Log", []() {
+    action("View Sus Device List", []() {
         MenuController::closeSilent();
         SusDeviceView::open();
     });

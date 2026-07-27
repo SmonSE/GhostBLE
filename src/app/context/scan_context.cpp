@@ -9,6 +9,7 @@ namespace ScanContext {
 // ------------------------------------------------------------
 std::atomic<bool> bleScanEnabled{false};
 std::atomic<bool> scanIsRunning{false};
+std::atomic<bool> scanCancelRequested{false};
 
 // ------------------------------------------------------------
 //  Found devices

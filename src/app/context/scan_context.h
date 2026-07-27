@@ -22,8 +22,9 @@ namespace ScanContext {
 // ------------------------------------------------------------
 //  Scan-Steuerung  (Core 0 schreibt, Core 1 liest → atomic)
 // ------------------------------------------------------------
-extern std::atomic<bool> bleScanEnabled;   // User hat Scan aktiviert
-extern std::atomic<bool> scanIsRunning;    // Scan-Schleife läuft gerade
+extern std::atomic<bool> bleScanEnabled;       // User hat Scan aktiviert
+extern std::atomic<bool> scanIsRunning;        // Scan-Schleife läuft gerade
+extern std::atomic<bool> scanCancelRequested;
 
 // ------------------------------------------------------------
 //  Gefundene Geräte
