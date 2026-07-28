@@ -46,7 +46,7 @@ static constexpr int GRID_STEP = 12;
 static int rssiToPercent(int8_t rssi) {
 
     //return constrain(map(rssi, -88, -40, 0, 100), 0, 100);
-    return constrain(map(rssi, -90, -30, 0, 100), 0, 100);
+    return constrain(map(rssi, -96, -30, 0, 100), 0, 100);
 }
 
 static unsigned long percentToBeepInterval(int pct) {
@@ -243,13 +243,15 @@ void update() {
     beepIfNeeded(smoothedRssi_, lastFound_);
 
     unsigned long now = millis();
-    if (now - lastScanTime_ < 1200) return;
+    if (now - lastScanTime_ < 600) return;  //was 1200
     lastScanTime_ = now;
 
     NimBLEScan* pScan = NimBLEDevice::getScan();
     pScan->clearResults();
     pScan->setActiveScan(false);
-    NimBLEScanResults results = pScan->getResults(700);
+    pScan->setInterval(40);   // ms zwischen Scan-Fenstern — aggressiver als Default
+    pScan->setWindow(40);     // ms Scan-Dauer pro Fenster — praktisch Dauerscan
+    NimBLEScanResults results = pScan->getResults(500); // was 700
 
     bool   found = false;
     int8_t rssi  = -100;
@@ -264,7 +266,8 @@ void update() {
     }
 
     if (found) {
-        smoothedRssi_ = (smoothedRssi_ * 3 + rssi) / 4;
+        //smoothedRssi_ = (smoothedRssi_ * 3 + rssi) / 4;
+        smoothedRssi_ = (smoothedRssi_ + rssi) / 2; 
     }
     lastFound_ = found;
 

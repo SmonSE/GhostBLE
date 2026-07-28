@@ -4,16 +4,21 @@
 
 bool isTargetDevice(String name, String address, String serviceUuid, String deviceInfoService, String& outLabel) {
 
-  // 0. CATHACK / BRUCE Signatur
+  if (name == "ChameleonUltra" || name == "ChameleonLite") {
+    outLabel = "Chameleon RFID Tool";
+    LOG(LOG_TARGET, "Chameleon RFID research device detected" + name);
+    return true;
+  }
+
   if ((name == "esp32" || name == "ESP32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0" || name == "Keyboard_e9" || name == "BruceNet")) {
     outLabel = "ESP32 Hardware";
-    LOG(LOG_TARGET, "Device with ESP32 Hardware detected");
+    LOG(LOG_TARGET, "Device with ESP32 Hardware detected" + name);
     return true;
   }
 
   if ((deviceInfoService == "esp32" || deviceInfoService == "n/a" || deviceInfoService == "<no name>" || deviceInfoService == "Keyboard_a0" || deviceInfoService == "Keyboard_e9" || deviceInfoService == "BruceNet")) {
     outLabel = "ESP32 Hardware";
-    LOG(LOG_TARGET, "Device with ESP32 Hardware detected");
+    LOG(LOG_TARGET, "Device with ESP32 Hardware detected" + name);
     return true;
   }
 
@@ -28,7 +33,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   if (serviceUuid == CATHACK_SERVICE_UUID_3 &&
       (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
     outLabel = "CATHACK Firmware";
-    LOG(LOG_TARGET, "Device with CATHACK Firmware detected");
+    LOG(LOG_TARGET, "Device with CATHACK Firmware detected" + name);
     return true;
   }
 

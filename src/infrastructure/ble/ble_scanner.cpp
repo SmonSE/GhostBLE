@@ -380,6 +380,16 @@ static bool parseDeviceInfo(
         manufacturerName = getManufacturerName(manufacturerId);
         DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: manufacturer data decoded
 
+        // ← DEBUG: rear Bytes output, to detect CT-Byte
+        if (manufacturerId == 0x004C) {
+            String hexDump = "";
+            for (size_t i = 0; i < mfg.size(); i++) {
+                char buf[4];
+                snprintf(buf, sizeof(buf), "%02X ", (uint8_t)mfg[i]);
+                hexDump += buf;
+            }
+            LOG(LOG_TARGET, devTag + "DEBUG Apple mfg data (" + String(mfg.size()) + " bytes): " + hexDump);
+        }
 
         // ============================================================
         // META RAY-BAN DETECTION
@@ -394,6 +404,7 @@ static bool parseDeviceInfo(
             // Mark as high-value target if confident
             if (MetaGlasses::isHighValueTarget(metaConfidence)) {
                 isSecurityOrTrackingDevice = true;
+                ScanContext::susDevice++;
                 DeviceContext::xpManager.awardXP(5.0f);  // +5 XP for Meta glasses
                 
                 // Show speech bubble
@@ -417,6 +428,8 @@ static bool parseDeviceInfo(
                     "   Distance: ~" + String(estDist, 2) + " m");
 
                 isSecurityOrTrackingDevice = true;
+                ScanContext::susDevice++;
+                DeviceContext::xpManager.awardXP(5.0f);
 
                 SusLog::add("Find My Tracker", ScanContext::addrStr.c_str(), (int8_t)ScanContext::rssi.load());
 
@@ -434,10 +447,13 @@ static bool parseDeviceInfo(
             }
         }
 
-        // iBeacon detection
+        // ============================================================
+        // IBEACON DETECTION
+        // ============================================================
         beacon = parseIBeacon(mfg);
         if (beacon.valid) {
             isIBeacon = true;
+            ScanContext::beaconsFound++;
             DeviceContext::xpManager.awardXP(3.0f);  // +3.0 XP: iBeacon parsed
 
             LOG(LOG_BEACON, devTag + "iBeacon detected!\n"
@@ -457,7 +473,9 @@ static bool parseDeviceInfo(
         }
     }
 
-    // --- SDO detection via primary service UUID (if present) ---
+    // ============================================================
+    // DRONE - SDO DETECTION
+    // ============================================================
     int svcCountSdo = device->getServiceUUIDCount();
     for (int s = 0; s < svcCountSdo; s++) {
         NimBLEUUID svcUUID = device->getServiceUUID(s);
@@ -470,10 +488,21 @@ static bool parseDeviceInfo(
                 ctx.rssi = ScanContext::rssi.load();
                 ctx.mac  = ScanContext::addrStr.c_str();
                 ctx.name = localName.c_str();
+                ctx.serviceData    = nullptr;
+                ctx.serviceDataLen = 0;
+
+                LOG(LOG_GATT, devTag + "[DRONE] " + String(result.name));
+
+                if (result.uuid == 0xFFFA) SdoHandlers::handleDrone(&ctx);
+                if (result.uuid == 0xFFFD) SdoHandlers::handleFido(&ctx);
+                if (result.uuid == 0xFFF6) SdoHandlers::handleMatter(&ctx);
             }
         }
     }
 
+    // ============================================================
+    // FLOCK CAMERA DETECTION
+    // ============================================================
     FlockDetection::FlockResult flock = FlockDetection::detect(
         device, localName, manufacturerId);
 

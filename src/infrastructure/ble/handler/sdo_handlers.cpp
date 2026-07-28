@@ -5,6 +5,7 @@
 #include "core/parsing/drone_id_parser.h"
 #include "app/context/device_context.h"
 #include "app/context/scan_context.h"
+#include "app/context/sus_log_context.h"
 
 #include "ui/menu/menu_controller.h"
 
@@ -53,6 +54,19 @@ void SdoHandlers::handleDrone(const SdoContext* ctx) {
     String msg = "[SDO] Drone detected (ASTM Remote ID)";
     if (ctx) msg += " | RSSI: " + String(ctx->rssi) + " | MAC: " + ctx->mac;
     LOG(LOG_GATT, msg);
+
+    DeviceContext::xpManager.awardXP(2.0f);  // weniger als beim vollen Parse (5.0), da unbestätigte Details
+    ScanContext::susDevice++;
+
+    if (ctx) {
+        SusLog::add("Drone (unparsed)", ctx->mac.c_str(), (int8_t)ctx->rssi);
+    }
+
+    auto* ms = MenuController::getState();
+    if (ms->audioEnabled && ms->audioDrone) {
+        M5.Speaker.setVolume(MenuController::getAlarmVolume());
+        M5.Speaker.tone(2093, 150);
+    }
 }
 
 // ===== FIDO Handler =====
