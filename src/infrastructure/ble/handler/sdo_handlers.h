@@ -3,11 +3,11 @@
 #include <NimBLEDevice.h>
 
 struct SdoContext {
-    int rssi;
+    int rssi = 0;
     String mac;
     String name;
-    const uint8_t* serviceData;
-    size_t      serviceDataLen;
+    const uint8_t* serviceData = nullptr;
+    size_t      serviceDataLen = 0;
 };
 
 // ===== Handler Interface =====
