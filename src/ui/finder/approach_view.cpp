@@ -193,9 +193,7 @@ void open(const char* mac, const char* name) {
 
 void close() {
     open_ = false;
-    //FinderListView::open();
-    //FinderListView::draw();
-    MenuController::open();
+    FinderListView::open();
 }
 
 bool isOpen() { return open_; }
@@ -249,8 +247,8 @@ void update() {
     NimBLEScan* pScan = NimBLEDevice::getScan();
     pScan->clearResults();
     pScan->setActiveScan(false);
-    pScan->setInterval(40);   // ms zwischen Scan-Fenstern — aggressiver als Default
-    pScan->setWindow(40);     // ms Scan-Dauer pro Fenster — praktisch Dauerscan
+    pScan->setInterval(40);
+    pScan->setWindow(40);
     NimBLEScanResults results = pScan->getResults(500); // was 700
 
     bool   found = false;
