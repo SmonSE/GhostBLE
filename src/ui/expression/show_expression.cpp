@@ -32,7 +32,7 @@
 
 
 static float         smoothedVoltage    = 0;
-static int           displayedPercent   = 100;
+static int           displayedPercent   = -1;
 static bool          lastChargingState  = false;
 static unsigned long usbDisconnectTime  = 0;
 
@@ -93,10 +93,54 @@ void drawGPSIcon(int x, int y, bool hasFix) {
 void drawBatteryIcon(int x, int y, int percent, bool charging) {
     M5.Lcd.drawRect(x, y, 16, 8, WHITE);
     M5.Lcd.fillRect(x + 16, y + 2, 2, 4, WHITE);
-    uint16_t fillColor = charging ? YELLOW : (percent < 20 ? RED : GREEN);
+
     int fillW = 14 * percent / 100;
-    if (fillW > 0)  M5.Lcd.fillRect(x + 1,         y + 1, fillW,      6, fillColor);
-    if (fillW < 14) M5.Lcd.fillRect(x + 1 + fillW, y + 1, 14 - fillW, 6, BLACK);
+
+    if (charging) {
+        // Dunkelgrüner Basis-Fill über die volle Prozent-Breite
+        uint16_t dimGreen = 0x0320;   // gedämpftes Grün als Hintergrund
+        if (fillW > 0)  M5.Lcd.fillRect(x + 1, y + 1, fillW, 6, dimGreen);
+        if (fillW < 14) M5.Lcd.fillRect(x + 1 + fillW, y + 1, 14 - fillW, 6, BLACK);
+
+        // Wandernder heller Streifen darüber, nur innerhalb des Fill-Bereichs
+        if (fillW > 2) {
+            const int segW = 3;
+            const unsigned long cycleMs = 800;   // eine Wanderung alle 800ms
+            int travelRange = fillW - segW;
+            if (travelRange > 0) {
+                int pos = (millis() % cycleMs) * travelRange / cycleMs;
+                M5.Lcd.fillRect(x + 1 + pos, y + 1, segW, 6, GREEN);
+            } else {
+                M5.Lcd.fillRect(x + 1, y + 1, fillW, 6, GREEN);
+            }
+        }
+    } else {
+        uint16_t fillColor;
+        if (percent < 25)      fillColor = RED;
+        else if (percent < 75) fillColor = YELLOW;
+        else                   fillColor = GREEN;
+
+        if (fillW > 0)  M5.Lcd.fillRect(x + 1, y + 1, fillW, 6, fillColor);
+        if (fillW < 14) M5.Lcd.fillRect(x + 1 + fillW, y + 1, 14 - fillW, 6, BLACK);
+    }
+}
+
+static void logBatteryDebug(int rawVoltage, float smoothedVoltage, bool chargingNow,
+                            bool usbConnected, int displayedPercent, int newPercent) {
+    static unsigned long lastLogTime = 0;
+    unsigned long now = millis();
+
+    // Nur alle 3 Sekunden loggen, sonst wächst die Datei zu schnell
+    if (now - lastLogTime < 3000) return;
+    lastLogTime = now;
+
+    File f = SD.open("/GhostBLE/battery_debug.log", FILE_APPEND);
+    if (f) {
+        f.printf("[%lu] raw=%d smoothed=%.1f isCharging=%d usbConnected=%d chargingNow=%d displayedPct=%d newPct=%d\n",
+            now, rawVoltage, smoothedVoltage, M5.Power.isCharging(),
+            usbConnected, chargingNow, displayedPercent, newPercent);
+        f.close();
+    }
 }
 
 // ----------------------------------------------------------------
@@ -105,31 +149,32 @@ void drawBatteryIcon(int x, int y, int percent, bool charging) {
 void updateBatteryState() {
     if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen()) return;
 
-    int  rawVoltage  = M5.Power.getBatteryVoltage();
-    bool chargingNow = M5.Power.isCharging();
-    bool usbConnected = (rawVoltage > 4200);
+    int rawVoltage = M5.Power.getBatteryVoltage();
 
-    if (!chargingNow && rawVoltage > 4200) chargingNow = true;
+    // Cardputer/Cardputer-Adv: M5.Power.isCharging() liefert laut M5Stack-Doku
+    // einen Sentinel-Wert (bei dir konstant "2"), der als bool IMMER true ergibt —
+    // daher komplett entfernt, nur noch reine Spannungsheuristik.
+    bool chargingNow = (rawVoltage > 4100);
 
     if (smoothedVoltage == 0) smoothedVoltage = rawVoltage;
     smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;
 
+    // Beim allerersten Aufruf direkt auf den echten Wert springen,
+    // statt von einem falschen Default (100) minutenlang herunterzuzählen
+    if (displayedPercent < 0) {
+        displayedPercent = voltageToPercent((int)smoothedVoltage);
+    }
+
     // ← DEBUG
-    Serial.printf("BATT: raw=%d smoothed=%.1f isCharging=%d usbConnected=%d chargingNow=%d displayedPct=%d newPct=%d\n",
-        rawVoltage,
-        smoothedVoltage,
-        M5.Power.isCharging(),
-        usbConnected,
-        chargingNow,
-        displayedPercent,
-        voltageToPercent((int)smoothedVoltage));
+    //logBatteryDebug(rawVoltage, smoothedVoltage, chargingNow, chargingNow,
+    //                displayedPercent, voltageToPercent((int)smoothedVoltage));
 
     // Debounce USB disconnect
     if (UIContext::isChargingState.load() && !chargingNow) {
         usbDisconnectTime = millis();
     }
 
-    UIContext::isChargingState.store(chargingNow || usbConnected);
+    UIContext::isChargingState.store(chargingNow);
 
     if (!chargingNow && (millis() - usbDisconnectTime < 2000)) {
         // keep current displayedPercent during debounce window
