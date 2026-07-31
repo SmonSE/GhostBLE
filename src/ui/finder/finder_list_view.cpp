@@ -11,6 +11,7 @@
 #include "ui/overlay/draw_overlay.h"
 #include "ui/expression/show_expression.h"
 #include "ui/icons/scan_icon.h"
+#include "ui/menu/menu_controller.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"
@@ -38,14 +39,7 @@ void open() {
 void close() { 
     open_ = false; 
 
-    M5.Lcd.fillScreen(0x00C4);
-    drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
-    drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
-    showScanIcon();
-    drawXPBar(LEVEL_TEXT_X, BOTTOM_BAR_Y, true);
-
-    // Here is different solution maybe better!
+    MenuController::open();
 }
 
 bool isOpen() { return open_; }
@@ -84,8 +78,8 @@ void selectCurrent() {
     if (total == 0) return;
 
     const auto& d = DeviceFinder::get(cursorIdx_);
-    //close();
-    ApproachView::open(d.mac, d.name);
+    close();
+    ApproachView::open(d.mac, d.name, ApproachView::ReturnTarget::FinderList);
 }
 
 void draw() {

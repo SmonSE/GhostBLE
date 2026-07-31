@@ -58,7 +58,7 @@ void selectCurrent() {
 
     const auto& e = SusLog::get(cursorIdx_);
     close();
-    ApproachView::open(e.mac, e.label);
+    ApproachView::open(e.mac, e.label, ApproachView::ReturnTarget::SusList);
 }
 
 void draw() {
