@@ -284,11 +284,10 @@ void showHelpOverlay() {
     M5.Lcd.setCursor(80, 3);
     M5.Lcd.print("-- CONTROLS --");
 
-    // Version
+    // Build Date
     M5.Lcd.setTextColor(0x8C71, 0x00C4);
     M5.Lcd.setCursor(10, y); y += 15;
-    M5.Lcd.print(GHOSTBLE_VERSION);
-    M5.Lcd.print("       ");
+    M5.Lcd.print("Build Date   ");
     M5.Lcd.print(GHOSTBLE_BUILD_DATE);
 
     M5.Lcd.setTextColor(WHITE, 0x00C4);
