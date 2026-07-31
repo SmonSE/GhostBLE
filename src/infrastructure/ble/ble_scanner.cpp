@@ -381,6 +381,7 @@ static bool parseDeviceInfo(
         DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: manufacturer data decoded
 
         // ← DEBUG: rear Bytes output, to detect CT-Byte
+        /*
         if (manufacturerId == 0x004C) {
             String hexDump = "";
             for (size_t i = 0; i < mfg.size(); i++) {
@@ -389,8 +390,8 @@ static bool parseDeviceInfo(
                 hexDump += buf;
             }
             LOG(LOG_TARGET, devTag + "DEBUG Apple mfg data (" + String(mfg.size()) + " bytes): " + hexDump);
-        }
-
+        }*/
+        
         // ============================================================
         // META RAY-BAN DETECTION
         // ============================================================
@@ -427,6 +428,15 @@ static bool parseDeviceInfo(
                     "   RSSI:     " + String(ScanContext::rssi.load()) + " dBm\n"
                     "   Distance: ~" + String(estDist, 2) + " m");
 
+                // Debug: Manufacturer-Bytes if offline tracker found
+                String hexDump = "";
+                for (size_t i = 0; i < mfg.size(); i++) {
+                    char buf[4];
+                    snprintf(buf, sizeof(buf), "%02X ", (uint8_t)mfg[i]);
+                    hexDump += buf;
+                }
+                LOG(LOG_TARGET, devTag + "   Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
+                
                 isSecurityOrTrackingDevice = true;
                 ScanContext::susDevice++;
                 DeviceContext::xpManager.awardXP(5.0f);
