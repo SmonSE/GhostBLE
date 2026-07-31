@@ -831,7 +831,7 @@ static bool connectAndReadGATT(
                 M5.Speaker.tone(1000, 200);
             }
 
-            LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
+            //LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
             vTaskDelay(pdMS_TO_TICKS(2000));
 
             if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled)
