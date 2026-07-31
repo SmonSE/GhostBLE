@@ -231,7 +231,6 @@ Real-time BLE device discovery via WiFi Access Point and WebSocket:
 - **Trace log** — color-coded by category (scan, gatt, security, beacon, notify, privacy)
 - **Stats bar** — live counters for Spotted / Suspicious / Beacons / PwnBeacons
 - **Device filter** — filter cards by name or MAC address
-- **Log replay** — load and replay a recorded `sniffed.log` from SD card into the UI
 - **Settings panel** — configure device name, face, WiFi SSID and password
 - **Auto-reconnect** — WebSocket reconnects automatically after BLE scan interruptions
 - **Display sleep** — display turns off automatically when a web client connects to save resources
