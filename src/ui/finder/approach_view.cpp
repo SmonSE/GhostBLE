@@ -5,6 +5,7 @@
 
 #include "ui/menu/menu_controller.h"
 #include "ui/finder/finder_list_view.h"
+#include "ui/susview/sus_device_view.h"
 
 #include "infrastructure/platform/hardware_config.h"
 #include "infrastructure/ble/ble_scanner.h"
@@ -137,12 +138,6 @@ static void drawDynamic(int8_t rssi, bool found) {
     M5.Lcd.setTextColor(col, COL_SCREEN_BG);
     M5.Lcd.setCursor(4, 105);
     M5.Lcd.printf("%3d%%  %d dBm", pct, rssi);
-
-    // Trend
-    //M5.Lcd.setCursor(150, 110);
-    //if (rssi > lastDrawnRssi_ + 2)       M5.Lcd.print("^ closer");
-    //else if (rssi < lastDrawnRssi_ - 2)  M5.Lcd.print("v farther");
-    //else                                 M5.Lcd.print("- steady");
 }
 
 // ============================================================
@@ -170,7 +165,9 @@ static void beepIfNeeded(int8_t rssi, bool found) {
 //  Public API
 // ============================================================
 
-void open(const char* mac, const char* name) {
+static ReturnTarget returnTarget_ = ReturnTarget::FinderList;
+
+void open(const char* mac, const char* name, ReturnTarget returnTo) {
     if (ScanContext::bleScanEnabled.load()) {
         LOG(LOG_CONTROL, "Approach View — stopping main scan");
         stopBleScan();
@@ -181,6 +178,7 @@ void open(const char* mac, const char* name) {
     scanStopped_   = false;
     targetMac_     = mac;
     targetName_    = name;
+    returnTarget_  = returnTo;   // ← NEU
     smoothedRssi_  = -100;
     lastDrawnRssi_ = -127;
     lastFound_     = false;
@@ -190,7 +188,11 @@ void open(const char* mac, const char* name) {
 
 void close() {
     open_ = false;
-    FinderListView::open();
+    if (returnTarget_ == ReturnTarget::SusList) {
+        SusDeviceView::open();
+    } else {
+        FinderListView::open();
+    }
 }
 
 bool isOpen() { return open_; }

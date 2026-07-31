@@ -1,9 +1,12 @@
 // ui/finder/approach_view.h
 #pragma once
 #include <Arduino.h>
+
+
 namespace ApproachView {
-    void open(const char* mac, const char* name);
+    enum class ReturnTarget { FinderList, SusList };
+    void open(const char* mac, const char* name, ReturnTarget returnTo);
     void close();
     bool isOpen();
-    void update();   // regelmäßig aus loop() aufrufen — macht kurzen gezielten Scan + redraw
+    void update();
 }
