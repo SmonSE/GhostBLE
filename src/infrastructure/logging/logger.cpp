@@ -28,14 +28,14 @@ static bool sdInitialized = false;
 // Category index → filename mapping
 static const char* catFileNames[] = {
     "/GhostBLE/scan.log",       // 0  LOG_SCAN
-    "/GhostBLE/sniffed.log",    // 1  LOG_GATT / SNIFFED
+    "/GhostBLE/sniffed.log",    // 1  LOG_GATT -> LOG_SNIFF
     "/GhostBLE/privacy.log",    // 2  LOG_PRIVACY
     "/GhostBLE/security.log",   // 3  LOG_SECURITY
     "/GhostBLE/beacon.log",     // 4  LOG_BEACON
     "/GhostBLE/control.log",    // 5  LOG_CONTROL
     "/GhostBLE/gps.log",        // 6  LOG_GPS
     "/GhostBLE/system.log",     // 7  LOG_SYSTEM
-    "/GhostBLE/target.log",     // 8  LOG_TARGET
+    "/GhostBLE/suspicious.log", // 8  LOG_TARGET -> LOG_SUS
     "/GhostBLE/notify.log",     // 9  LOG_NOTIFY
     "/GhostBLE/misc.log",       // 10 (unused)
     "/GhostBLE/misc.log",       // 11

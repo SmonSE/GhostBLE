@@ -313,7 +313,7 @@ static void buildItems() {
     //toggleAction("Control",  getLogControl,  toggleLogControl);
     toggleAction("GPS Data",      getLogGps,      toggleLogGps);
     //toggleAction("System",   getLogSystem,   toggleLogSystem);
-    toggleAction("Target",   getLogTarget,   toggleLogTarget);
+    toggleAction("Suspicious",   getLogTarget,   toggleLogTarget);
     //toggleAction("Notify",   getLogNotify,   toggleLogNotify);
 }
 
