@@ -154,7 +154,7 @@ void updateBatteryState() {
     // Cardputer/Cardputer-Adv: M5.Power.isCharging() liefert laut M5Stack-Doku
     // einen Sentinel-Wert (bei dir konstant "2"), der als bool IMMER true ergibt —
     // daher komplett entfernt, nur noch reine Spannungsheuristik.
-    bool chargingNow = (rawVoltage > 4100);
+    bool chargingNow = (rawVoltage > 4320);  // >4.320V = USB angeschlossen, <4.320V = USB abgezogen    
 
     if (smoothedVoltage == 0) smoothedVoltage = rawVoltage;
     smoothedVoltage = smoothedVoltage * 0.92f + rawVoltage * 0.08f;

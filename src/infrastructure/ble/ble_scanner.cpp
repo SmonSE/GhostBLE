@@ -93,6 +93,25 @@ struct IBeaconInfo {
     int8_t      txPower  = 0;
 };
 
+static bool isLikelyJson(const std::string& value) {
+    if (value.empty()) return false;
+
+    // Führende Whitespaces überspringen
+    size_t start = 0;
+    while (start < value.size() && isspace((unsigned char)value[start])) start++;
+    if (start >= value.size()) return false;
+
+    char first = value[start];
+    if (first != '{' && first != '[') return false;
+
+    // Trailing Whitespaces überspringen, letztes Zeichen prüfen
+    size_t end = value.size() - 1;
+    while (end > start && isspace((unsigned char)value[end])) end--;
+
+    char last = value[end];
+    return (first == '{' && last == '}') || (first == '[' && last == ']');
+}
+
 // Extra Payload
 void extractUUIDs(const std::vector<uint8_t>& payload) {
     int i = 0;
@@ -728,6 +747,12 @@ static bool connectAndReadGATT(
     ScanContext::targetConnects++;
     DeviceContext::xpManager.awardXP(0.5f);  // +0.5 XP: GATT connection success
 
+    // Target-Erkennung wird nur GEMERKT, nicht sofort ausgelöst — die Schleife
+    // muss zuerst ALLE Services/Characteristics durchlaufen (JSON-Erkennung etc.),
+    // bevor reagiert und die Funktion verlassen wird.
+    bool   targetWasFound = false;
+    String targetWasLabel;
+
     // --- Iterate services and characteristics ---
     for (auto svcIt = pClient->getServices().begin();
          svcIt != pClient->getServices().end(); ++svcIt)
@@ -770,13 +795,26 @@ static bool connectAndReadGATT(
 
             // Read characteristic value — only process printable ASCII
             std::string rawValue = characteristic->readValue();
+
             while (!rawValue.empty() && rawValue.back() == '\0') {
                 rawValue.pop_back();
             }
             if (!rawValue.empty() && isPrintableText(rawValue)) {
-                LOG(LOG_GATT, devTag + "  Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
                 dev.gattHasName = true;
                 ScanContext::nameList.push_back(rawValue);
+
+                // Prüfen, ob dieser Service bereits vom GenericDumpHandler (Fallback) gedumpt wurde —
+                // falls ja, keine redundante ASCII-Zeile mehr loggen (Hex-Dump existiert schon)
+                bool alreadyDumped = !GATTServiceRegistry::getLastResult(serviceUuid).isEmpty();
+
+                if (!alreadyDumped) {
+                    LOG(LOG_GATT, devTag + "  Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
+                }
+
+                if (isLikelyJson(rawValue)) {
+                    LOG(LOG_GATT, devTag + "  [JSON] " + String(rawValue.c_str()));
+                    DeviceContext::xpManager.awardXP(1.5f);
+                }
 
                 if (looksLikePersonalName(rawValue))    dev.gattHasPersonalName = true;
                 if (looksLikeIdentityData(rawValue))    dev.gattHasIdentityInfo = true;
@@ -811,45 +849,54 @@ static bool connectAndReadGATT(
         }
 
         // --- Known / suspicious target detection ---
-        String targetLabel;
-        if (isTargetDevice(localName.c_str(), address.c_str(),
-                        serviceUuid.c_str(), deviceInfoService.c_str(), targetLabel)) {
-            ScanContext::targetFound = true;
-            ScanContext::susDevice++;
-            DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
-
-            SusLog::add(targetLabel.c_str(), address.c_str(), (int8_t)ScanContext::rssi.load());
-
-            // ← Audio alert
-            auto* ms = MenuController::getState();
-            if (ms->audioEnabled && ms->audioSuspicious) {
-                M5.Speaker.setVolume(MenuController::getAlarmVolume());
-                M5.Speaker.tone(1800, 160);
-                while (M5.Speaker.isPlaying()) { delay(5); }
-                M5.Speaker.tone(1400, 180);
-                while (M5.Speaker.isPlaying()) { delay(5); }
-                M5.Speaker.tone(1000, 200);
+        // Nur MERKEN — Schleife läuft weiter, damit alle Services vollständig
+        // verarbeitet werden, bevor reagiert wird.
+        if (!targetWasFound) {
+            String targetLabel;
+            if (isTargetDevice(localName.c_str(), address.c_str(),
+                            serviceUuid.c_str(), deviceInfoService.c_str(), targetLabel)) {
+                targetWasFound = true;
+                targetWasLabel = targetLabel;
             }
-
-            //LOG(LOG_TARGET, devTag + "!!! Target detected !!!");
-            vTaskDelay(pdMS_TO_TICKS(2000));
-
-            if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled)
-            {
-                UIContext::isAngryTaskRunning.store(true);
-
-                if (xTaskCreatePinnedToCore( showAngryExpressionTask, "AngryFace", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
-                {
-                    LOG(LOG_SYSTEM, "Failed to create AngryFace task");
-                    UIContext::isAngryTaskRunning.store(false);
-                    UIContext::angryTaskHandle = nullptr;
-                }
-            }
-
-            return true; // target found — caller breaks loop
-        }else {
-          ScanContext::targetFound = false;  // ← Only reset if NOT a target
         }
+    }
+
+    // --- Erst NACH vollständiger Iteration über ALLE Services reagieren ---
+    if (targetWasFound) {
+        ScanContext::targetFound = true;
+        ScanContext::susDevice++;
+        DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
+
+        SusLog::add(targetWasLabel.c_str(), address.c_str(), (int8_t)ScanContext::rssi.load());
+
+        // ← Audio alert
+        auto* ms = MenuController::getState();
+        if (ms->audioEnabled && ms->audioSuspicious) {
+            M5.Speaker.setVolume(MenuController::getAlarmVolume());
+            M5.Speaker.tone(1800, 160);
+            while (M5.Speaker.isPlaying()) { delay(5); }
+            M5.Speaker.tone(1400, 180);
+            while (M5.Speaker.isPlaying()) { delay(5); }
+            M5.Speaker.tone(1000, 200);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(2000));
+
+        if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled)
+        {
+            UIContext::isAngryTaskRunning.store(true);
+
+            if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
+            {
+                LOG(LOG_SYSTEM, "Failed to create AngryFace task");
+                UIContext::isAngryTaskRunning.store(false);
+                UIContext::angryTaskHandle = nullptr;
+            }
+        }
+
+        return true;  // target found — caller breaks loop
+    } else {
+        ScanContext::targetFound = false;  // ← Only reset if NOT a target
     }
 
     return false;  // no target found — continue
@@ -1105,7 +1152,12 @@ void scanForDevices() {
         if (ScanContext::is_connectable && pClient->connect(*device)) {
             // get Device scan count
             int remaining = results.getCount() - i;
-          
+
+            // MTU-Verhandlung — Standard ist nur 23 Bytes (20 nutzbar),
+            // viele Geräte unterstützen deutlich mehr für lange Characteristics
+            uint16_t negotiatedMTU = pClient->getMTU();
+            LOG(LOG_GATT, devTag + "Default MTU: " + String(negotiatedMTU));
+
             if (pClient->discoverAttributes()) {
                 // --- Full GATT read + target detection ---
                 bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag, remaining);
