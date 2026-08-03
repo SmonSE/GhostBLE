@@ -108,6 +108,7 @@ void setup() {
 
   DeviceContext::deviceConfig.begin();
   NimBLEDevice::init(DeviceContext::deviceConfig.getEffectiveBleName().c_str());
+  NimBLEDevice::setMTU(247);
 
   registerGATTServiceHandlers();
   LOG(LOG_SYSTEM, "BLE initialized successfully.");

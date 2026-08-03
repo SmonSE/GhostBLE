@@ -31,7 +31,7 @@ String GenericDumpHandler::dumpService(NimBLEClient* pClient, const std::string&
             std::string raw = pChar->readValue();
             if (!raw.empty()) {
                 String hex = "";
-                size_t maxLen = 64; // UI limit
+                size_t maxLen = 200; // before the value was 64. 
                 size_t len = (raw.size() > maxLen) ? maxLen : raw.size();
 
                 for (size_t i = 0; i < len; i++) {
