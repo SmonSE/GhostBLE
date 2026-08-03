@@ -101,7 +101,13 @@ static void drawStatic() {
 
     M5.Lcd.setTextColor(COL_TEXT_DIM, COL_SCREEN_BG);
     M5.Lcd.setCursor(4, 125);
-    M5.Lcd.print(" ESC back to list");
+    
+
+#if HAS_KEYBOARD
+    M5.Lcd.print(" esc back to list");
+#else
+    M5.Lcd.print(" B(longpress):back to list");
+#endif
 }
 
 static void drawDynamic(int8_t rssi, bool found) {
@@ -112,7 +118,7 @@ static void drawDynamic(int8_t rssi, bool found) {
 
     if (!found) {
         M5.Lcd.setTextColor(0x8C71, COL_SCREEN_BG);
-        M5.Lcd.setCursor(4, 110);
+        M5.Lcd.setCursor(4, 105);
         M5.Lcd.print("Signal lost...");
         return;
     }
