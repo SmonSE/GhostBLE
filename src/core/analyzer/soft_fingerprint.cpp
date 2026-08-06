@@ -49,7 +49,9 @@ SoftFingerprint createAppleFingerprint(
         fp.serviceHash = simpleHash(name);
     }
 
-    int bucket = (rssi / 10) * 10;  // e.g. -67 → -60
+    // Größerer Bucket (30 statt 10)
+    int bucket = (rssi / 30) * 30;
+    //int bucket = (rssi / 10) * 10;  // e.g. -67 → -60
     fp.appearance = (uint16_t)(bucket + 100);
 
     return fp;
