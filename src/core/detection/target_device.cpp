@@ -55,10 +55,12 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   }
   if (uuid == "0x3082") {
       outLabel = "FLIPPER ZERO (White)";
+      LOG(LOG_TARGET, "FLIPPER ZERO detected (White)");
       return true;
   }
   if (uuid == "0x3083") {
       outLabel = "FLIPPER ZERO (Transparent)";
+      LOG(LOG_TARGET, "FLIPPER ZERO detected (Transparent)");
       return true;
   }
 

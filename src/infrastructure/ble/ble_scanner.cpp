@@ -17,6 +17,7 @@
 #include "ui/menu/menu_controller.h"
 
 #include "core/parsing/appearance_parser.h"
+#include "core/parsing/binary_format_detector.h"
 
 #include "gattServices/notify_handler.h"
 
@@ -799,12 +800,18 @@ static bool connectAndReadGATT(
             while (!rawValue.empty() && rawValue.back() == '\0') {
                 rawValue.pop_back();
             }
+
+            // Binärformat-Erkennung — läuft unabhängig davon, ob der Rest "printable" ist
+            String binaryFormat = detectBinaryFormat(rawValue);
+            if (!binaryFormat.isEmpty()) {
+                LOG(LOG_GATT, devTag + "  Char [" + String(charUuid.c_str()) + "] (len=" +
+                    String(rawValue.size()) + "): [" + binaryFormat + "]");
+            }
+
             if (!rawValue.empty() && isPrintableText(rawValue)) {
                 dev.gattHasName = true;
                 ScanContext::nameList.push_back(rawValue);
 
-                // Prüfen, ob dieser Service bereits vom GenericDumpHandler (Fallback) gedumpt wurde —
-                // falls ja, keine redundante ASCII-Zeile mehr loggen (Hex-Dump existiert schon)
                 bool alreadyDumped = !GATTServiceRegistry::getLastResult(serviceUuid).isEmpty();
 
                 if (!alreadyDumped) {

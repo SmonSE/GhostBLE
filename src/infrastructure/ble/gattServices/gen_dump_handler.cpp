@@ -5,6 +5,8 @@
 #include <NimBLERemoteCharacteristic.h>
 
 #include "infrastructure/logging/logger.h"
+#include "core/parsing/binary_format_detector.h"
+
 
 String GenericDumpHandler::dumpService(NimBLEClient* pClient, const std::string& uuid) {
     String result = "";
@@ -30,25 +32,31 @@ String GenericDumpHandler::dumpService(NimBLEClient* pClient, const std::string&
         if (pChar->canRead()) {
             std::string raw = pChar->readValue();
             if (!raw.empty()) {
-                String hex = "";
-                size_t maxLen = 200; // before the value was 64. 
-                size_t len = (raw.size() > maxLen) ? maxLen : raw.size();
+                String binaryFormat = detectBinaryFormat(raw);
 
-                for (size_t i = 0; i < len; i++) {
-                    char buf[4];
-                    snprintf(buf, sizeof(buf), "%02X ", (uint8_t)raw[i]);
-                    hex += buf;
-                }
-                if (raw.size() > maxLen) {
-                    hex += "...";
-                }
-                // Optional but VERY useful:
                 line += " (len=" + String(raw.size()) + ")";
-                line += " = " + hex;
+
+                if (!binaryFormat.isEmpty()) {
+                    // Bekanntes Binärformat erkannt — kein Hex-Dump nötig
+                    line += " = [" + binaryFormat + "]";
+                } else {
+                    String hex = "";
+                    size_t maxLen = 200; // UI limit
+                    size_t len = (raw.size() > maxLen) ? maxLen : raw.size();
+
+                    for (size_t i = 0; i < len; i++) {
+                        char buf[4];
+                        snprintf(buf, sizeof(buf), "%02X ", (uint8_t)raw[i]);
+                        hex += buf;
+                    }
+                    if (raw.size() > maxLen) {
+                        hex += "...";
+                    }
+                    line += " = " + hex;
+                }
             }
         }
 
-        //line += "\n";
         result += line;
         LOG(LOG_GATT, "     " + line);
     }
