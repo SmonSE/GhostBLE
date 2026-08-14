@@ -85,6 +85,12 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     return true;
   }
 
+  if (name == "NibBLEs") {
+    outLabel = "Found NibBLEs device";
+    LOG(LOG_TARGET, "Found NibBLEs device (name match)");
+    return true;
+  }
+
   // 6. POTENTIAL CARD SKIMMER (generic serial BLE module names)
   if (name == "HC-03" || name == "HC-05" || name == "HC-06" || name == "HC-08" ||
       name == "HM-10" || name == "HM-19") {
@@ -108,9 +114,6 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     LOG(LOG_TARGET, "CS: Possible Roving Networks MAC prefix detected: " + address);
     return true;
   }
-
-return false;
-
 
   return false;
 }
