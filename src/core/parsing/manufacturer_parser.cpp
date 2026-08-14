@@ -57,6 +57,21 @@ String getManufacturerName(uint16_t id) {
     case 0x01DC: return "Wyze Labs, Inc.";
     case 0x01E3: return "Amazfit (Huami Information Technology)";
 
+    // ── Vehicle OEM ──────────────────────────────────────────────
+    case 0xFE30: return "Volkswagen AG";
+    case 0xFE31: return "Volkswagen AG";
+    case 0xFE4C: return "Volkswagen AG";
+    case 0xFC31: return "Ford Motor Company";
+    case 0xFC55: return "BYD Company Limited";
+    case 0xFC63: return "Volvo Technology AB";
+    case 0xFC64: return "Volvo Technology AB";
+    case 0x010E: return "Audi AG";
+    case 0x017C: return "Mercedes-Benz Group AG";
+
+    // ── Automotive suppliers / mobility ─────────────────────────
+    case 0xFE02: return "Robert Bosch GmbH";
+    case 0xFC48: return "Michelin";
+
     // ── 0x0200 – 0x02FF ──────────────────────────────────────
     case 0x02E5: return "Espressif Systems (M5Stack)";
 
@@ -77,7 +92,7 @@ String getManufacturerName(uint16_t id) {
 
     // ── Larger IDs ────────────────────────────────────────────
     case 0x0171: return "OPPO Mobile Telecommunications Corp., Ltd.";
-    case 0x017C: return "Huawei Technologies Co., Ltd.";
+    case 0x027D: return "Huawei Technologies Co., Ltd.";
     case 0x018B: return "vivo Mobile Communication Co., Ltd.";
     case 0x0195: return "OnePlus Electronics Corp. (Pvt. Ltd.)";
     case 0x0165: return "Xiaomi Inc.";
