@@ -286,6 +286,7 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 | **FN** | Toggle WiFi AP and web dashboard |
 | **TAB** | Toggle wardriving mode |
 | **DEL** | Switch GPS source (Grove / LoRa) |
+| **D** | Display sleep / wakeup |
 | **F** | BLE device finder |
 | **I** | Image / screenshot |
 | **M** | Main Menu with all settings |
