@@ -22,14 +22,14 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     return true;
   }
 
-  // 1. LIGHTBLUE APP UUIDs
+  // LIGHTBLUE APP UUIDs
   if (serviceUuid == LIGHTBLUE_APP_SERVICE_UUID) {
     outLabel = "LIGHT BLUE APP";
     LOG(LOG_TARGET, "Device with LIGHT BLUE APP detected");
     return true;
   }
 
-  // 2. CATHACK-Signatur
+  // CATHACK-Signatur
   if (serviceUuid == CATHACK_SERVICE_UUID_3 &&
       (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
     outLabel = "CATHACK Firmware";
@@ -37,7 +37,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     return true;
   }
 
-  // 3. FLIPPER ZERO UUIDs
+  // FLIPPER ZERO UUIDs
   String uuid = serviceUuid;
   uuid.toLowerCase();
 
@@ -47,7 +47,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   } else if (uuid.length() >= 8) {
       uuid = uuid.substring(4, 8);
   }
-  // Detection
+
   if (uuid == "0x3081") {
       outLabel = "FLIPPER ZERO (Black)";
       LOG(LOG_TARGET, "FLIPPER ZERO detected (Black)");
@@ -64,14 +64,13 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
       return true;
   }
 
-  // 4. PWNBEACON (PwnGrid over BLE)
   if (serviceUuid == PWNBEACON_SERVICE_UUID) {
     outLabel = "PWNBEACON (PwnGrid/Pwnagotchi)";
     LOG(LOG_TARGET, "👾 PWNBEACON detected (PwnGrid/Pwnagotchi)");
     return false;
   }
 
-  // 5. XIAO BISCUIT
+  // XIAO BISCUIT
   String uuidLower = serviceUuid;
   uuidLower.toLowerCase();
   if (uuidLower == XIAO_BISCUIT_SERVICE_UUID || uuidLower == XIAO_BISCUIT_SERVICE_UUID_2) {
@@ -85,13 +84,23 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
     return true;
   }
 
+  // NibbLEs detection
   if (name == "NibBLEs") {
     outLabel = "Found NibBLEs device";
     LOG(LOG_TARGET, "Found NibBLEs device (name match)");
     return true;
   }
 
-  // 6. POTENTIAL CARD SKIMMER (generic serial BLE module names)
+  // Looki Ai Wearable detection
+  String nameLower = name;
+  nameLower.toLowerCase();
+
+  if (nameLower.indexOf("looki") >= 0) {
+      outLabel = "Looki L1 AI Wearable";
+      LOG(LOG_TARGET, "Looki L1 detected: " + name);
+      return true;
+  }
+
   if (name == "HC-03" || name == "HC-05" || name == "HC-06" || name == "HC-08" ||
       name == "HM-10" || name == "HM-19") {
     outLabel = "Possible Card Skimmer";
