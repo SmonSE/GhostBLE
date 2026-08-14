@@ -320,6 +320,19 @@ void loop() {
           MenuController::open();
           return;
         }
+        if (key == 'd' || key == 'D') {
+            NetworkContext::displayEnabled = !NetworkContext::displayEnabled;
+
+            if (NetworkContext::displayEnabled) {
+                M5.Lcd.wakeup();
+                LOG(LOG_CONTROL, "D pressed — display ON");
+            } else {
+                M5.Lcd.sleep();
+                LOG(LOG_CONTROL, "D pressed — display OFF");
+            }
+
+            return;
+        }
         if (key == 'f' || key == 'F') {
           LOG(LOG_CONTROL, "F pressed — Find Device");
           FinderListView::drawScanning();
