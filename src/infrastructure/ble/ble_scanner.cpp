@@ -751,8 +751,11 @@ static bool connectAndReadGATT(
     // Target-Erkennung wird nur GEMERKT, nicht sofort ausgelöst — die Schleife
     // muss zuerst ALLE Services/Characteristics durchlaufen (JSON-Erkennung etc.),
     // bevor reagiert und die Funktion verlassen wird.
-    bool   targetWasFound = false;
     String targetWasLabel;
+    bool targetWasFound = false;
+    bool isBiscuit = false;
+    bool isFlipper = false;
+    bool isTesla = false;
 
     // --- Iterate services and characteristics ---
     for (auto svcIt = pClient->getServices().begin();
@@ -834,25 +837,16 @@ static bool connectAndReadGATT(
             localName = device->getName().c_str();
         }
 
-        // --- Tesla detection via GATT service UUID ---
         if (isTeslaDevice("", serviceUuid.c_str())) {
-            LOG(LOG_TARGET, devTag + "Tesla vehicle detected via GATT service");
-            nibblesSpeechShowCustom(teslaMsgs[random(TESLA_MSG_COUNT)]);
-            delay(1000);
+            isTesla = true;
         }
 
-        // --- Xiao Biscuit detection via GATT service UUID ---
         if (isXiaoBiscuitDevice(localName, serviceUuid.c_str())) {
-            LOG(LOG_TARGET, devTag + "Xiao Biscuit detected via GATT service");
-            nibblesSpeechShowCustom(biscuitMsgs[random(BISCUIT_MSG_COUNT)]);
-            delay(1000);
+            isBiscuit = true;
         }
 
-        // --- Flipper Zero detection via GATT service UUID ---
         if (isFlipperDevice(serviceUuid.c_str())) {
-            LOG(LOG_TARGET, devTag + "Flipper Zero detected via GATT service");
-            nibblesSpeechShowCustom(flipperMsgs[random(FLIPPER_MSG_COUNT)]);
-            delay(1000);
+            isFlipper = true;
         }
 
         // --- Known / suspicious target detection ---
@@ -866,6 +860,27 @@ static bool connectAndReadGATT(
                 targetWasLabel = targetLabel;
             }
         }
+    }
+
+    if (isBiscuit) {
+        LOG(LOG_TARGET, devTag + "Xiao Biscuit detected via GATT service");
+        nibblesSpeechShowCustom(
+            biscuitMsgs[random(BISCUIT_MSG_COUNT)]
+        );
+    }
+
+    if (isFlipper) {
+        LOG(LOG_TARGET, devTag + "Flipper Zero detected via GATT service");
+        nibblesSpeechShowCustom(
+            flipperMsgs[random(FLIPPER_MSG_COUNT)]
+        );
+    }
+
+    if (isTesla) {
+        LOG(LOG_TARGET, devTag + "Tesla vehicle detected via GATT service");
+        nibblesSpeechShowCustom(
+            teslaMsgs[random(TESLA_MSG_COUNT)]
+        );
     }
 
     // --- Erst NACH vollständiger Iteration über ALLE Services reagieren ---
@@ -901,9 +916,7 @@ static bool connectAndReadGATT(
             }
         }
 
-        return true;  // target found — caller breaks loop
-    } else {
-        ScanContext::targetFound = false;  // ← Only reset if NOT a target
+        return true;  // target found for this device
     }
 
     return false;  // no target found — continue
@@ -1014,6 +1027,9 @@ void scanForDevices() {
             LOG(LOG_SCAN, "Scan cancelled mid-loop (" + String(i) + "/" + String(results.getCount()) + " devices processed)");
             break;
         }
+
+        // Reset per-device state
+        ScanContext::targetFound = false;
 
         dev = {};
         displayName.clear();
@@ -1423,8 +1439,6 @@ void scanForDevices() {
                             UIContext::angryTaskHandle = nullptr;
                         }
                     }
-                } else {
-                    ScanContext::targetFound = false;  // ← Only reset if NOT a target
                 }
               }
 
