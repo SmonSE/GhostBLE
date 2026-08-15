@@ -11,6 +11,7 @@
 #include "ui/susview/sus_device_view.h"
 #include "ui/finder/finder_list_view.h"
 #include "ui/finder/approach_view.h"
+#include "ui/filemanager/file_manager_view.h"
 
 #include "assets/nibblesAngry.h"
 #include "assets/nibblesFront.h"
@@ -166,7 +167,7 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
 static void clearThoughtBubble() {
     // Clear thought bubble area
     if (MenuController::isOpen() || SusDeviceView::isOpen() ||
-        FinderListView::isOpen() || ApproachView::isOpen()) return;
+        FinderListView::isOpen() || ApproachView::isOpen() || FileManagerView::isOpen()) return;
     UIContext::isSpeechBubbleActive = false;
 
     // Hintergrund unter der Bubble wiederherstellen
@@ -213,7 +214,7 @@ static void clearThoughtBubble() {
 
 static void showMumble(const char* message, bool force = false) {
     if (MenuController::isOpen() || SusDeviceView::isOpen() ||
-        FinderListView::isOpen() || ApproachView::isOpen()) return; 
+        FinderListView::isOpen() || ApproachView::isOpen() || FileManagerView::isOpen()) return; 
     if(force || !ScanContext::scanIsRunning){
         M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 22, 0x00C4);
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,

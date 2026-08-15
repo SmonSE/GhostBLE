@@ -21,6 +21,7 @@
 #include "ui/icons/scan_icon.h"
 #include "ui/susview/sus_device_view.h"
 #include "ui/finder/finder_list_view.h"
+#include "ui/filemanager/file_manager_view.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"
@@ -234,6 +235,13 @@ static void buildItems() {
     action("Show Help", []() {
         MenuController::closeSilent();
         showHelpOverlay();
+    });
+
+    // ── File Manager ──────-──────────────────────────────────
+    section("FILE MANAGER");
+    action("Manage Log Files", []() {
+        MenuController::closeSilent();
+        FileManagerView::open();
     });
 
     // im buildItems():
