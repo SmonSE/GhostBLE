@@ -43,6 +43,7 @@
 #include "src/ui/finder/approach_view.h"
 
 #include "ui/menu/menu_controller.h"
+#include "ui/filemanager/file_manager_view.h"
 
 
 static MenuState menuState;  // globale Instanz
@@ -231,37 +232,43 @@ void loop() {
 
       // ── ENTER: confirm/select — routed to whichever view is active ──
       if (status.enter) {
-        if (FinderListView::isOpen()) {
-          LOG(LOG_CONTROL, "ENTER — finder select");
-          FinderListView::selectCurrent();
-        } else if (SusDeviceView::isOpen()) {
-          LOG(LOG_CONTROL, "ENTER — sus device select");
-          SusDeviceView::selectCurrent();
-        } else if (MenuController::isOpen()) {
-          LOG(LOG_CONTROL, "ENTER — menu select");
-          MenuController::selectCurrent();
-        }
-        return;
+          if (FinderListView::isOpen()) {
+              LOG(LOG_CONTROL, "ENTER — finder select");
+              FinderListView::selectCurrent();
+          } else if (SusDeviceView::isOpen()) {
+              LOG(LOG_CONTROL, "ENTER — sus device select");
+              SusDeviceView::selectCurrent();
+          } else if (FileManagerView::isInConfirmMode()) {
+              LOG(LOG_CONTROL, "ENTER — confirming file delete");
+              FileManagerView::confirmDelete();
+          } else if (FileManagerView::isOpen()) {
+              LOG(LOG_CONTROL, "ENTER — file manager select");
+              FileManagerView::selectCurrent();
+          } else if (MenuController::isOpen()) {
+              LOG(LOG_CONTROL, "ENTER — menu select");
+              MenuController::selectCurrent();
+          }
+          return;
       }
 
       // ── ESC: one step back — closes innermost open view first ──
       for (auto key : status.word) {
-        if (key == '`') {
-          if (ApproachView::isOpen()) {
-            LOG(LOG_CONTROL, "ESC — closing Approach View");
-            ApproachView::close();
-          } else if (FinderListView::isOpen()) {
-            LOG(LOG_CONTROL, "ESC — closing Finder List View");
-            FinderListView::close();
-          } else if (SusDeviceView::isOpen()) {
-            LOG(LOG_CONTROL, "ESC — closing Sus Device View");
-            SusDeviceView::close();
-          } else if (MenuController::isOpen()) {
-            LOG(LOG_CONTROL, "ESC — closing Main Menu");
-            MenuController::close();
+          if (key == '`') {
+              if (ApproachView::isOpen()) {
+                  ApproachView::close();
+              } else if (FinderListView::isOpen()) {
+                  FinderListView::close();
+              } else if (SusDeviceView::isOpen()) {
+                  SusDeviceView::close();
+              } else if (FileManagerView::isInConfirmMode()) {
+                  FileManagerView::cancelAction();
+              } else if (FileManagerView::isOpen()) {
+                  FileManagerView::close();
+              } else if (MenuController::isOpen()) {
+                  MenuController::close();
+              }
+              return;
           }
-          return;
-        }
       }
 
       // ── Approach View: nur ESC wirkt, sonst nichts weiter verarbeiten ──
@@ -287,6 +294,17 @@ void loop() {
           if (key == '`') SusDeviceView::close();
         }
         return;
+      }
+
+      if (FileManagerView::isOpen()) {
+          for (auto key : status.word) {
+              if (key == ';') FileManagerView::navigatePrev();
+              if (key == '.') FileManagerView::navigateNext();
+          }
+          if (status.enter) {
+              FileManagerView::selectCurrent();
+          }
+          return;
       }
 
       // ── Main Menu: uniforme Navigation + Slider-Adjust ──
@@ -650,7 +668,7 @@ void onLongPress() {
 
   if (ScanContext::bleScanEnabled) {
     LOG(LOG_CONTROL,"BLE Scan ENABLED");
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
           drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     }
@@ -662,7 +680,7 @@ void onLongPress() {
   }
   else {
     LOG(LOG_CONTROL,"BLE Scan DISABLED");
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     }
@@ -678,7 +696,7 @@ void toggleWiFi() {
     NetworkContext::wifiStarted = false;
     NetworkContext::isWebLogActive = false;
     logDisableTarget(TARGET_WEB);
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
       if (random(2) == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                       nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
@@ -694,7 +712,7 @@ void toggleWiFi() {
     NetworkContext::wifiStarted = true;
     NetworkContext::isWebLogActive = true;
     logEnableTarget(TARGET_WEB);
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
       if (random(2) == 0) {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                       nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
@@ -720,7 +738,7 @@ void toggleWardriving() {
         String(NetworkContext::wigleLogger.getLoggedCount()) + " logged)");
         logDisableCategory(LOG_GPS);
         
-        if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
+        if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !FileManagerView::isOpen() ) {
           if (random(2) == 0) {
             drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                           nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
@@ -739,7 +757,7 @@ void toggleWardriving() {
         LOG(LOG_CONTROL, "Wardriving ON  (" + String(NetworkContext::gpsManager.getSourceName()) + ")");
         LOG(LOG_CONTROL, "  File: " + NetworkContext::wigleLogger.getFilename());
 
-        if(!MenuController::isOpen() || !SusDeviceView::isOpen()) {
+        if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !ApproachView::isOpen() || !FinderListView::isOpen() || !FileManagerView::isOpen() ) {
           if (random(2) == 0) {
             drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                           nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
