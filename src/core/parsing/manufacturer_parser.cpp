@@ -136,6 +136,10 @@ String getMemberServiceOwner(uint16_t uuid) {
     case 0xFED3: return "Apple Inc.";
     case 0xFED4: return "Apple Inc.";
 
+    // Bosch
+    case 0xFE02: return "Robert Bosch GmbH";
+    case 0xFC48: return "Michelin";
+
     // Google
     case 0xFC3E: return "Google LLC";
     case 0xFC56: return "Google LLC";
