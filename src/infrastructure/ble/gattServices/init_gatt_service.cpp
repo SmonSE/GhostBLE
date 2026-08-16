@@ -16,7 +16,7 @@
 #include "env_sensing_service.h"
 #include "alert_notifi_service.h"
 #include "phone_alert_status_service.h"
-#include "gen_dump_handler.h"
+#include "unknown_gatt_handler.h"
 #include "location_navigation_service.h"
 
 
@@ -86,11 +86,11 @@ void registerGATTServiceHandlers()
         "180e", "Phone Alert Status",
         [](NimBLEClient* c) { return PhoneAlertStatusServiceHandler::readPhoneAlertStatus(c); });
 
+    GATTServiceRegistry::registerService(
+        "1819", "Location & Navigation",
+        [](NimBLEClient* c) { return LocationNavigationServiceHandler::readLocation(c); });
+
     // Fallback: dump characteristics for any unregistered service
     GATTServiceRegistry::registerFallback(
-        [](NimBLEClient* c, std::string uuid) { return GenericDumpHandler::dumpService(c, uuid); });
-
-    GATTServiceRegistry::registerService(
-    "1819", "Location & Navigation",
-    [](NimBLEClient* c) { return LocationNavigationServiceHandler::readLocation(c); });
+        [](NimBLEClient* c, std::string uuid) { return UnknownGATTHandler::dumpService(c, uuid); });
 }
