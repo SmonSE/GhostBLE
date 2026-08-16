@@ -100,7 +100,12 @@ void SdoHandlers::handleMatter(const SdoContext* ctx) {
 }
 
 bool SdoHandlers::extract16BitUUID(const NimBLEUUID& uuid, uint16_t& out) {
-    std::string s = uuid.toString();  // z.B. "0000fffa-0000-1000-8000-00805f9b34fb"
+    std::string s = uuid.toString();  // z.B. "0xfffa" oder "0000fffa-0000-1000-8000-00805f9b34fb"
+
+    // NimBLE prefixes 16-bit UUIDs with "0x" (see ble_uuid_to_str) — strip it
+    if (s.rfind("0x", 0) == 0) {
+        s = s.substr(2);
+    }
 
     // Fall 1: kurze Form "fffa"
     if (s.length() == 4) {
