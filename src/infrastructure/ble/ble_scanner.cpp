@@ -18,6 +18,7 @@
 
 #include "core/parsing/appearance_parser.h"
 #include "core/parsing/binary_format_detector.h"
+#include "core/parsing/fmdn_parser.h"
 
 #include "gattServices/notify_handler.h"
 
@@ -665,6 +666,36 @@ static bool parseDeviceInfo(
                     if (result.uuid == 0xFFF6) SdoHandlers::handleMatter(&ctx);
                 }
             }    
+
+            // ============================================================
+            // GOOGLE FIND MY DEVICE (FMDN) TRACKER DETECTION
+            // Passive: Moto Tag / Novoo / Chipolo broadcast under Eddystone
+            // UUID 0xFEAA with frame byte 0x40 (normal) / 0x41 (unwanted).
+            // ============================================================
+            if (hasUuid16) {
+                FmdnParser::FmdnResult fmdn = FmdnParser::parse(
+                    uuid16, (const uint8_t*)svcData.data(), svcData.size());
+
+                if (fmdn.detected) {
+                    const char* fmdnLabel = fmdn.unwantedTracking
+                        ? "FMDN Unwanted Track"     // 0x41 – separated tracker
+                        : "Google Find My";         // 0x40 – owner nearby
+
+                    LOG(LOG_TARGET, devTag + "Google Find My tracker detected"
+                        + (fmdn.unwantedTracking ? " (UNWANTED TRACKING MODE)" : "")
+                        + "\n   Address:  " + String(ScanContext::addrStr.c_str())
+                        + "\n   RSSI:     " + String(ScanContext::rssi.load()) + " dBm");
+
+                    isSecurityOrTrackingDevice = true;
+                    ScanContext::susDevice++;
+                    DeviceContext::xpManager.awardXP(fmdn.unwantedTracking ? 5.0f : 3.0f);
+
+                    SusLog::add(fmdnLabel, ScanContext::addrStr.c_str(),
+                                (int8_t)ScanContext::rssi.load());
+
+                    nibblesSpeechShowCustom(fmdn.unwantedTracking ? "Stalker?!" : "FindMy tag");
+                }
+            }
 
             // PwnBeacon service data payload
             if (svcDataUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
