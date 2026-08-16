@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <string>
 
-class GenericDumpHandler {
+class UnknownGATTHandler {
 public:
     static String dumpService(NimBLEClient* pClient, const std::string& uuid);
 

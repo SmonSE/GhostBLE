@@ -1,4 +1,4 @@
-#include "gen_dump_handler.h"
+#include "unknown_gatt_handler.h"
 
 #include <NimBLEDevice.h>
 #include <NimBLERemoteService.h>
@@ -8,7 +8,7 @@
 #include "core/parsing/binary_format_detector.h"
 
 
-bool GenericDumpHandler::isLikelyUtf8Text(const std::string& data) {
+bool UnknownGATTHandler::isLikelyUtf8Text(const std::string& data) {
     if (data.empty()) {
         return false;
     }
@@ -90,7 +90,7 @@ bool GenericDumpHandler::isLikelyUtf8Text(const std::string& data) {
     return printable >= 3;
 }
 
-String GenericDumpHandler::getUtf8Text(const std::string& data) {
+String UnknownGATTHandler::getUtf8Text(const std::string& data) {
     size_t end = data.size();
 
     while (end > 0 && data[end - 1] == '\0') {
@@ -110,7 +110,7 @@ String GenericDumpHandler::getUtf8Text(const std::string& data) {
     return String(text.c_str());
 }
 
-String GenericDumpHandler::dumpService(NimBLEClient* pClient, const std::string& uuid) {
+String UnknownGATTHandler::dumpService(NimBLEClient* pClient, const std::string& uuid) {
     String result = "";
 
     if (!pClient) return result;
