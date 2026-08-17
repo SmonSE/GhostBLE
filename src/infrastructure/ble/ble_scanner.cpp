@@ -1438,8 +1438,9 @@ void scanForDevices() {
               if (device->haveServiceUUID()) {
                 NimBLEUUID uuid = device->getServiceUUID();
                 String uuidStr = String(uuid.toString().c_str());
+                String serviceName = getServiceName(uuidStr);
 
-                LOG(LOG_GATT, devTag + "Service-UUID: " + uuidStr);
+                LOG(LOG_GATT, devTag + "Service-UUID: " + uuidStr + " (" + serviceName + ")");
 
                 // --- Known / suspicious target detection (advertisement-based) ---
                 // Note: deviceInfoService are empty here since we didn't connect
