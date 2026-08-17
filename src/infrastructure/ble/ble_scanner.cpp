@@ -899,24 +899,18 @@ static bool connectAndReadGATT(
     }
 
     if (isBiscuit) {
-        LOG(LOG_TARGET, devTag + "Xiao Biscuit detected via GATT service");
-        nibblesSpeechShowCustom(
-            biscuitMsgs[random(BISCUIT_MSG_COUNT)]
-        );
+        //LOG(LOG_TARGET, devTag + "Xiao Biscuit detected via GATT service");
+        nibblesSpeechShowCustom(biscuitMsgs[random(BISCUIT_MSG_COUNT)]);
     }
 
     if (isFlipper) {
-        LOG(LOG_TARGET, devTag + "Flipper Zero detected via GATT service");
-        nibblesSpeechShowCustom(
-            flipperMsgs[random(FLIPPER_MSG_COUNT)]
-        );
+        //LOG(LOG_TARGET, devTag + "Flipper Zero detected via GATT service");
+        nibblesSpeechShowCustom(flipperMsgs[random(FLIPPER_MSG_COUNT)]);
     }
 
     if (isTesla) {
-        LOG(LOG_TARGET, devTag + "Tesla vehicle detected via GATT service");
-        nibblesSpeechShowCustom(
-            teslaMsgs[random(TESLA_MSG_COUNT)]
-        );
+        //LOG(LOG_TARGET, devTag + "Tesla vehicle detected via GATT service");
+        nibblesSpeechShowCustom(teslaMsgs[random(TESLA_MSG_COUNT)]);
     }
 
     // --- Erst NACH vollständiger Iteration über ALLE Services reagieren ---
