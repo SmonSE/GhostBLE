@@ -45,28 +45,53 @@ static const ServiceEntry serviceTable[] = {
 static const int serviceTableSize = sizeof(serviceTable) / sizeof(serviceTable[0]);
 
 String getServiceName(const String& uuid) {
-    // Try parsing as a 16-bit UUID for fast binary search
-    if (uuid.length() <= 4) {
-        uint16_t id = (uint16_t)strtoul(uuid.c_str(), nullptr, 16);
-        if (id != 0) {
-            int lo = 0, hi = serviceTableSize - 1;
-            while (lo <= hi) {
-                int mid = (lo + hi) / 2;
-                if (serviceTable[mid].uuid == id) return serviceTable[mid].name;
-                if (serviceTable[mid].uuid < id) lo = mid + 1;
-                else hi = mid - 1;
+
+    String normalized = uuid;
+    normalized.trim();
+    normalized.toLowerCase();
+
+    if (normalized.startsWith("0x")) {
+        normalized = normalized.substring(2);
+    }
+
+    // Try parsing as a 16-bit UUID
+    if (normalized.length() == 4) {
+
+        uint16_t id = (uint16_t)strtoul(normalized.c_str(), nullptr, 16);
+
+        int lo = 0;
+        int hi = serviceTableSize - 1;
+
+        while (lo <= hi) {
+            int mid = (lo + hi) / 2;
+
+            if (serviceTable[mid].uuid == id) {
+                return serviceTable[mid].name;
             }
 
-            // Not in standard table — check Member Services (Section 3.11)
-            String owner = getMemberServiceOwner(id);
-            if (!owner.isEmpty()) {
-                return "Member Service (" + owner + ")";
+            if (serviceTable[mid].uuid < id) {
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
             }
+        }
+
+        // Bluetooth SIG Member Services
+        String owner = getMemberServiceOwner(id);
+
+        if (!owner.isEmpty()) {
+            return "Member Service (" + owner + ")";
         }
     }
 
-    // Fall through for 128-bit UUIDs (vendor-specific)
-    if (uuid == PWNBEACON_SERVICE_UUID) return "PwnBeacon (PwnGrid/BLE)";
-    if (uuid == TESLA_BLE_SERVICE_UUID) return "Tesla Vehicle (BLE Key)";
+    // 128-bit vendor-specific UUIDs
+    if (normalized.equalsIgnoreCase(PWNBEACON_SERVICE_UUID)) {
+        return "PwnBeacon (PwnGrid/BLE)";
+    }
+
+    if (normalized.equalsIgnoreCase(TESLA_BLE_SERVICE_UUID)) {
+        return "Tesla Vehicle (BLE Key)";
+    }
+
     return "Unknown Service";
 }
