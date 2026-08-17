@@ -16,7 +16,14 @@ static uint8_t categoryTargets[16];
 #ifdef VERBOSE_LOGGING
 static uint16_t enabledCategories = LOG_ALL;
 #else
-static uint16_t enabledCategories = LOG_ALL & ~(LOG_SYSTEM | LOG_CONTROL | LOG_GPS);
+static uint16_t enabledCategories =
+    LOG_ALL &
+    ~(LOG_SYSTEM |
+      LOG_CONTROL |
+      LOG_SCAN |
+      LOG_BEACON |
+      LOG_NOTIFY |
+      LOG_GPS);
 #endif
 
 // Global target enable mask — controls which outputs are active
@@ -28,7 +35,7 @@ static bool sdInitialized = false;
 // Category index → filename mapping
 static const char* catFileNames[] = {
     "/GhostBLE/scan.log",       // 0  LOG_SCAN
-    "/GhostBLE/sniffed.log",    // 1  LOG_GATT -> LOG_SNIFF
+    "/GhostBLE/gatt.log",    // 1  LOG_GATT -> LOG_SNIFF
     "/GhostBLE/privacy.log",    // 2  LOG_PRIVACY
     "/GhostBLE/security.log",   // 3  LOG_SECURITY
     "/GhostBLE/beacon.log",     // 4  LOG_BEACON
@@ -37,7 +44,7 @@ static const char* catFileNames[] = {
     "/GhostBLE/system.log",     // 7  LOG_SYSTEM
     "/GhostBLE/suspicious.log", // 8  LOG_TARGET -> LOG_SUS
     "/GhostBLE/notify.log",     // 9  LOG_NOTIFY
-    "/GhostBLE/misc.log",       // 10 (unused)
+    "/GhostBLE/sniffed.log",    // 10 LOG_SNIFFED
     "/GhostBLE/misc.log",       // 11
     "/GhostBLE/misc.log",       // 12
     "/GhostBLE/misc.log",       // 13
@@ -75,14 +82,6 @@ static void migrateToFolder() {
 
 bool initLogger(int sdCsPin) {
     logMutex = xSemaphoreCreateMutex();
-
-    // Disable not important LOGs to reduce trace load
-    logDisableCategory(LOG_SYSTEM);
-    logDisableCategory(LOG_CONTROL);
-    logDisableCategory(LOG_SCAN);
-    logDisableCategory(LOG_BEACON);
-    logDisableCategory(LOG_NOTIFY);
-    logDisableCategory(LOG_GPS);
 
     // Default: all categories route to all targets
     // (actual output filtered by enabledTargets)

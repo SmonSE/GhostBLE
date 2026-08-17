@@ -23,7 +23,7 @@ String EnvironmentalSensingServiceHandler::readEnvironmentalSensing(NimBLEClient
         if (raw.size() >= 2) {
             int16_t tempRaw = (uint8_t)raw[0] | ((uint8_t)raw[1] << 8);
             float tempC = tempRaw / 100.0f;
-            result += "🌡 Temperature: " + String(tempC, 1) + " °C\n";
+            result += "  Temperature: " + String(tempC, 1) + " °C\n";
             LOG(LOG_GATT, "     Temperature: " + String(tempC, 1) + " °C");
         }
     }

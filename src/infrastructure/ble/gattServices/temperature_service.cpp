@@ -28,7 +28,7 @@ static float parseIEEE11073Float(const uint8_t* data) {
 }
 
 String TemperatureServiceHandler::readTemperature(NimBLEClient* pClient) {
-    LOG(LOG_GATT,"   🌡️ Temperature Service");
+    LOG(LOG_GATT,"     Temperature Service");
 
     if (!pClient) return "";
 
@@ -61,10 +61,10 @@ String TemperatureServiceHandler::readTemperature(NimBLEClient* pClient) {
 
                 String unit = (flags & 0x01) ? "F" : "C";
 
-                LOG(LOG_GATT, "     🌡️ Temperature: " + String(temperature, 2) + " °" + unit);
+                LOG(LOG_GATT, "       Temperature: " + String(temperature, 2) + " °" + unit);
 
                 LOG(LOG_GATT,
-                    "🌡️ Temperature: " + String(temperature, 2) + " °" + unit
+                    "  Temperature: " + String(temperature, 2) + " °" + unit
                 );
             }
         );

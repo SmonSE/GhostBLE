@@ -1,31 +1,34 @@
 #include "target_device.h"
+#include "app/context/globals.h"
 #include "config/detection_config.h"
 #include "infrastructure/logging/logger.h"
 
 bool isTargetDevice(String name, String address, String serviceUuid, String deviceInfoService, String& outLabel) {
 
+  outLabel = "";
+
   if (name == "ChameleonUltra" || name == "ChameleonLite") {
     outLabel = "Chameleon RFID Tool";
-    LOG(LOG_TARGET, "Chameleon RFID research device detected" + name);
+    LOG(LOG_TARGET, devTag + "Chameleon RFID research device detected" + name);
     return true;
   }
 
   if ((name == "esp32" || name == "ESP32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0" || name == "Keyboard_e9" || name == "BruceNet")) {
     outLabel = "ESP32 Hardware";
-    LOG(LOG_TARGET, "Device with ESP32 Hardware detected" + name);
+    LOG(LOG_TARGET, devTag + "Device with ESP32 Hardware detected" + name);
     return true;
   }
 
   if ((deviceInfoService == "esp32" || deviceInfoService == "n/a" || deviceInfoService == "<no name>" || deviceInfoService == "Keyboard_a0" || deviceInfoService == "Keyboard_e9" || deviceInfoService == "BruceNet")) {
     outLabel = "ESP32 Hardware";
-    LOG(LOG_TARGET, "Device with ESP32 Hardware detected" + name);
+    LOG(LOG_TARGET, devTag + "Device with ESP32 Hardware detected" + name);
     return true;
   }
 
   // LIGHTBLUE APP UUIDs
   if (serviceUuid == LIGHTBLUE_APP_SERVICE_UUID) {
     outLabel = "LIGHT BLUE APP";
-    LOG(LOG_TARGET, "Device with LIGHT BLUE APP detected");
+    LOG(LOG_TARGET, devTag + "Device with LIGHT BLUE APP detected");
     return true;
   }
 
@@ -33,7 +36,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   if (serviceUuid == CATHACK_SERVICE_UUID_3 &&
       (name == "esp32" || name == "n/a" || name == "<no name>" || name == "Keyboard_a0")) {
     outLabel = "CATHACK Firmware";
-    LOG(LOG_TARGET, "Device with CATHACK Firmware detected" + name);
+    LOG(LOG_TARGET, devTag + "Device with CATHACK Firmware detected" + name);
     return true;
   }
 
@@ -50,23 +53,23 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
 
   if (uuid == "0x3081") {
       outLabel = "FLIPPER ZERO (Black)";
-      LOG(LOG_TARGET, "FLIPPER ZERO detected (Black)");
+      LOG(LOG_TARGET, devTag + "FLIPPER ZERO detected (Black)");
       return true;
   }
   if (uuid == "0x3082") {
       outLabel = "FLIPPER ZERO (White)";
-      LOG(LOG_TARGET, "FLIPPER ZERO detected (White)");
+      LOG(LOG_TARGET, devTag + "FLIPPER ZERO detected (White)");
       return true;
   }
   if (uuid == "0x3083") {
       outLabel = "FLIPPER ZERO (Transparent)";
-      LOG(LOG_TARGET, "FLIPPER ZERO detected (Transparent)");
+      LOG(LOG_TARGET, devTag + "FLIPPER ZERO detected (Transparent)");
       return true;
   }
 
   if (serviceUuid == PWNBEACON_SERVICE_UUID) {
     outLabel = "PWNBEACON (PwnGrid/Pwnagotchi)";
-    LOG(LOG_TARGET, "👾 PWNBEACON detected (PwnGrid/Pwnagotchi)");
+    LOG(LOG_TARGET, devTag + " PWNBEACON detected (PwnGrid/Pwnagotchi)");
     return false;
   }
 
@@ -75,19 +78,19 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   uuidLower.toLowerCase();
   if (uuidLower == XIAO_BISCUIT_SERVICE_UUID || uuidLower == XIAO_BISCUIT_SERVICE_UUID_2) {
     outLabel = "XIAO BISCUIT";
-    LOG(LOG_TARGET, "XIAO BISCUIT detected (service UUID match)");
+    LOG(LOG_TARGET, devTag + "XIAO BISCUIT detected (service UUID match)");
     return true;
   }
   if (name == "Xiao Biscuit") {
     outLabel = "XIAO BISCUIT";
-    LOG(LOG_TARGET, "XIAO BISCUIT detected (name match)");
+    LOG(LOG_TARGET, devTag + "XIAO BISCUIT detected (name match)");
     return true;
   }
 
   // NibbLEs detection
   if (name == "NibBLEs") {
     outLabel = "Found NibBLEs device";
-    LOG(LOG_TARGET, "Found NibBLEs device (name match)");
+    LOG(LOG_TARGET, devTag + "Found NibBLEs device (name match)");
     return true;
   }
 
@@ -97,21 +100,21 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
 
   if (nameLower.indexOf("looki") >= 0) {
       outLabel = "Looki L1 AI Wearable";
-      LOG(LOG_TARGET, "Looki L1 detected: " + name);
+      LOG(LOG_TARGET, devTag + "Looki L1 detected: " + name);
       return true;
   }
 
   if (name == "HC-03" || name == "HC-05" || name == "HC-06" || name == "HC-08" ||
       name == "HM-10" || name == "HM-19") {
     outLabel = "Possible Card Skimmer";
-    LOG(LOG_TARGET, "CS: Possible card skimmer module detected: " + name);
+    LOG(LOG_TARGET, devTag + "CS: Possible card skimmer module detected: " + name);
     return true;
   }
 
   // RNBT-XXXX name prefix (Roving Networks default naming)
   if (name.startsWith("RNBT-")) {
     outLabel = "Possible Card Skimmer (RN module)";
-    LOG(LOG_TARGET, "CS: Possible RN Bluetooth module detected: " + name);
+    LOG(LOG_TARGET, devTag + "CS: Possible RN Bluetooth module detected: " + name);
     return true;
   }
 
@@ -120,7 +123,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
   macLower.toLowerCase();
   if (macLower.startsWith("00:06:66")) {
     outLabel = "Possible Card Skimmer (RN OUI)";
-    LOG(LOG_TARGET, "CS: Possible Roving Networks MAC prefix detected: " + address);
+    LOG(LOG_TARGET, devTag + "CS: Possible Roving Networks MAC prefix detected: " + address);
     return true;
   }
 
