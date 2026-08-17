@@ -92,8 +92,8 @@ void decodeBLEData(const std::string& uuid, uint8_t* data, size_t length)
         LOG(LOG_NOTIFY, "   UUID : " + uuidStr + " [" + vendorName + "]");
     else
         LOG(LOG_NOTIFY, "   UUID : " + uuidStr);
-    LOG(LOG_NOTIFY, "   HEX  : " + hexString);
-    LOG(LOG_NOTIFY, "   ASCII: " + asciiString);
+        LOG(LOG_NOTIFY, "   HEX  : " + hexString);
+        LOG(LOG_NOTIFY, "   ASCII: " + asciiString);
 
     // ---- Known BLE characteristics ----
     if (uuidStr.endsWith(UUID_BATTERY_LEVEL) && length >= 1)

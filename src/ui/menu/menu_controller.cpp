@@ -74,6 +74,7 @@ LOG_TOGGLE_PAIR(Gps,      LOG_GPS)
 LOG_TOGGLE_PAIR(System,   LOG_SYSTEM)
 LOG_TOGGLE_PAIR(Target,   LOG_TARGET)
 LOG_TOGGLE_PAIR(Notify,   LOG_NOTIFY)
+LOG_TOGGLE_PAIR(Sniffed,  LOG_SNIFFED)
 
 // ── Menu item definition ──────────────────────────────────────
 struct MenuItem {
@@ -313,16 +314,17 @@ static void buildItems() {
 
     // ── LOGGING ──────────────────────────────────────────────
     section("LOGGING");
-    //toggleAction("Scan",     getLogScan,     toggleLogScan);
-    toggleAction("Sniffed",  getLogGatt,     toggleLogGatt);
-    toggleAction("Privacy",  getLogPrivacy,  toggleLogPrivacy);
-    toggleAction("Security", getLogSecurity, toggleLogSecurity);
-    toggleAction("Beacon",   getLogBeacon,   toggleLogBeacon);
-    //toggleAction("Control",  getLogControl,  toggleLogControl);
-    toggleAction("GPS Data",      getLogGps,      toggleLogGps);
-    //toggleAction("System",   getLogSystem,   toggleLogSystem);
-    toggleAction("Suspicious",   getLogTarget,   toggleLogTarget);
-    //toggleAction("Notify",   getLogNotify,   toggleLogNotify);
+    //toggleAction("Scan",       getLogScan,     toggleLogScan);
+    toggleAction("Raw GATT Data", getLogGatt,     toggleLogGatt);
+    toggleAction("Privacy",       getLogPrivacy,  toggleLogPrivacy);
+    toggleAction("Security",      getLogSecurity, toggleLogSecurity);
+    toggleAction("Beacon",        getLogBeacon,   toggleLogBeacon);
+    //toggleAction("Control",     getLogControl,  toggleLogControl);
+    //toggleAction("GPS Data",    getLogGps,      toggleLogGps);
+    //toggleAction("System",      getLogSystem,   toggleLogSystem);
+    toggleAction("Sniffed Data",  getLogSniffed,  toggleLogSniffed);
+    toggleAction("Suspicious",    getLogTarget,   toggleLogTarget);
+    //toggleAction("Notify",      getLogNotify,   toggleLogNotify);
 }
 
 // ── Drawing helpers ───────────────────────────────────────────

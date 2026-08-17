@@ -17,8 +17,12 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
     // For better logging and correlation, show local name if available, otherwise just the address
     if (localName != "") {
         LOG(LOG_GATT, "   Device found: " + localName + " [" + address + "]");
+        delay(10);  // allow log to flush before next read
+        LOG(LOG_SNIFFED, "   Device found: " + localName + " [" + address + "]");
     } else {
         LOG(LOG_GATT, "   Device found: [" + address + "]");
+        delay(10);  // allow log to flush before next read
+        LOG(LOG_SNIFFED, "   Device found: [" + address + "]");
     }
 
     NimBLERemoteService* gapService = pClient->getService(UUID_GENERIC_ACCESS);
@@ -54,6 +58,8 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                 String val = deviceName;
                 accessInfoString += String(charNames[i]) + ": " + val + "\n";
                 LOG(LOG_GATT, "     " + String(charNames[i]) + ": " + val);
+                delay(10);  // allow log to flush before next read
+                LOG(LOG_SNIFFED, "     " + String(charNames[i]) + ": " + val);
             } else if (strcmp(charUUIDs[i], "2A01") == 0) {
                 if (value.size() >= 2) {
                     uint16_t appearance;
@@ -61,6 +67,8 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                     appearanceName = getAppearanceName(appearance);
                     accessInfoString += "Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")\n";
                     LOG(LOG_GATT, "     Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")");
+                    delay(10);  // allow log to flush before next read
+                    LOG(LOG_SNIFFED, "   Appearance: " + appearanceName + " (0x" + String(appearance, HEX) + ")");
                 }
             } else if (strcmp(charUUIDs[i], "2A04") == 0) {
                 if (value.length() >= 8) {

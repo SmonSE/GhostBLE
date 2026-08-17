@@ -19,6 +19,7 @@
 #include "core/parsing/appearance_parser.h"
 #include "core/parsing/binary_format_detector.h"
 #include "core/parsing/fmdn_parser.h"
+#include "core/detection/target_device.h"
 
 #include "gattServices/notify_handler.h"
 
@@ -445,9 +446,9 @@ static bool parseDeviceInfo(
                 float estDist = powf(10.0f, (float)(DISTANCE_CONSTANT - ScanContext::rssi.load()) / (float)RSSI_CONSTANT);
 
                 LOG(LOG_TARGET, devTag + "Find My Tracker detected (offline finding mode)\n"
-                    "   Address:  " + String(ScanContext::addrStr.c_str()) + "\n"
-                    "   RSSI:     " + String(ScanContext::rssi.load()) + " dBm\n"
-                    "   Distance: ~" + String(estDist, 2) + " m");
+                    "      Address:  " + String(ScanContext::addrStr.c_str()) + "\n"
+                    "      RSSI:     " + String(ScanContext::rssi.load()) + " dBm\n"
+                    "      Distance: ~" + String(estDist, 2) + " m");
 
                 // Debug: Manufacturer-Bytes if offline tracker found
                 String hexDump = "";
@@ -456,7 +457,7 @@ static bool parseDeviceInfo(
                     snprintf(buf, sizeof(buf), "%02X ", (uint8_t)mfg[i]);
                     hexDump += buf;
                 }
-                LOG(LOG_TARGET, devTag + "   Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
+                LOG(LOG_TARGET, devTag + "Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
                 
                 isSecurityOrTrackingDevice = true;
                 ScanContext::susDevice++;
@@ -849,11 +850,15 @@ static bool connectAndReadGATT(
                 bool alreadyDumped = !GATTServiceRegistry::getLastResult(serviceUuid).isEmpty();
 
                 if (!alreadyDumped) {
-                    LOG(LOG_GATT, devTag + "  Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
+                    //LOG(LOG_GATT, devTag + "  Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
+                    //delay(10);  // allow log to flush before next read
+                    LOG(LOG_SNIFFED, devTag + "ASCII: " + String(rawValue.c_str()));
                 }
 
                 if (isLikelyJson(rawValue)) {
-                    LOG(LOG_GATT, devTag + "  [JSON] " + String(rawValue.c_str()));
+                    //LOG(LOG_GATT, devTag + "  [JSON]: " + String(rawValue.c_str()));
+                    //delay(10);
+                    LOG(LOG_SNIFFED, devTag + "JSON:  " + String(rawValue.c_str()));
                     DeviceContext::xpManager.awardXP(1.5f);
                 }
 
@@ -1225,7 +1230,7 @@ void scanForDevices() {
                 uint8_t metaAdConfidence = MetaGlasses::detectMetaGlasses(device, localName, manufacturerId);
 
                 if (metaAdConfidence > 0 && MetaGlasses::hasMetaGATTService(pClient)) {
-                    LOG(LOG_TARGET, devTag + "👓 Meta Ray-Ban GATT service confirmed!");
+                    LOG(LOG_TARGET, devTag + "  Meta Ray-Ban GATT service confirmed!");
                     
                     String generation = MetaGlasses::detectGeneration(localName, true);
                     String model = MetaGlasses::extractModelName(localName);
@@ -1292,22 +1297,24 @@ void scanForDevices() {
 
                 // --- Build and log device info summary ---
                 String infoLog = devTag + "Device info\n"
-                    "   Address:  " + address + "\n"
-                    "   Name:     " + localName + "\n"
-                    "   Manuf.:   " + manufacturerName;
+                    "      Address:  " + address + "\n"
+                    "      Name:     " + localName + "\n"
+                    "      Manuf.:   " + manufacturerName;
 
                 if (!modelName.isEmpty()) infoLog += "\n   Model:    " + modelName;
 
-                infoLog += "\n   Raw GATT:";
+                infoLog += "\n     Raw GATT:";
                 for (const auto& n : ScanContext::nameList) {
                     if (!n.empty()) infoLog += "\n     - " + String(n.c_str());
                 }
 
                 float distance = powf(10.0f,
                     (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
-                infoLog += "\n   Distance: ~" + String(distance, 2) + " m"
-                         + "\n   RSSI:     " + String(currentRSSI) + " dBm";
+                infoLog += "\n     Distance: ~" + String(distance, 2) + " m"
+                         + "\n     RSSI:     " + String(currentRSSI) + " dBm";
                 LOG(LOG_GATT, infoLog);
+                delay(10);  // allow log to flush before next read
+                LOG(LOG_SNIFFED, infoLog);
 
                 // --- iBeacon details ---
                 if (isIBeacon) {

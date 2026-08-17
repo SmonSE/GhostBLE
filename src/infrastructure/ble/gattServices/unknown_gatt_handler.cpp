@@ -6,6 +6,7 @@
 
 #include "infrastructure/logging/logger.h"
 #include "core/parsing/binary_format_detector.h"
+#include "app/context/globals.h"
 
 
 bool UnknownGATTHandler::isLikelyUtf8Text(const std::string& data) {
@@ -121,33 +122,47 @@ String UnknownGATTHandler::dumpService(NimBLEClient* pClient, const std::string&
     LOG(LOG_GATT, "     Unknown Service (0x" + String(uuid.c_str()) + ")");
 
     auto characteristics = service->getCharacteristics(true);
+
     for (auto* pChar : characteristics) {
         std::string charUuid = pChar->getUUID().toString();
+
         String props = "";
-        if (pChar->canRead()) props += "R";
-        if (pChar->canWrite()) props += "W";
-        if (pChar->canNotify()) props += "N";
+        if (pChar->canRead())     props += "R";
+        if (pChar->canWrite())    props += "W";
+        if (pChar->canNotify())   props += "N";
         if (pChar->canIndicate()) props += "I";
 
-        String line = "  Char " + String(charUuid.c_str()) + " [" + props + "]";
+        String line = "  Char " + String(charUuid.c_str()) +
+                      " [" + props + "]";
 
         if (pChar->canRead()) {
             std::string raw = pChar->readValue();
+
             if (!raw.empty()) {
                 String binaryFormat = detectBinaryFormat(raw);
 
                 line += " (len=" + String(raw.size()) + ")";
 
                 if (!binaryFormat.isEmpty()) {
+                    // Known binary format
                     line += " = [" + binaryFormat + "]";
                 } else {
+                    // HEX dump
                     String hex = "";
+
                     size_t maxLen = 200;
-                    size_t len = (raw.size() > maxLen) ? maxLen : raw.size();
+                    size_t len = (raw.size() > maxLen)
+                                     ? maxLen
+                                     : raw.size();
 
                     for (size_t i = 0; i < len; i++) {
                         char buf[4];
-                        snprintf(buf, sizeof(buf), "%02X ", (uint8_t)raw[i]);
+                        snprintf(
+                            buf,
+                            sizeof(buf),
+                            "%02X ",
+                            static_cast<uint8_t>(raw[i])
+                        );
                         hex += buf;
                     }
 
@@ -156,23 +171,30 @@ String UnknownGATTHandler::dumpService(NimBLEClient* pClient, const std::string&
                     }
 
                     line += " = " + hex;
+                }
 
-                    // Try to interpret the value as UTF-8 text
-                    String text = getUtf8Text(raw);
+                // ---------------------------------------------------------
+                // UTF-8 / Text detection
+                // ---------------------------------------------------------
+                String text = getUtf8Text(raw);
 
-                    if (!text.isEmpty()) {
-                        line += "\n       Text: \"" + text + "\"";
-                    }
+                if (!text.isEmpty()) {
+                    // Keep LOG_GATT unchanged.
+                    LOG(
+                        LOG_SNIFFED, devTag + "UTF-8: \"" + text + "\""
+                    );
                 }
             }
         }
 
+        // Existing GATT output remains unchanged
         result += line;
         LOG(LOG_GATT, "     " + line);
     }
 
     if (result.isEmpty()) {
-        result = "Unknown Service (" + String(uuid.c_str()) + "): No characteristics\n";
+        result = "Unknown Service (" + String(uuid.c_str()) +
+                 "): No characteristics\n";
     }
 
     return result;
