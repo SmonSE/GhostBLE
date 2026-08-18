@@ -457,7 +457,7 @@ static bool parseDeviceInfo(
                     snprintf(buf, sizeof(buf), "%02X ", (uint8_t)mfg[i]);
                     hexDump += buf;
                 }
-                LOG(LOG_TARGET, devTag + "Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
+                LOG(LOG_TARGET, "      Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
                 
                 isSecurityOrTrackingDevice = true;
                 ScanContext::susDevice++;
@@ -1230,7 +1230,7 @@ void scanForDevices() {
                     String model = MetaGlasses::extractModelName(localName);
                     
                     LOG(LOG_TARGET, devTag + "   Generation: " + generation);
-                    LOG(LOG_TARGET, devTag + "   Model:      " + model);
+                    LOG(LOG_TARGET, devTag + "   Model: " + model);
                     
                     // Mark as suspicious target
                     ScanContext::targetFound = true;
@@ -1291,11 +1291,11 @@ void scanForDevices() {
 
                 // --- Build and log device info summary ---
                 String infoLog = devTag + "Device info\n"
-                    "      Address:  " + address + "\n"
-                    "      Name:     " + localName + "\n"
-                    "      Manuf.:   " + manufacturerName;
+                    "      Address:" + address + "\n"
+                    "      Name:   " + localName + "\n"
+                    "      Manuf.: " + manufacturerName;
 
-                if (!modelName.isEmpty()) infoLog += "\n   Model:    " + modelName;
+                if (!modelName.isEmpty()) infoLog += "\n        Model:" + modelName;
 
                 infoLog += "\n     Raw GATT:";
                 for (const auto& n : ScanContext::nameList) {
@@ -1511,14 +1511,14 @@ void scanForDevices() {
 
           // --- Log full device info even without GATT connection ---
           String infoLog = devTag + "Device info (no GATT)\n"
-              "   Address:  " + address + "\n"
-              "   Name:     " + localName + "\n"
-              "   Manuf.:   " + manufacturerName;
+              "     Address:" + address + "\n"
+              "     Name:   " + localName + "\n"
+              "     Manuf.: " + manufacturerName;
 
           float distance = powf(10.0f,
               (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
-          infoLog += "\n   Distance: ~" + String(distance, 2) + " m"
-                  + "\n   RSSI:     " + String(currentRSSI) + " dBm";
+          infoLog += "\n     Distance: ~" + String(distance, 2) + " m"
+                  + "\n     RSSI:     " + String(currentRSSI) + " dBm";
           LOG(LOG_GATT, infoLog);
 
           dev.isConnectable = false;
