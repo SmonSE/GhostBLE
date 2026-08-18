@@ -522,6 +522,97 @@ void loop() {
     return;
   }
 
+  // ────────────────────────────────────────────────────────────────
+  // File Manager View
+  //
+  // BtnA short = next file / scroll down
+  // BtnA 3s    = refresh file list
+  // BtnB short = select / preview / confirm delete
+  // BtnB 3s    = back / close File Manager
+  // ────────────────────────────────────────────────────────────────
+  if (FileManagerView::isOpen()) {
+
+      // ── BtnA short = navigate next / scroll ────────────────
+      if (M5.BtnA.isPressed()) {
+
+          if (!buttonAHeld) {
+
+              if (buttonAPressStart == 0) {
+                  buttonAPressStart = currentTime;
+              }
+              else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
+
+                  buttonAHeld = true;
+
+                  LOG(LOG_CONTROL, "BtnA 3s — refreshing file manager");
+
+                  FileManagerView::open();
+              }
+          }
+
+      } else {
+
+          if (buttonAPressStart > 0 && !buttonAHeld) {
+
+              unsigned long held = currentTime - buttonAPressStart;
+
+              if (held < LONG_PRESS_MS) {
+
+                  LOG(LOG_CONTROL, "BtnA short — file manager next");
+
+                  FileManagerView::navigateNext();
+              }
+          }
+
+          buttonAPressStart = 0;
+          buttonAHeld = false;
+      }
+
+
+      // ── BtnB short = select, BtnB 3s = close ───────────────
+      if (M5.BtnB.isPressed()) {
+
+          if (!buttonBHeld) {
+
+              if (buttonBPressStart == 0) {
+                  buttonBPressStart = currentTime;
+              }
+              else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+
+                  buttonBHeld = true;
+
+                  LOG(LOG_CONTROL, "BtnB 3s — closing file manager");
+
+                  FileManagerView::close();
+
+                  buttonBPressStart = 0;
+
+                  // Prevent this same physical press from
+                  // being processed by the parent view.
+                  waitForBtnRelease = true;
+              }
+          }
+
+      } else {
+
+          if (buttonBPressStart > 0 && !buttonBHeld) {
+
+              unsigned long held = currentTime - buttonBPressStart;
+
+              if (held < LONG_PRESS_MS) {
+
+                  LOG(LOG_CONTROL, "BtnB short — file manager select");
+
+                  FileManagerView::selectCurrent();
+              }
+          }
+
+          buttonBPressStart = 0;
+          buttonBHeld = false;
+      }
+
+      return;
+  }
 
   // ────────────────────────────────────────────────────────────────
   // Finder List View
