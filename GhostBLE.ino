@@ -72,6 +72,7 @@ void stopWebLogServer();
 // Button long press tracking
 unsigned long buttonAPressStart = 0;
 bool buttonAHeld = false;
+bool waitForBtnRelease = false;
 
 #if HAS_TWO_BUTTONS
 unsigned long buttonBPressStart = 0;
@@ -430,196 +431,396 @@ void loop() {
   }
 #else
   // ================================================================
-  //  StickS3 Button Handling — priority: innermost open view first
-  //    BtnA short = navigate next   (in list/menu views)
-  //    BtnA 3s    = BLE scan toggle (nothing open) / refresh (Finder open)
-  //    BtnB short = select / confirm / toggle
-  //    BtnB 3s    = back one level  (closes innermost view) / open menu
+  //  StickS3 Button Handling
+  //
+  //  BtnA short = navigate next
+  //  BtnA 3s    = BLE scan / refresh
+  //  BtnB short = select / confirm / toggle
+  //  BtnB 3s    = back one level / open menu
+  //
+  //  IMPORTANT:
+  //  After a long-press action changes the current view, we wait
+  //  until the physical button has been released before processing
+  //  any new button input.
   // ================================================================
 
-  // ── Help overlay dismiss (any button) ──────────────────────
-  if (UIContext::helpOverlayVisible) {
-    if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed()) {
-      LOG(LOG_CONTROL, "Button pressed — closing help");
-      UIContext::hideHelpOverlay();
+  // ────────────────────────────────────────────────────────────────
+  // Wait for physical button release after a long-press action
+  // ────────────────────────────────────────────────────────────────
+  if (waitForBtnRelease) {
+
+    if (!M5.BtnA.isPressed() && !M5.BtnB.isPressed()) {
+
+      waitForBtnRelease = false;
+
+      buttonAPressStart = 0;
+      buttonBPressStart = 0;
+
+      buttonAHeld = false;
+      buttonBHeld = false;
+
+      buttonBShortHandled = false;
+
+      LOG(LOG_CONTROL, "Buttons released — input unlocked");
     }
+
+    // Do NOT process any other button input while waiting.
     return;
   }
 
-  // ── Approach View — only BtnB(hold) closes ──────────────────
+
+  // ────────────────────────────────────────────────────────────────
+  // Help overlay dismiss (any button)
+  // ────────────────────────────────────────────────────────────────
+  if (UIContext::helpOverlayVisible) {
+
+    if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed()) {
+
+      LOG(LOG_CONTROL, "Button pressed — closing help");
+
+      UIContext::hideHelpOverlay();
+
+      // The button press that closed the overlay must not
+      // immediately trigger another action.
+      waitForBtnRelease = true;
+    }
+
+    return;
+  }
+
+
+  // ────────────────────────────────────────────────────────────────
+  // Approach View — only BtnB(hold) closes
+  // ────────────────────────────────────────────────────────────────
   if (ApproachView::isOpen()) {
+
     if (M5.BtnB.isPressed()) {
+
       if (buttonBPressStart == 0) {
         buttonBPressStart = currentTime;
-      } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
-        LOG(LOG_CONTROL, "BtnB 3s — closing Approach View");
-        ApproachView::close();
-        buttonBPressStart = 0;
       }
+      else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+
+        LOG(LOG_CONTROL, "BtnB 3s — closing Approach View");
+
+        ApproachView::close();
+
+        buttonBPressStart = 0;
+        buttonBHeld = true;
+
+        // IMPORTANT:
+        // Do not allow this same physical press to be
+        // interpreted by the next view.
+        waitForBtnRelease = true;
+      }
+
     } else {
+
       buttonBPressStart = 0;
     }
+
     return;
   }
 
-  // ── Finder List View ─────────────────────────────────────────
+
+  // ────────────────────────────────────────────────────────────────
+  // Finder List View
+  // ────────────────────────────────────────────────────────────────
   if (FinderListView::isOpen()) {
-    // BtnA short = next, BtnA 3s = refresh
+
+    // ── BtnA short = next, BtnA 3s = refresh ────────────────
     if (M5.BtnA.isPressed()) {
+
       if (!buttonAHeld) {
+
         if (buttonAPressStart == 0) {
           buttonAPressStart = currentTime;
-        } else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
+        }
+        else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
+
           buttonAHeld = true;
+
           LOG(LOG_CONTROL, "BtnA 3s — refreshing finder");
+
           FinderListView::refresh();
         }
       }
+
     } else {
+
       if (buttonAPressStart > 0 && !buttonAHeld) {
+
         unsigned long held = currentTime - buttonAPressStart;
+
         if (held < LONG_PRESS_MS) {
+
           LOG(LOG_CONTROL, "BtnA short — finder next");
+
           FinderListView::navigateNext();
         }
       }
+
       buttonAPressStart = 0;
-      buttonAHeld       = false;
+      buttonAHeld = false;
     }
 
-    // BtnB short = select, BtnB 3s = close
+
+    // ── BtnB short = select, BtnB 3s = close ────────────────
     if (M5.BtnB.isPressed()) {
+
       if (!buttonBHeld) {
+
         if (buttonBPressStart == 0) {
           buttonBPressStart = currentTime;
-        } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+        }
+        else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+
           buttonBHeld = true;
+
           LOG(LOG_CONTROL, "BtnB 3s — closing finder list");
+
           FinderListView::close();
+
+          buttonBPressStart = 0;
+
+          // Prevent the same long press from
+          // entering/selecting something in the next view.
+          waitForBtnRelease = true;
         }
       }
+
     } else {
+
       if (buttonBPressStart > 0 && !buttonBHeld) {
+
         unsigned long held = currentTime - buttonBPressStart;
+
         if (held < LONG_PRESS_MS) {
+
           LOG(LOG_CONTROL, "BtnB short — finder select");
+
           FinderListView::selectCurrent();
         }
       }
+
       buttonBPressStart = 0;
-      buttonBHeld       = false;
+      buttonBHeld = false;
     }
+
     return;
   }
 
-  // ── Sus Device View ──────────────────────────────────────────
+
+  // ────────────────────────────────────────────────────────────────
+  // Sus Device View
+  // ────────────────────────────────────────────────────────────────
   if (SusDeviceView::isOpen()) {
+
+    // ── BtnA short = next ───────────────────────────────────
     if (M5.BtnA.wasPressed()) {
+
       SusDeviceView::navigateNext();
     }
+
+
+    // ── BtnB short = locate, BtnB 3s = back ────────────────
     if (M5.BtnB.isPressed()) {
+
       if (!buttonBHeld) {
+
         if (buttonBPressStart == 0) {
           buttonBPressStart = currentTime;
-        } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+        }
+        else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+
           buttonBHeld = true;
+
           LOG(LOG_CONTROL, "BtnB 3s — closing sus device view");
+
           SusDeviceView::close();
+
+          // Open parent view.
           MenuController::open();
+
+          buttonBPressStart = 0;
+
+          // IMPORTANT:
+          // The BtnB that closed SusDeviceView must not
+          // immediately select something in Main Menu.
+          waitForBtnRelease = true;
         }
       }
+
     } else {
+
       if (buttonBPressStart > 0 && !buttonBHeld) {
+
         unsigned long held = currentTime - buttonBPressStart;
+
         if (held < LONG_PRESS_MS) {
+
           LOG(LOG_CONTROL, "BtnB short — sus device select (locate)");
+
           SusDeviceView::selectCurrent();
         }
       }
+
       buttonBPressStart = 0;
-      buttonBHeld       = false;
+      buttonBHeld = false;
     }
+
     return;
   }
 
-  // ── Main Menu ─────────────────────────────────────────────────
+
+  // ────────────────────────────────────────────────────────────────
+  // Main Menu
+  // ────────────────────────────────────────────────────────────────
   if (MenuController::isOpen()) {
-    // BtnA short = navigate down
+
+    // ── BtnA short = navigate down ─────────────────────────
     if (M5.BtnA.isPressed()) {
+
       if (!buttonAHeld) {
+
         if (buttonAPressStart == 0) {
           buttonAPressStart = currentTime;
         }
       }
+
     } else {
+
       if (buttonAPressStart > 0 && !buttonAHeld) {
+
         unsigned long held = currentTime - buttonAPressStart;
+
         if (held < LONG_PRESS_MS) {
+
           LOG(LOG_CONTROL, "BtnA short — menu navigate down");
+
           MenuController::navigateDown();
         }
       }
+
       buttonAPressStart = 0;
-      buttonAHeld       = false;
+      buttonAHeld = false;
     }
 
-    // BtnB short = select/toggle, BtnB 3s = close menu
+
+    // ── BtnB short = select/toggle, BtnB 3s = close menu ────
     if (M5.BtnB.isPressed()) {
+
       if (!buttonBHeld) {
+
         if (buttonBPressStart == 0) {
           buttonBPressStart = currentTime;
-        } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+        }
+        else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+
           buttonBHeld = true;
+
           LOG(LOG_CONTROL, "BtnB 3s — closing menu");
+
           MenuController::close();
+
+          buttonBPressStart = 0;
+
+          // Do not let the same physical press
+          // trigger anything after the menu closes.
+          waitForBtnRelease = true;
         }
       }
+
     } else {
+
       if (buttonBPressStart > 0 && !buttonBHeld) {
+
         unsigned long held = currentTime - buttonBPressStart;
+
         if (held < LONG_PRESS_MS) {
+
           LOG(LOG_CONTROL, "BtnB short — menu select/toggle");
+
           MenuController::selectCurrent();
         }
       }
+
       buttonBPressStart = 0;
-      buttonBHeld       = false;
+      buttonBHeld = false;
     }
+
     return;
   }
 
-  // ── Nichts offen: BtnA 3s = BLE Scan, BtnB 3s = Menü öffnen ────
+
+  // ────────────────────────────────────────────────────────────────
+  // Nothing open
+  //
+  // BtnA 3s = BLE scan
+  // BtnB 3s = open menu
+  // ────────────────────────────────────────────────────────────────
   if (M5.BtnA.isPressed()) {
+
     if (!buttonAHeld) {
+
       if (buttonAPressStart == 0) {
         buttonAPressStart = currentTime;
-      } else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
+      }
+      else if (currentTime - buttonAPressStart >= HELP_LONG_PRESS_MS) {
+
         buttonAHeld = true;
+
         LOG(LOG_CONTROL, "BtnA 3s — BLE scan toggle");
+
         onLongPress();
+
+        // Protect against the same press being interpreted
+        // by a newly opened/changed view.
+        waitForBtnRelease = true;
       }
     }
+
   } else {
+
     buttonAPressStart = 0;
-    buttonAHeld       = false;
+    buttonAHeld = false;
   }
 
+
   #if HAS_TWO_BUTTONS
+
+  // ── BtnB 3s = open menu ──────────────────────────────────
   if (M5.BtnB.isPressed()) {
+
     if (!buttonBHeld) {
+
       if (buttonBPressStart == 0) {
         buttonBPressStart = currentTime;
-      } else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+      }
+      else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+
         buttonBHeld = true;
+
         LOG(LOG_CONTROL, "BtnB 3s — opening menu");
+
         MenuController::open();
+
+        buttonBPressStart = 0;
+
+        // VERY IMPORTANT:
+        // We opened the menu because of this BtnB press.
+        // The menu must not process that same press.
+        waitForBtnRelease = true;
       }
     }
+
   } else {
+
     buttonBPressStart = 0;
-    buttonBHeld       = false;
+    buttonBHeld = false;
     buttonBShortHandled = false;
   }
+
   #endif  // HAS_TWO_BUTTONS
 #endif // !CARDPUTER
 
