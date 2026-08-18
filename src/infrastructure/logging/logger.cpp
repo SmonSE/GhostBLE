@@ -1,5 +1,7 @@
 #include "logger.h"
 
+#include "app/context/network_context.h"
+
 #include <SD.h>
 
 
@@ -229,4 +231,30 @@ uint16_t logGetEnabledCategories() {
 
 void logSetEnabledCategories(uint16_t mask) {
     enabledCategories = mask;
+}
+
+static void logDeviceGpsTimestamp(uint32_t deviceNumber)
+{
+    if (!NetworkContext::wardrivingEnabled.load()) {
+        return;
+    }
+
+    if (!NetworkContext::gpsManager.isValid()) {
+        return;
+    }
+
+    char msg[160];
+
+    snprintf(
+        msg,
+        sizeof(msg),
+        "[#%lu][TIMESTAMP][GPS][%s][SAT:%u][Lat:%.6f][Lon:%.6f]",
+        (unsigned long)deviceNumber,
+        NetworkContext::gpsManager.getTimestamp().c_str(),
+        NetworkContext::gpsManager.getSatellites(),
+        NetworkContext::gpsManager.getLatitude(),
+        NetworkContext::gpsManager.getLongitude()
+    );
+
+    LOG(LOG_GPS, msg);
 }

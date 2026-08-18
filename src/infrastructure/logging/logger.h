@@ -65,3 +65,4 @@ void     logSetEnabledCategories(uint16_t mask);
 // Unified log: writes to configured targets based on category
 void LOG(LogCategory category, const String& msg);
 
+String appendGpsContext(LogCategory category);
