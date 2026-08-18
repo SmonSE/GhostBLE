@@ -3,6 +3,7 @@
 #include <SD.h>
 
 #include "infrastructure/logging/logger.h"
+#include "infrastructure/ble/ble_scanner.h"
 #include "ui/menu/menu_controller.h"
 
 namespace FileManagerView {
@@ -67,6 +68,13 @@ static bool isLogFile(const char* name) {
     return filename.endsWith(".log");
 }
 
+static bool isProtectedFile(const char* name) {
+    String filename = name;
+    filename.toLowerCase();
+
+    return filename == "xp.dat";
+}
+
 void open() {
     loadFiles();
     cursorIdx_ = 0;
@@ -128,6 +136,11 @@ void selectCurrent() {
     if (!open_ || fileCount_ == 0) return;
 
     if (mode_ == Mode::List) {
+        if (isProtectedFile(files_[cursorIdx_].name)) {
+            // Protected file — do nothing
+            return;
+        }
+
         if (isLogFile(files_[cursorIdx_].name)) {
             previewOffset_ = 0;
             mode_ = Mode::Preview;
@@ -138,6 +151,7 @@ void selectCurrent() {
         draw();
         return;
     }
+    
     if (mode_ == Mode::Preview) {
         mode_ = Mode::Confirm;
         draw();
@@ -146,7 +160,27 @@ void selectCurrent() {
 }
 
 void confirmDelete() {
-    if (!open_ || mode_ != Mode::Confirm || fileCount_ == 0) return;
+    if (!open_ || mode_ != Mode::Confirm || fileCount_ == 0)
+        return;
+
+    // Block file deletion while BLE scanning is active
+    if (ScanContext::bleScanEnabled.load()) {
+        LOG(LOG_CONTROL, "File deletion blocked while BLE scan is running");
+
+        mode_ = Mode::List;
+        draw();
+        return;
+    }   
+
+    if (isProtectedFile(files_[cursorIdx_].name)) {
+        LOG(LOG_CONTROL,
+            "Delete blocked for protected file: " +
+            String(files_[cursorIdx_].name));
+
+        mode_ = Mode::List;
+        draw();
+        return;
+    }
 
     String path = String(LOG_DIR) + "/" + files_[cursorIdx_].name;
     if (SD.remove(path)) {
@@ -264,9 +298,15 @@ void draw() {
         M5.Lcd.setCursor(4, y + 2);
         M5.Lcd.print(files_[idx].name);
 
-        M5.Lcd.setTextColor(0x8C71, bg);
-        M5.Lcd.setCursor(4, y + 10);
-        M5.Lcd.print(formatSize(files_[idx].size));
+        if (isProtectedFile(files_[idx].name)) {
+            M5.Lcd.setTextColor(0xFFE0, bg);
+            M5.Lcd.setCursor(4, y + 10);
+            M5.Lcd.print("PROTECTED");
+        } else {
+            M5.Lcd.setTextColor(0x8C71, bg);
+            M5.Lcd.setCursor(4, y + 10);
+            M5.Lcd.print(formatSize(files_[idx].size));
+        }
 
         y += 18;
     }

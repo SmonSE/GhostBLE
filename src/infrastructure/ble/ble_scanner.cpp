@@ -115,6 +115,43 @@ static bool isLikelyJson(const std::string& value) {
     return (first == '{' && last == '}') || (first == '[' && last == ']');
 }
 
+static void logGpsTimestampToActiveCategories(const String& devTag)
+{
+    if (!NetworkContext::wardrivingEnabled.load() ||
+        !NetworkContext::gpsManager.isValid()) {
+        return;
+    }
+
+    char gpsMsg[160];
+
+    snprintf(
+        gpsMsg,
+        sizeof(gpsMsg),
+        "%s[TIMESTAMP][GPS][%s][SAT:%u][Lat:%.6f][Lon:%.6f]",
+        devTag,
+        NetworkContext::gpsManager.getTimestamp().c_str(),
+        NetworkContext::gpsManager.getSatellites(),
+        NetworkContext::gpsManager.getLatitude(),
+        NetworkContext::gpsManager.getLongitude()
+    );
+
+    const LogCategory categories[] = {
+        LOG_GATT,
+        LOG_PRIVACY,
+        LOG_SECURITY,
+        LOG_BEACON,
+        LOG_SNIFFED
+        //LOG_TARGET
+    };
+
+    for (LogCategory category : categories) {
+        if (logIsCategoryEnabled(category)) {
+            LOG(category, gpsMsg);
+        }
+        delay(10);  // allow log to flush before next category
+    }
+}
+
 // Extra Payload
 void extractUUIDs(const std::vector<uint8_t>& payload) {
     int i = 0;
@@ -1089,6 +1126,9 @@ void scanForDevices() {
         }
 
         String devTag = "[#" + String(devSessionId) + "] ";
+
+        // Timestamp via GPS if wardriving is enabled and a valid GPS fix is available
+        logGpsTimestampToActiveCategories(devTag);
 
         // Raw advertisement payload for privacy/flag analysis
         std::vector<uint8_t> payloadVec = device->getPayload();
