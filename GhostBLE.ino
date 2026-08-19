@@ -568,8 +568,7 @@ void loop() {
           buttonAHeld = false;
       }
 
-
-      // ── BtnB short = select, BtnB 3s = close ───────────────
+      // ── BtnB short = select / confirm, BtnB 3s = close ────────
       if (M5.BtnB.isPressed()) {
 
           if (!buttonBHeld) {
@@ -587,8 +586,8 @@ void loop() {
 
                   buttonBPressStart = 0;
 
-                  // Prevent this same physical press from
-                  // being processed by the parent view.
+                  // Prevent this same physical press from being
+                  // processed by the parent view.
                   waitForBtnRelease = true;
               }
           }
@@ -601,16 +600,24 @@ void loop() {
 
               if (held < LONG_PRESS_MS) {
 
-                  LOG(LOG_CONTROL, "BtnB short — file manager select");
+                  if (FileManagerView::isInConfirmMode()) {
 
-                  FileManagerView::selectCurrent();
+                      LOG(LOG_CONTROL, "BtnB short — confirming file delete");
+
+                      FileManagerView::confirmDelete();
+
+                  } else {
+
+                      LOG(LOG_CONTROL, "BtnB short — file manager select");
+
+                      FileManagerView::selectCurrent();
+                  }
               }
           }
 
           buttonBPressStart = 0;
           buttonBHeld = false;
       }
-
       return;
   }
 
