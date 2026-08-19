@@ -128,7 +128,7 @@ static void logGpsTimestampToActiveCategories(const String& devTag)
         gpsMsg,
         sizeof(gpsMsg),
         "%s[TIMESTAMP][GPS][%s][SAT:%u][Lat:%.6f][Lon:%.6f]",
-        devTag,
+        devTag.c_str(),
         NetworkContext::gpsManager.getTimestamp().c_str(),
         NetworkContext::gpsManager.getSatellites(),
         NetworkContext::gpsManager.getLatitude(),
@@ -140,15 +140,16 @@ static void logGpsTimestampToActiveCategories(const String& devTag)
         LOG_PRIVACY,
         LOG_SECURITY,
         //LOG_BEACON,
-        //LOG_SNIFFED
+        //LOG_SNIFFED,
         //LOG_TARGET
     };
 
     for (LogCategory category : categories) {
-        if (logIsCategoryEnabled(category)) {
-            LOG(category, gpsMsg);
-        }
-        delay(20);  // allow log to flush before next category
+
+        if (!logIsCategoryEnabled(category))
+            continue;
+
+        LOG(category, gpsMsg);
     }
 }
 
