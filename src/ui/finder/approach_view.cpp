@@ -13,6 +13,19 @@
 
 namespace ApproachView {
 
+// ── Layout constants ──────────────────────────────────────────
+static constexpr int MENU_X        = 0;
+static constexpr int MENU_Y        = 0;
+static constexpr int MENU_W        = 240;
+static constexpr int MENU_H        = 135;
+static constexpr int ROW_H         = 11;    // pixels per row
+static constexpr int ROWS_VISIBLE  = 11;    // rows on screen at once
+static constexpr int INDENT_W      = 8;     // sub-item indent pixels
+
+// ── Colors (RGB565) ───────────────────────────────────────────
+static constexpr uint16_t COL_CURSOR    = 0x07E0;   // green
+static constexpr uint16_t COL_STATUSBAR = 0x5ACB;   // very dark for status bar
+
 // ── State ────────────────────────────────────────────────────
 static bool    open_          = false;
 static bool    staticDrawn_   = false;
@@ -99,14 +112,17 @@ static void drawStatic() {
     M5.Lcd.fillRoundRect(BAR_X, BAR_Y, BAR_W, BAR_H, 6, COL_BAR_BG);
     drawBarFrame();
 
-    M5.Lcd.setTextColor(COL_TEXT_DIM, COL_SCREEN_BG);
-    M5.Lcd.setCursor(4, 125);
+    //M5.Lcd.setTextColor(COL_TEXT_DIM, COL_SCREEN_BG);
+    //M5.Lcd.setCursor(4, 125);
     
-
+    // Status bar at bottom
+    M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
+    M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
+    M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
 #if HAS_KEYBOARD
     M5.Lcd.print(" esc back to list");
 #else
-    M5.Lcd.print(" B(longpress):back to list");
+    M5.Lcd.print("hold big:back to list");
 #endif
 }
 

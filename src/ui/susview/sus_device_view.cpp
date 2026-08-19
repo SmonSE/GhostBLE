@@ -12,6 +12,19 @@
 
 namespace SusDeviceView {
 
+// ── Layout constants ──────────────────────────────────────────
+static constexpr int MENU_X        = 0;
+static constexpr int MENU_Y        = 0;
+static constexpr int MENU_W        = 240;
+static constexpr int MENU_H        = 135;
+static constexpr int ROW_H         = 11;    // pixels per row
+static constexpr int ROWS_VISIBLE  = 11;    // rows on screen at once
+static constexpr int INDENT_W      = 8;     // sub-item indent pixels
+
+// ── Colors (RGB565) ───────────────────────────────────────────
+static constexpr uint16_t COL_CURSOR    = 0x07E0;   // green
+static constexpr uint16_t COL_STATUSBAR = 0x5ACB;   // very dark for status bar
+
 static bool menuOpen_ = false;
 static int  cursorIdx_ = 0;
 
@@ -74,12 +87,15 @@ void draw() {
         M5.Lcd.setTextColor(0x8C71, 0x0020);
         M5.Lcd.setCursor(4, 20);
         M5.Lcd.print("No suspicious devices yet");
-        M5.Lcd.setCursor(4, 125);
-#if HAS_KEYBOARD
+        // Status bar at bottom
+        M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
+        M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
+        M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
+    #if HAS_KEYBOARD
         M5.Lcd.print("^:up  v:down  ok:select  esc:close");
-#else
-        M5.Lcd.print("A:next  B:select  Hold B:back");
-#endif
+    #else
+        M5.Lcd.print("blue:next  big:select  hold big:back");
+    #endif
         return;
     }
 
@@ -106,12 +122,14 @@ void draw() {
         y += 22;
     }
 
-    M5.Lcd.setTextColor(0x2945, 0x0020);
-    M5.Lcd.setCursor(4, 125);
+    // Status bar at bottom
+    M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
+    M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
+    M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
 #if HAS_KEYBOARD
     M5.Lcd.print("^:up  v:down  ok:select  esc:close");
 #else
-    M5.Lcd.print("A:next  B:select  Hold B:back");
+    M5.Lcd.print("blue:next  big:select  hold big:back");
 #endif
 }
 
