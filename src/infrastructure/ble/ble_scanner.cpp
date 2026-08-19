@@ -139,8 +139,8 @@ static void logGpsTimestampToActiveCategories(const String& devTag)
         LOG_GATT,
         LOG_PRIVACY,
         LOG_SECURITY,
-        LOG_BEACON,
-        LOG_SNIFFED
+        //LOG_BEACON,
+        //LOG_SNIFFED
         //LOG_TARGET
     };
 
@@ -148,7 +148,7 @@ static void logGpsTimestampToActiveCategories(const String& devTag)
         if (logIsCategoryEnabled(category)) {
             LOG(category, gpsMsg);
         }
-        delay(10);  // allow log to flush before next category
+        delay(20);  // allow log to flush before next category
     }
 }
 

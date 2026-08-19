@@ -41,6 +41,11 @@ extern bool displayEnabled;   // Websocket active -> Display sleep
 extern std::atomic<bool> wardrivingEnabled;
 
 // ------------------------------------------------------------
+//  StickS3 Display Sleep
+// ------------------------------------------------------------
+extern std::atomic<bool> displaySleepEnabled;
+
+// ------------------------------------------------------------
 //  GPS  (only loop() have access)
 // ------------------------------------------------------------
 extern GPSManager gpsManager;

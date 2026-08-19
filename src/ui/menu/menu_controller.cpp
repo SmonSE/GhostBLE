@@ -145,6 +145,19 @@ void setAudioDrone(bool v)      { if (state_) state_->audioDrone      = v; }
 void setAudioFlipper(bool v)    { if (state_) state_->audioFlipper    = v; }
 void setAudioPwnBeacon(bool v)  { if (state_) state_->audioPwnBeacon  = v; }
 
+void toggleDisplaySleep() {
+    bool enabled = !NetworkContext::displaySleepEnabled.load();
+    NetworkContext::displaySleepEnabled.store(enabled);
+
+    if (enabled) {
+        LOG(LOG_CONTROL, "Display sleep enabled");
+        M5.Lcd.sleep();
+    } else {
+        M5.Lcd.wakeup();
+        LOG(LOG_CONTROL, "Display sleep disabled");
+    }
+}
+
 uint8_t getAlarmVolume() {
     return alarmVolume_;
 }
@@ -310,7 +323,11 @@ static void buildItems() {
 
     // ── DISPLAY ──────────────────────────────────────────────
     section("DISPLAY");
+#if defined(M5STICKS3)
+    action("Display Sleep", toggleDisplaySleep);
+#endif
     slider("Brightness", brightness_, 10, 255, 17, applyBrightness);
+
 
     // ── LOGGING ──────────────────────────────────────────────
     section("LOGGING");

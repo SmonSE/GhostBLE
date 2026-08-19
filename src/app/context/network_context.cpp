@@ -84,6 +84,11 @@ bool displayEnabled  = true;
 std::atomic<bool> wardrivingEnabled{false};
 
 // ------------------------------------------------------------
+//  StickS3 Display Sleep
+// ------------------------------------------------------------
+std::atomic<bool> displaySleepEnabled{false};
+
+// ------------------------------------------------------------
 //  GPS + WiGLE-Logger
 // Objects live here — the only instance in the entire project.
 // ------------------------------------------------------------
