@@ -257,4 +257,5 @@ static void logDeviceGpsTimestamp(uint32_t deviceNumber)
     );
 
     LOG(LOG_GPS, msg);
+    delay(10);  // allow log to flush before next read
 }

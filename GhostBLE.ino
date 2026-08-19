@@ -447,6 +447,23 @@ void loop() {
   // ────────────────────────────────────────────────────────────────
   // Wait for physical button release after a long-press action
   // ────────────────────────────────────────────────────────────────
+
+  if (NetworkContext::displaySleepEnabled.load()) {
+
+      if (M5.BtnA.wasPressed() || M5.BtnB.wasPressed()) {
+
+          M5.Lcd.wakeup();
+          NetworkContext::displaySleepEnabled.store(false);
+
+          LOG(LOG_CONTROL, "Button detected — display wakeup");
+
+          // Don't process the wake-up button as an action.
+          waitForBtnRelease = true;
+      }
+
+      return;
+  }
+
   if (waitForBtnRelease) {
 
     if (!M5.BtnA.isPressed() && !M5.BtnB.isPressed()) {

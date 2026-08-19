@@ -75,6 +75,8 @@ void setWifiEnabled(bool v);
 bool getWardriving();
 void setWardriving(bool v);
 
+void toggleDisplaySleep();
+
 uint8_t getAlarmVolume();
 void    setAlarmVolume(uint8_t val);
 void    setAlarmVolumeSilent(uint8_t val);
