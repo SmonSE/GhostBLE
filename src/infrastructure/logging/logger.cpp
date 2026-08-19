@@ -184,31 +184,50 @@ static const char* getCatFileName(LogCategory category) {
 
 void LOG(LogCategory category, const String& msg) {
     uint8_t targets = getTargets(category);
-    if (targets == TARGET_NONE) return;
 
-    if (logMutex != NULL && xSemaphoreTake(logMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
-        if ((targets & TARGET_SERIAL) && Serial.availableForWrite() > 0) {
-            Serial.println(msg);
+    if (targets == TARGET_NONE)
+        return;
+
+    // ─────────────────────────────────────────────
+    // SERIAL
+    // ─────────────────────────────────────────────
+    if ((targets & TARGET_SERIAL) &&
+        Serial.availableForWrite() > 0) {
+
+        Serial.println(msg);
+    }
+
+    // ─────────────────────────────────────────────
+    // WEB
+    // ─────────────────────────────────────────────
+    if ((targets & TARGET_WEB) &&
+        ws.count() > 0 &&
+        ws.availableForWriteAll()) {
+
+        if (category & LOG_GATT) {
+            ws.textAll(msg);
         }
-        if ((targets & TARGET_WEB) && ws.count() > 0 && ws.availableForWriteAll()) {
-            // Log only SNIFFED data to web!
-            //if ((category & LOG_GATT) || (category & LOG_MARKER))
-            if (category & LOG_GATT) {
-                ws.textAll(msg);
-            }
-        }
-        if ((targets & TARGET_SD) && sdInitialized) {
-            File f = SD.open(getCatFileName(category), FILE_APPEND);
+    }
+
+    // ─────────────────────────────────────────────
+    // SD
+    // ─────────────────────────────────────────────
+    if ((targets & TARGET_SD) && sdInitialized) {
+
+        if (logMutex != NULL &&
+            xSemaphoreTake(logMutex, pdMS_TO_TICKS(100)) == pdTRUE) {
+
+            File f = SD.open(
+                getCatFileName(category),
+                FILE_APPEND
+            );
+
             if (f) {
                 f.println(msg);
                 f.close();
             }
-        }
-        xSemaphoreGive(logMutex);
-    } else {
-        // Fallback: serial only if mutex unavailable
-        if (enabledTargets & TARGET_SERIAL) {
-            Serial.println(msg);
+
+            xSemaphoreGive(logMutex);
         }
     }
 }
@@ -231,31 +250,4 @@ uint16_t logGetEnabledCategories() {
 
 void logSetEnabledCategories(uint16_t mask) {
     enabledCategories = mask;
-}
-
-static void logDeviceGpsTimestamp(uint32_t deviceNumber)
-{
-    if (!NetworkContext::wardrivingEnabled.load()) {
-        return;
-    }
-
-    if (!NetworkContext::gpsManager.isValid()) {
-        return;
-    }
-
-    char msg[160];
-
-    snprintf(
-        msg,
-        sizeof(msg),
-        "[#%lu][TIMESTAMP][GPS][%s][SAT:%u][Lat:%.6f][Lon:%.6f]",
-        (unsigned long)deviceNumber,
-        NetworkContext::gpsManager.getTimestamp().c_str(),
-        NetworkContext::gpsManager.getSatellites(),
-        NetworkContext::gpsManager.getLatitude(),
-        NetworkContext::gpsManager.getLongitude()
-    );
-
-    LOG(LOG_GPS, msg);
-    delay(10);  // allow log to flush before next read
 }
