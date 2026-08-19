@@ -5,8 +5,23 @@
 #include "infrastructure/logging/logger.h"
 #include "infrastructure/ble/ble_scanner.h"
 #include "ui/menu/menu_controller.h"
+#include "app/context/globals.h"
+
 
 namespace FileManagerView {
+
+// ── Layout constants ──────────────────────────────────────────
+static constexpr int MENU_X        = 0;
+static constexpr int MENU_Y        = 0;
+static constexpr int MENU_W        = 240;
+static constexpr int MENU_H        = 135;
+static constexpr int ROW_H         = 11;    // pixels per row
+static constexpr int ROWS_VISIBLE  = 11;    // rows on screen at once
+static constexpr int INDENT_W      = 8;     // sub-item indent pixels
+
+// ── Colors (RGB565) ───────────────────────────────────────────
+static constexpr uint16_t COL_CURSOR    = 0x07E0;   // green
+static constexpr uint16_t COL_STATUSBAR = 0x5ACB;   // very dark for status bar
 
 static constexpr const char* LOG_DIR = "/GhostBLE";
 static constexpr int MAX_FILES = 30;
@@ -219,9 +234,15 @@ static void drawLogPreview() {
         M5.Lcd.setCursor(4, 20);
         M5.Lcd.print("Failed to open file");
 
-        M5.Lcd.setTextColor(0x8C71, 0x0020);
-        M5.Lcd.setCursor(4, 125);
-        M5.Lcd.print("ESC: back");
+        // Status bar at bottom
+        M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
+        M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
+        M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
+    #if defined(HAS_KEYBOARD)
+        M5.Lcd.print("esc:back");
+    #else
+        M5.Lcd.print("hold big:back");
+    #endif
         return;
     }
 
@@ -257,9 +278,15 @@ static void drawLogPreview() {
 
     file.close();
 
-    M5.Lcd.setTextColor(0x8C71, 0x0020);
-    M5.Lcd.setCursor(4, 125);
-    M5.Lcd.print("UP/DOWN: scroll  ENTER: delete");
+    // Status bar at bottom
+    M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
+    M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
+    M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
+#if defined(HAS_KEYBOARD)
+    M5.Lcd.print("up/down:scroll  enter:select  esc:back");
+#else
+    M5.Lcd.print("blue:scroll  big:select  hold big:back");
+#endif
 }
 
 void draw() {
@@ -277,11 +304,20 @@ void draw() {
     M5.Lcd.printf("LOG FILES (%d)", fileCount_);
 
     if (fileCount_ == 0) {
-        M5.Lcd.setTextColor(0x8C71, 0x0020);
+        M5.Lcd.setTextColor(0x07E0, 0x5ACB);
         M5.Lcd.setCursor(4, 20);
         M5.Lcd.print("No files found");
         M5.Lcd.setCursor(4, 125);
-        M5.Lcd.print("ESC: close");
+
+        // Status bar at bottom
+        M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
+        M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
+        M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
+    #if defined(HAS_KEYBOARD)
+        M5.Lcd.print("esc:back");
+    #else
+        M5.Lcd.print("hold blue:back");
+    #endif
         return;
     }
 
@@ -301,7 +337,7 @@ void draw() {
         if (isProtectedFile(files_[idx].name)) {
             M5.Lcd.setTextColor(0xFFE0, bg);
             M5.Lcd.setCursor(4, y + 10);
-            M5.Lcd.print("PROTECTED");
+            M5.Lcd.print("protected");
         } else {
             M5.Lcd.setTextColor(0x8C71, bg);
             M5.Lcd.setCursor(4, y + 10);
@@ -320,9 +356,21 @@ void draw() {
         M5.Lcd.setCursor(4, 104);
         M5.Lcd.printf("Delete %s?", files_[cursorIdx_].name);
         M5.Lcd.setCursor(4, 114);
-        M5.Lcd.print("ENTER: confirm  ESC: cancel");
+    #if defined(HAS_KEYBOARD)
+        M5.Lcd.print("enter:confirm  esc:cancel");
+    #else
+        M5.Lcd.print("big:confirm  hold blue:cancel");
+    #endif
     } else {
-        M5.Lcd.print("next  ENTER:delete  ESC:close");
+        // Status bar at bottom
+        M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
+        M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
+        M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
+    #if defined(HAS_KEYBOARD)
+        M5.Lcd.print("next  enter:select  esc:close");
+    #else
+        M5.Lcd.print("blue:scroll  big:select  hold big:close");
+    #endif
     }
 }
 

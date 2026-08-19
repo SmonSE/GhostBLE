@@ -577,7 +577,7 @@ void draw() {
 #if HAS_KEYBOARD
     M5.Lcd.print(" ^:up  v:down  ok:select  esc:close");
 #else
-    M5.Lcd.print("A:down  B:select  Hold B:back");
+    M5.Lcd.print("blue:down  big:select  hold big:back");
 #endif
 }
 
