@@ -4,6 +4,8 @@
 
 #include "infrastructure/logging/logger.h"
 #include "infrastructure/ble/ble_scanner.h"
+#include "infrastructure/platform/hardware_config.h"
+
 #include "ui/menu/menu_controller.h"
 #include "app/context/globals.h"
 
@@ -238,7 +240,7 @@ static void drawLogPreview() {
         M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
         M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
         M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
-    #if defined(HAS_KEYBOARD)
+    #if HAS_KEYBOARD
         M5.Lcd.print("esc:back");
     #else
         M5.Lcd.print("hold big:back");
@@ -282,7 +284,7 @@ static void drawLogPreview() {
     M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
     M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
     M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
-#if defined(HAS_KEYBOARD)
+#if HAS_KEYBOARD
     M5.Lcd.print("up/down:scroll  enter:select  esc:back");
 #else
     M5.Lcd.print("blue:scroll  big:select  hold big:back");
@@ -313,7 +315,7 @@ void draw() {
         M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
         M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
         M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
-    #if defined(HAS_KEYBOARD)
+    #if HAS_KEYBOARD
         M5.Lcd.print("esc:back");
     #else
         M5.Lcd.print("hold blue:back");
@@ -356,7 +358,7 @@ void draw() {
         M5.Lcd.setCursor(4, 104);
         M5.Lcd.printf("Delete %s?", files_[cursorIdx_].name);
         M5.Lcd.setCursor(4, 114);
-    #if defined(HAS_KEYBOARD)
+    #if HAS_KEYBOARD
         M5.Lcd.print("enter:confirm  esc:cancel");
     #else
         M5.Lcd.print("big:confirm  hold blue:cancel");
@@ -366,8 +368,8 @@ void draw() {
         M5.Lcd.fillRect(0, MENU_H - ROW_H, MENU_W, ROW_H, COL_STATUSBAR);
         M5.Lcd.setTextColor(COL_CURSOR, COL_STATUSBAR);
         M5.Lcd.setCursor(2, MENU_H - ROW_H + 2);
-    #if defined(HAS_KEYBOARD)
-        M5.Lcd.print("next  enter:select  esc:close");
+    #if HAS_KEYBOARD
+        M5.Lcd.print("up/down:scroll  enter:select  esc:close");
     #else
         M5.Lcd.print("blue:scroll  big:select  hold big:close");
     #endif

@@ -722,8 +722,8 @@ static bool parseDeviceInfo(
 
                     LOG(LOG_TARGET, devTag + "Google Find My tracker detected"
                         + (fmdn.unwantedTracking ? " (UNWANTED TRACKING MODE)" : "")
-                        + "\n   Address:  " + String(ScanContext::addrStr.c_str())
-                        + "\n   RSSI:     " + String(ScanContext::rssi.load()) + " dBm");
+                        + "\n     Address:  " + String(ScanContext::addrStr.c_str())
+                        + "\n     RSSI:     " + String(ScanContext::rssi.load()) + " dBm");
 
                     isSecurityOrTrackingDevice = true;
                     ScanContext::susDevice++;
