@@ -61,6 +61,7 @@ most overlooked privacy leak in daily life.
 
 | Device | Platform | Display | Keyboard | SD Card |
 |--------|----------|---------|----------|---------|
+| **M5Stack Cardputer ADV** | ESP32-S3 | 240×135 LCD | Yes | Yes |
 | **M5Stack Cardputer** | ESP32-S3 | 240×135 LCD | Yes | Yes |
 | **M5StickS3** | ESP32-S3 | 240×135 LCD | No (2 buttons) | No |
 
