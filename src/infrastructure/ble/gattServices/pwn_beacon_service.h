@@ -1,4 +1,4 @@
-#pragma once
+/*#pragma once
 
 #include <NimBLEClient.h>
 #include <NimBLEServer.h>
@@ -48,3 +48,4 @@ public:
     // Stop advertising
     static void stopAdvertising();
 };
+*/

@@ -17,7 +17,12 @@ const char* CATHACK_SERVICE_UUID_3 = "89d3502b-0f36-433a-8ef4-c502ad55f8dc";
 
 // ===== Tesla BLE UUIDs =====
 const char* TESLA_BLE_SERVICE_UUID = "00000211-b2d1-43f0-9b88-960cebf8b91e";
-const char* TESLA_IBEACON_UUID     = "74278bda-b644-4520-8f0c-720eaf059935";
+const char* TESLA_TO_VEHICLE_CHAR_UUID = "00000212-b2d1-43f0-9b88-960cebf8b91e";
+const char* TESLA_FROM_VEHICLE_CHAR_UUID = "00000213-b2d1-43f0-9b88-960cebf8b91e";
+const char* TESLA_VERSION_CHAR_UUID = "00000214-b2d1-43f0-9b88-960cebf8b91e";
+
+// Tesla-related iBeacon UUID
+const char* TESLA_IBEACON_UUID = "74278bda-b644-4520-8f0c-720eaf059935";
 
 // ===== PwnBeacon UUIDs =====
 const char* PWNBEACON_SERVICE_UUID        = "b34c0000-0000-0000-1337-000000000001";

@@ -18,7 +18,7 @@
 #include "core/privacy/exposure_classifier.h"
 #include "core/parsing/ble_decoder.h"
 #include "gattServices/reg_gatt_service.h"
-#include "gattServices/pwn_beacon_service.h"
+//#include "gattServices/pwn_beacon_service.h"
 #include "core/analyzer/security_analyzer.h"
 #include "infrastructure/gps/gps_manager.h"
 #include "infrastructure/wardriving/wigle_logger.h"

@@ -18,6 +18,10 @@ void scan5s() {
     NimBLEScan* pScan = NimBLEDevice::getScan();
     pScan->clearResults();
     pScan->setActiveScan(true);
+    pScan->setPhy(NimBLEScan::Phy::SCAN_ALL);
+    pScan->setInterval(BLE_SCAN_INTERVAL);
+    pScan->setWindow(BLE_SCAN_WINDOW);
+    delay(100);  // brief stability delay before scan
 
     NimBLEScanResults results = pScan->getResults(10000);  // 10 Sekunden
 

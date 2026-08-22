@@ -4,86 +4,194 @@
 #include <NimBLEDevice.h>
 #include <Arduino.h>
 
-// ===========================================================================
-//  Flock Safety Camera & Raven Gunshot Detector Detection
-//
-//  Detection methods (BLE-only, passive — no connection required):
-//    1. MAC OUI prefix  — 20+ known Flock Safety OUI prefixes
-//    2. Device name     — "FS Ext Battery", "Penguin", "Flock", "Pigvision"
-//    3. Manufacturer ID — 0x09C8 (XUNTONG) used in Flock hardware
-//    4. Raven UUID      — SoundThinking/ShotSpotter service UUIDs
-//    5. Raven FW est.   — firmware version from UUID pattern
-//
-//  Sources:
-//    colonelpanichacks/flock-you (MIT)
-//    wgreenberg/flock-you  — manufacturer ID 0x09C8
-//    GainSec — Raven BLE service UUID dataset
-//    DeFlock / deflock.me — crowdsourced OUI list
-// ===========================================================================
-
 namespace FlockDetection {
 
-// ── Device types ──────────────────────────────────────────────
+// ===========================================================================
+// Detection state
+// ===========================================================================
+
+enum class DetectionState {
+    None,
+    Suspected,
+    Confirmed
+};
+
+// ===========================================================================
+// Device types
+// ===========================================================================
+
 enum class FlockDeviceType {
     Unknown,
-    FlockCamera,        // Flock Safety ALPR camera
-    RavenGunshot,       // SoundThinking/ShotSpotter Raven
-    FlockExtBattery,    // External battery unit
+    FlockCamera,
+    RavenGunshot,
+    FlockExtBattery
 };
 
-// ── Raven firmware versions ───────────────────────────────────
+// ===========================================================================
+// Raven firmware families
+// ===========================================================================
+
 enum class RavenFirmware {
     Unknown,
-    V1_1_x,   // has legacy Health + Location service
-    V1_2_x,   // has GPS + Power + Network + Upload + Error
-    V1_3_x,   // same as 1.2.x + extended services
+
+    // Legacy Health + Location services
+    V1_1_x,
+
+    // GPS / Power / Network / Upload / Error
+    V1_2_PLUS
 };
 
-// ── Detection result ──────────────────────────────────────────
+// ===========================================================================
+// Evidence flags
+//
+// These allow GhostBLE to explain WHY a device was detected.
+// ===========================================================================
+
+enum EvidenceFlags : uint16_t {
+
+    EVIDENCE_NONE                  = 0,
+
+    // Address / OUI
+    EVIDENCE_FLOCK_OUI             = 1 << 0,
+    EVIDENCE_ESPRESSIF_OUI         = 1 << 1,
+
+    // Name
+    EVIDENCE_FLOCK_NAME             = 1 << 2,
+    EVIDENCE_RAVEN_NAME             = 1 << 3,
+
+    // Manufacturer
+    EVIDENCE_FLOCK_MANUFACTURER     = 1 << 4,
+
+    // Services
+    EVIDENCE_RAVEN_STANDARD_UUID    = 1 << 5,
+    EVIDENCE_RAVEN_SPECIFIC_UUID    = 1 << 6,
+
+    // Payload / future extensions
+    EVIDENCE_FLOCK_PAYLOAD          = 1 << 7,
+
+    // Multiple independent signals
+    EVIDENCE_MULTI_SIGNAL           = 1 << 8
+};
+
+// ===========================================================================
+// Detection result
+// ===========================================================================
+
 struct FlockResult {
-    bool            detected   = false;
-    FlockDeviceType type       = FlockDeviceType::Unknown;
-    RavenFirmware   ravenFW    = RavenFirmware::Unknown;
 
-    uint8_t         confidence = 0;   // 1=name/OUI, 2=mfr ID, 3=UUID
+    DetectionState state = DetectionState::None;
 
-    String          matchedOUI;       // matched MAC prefix if any
-    String          matchedName;      // matched name keyword if any
-    String          summary;          // human-readable detection string
+    bool detected = false;
+
+    FlockDeviceType type = FlockDeviceType::Unknown;
+
+    RavenFirmware ravenFW = RavenFirmware::Unknown;
+
+    // 0 - 100
+    uint8_t confidence = 0;
+
+    // Numerical score before conversion to confidence
+    uint16_t score = 0;
+
+    // Evidence bitmask
+    uint16_t evidence = EVIDENCE_NONE;
+
+    // Matched information
+    String matchedOUI;
+    String matchedName;
+
+    // Human-readable explanation
+    String summary;
 };
 
-// ── Statistics ────────────────────────────────────────────────
+// ===========================================================================
+// Statistics
+// ===========================================================================
+
 struct FlockStats {
+
     uint16_t flockCamerasFound = 0;
     uint16_t ravenDevicesFound = 0;
+    uint16_t suspectedDevicesFound = 0;
+
     uint32_t lastDetectionTime = 0;
-    String   lastDeviceName;
+
+    String lastDeviceName;
 };
 
 extern FlockStats stats;
 
-// ── Detection API (passive — no BLE connection needed) ────────
+// ===========================================================================
+// Detection API
+// ===========================================================================
 
-// Full detection pipeline — call from parseDeviceInfo().
-// Returns a FlockResult with detected=false if not a Flock/Raven device.
-FlockResult detect(const NimBLEAdvertisedDevice* device,
-                   const String&   name,
-                   uint16_t        manufacturerId);
+FlockResult detect(
+    const NimBLEAdvertisedDevice* device,
+    const String& name,
+    uint16_t manufacturerId
+);
 
-// Individual checks (used internally, exposed for testing)
+// ===========================================================================
+// Individual checks
+// ===========================================================================
+
+// True only for OUIs specifically associated with Flock hardware.
+bool hasFlockSpecificOUI(const std::string& mac);
+
+// True for Espressif OUIs that have been observed in Flock hardware.
+// IMPORTANT: this alone does NOT identify a Flock device.
+bool hasFlockEspressifOUI(const std::string& mac);
+
+// Backwards-compatible helper.
+// Returns true only for Flock-specific OUIs.
 bool hasFlockOUI(const std::string& mac);
+
 bool hasFlockName(const String& name);
+
+bool hasRavenName(const String& name);
+
 bool hasFlockManufacturerId(uint16_t manufacturerId);
-bool hasRavenServiceUUID(const NimBLEAdvertisedDevice* device,
-                         RavenFirmware& outFW);
 
-// ── Logging ───────────────────────────────────────────────────
-void logDetection(const String& devTag, const FlockResult& result,
-                  const String& address, int rssi);
+bool hasRavenServiceUUID(
+    const NimBLEAdvertisedDevice* device,
+    RavenFirmware& outFW
+);
 
-// ── Stats ─────────────────────────────────────────────────────
+// ===========================================================================
+// Evidence helpers
+// ===========================================================================
+
+bool hasEvidence(
+    const FlockResult& result,
+    EvidenceFlags flag
+);
+
+String getEvidenceString(const FlockResult& result);
+
+String getConfidenceString(const FlockResult& result);
+
+String getDeviceTypeString(FlockDeviceType type);
+
+String getDetectionStateString(DetectionState state);
+
+// ===========================================================================
+// Logging
+// ===========================================================================
+
+void logDetection(
+    const String& devTag,
+    const FlockResult& result,
+    const String& address,
+    int rssi
+);
+
+// ===========================================================================
+// Stats
+// ===========================================================================
+
 String getStatsString();
-void   resetStats();
+
+void resetStats();
 
 } // namespace FlockDetection
 
