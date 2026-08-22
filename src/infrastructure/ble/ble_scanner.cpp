@@ -14,17 +14,20 @@
 #include "app/context/network_context.h"
 #include "app/context/sus_log_context.h"
 
+#include "config/detection_config.h"
+
 #include "ui/menu/menu_controller.h"
 
 #include "core/parsing/appearance_parser.h"
 #include "core/parsing/binary_format_detector.h"
 #include "core/parsing/fmdn_parser.h"
 #include "core/detection/target_device.h"
+#include "core/parsing/sdo_service_parser.h"
+#include "core/security/gatt_fingerprint.h"
 
 #include "gattServices/notify_handler.h"
 
 #include "infrastructure/ble/handler/sdo_handlers.h"
-#include "core/parsing/sdo_service_parser.h"
 
 #include "web/web_sender.h"
 
@@ -358,8 +361,8 @@ static bool parseDeviceInfo(
     String&       manufacturerName,
     bool&         isIBeacon,
     IBeaconInfo&  beacon,
-    bool&         isPwnBeacon,
-    PwnBeaconInfo& pwnBeacon,
+    //bool&         isPwnBeacon,
+    //PwnBeaconInfo& pwnBeacon,
     bool&         hasCustomService,
     bool&         hasWeakName,
     bool&         isUnknownManufacturer,
@@ -637,9 +640,9 @@ static bool parseDeviceInfo(
 
             // PwnBeacon detection via service UUID
             if (svcUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
-                isPwnBeacon = true;
+                //isPwnBeacon = true;
                 DeviceContext::beaconsFound++;
-                DeviceContext::pwnbeaconsFound++;
+                //DeviceContext::pwnbeaconsFound++;
 
                 if (!heartTaskRunning.load()) {
                     heartTaskRunning.store(true);
@@ -736,6 +739,7 @@ static bool parseDeviceInfo(
                 }
             }
 
+            /*
             // PwnBeacon service data payload
             if (svcDataUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
                 pwnBeacon = PwnBeaconServiceHandler::parseAdvertisement(
@@ -752,7 +756,7 @@ static bool parseDeviceInfo(
                         "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint));
                 }
             }
-
+            */
         }
         LOG(LOG_GATT, sdLog);
     }
@@ -827,12 +831,31 @@ static bool connectAndReadGATT(
     bool isFlipper = false;
     bool isTesla = false;
 
+    GATTFingerprint gattFingerprint;
+    gattFingerprint.reset();
+
     // --- Iterate services and characteristics ---
     for (auto svcIt = pClient->getServices().begin();
          svcIt != pClient->getServices().end(); ++svcIt)
     {
         NimBLERemoteService* service     = *svcIt;
         std::string          serviceUuid = service->getUUID().toString();
+
+        // ─────────────────────────────────────────────
+        // GATT Fingerprint - service
+        // ─────────────────────────────────────────────
+
+        gattFingerprint.services++;
+
+        if (serviceUuid.length() == 36) {
+            gattFingerprint.proprietaryServices++;
+        } else {
+            gattFingerprint.standardServices++;
+        }
+
+        ScanContext::uuidList.push_back(
+            "Service UUID: " + serviceUuid
+        );
 
         ScanContext::uuidList.push_back("Service UUID: " + serviceUuid);
 
@@ -842,7 +865,55 @@ static bool connectAndReadGATT(
             NimBLERemoteCharacteristic* characteristic = *cIt;
             std::string charUuid = characteristic->getUUID().toString();
 
+            if (!characteristic) {
+                continue;
+            }
+
             ScanContext::uuidList.push_back("Characteristic UUID: " + charUuid);
+
+            // ─────────────────────────────────────────────
+            // GATT Fingerprintparser Test
+            // ─────────────────────────────────────────────
+            gattFingerprint.characteristics++;
+            const bool canRead = characteristic->canRead();
+            const bool canWrite = characteristic->canWrite() || characteristic->canWriteNoResponse();
+            const bool canNotify = characteristic->canNotify();
+            const bool canIndicate = characteristic->canIndicate();
+
+            if (canRead && canWrite) {
+                gattFingerprint.readWrite++;
+            }
+            else if (canRead) {
+                gattFingerprint.read++;
+            }
+            else if (canWrite) {
+                gattFingerprint.write++;
+            }
+
+            if (canNotify) {
+                gattFingerprint.notify++;
+            }
+
+            if (canIndicate) {
+                gattFingerprint.indicate++;
+            }
+
+            // Existing code
+            if (charUuid == UUID_MODEL_NUMBER)
+                dev.gattHasModelInfo = true;
+
+            if (charUuid == UUID_MANUFACTURER_NAME ||
+                charUuid == UUID_SERIAL_NUMBER)
+            {
+                dev.gattHasIdentityInfo = true;
+            }
+
+            // Existing writable tracking
+            if (canWrite) {
+                hasWritableChar = true;
+            }
+
+            // FINGERPRINT PARSER TEST
 
             // Flag device info fields found via GATT
             if (charUuid == UUID_MODEL_NUMBER)                            dev.gattHasModelInfo    = true;
@@ -987,6 +1058,8 @@ static bool connectAndReadGATT(
         return true;  // target found for this device
     }
 
+    LOG(LOG_GATT,gattFingerprint.toString());
+
     return false;  // no target found — continue
 }
 
@@ -1063,6 +1136,7 @@ void scanForDevices() {
 
     pScan->clearResults();
     pScan->setActiveScan(UIContext::isResearchModeActive.load()); // set by research mode that user device to active scan for more aggressive fingerprinting
+    pScan->setPhy(NimBLEScan::Phy::SCAN_1M);
     pScan->setInterval(BLE_SCAN_INTERVAL);
     pScan->setWindow(BLE_SCAN_WINDOW);
     delay(100);  // brief stability delay before scan
@@ -1070,9 +1144,9 @@ void scanForDevices() {
     NimBLEScanResults results = pScan->getResults(4000);  // 4-second scan window
 
     // Restart PwnBeacon advertising (NimBLE stops advertising during scan)
-    PwnBeaconServiceHandler::updateCounters(
-        ScanContext::targetConnects.load(),
-        ScanContext::allSpottedDevice.load());
+    //PwnBeaconServiceHandler::updateCounters(
+    //    ScanContext::targetConnects.load(),
+    //    ScanContext::allSpottedDevice.load());
 
     // Brief advertising window before processing — lets peers discover us
     vTaskDelay(pdMS_TO_TICKS(ADV_WINDOW_MS));
@@ -1111,16 +1185,15 @@ void scanForDevices() {
         bool hasWritableChar            = false;
         bool proprietary                = false;
         bool isIBeacon                  = false;
-        bool isPwnBeaconDevice          = false;
+        //bool isPwnBeaconDevice          = false;
         int  devSessionId               = 0;
 
         IBeaconInfo   beacon;
-        PwnBeaconInfo pwnBeacon;
+        //PwnBeaconInfo pwnBeacon;
 
         // --- Advertisement layer parsing + early filters ---
         if (!parseDeviceInfo(device, manufacturerId, manufacturerName,
-                             isIBeacon, beacon, isPwnBeaconDevice, pwnBeacon,
-                             hasCustomService, hasWeakName,
+                             isIBeacon, beacon, hasCustomService, hasWeakName,
                              isUnknownManufacturer, isSecurityOrTrackingDevice,
                              proprietary, devSessionId)) {
             continue;
@@ -1203,9 +1276,7 @@ void scanForDevices() {
             ExposureResult exposure = analyzeExposure(dev);
             handleExposureResult(exposure, manufacturerName, devTag);
 
-            WebSender::sendDevice(dev, devSessionId, currentRSSI,
-                      isIBeacon, isPwnBeaconDevice,
-                      dev.hasNotifyData);
+            WebSender::sendDevice(dev, devSessionId, currentRSSI, isIBeacon, dev.hasNotifyData);
 
             // Sad expression: device visible but unreachable
             if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load())
@@ -1256,7 +1327,7 @@ void scanForDevices() {
                 // --- Full GATT read + target detection ---
                 bool targetDetected = connectAndReadGATT(device, dev, hasWritableChar, devTag, remaining);
                 if (!targetDetected) {
-                    LOG(LOG_GATT, devTag + "No target detected via GATT: " + address);
+                    //LOG(LOG_GATT, devTag + "No target detected via GATT: " + address);
                 }
 
                 // ============================================================
@@ -1331,25 +1402,35 @@ void scanForDevices() {
                 dev.manufacturer  = manufacturerName.c_str();
 
                 // --- Build and log device info summary ---
-                String infoLog = devTag + "Device info\n"
+                String infoLogParsed = devTag + "Device info\n"
                     "      Address:" + address + "\n"
                     "      Name:   " + localName + "\n"
                     "      Manuf.: " + manufacturerName;
 
-                if (!modelName.isEmpty()) infoLog += "\n        Model:" + modelName;
+                if (!modelName.isEmpty()) infoLogParsed += "\n      Model:  " + modelName;
 
-                infoLog += "\n     Raw GATT:";
+                LOG(LOG_SNIFFED, infoLogParsed);
+
+                String infoLogRaw = devTag + "Raw GATT:";
                 for (const auto& n : ScanContext::nameList) {
-                    if (!n.empty()) infoLog += "\n     - " + String(n.c_str());
+                    if (!n.empty()) infoLogRaw += "\n     - " + String(n.c_str());
                 }
 
                 float distance = powf(10.0f,
                     (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
-                infoLog += "\n     Distance: ~" + String(distance, 2) + " m"
+                infoLogRaw += "\n     Distance: ~" + String(distance, 2) + " m"
                          + "\n     RSSI:     " + String(currentRSSI) + " dBm";
-                LOG(LOG_GATT, infoLog);
-                delay(10);  // allow log to flush before next read
-                LOG(LOG_SNIFFED, infoLog);
+                LOG(LOG_GATT, infoLogRaw);                
+
+                LOG(
+                    LOG_GATT, devTag + "Device PHY info\n" +
+                    devTag + "ADV TYPE: " + String(device->getAdvType()) +
+                    " | LEGACY: " +
+                    String(device->isLegacyAdvertisement() ? "YES" : "NO") +
+                    " | PHY: " +
+                    String(device->getPrimaryPhy()) + "/" +
+                    String(device->getSecondaryPhy())
+                );
 
                 // --- iBeacon details ---
                 if (isIBeacon) {
@@ -1365,15 +1446,15 @@ void scanForDevices() {
                 }
 
                 // --- PwnBeacon: full GATT read ---
-                if (isPwnBeaconDevice) {
-                    PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
-                    LOG(LOG_BEACON, devTag + "Beacon type: PwnBeacon\n"
-                        "   Name:     " + pwnBeacon.name + "\n"
-                        "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
-                        "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
-                        "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
-                        "   RSSI:     " + String(currentRSSI) + " dBm");
-                }
+                //if (isPwnBeaconDevice) {
+                //    PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
+                //    LOG(LOG_BEACON, devTag + "Beacon type: PwnBeacon\n"
+                //        "   Name:     " + pwnBeacon.name + "\n"
+                //        "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
+                //        "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
+                //        "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
+                //        "   RSSI:     " + String(currentRSSI) + " dBm");
+                //}
 
                 // --- Security analysis (writable chars, DFU, UART, encryption) ---
                 SecurityResult secResult = analyzeDeviceSecurity(pClient, dev);
@@ -1418,9 +1499,7 @@ void scanForDevices() {
                 ExposureResult exposure = analyzeExposure(dev);
                 handleExposureResult(exposure, manufacturerName, devTag);
 
-                WebSender::sendDevice(dev, devSessionId, currentRSSI,
-                      isIBeacon, isPwnBeaconDevice,
-                      dev.hasNotifyData);
+                WebSender::sendDevice(dev, devSessionId, currentRSSI, isIBeacon, dev.hasNotifyData);
 
                 // Glasses expression: detective mode after successful GATT read
                 if (!UIContext::isGlassesTaskRunning.load() && !UIContext::isAngryTaskRunning.load())
@@ -1497,8 +1576,6 @@ void scanForDevices() {
                         M5.Speaker.tone(1760, 200);
                     }
 
-                    LOG(LOG_TARGET, devTag + "!!! Target detected (no GATT) !!!");
-                    LOG(LOG_GATT, devTag + "!!! Target detected (no GATT) !!!");
                     //nibblesSpeechShow(SpeechContext::SUSPICIOUS);
                     vTaskDelay(pdMS_TO_TICKS(2000));
 
@@ -1562,13 +1639,21 @@ void scanForDevices() {
                   + "\n     RSSI:     " + String(currentRSSI) + " dBm";
           LOG(LOG_GATT, infoLog);
 
+          LOG(
+            LOG_GATT, devTag + "Device PHY info\n" +
+            devTag + "ADV TYPE: " + String(device->getAdvType()) +
+            " | LEGACY: " +
+            String(device->isLegacyAdvertisement() ? "YES" : "NO") +
+            " | PHY: " +
+            String(device->getPrimaryPhy()) + "/" +
+            String(device->getSecondaryPhy())
+          );
+          
           dev.isConnectable = false;
           ExposureResult exposure = analyzeExposure(dev);
           handleExposureResult(exposure, manufacturerName, devTag);
 
-          WebSender::sendDevice(dev, devSessionId, currentRSSI,
-                    isIBeacon, isPwnBeaconDevice,
-                    dev.hasNotifyData);
+          WebSender::sendDevice(dev, devSessionId, currentRSSI, isIBeacon, dev.hasNotifyData);
 
           // Sad expression: device visible but connection rejected
           if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load())
@@ -1619,7 +1704,7 @@ void scanForDevices() {
     LOG(LOG_SCAN, "  Sniffed:    " + String(ScanContext::targetConnects.load()));
     LOG(LOG_SCAN, "  Suspicious: " + String(ScanContext::susDevice.load()));
     LOG(LOG_SCAN, "  Beacons:    " + String(DeviceContext::beaconsFound.load()));
-    LOG(LOG_SCAN, "  PwnBeacons: " + String(DeviceContext::pwnbeaconsFound.load()));
+    //LOG(LOG_SCAN, "  PwnBeacons: " + String(DeviceContext::pwnbeaconsFound.load()));
 
     // ============================================================
     // META RAY-BAN STATISTICS

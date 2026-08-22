@@ -42,11 +42,13 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
     };
 
     LOG(LOG_GATT,"     Read value of generic access info");
+
+    int unavailableCharacteristics = 0;
     
     for (int i = 0; i < 4; i++) {
         NimBLERemoteCharacteristic* pChar = gapService->getCharacteristic(charUUIDs[i]);
         if (!pChar) {
-            LOG(LOG_GATT, "     Characteristic " + String(charUUIDs[i]) + " not found.");
+            unavailableCharacteristics++;
             continue;
         }
 
@@ -96,6 +98,16 @@ String GenericAccessServiceHandler::readGenericAccessInfo(NimBLEClient* pClient)
                 LOG(LOG_GATT, "     " + String(charNames[i]) + ": " + val);
             }
         }
+    }
+
+    // Print one summary instead of every missing characteristic
+    if (unavailableCharacteristics > 0) {
+        LOG(
+            LOG_GATT,
+            "     Characteristics: " +
+            String(unavailableCharacteristics) +
+            " unavailable"
+        );
     }
 
     return accessInfoString;

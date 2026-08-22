@@ -261,6 +261,9 @@ void update() {
     NimBLEScan* pScan = NimBLEDevice::getScan();
     pScan->clearResults();
     pScan->setActiveScan(false);
+    pScan->setPhy(NimBLEScan::Phy::SCAN_ALL);
+    pScan->setInterval(BLE_SCAN_INTERVAL);
+    pScan->setWindow(BLE_SCAN_WINDOW);
     pScan->setInterval(40);
     pScan->setWindow(40);
     NimBLEScanResults results = pScan->getResults(500);

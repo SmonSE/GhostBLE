@@ -27,7 +27,7 @@
 
 #include "src/infrastructure/ble/ble_scanner.h"
 #include "src/infrastructure/ble/gattServices/init_gatt_service.h"
-#include "src/infrastructure/ble/gattServices/pwn_beacon_service.h"
+//#include "src/infrastructure/ble/gattServices/pwn_beacon_service.h"
 #include "src/infrastructure/gps/gps_manager.h"
 #include "src/infrastructure/logging/logger.h"
 #include "src/infrastructure/platform/hardware.h"
@@ -117,10 +117,9 @@ void setup() {
 
   // Start PwnBeacon advertising so other devices can discover us
   if (!DeviceContext::deviceConfig.getStealthMode()) {
-      PwnBeaconServiceHandler::startAdvertising(
-          DeviceContext::deviceConfig.getName(),
-          DeviceContext::deviceConfig.getFace()
-      );
+      //PwnBeaconServiceHandler::startAdvertising(
+      //    DeviceContext::deviceConfig.getName(),
+      //    DeviceContext::deviceConfig.getFace());
   }
   
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
@@ -334,8 +333,10 @@ void loop() {
       }
 
       for (auto key : status.word) {
-        if (key == 'm' || key == 'M') {
-          LOG(LOG_CONTROL, "M pressed — showing main menu");
+        //Serial.printf("KEY RECEIVED: [%c] HEX=0x%02X\n", key, (uint8_t)key);
+        if (key == 'm' || key == 'M' ||
+            key == 'q' || key == 'Q') {
+          LOG(LOG_CONTROL, "M/Q pressed — showing main menu");
           MenuController::open();
           return;
         }

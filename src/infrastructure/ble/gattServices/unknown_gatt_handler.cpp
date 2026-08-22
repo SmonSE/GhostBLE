@@ -6,6 +6,7 @@
 
 #include "infrastructure/logging/logger.h"
 #include "core/parsing/binary_format_detector.h"
+#include "core/parsing/service_parser.h"
 #include "app/context/globals.h"
 
 
@@ -119,7 +120,8 @@ String UnknownGATTHandler::dumpService(NimBLEClient* pClient, const std::string&
     NimBLERemoteService* service = pClient->getService(uuid.c_str());
     if (!service) return result;
 
-    LOG(LOG_GATT, "     Unknown Service (0x" + String(uuid.c_str()) + ")");
+    String serviceName = getServiceName(String(uuid.c_str()));
+    LOG(LOG_GATT,"     " + serviceName + " (0x" + String(uuid.c_str()) + ")");
 
     auto characteristics = service->getCharacteristics(true);
 

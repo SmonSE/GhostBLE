@@ -1,330 +1,1139 @@
 #include "flock_detection.h"
 #include "infrastructure/logging/logger.h"
 
+#include <ctype.h>
+
 namespace FlockDetection {
 
-// ── Stats instance ─────────────────────────────────────────────
+// ===========================================================================
+// Statistics
+// ===========================================================================
+
 FlockStats stats;
 
-// ============================================================
-//  Flock Safety MAC OUI prefixes
-//  Source: DeFlock / deflock.me crowdsourced dataset +
-//          colonelpanichacks/flock-you (20 verified prefixes)
-//
-//  Format: first 3 bytes of MAC as lowercase "xx:xx:xx"
-// ============================================================
-static const char* FLOCK_OUIS[] = {
-    // Flock Safety primary OUIs
-    "00:e0:4c",   // Realtek — used in early Flock hardware
-    "10:02:b5",   // Flock Safety
-    "18:fe:34",   // Espressif (ESP32-based units)
-    "24:0a:c4",   // Espressif
-    "24:6f:28",   // Espressif
-    "2c:f4:32",   // Espressif
-    "30:ae:a4",   // Espressif
-    "3c:61:05",   // Espressif
-    "40:22:d8",   // Espressif
-    "40:f5:20",   // Espressif
-    "48:3f:da",   // Flock WiFi module
-    "4c:11:ae",   // Flock Safety ext battery
-    "50:02:91",   // Flock Safety
-    "54:43:b2",   // Espressif
-    "58:bf:25",   // Espressif
-    "5c:cf:7f",   // Espressif (legacy)
-    "60:55:f9",   // Flock Safety
-    "68:b6:b3",   // Flock Safety
-    "7c:9e:bd",   // Flock Safety
-    "82:6b:f2",   // DeFlockJoplin 31st OUI
-    "84:0d:8e",   // Espressif
-    "84:cc:a8",   // Espressif
-    "8c:aa:b5",   // Espressif
-    "90:38:0c",   // Flock Safety
-    "a4:cf:12",   // Espressif
-    "a4:e5:7c",   // Flock Safety
-    "b4:e6:2d",   // Espressif
-    "c8:f0:9e",   // Flock Safety camera
-    "cc:50:e3",   // Espressif
-    "d8:a0:1d",   // Espressif
-    "dc:54:75",   // Espressif
-    "e8:68:e7",   // Flock Safety
-    "ec:62:60",   // Espressif
-    "f0:08:d1",   // Flock Safety
-};
-static constexpr size_t FLOCK_OUI_COUNT =
-    sizeof(FLOCK_OUIS) / sizeof(FLOCK_OUIS[0]);
 
-// ============================================================
-//  Flock Safety BLE device name keywords
-//  Case-insensitive substring match
-// ============================================================
-static const char* FLOCK_NAMES[] = {
+// ===========================================================================
+// OUI DATABASE
+//
+// IMPORTANT:
+//
+// Flock-specific OUIs
+// --------------------
+// These are treated as strong evidence.
+//
+// Espressif OUIs
+// ---------------
+// These are NOT treated as Flock identification by themselves.
+//
+// An ESP32 can have the same OUI whether or not it is used by Flock.
+// ===========================================================================
+
+
+// ---------------------------------------------------------------------------
+// Flock-specific OUIs
+// ---------------------------------------------------------------------------
+
+static const char* FLOCK_SPECIFIC_OUIS[] = {
+
+    "10:02:b5",
+
+    "50:02:91",
+
+    "60:55:f9",
+
+    "68:b6:b3",
+
+    "7c:9e:bd",
+
+    "90:38:0c",
+
+    "a4:e5:7c",
+
+    "c8:f0:9e",
+
+    "e8:68:e7",
+
+    "f0:08:d1"
+};
+
+static constexpr size_t FLOCK_SPECIFIC_OUI_COUNT =
+    sizeof(FLOCK_SPECIFIC_OUIS) /
+    sizeof(FLOCK_SPECIFIC_OUIS[0]);
+
+
+// ---------------------------------------------------------------------------
+// Espressif OUIs observed in Flock hardware
+//
+// These are only supporting evidence.
+//
+// DO NOT treat them as Flock identification.
+// ---------------------------------------------------------------------------
+
+static const char* FLOCK_ESPRESSIF_OUIS[] = {
+
+    "18:fe:34",
+
+    "24:0a:c4",
+
+    "24:6f:28",
+
+    "2c:f4:32",
+
+    "30:ae:a4",
+
+    "3c:61:05",
+
+    "40:22:d8",
+
+    "40:f5:20",
+
+    "54:43:b2",
+
+    "58:bf:25",
+
+    "5c:cf:7f",
+
+    "84:0d:8e",
+
+    "84:cc:a8",
+
+    "8c:aa:b5",
+
+    "a4:cf:12",
+
+    "b4:e6:2d",
+
+    "cc:50:e3",
+
+    "d8:a0:1d",
+
+    "dc:54:75",
+
+    "ec:62:60"
+};
+
+static constexpr size_t FLOCK_ESPRESSIF_OUI_COUNT =
+    sizeof(FLOCK_ESPRESSIF_OUIS) /
+    sizeof(FLOCK_ESPRESSIF_OUIS[0]);
+
+
+// ===========================================================================
+// Device names
+// ===========================================================================
+
+static const char* FLOCK_STRONG_NAMES[] = {
+
     "flock",
     "fs ext battery",
     "fs-ext",
-    "penguin",       // Flock camera internal codename
-    "pigvision",     // Flock/partner branding
-    "raven",         // SoundThinking/ShotSpotter Raven
-    "shotspotter",
-    "soundthinking",
+    "pigvision"
 };
-static constexpr size_t FLOCK_NAME_COUNT =
-    sizeof(FLOCK_NAMES) / sizeof(FLOCK_NAMES[0]);
 
-// ============================================================
-//  Flock Safety manufacturer ID
-//  0x09C8 = XUNTONG — used in Flock hardware modules.
-//  Source: wgreenberg/flock-you
-// ============================================================
+static constexpr size_t FLOCK_STRONG_NAME_COUNT =
+    sizeof(FLOCK_STRONG_NAMES) /
+    sizeof(FLOCK_STRONG_NAMES[0]);
+
+
+static const char* FLOCK_WEAK_NAMES[] = {
+
+    "penguin"
+};
+
+static constexpr size_t FLOCK_WEAK_NAME_COUNT =
+    sizeof(FLOCK_WEAK_NAMES) /
+    sizeof(FLOCK_WEAK_NAMES[0]);
+
+
+static const char* RAVEN_STRONG_NAMES[] = {
+
+    "shotspotter",
+    "soundthinking"
+};
+
+static constexpr size_t RAVEN_STRONG_NAME_COUNT =
+    sizeof(RAVEN_STRONG_NAMES) /
+    sizeof(RAVEN_STRONG_NAMES[0]);
+
+
+static const char* RAVEN_WEAK_NAMES[] = {
+
+    "raven"
+};
+
+static constexpr size_t RAVEN_WEAK_NAME_COUNT =
+    sizeof(RAVEN_WEAK_NAMES) /
+    sizeof(RAVEN_WEAK_NAMES[0]);
+
+
+// ===========================================================================
+// Manufacturer
+// ===========================================================================
+//
+// 0x09C8 = XUNTONG
+//
+// This is associated with Flock hardware but is NOT treated as a
+// definitive Flock identifier by itself.
+// ===========================================================================
+
 static constexpr uint16_t FLOCK_MANUFACTURER_ID = 0x09C8;
 
-// ============================================================
-//  Raven (SoundThinking/ShotSpotter) BLE service UUIDs
-//  Source: GainSec — raven_configurations.json dataset
+
+// ===========================================================================
+// Raven UUIDs
+// ===========================================================================
+
+
+// ---------------------------------------------------------------------------
+// Standard Bluetooth SIG services.
 //
-//  Firmware 1.1.x uses legacy Health + Location services.
-//  Firmware 1.2.x adds GPS, Power, Network, Upload, Error.
-//  Firmware 1.3.x same as 1.2.x + extended services.
+// These are deliberately weak evidence.
 //
-//  Only the short prefix is matched — full 128-bit UUID is
-//  0000XXXX-0000-1000-8000-00805f9b34fb standard form.
-// ============================================================
+// 0x1809 = Health Thermometer
+// 0x1819 = Location and Navigation
+// ---------------------------------------------------------------------------
 
-// Raven 1.1.x legacy services
-static const char* RAVEN_UUIDS_V1_1[] = {
-    "00001809",   // Health Thermometer (legacy health service)
-    "00001819",   // Location and Navigation (legacy location service)
+static const char* RAVEN_STANDARD_UUIDS[] = {
+
+    "00001809",
+    "00001819"
 };
-static constexpr size_t RAVEN_V1_1_COUNT =
-    sizeof(RAVEN_UUIDS_V1_1) / sizeof(RAVEN_UUIDS_V1_1[0]);
 
-// Raven 1.2.x+ services
-static const char* RAVEN_UUIDS_V1_2[] = {
-    "00003100",   // GPS service — real-time coordinates
-    "00003200",   // Power service — battery & solar status
-    "00003300",   // Network service — LTE/WiFi connectivity
-    "00003400",   // Upload service — data transmission metrics
-    "00003500",   // Error service — diagnostics & error logs
+static constexpr size_t RAVEN_STANDARD_UUID_COUNT =
+    sizeof(RAVEN_STANDARD_UUIDS) /
+    sizeof(RAVEN_STANDARD_UUIDS[0]);
+
+
+// ---------------------------------------------------------------------------
+// Raven-specific services
+// ---------------------------------------------------------------------------
+
+static const char* RAVEN_SPECIFIC_UUIDS[] = {
+
+    "00003100",   // GPS
+    "00003200",   // Power
+    "00003300",   // Network
+    "00003400",   // Upload
+    "00003500"    // Error
 };
-static constexpr size_t RAVEN_V1_2_COUNT =
-    sizeof(RAVEN_UUIDS_V1_2) / sizeof(RAVEN_UUIDS_V1_2[0]);
 
-// ============================================================
-//  Helper: check if a UUID string contains a known prefix
-// ============================================================
-static bool uuidStartsWith(const std::string& uuid, const char* prefix) {
-    // NimBLE UUID toString() returns lowercase "0000xxxx-..."
-    // or "0x3100" for short-form UUIDs.
-    return uuid.find(prefix) != std::string::npos;
-}
+static constexpr size_t RAVEN_SPECIFIC_UUID_COUNT =
+    sizeof(RAVEN_SPECIFIC_UUIDS) /
+    sizeof(RAVEN_SPECIFIC_UUIDS[0]);
 
-// ============================================================
-//  Individual detection methods
-// ============================================================
 
-bool hasFlockOUI(const std::string& mac) {
-    if (mac.length() < 8) return false;
+// ===========================================================================
+// Internal helpers
+// ===========================================================================
 
-    // Extract first 8 chars: "xx:xx:xx"
-    std::string prefix = mac.substr(0, 8);
+static std::string normalizeMac(const std::string& mac)
+{
+    std::string result = mac;
 
-    // Lowercase for comparison
-    for (char& c : prefix) c = tolower(c);
-
-    for (size_t i = 0; i < FLOCK_OUI_COUNT; i++) {
-        if (prefix == FLOCK_OUIS[i]) return true;
+    for (char& c : result) {
+        c = static_cast<char>(
+            tolower(static_cast<unsigned char>(c))
+        );
     }
-    return false;
+
+    return result;
 }
 
-bool hasFlockName(const String& name) {
-    if (name.isEmpty()) return false;
 
-    String lower = name;
+static std::string getOUI(const std::string& mac)
+{
+    if (mac.length() < 8) {
+        return "";
+    }
+
+    return normalizeMac(mac.substr(0, 8));
+}
+
+
+static bool containsIgnoreCase(
+    const String& value,
+    const char* keyword)
+{
+    if (value.isEmpty() || keyword == nullptr) {
+        return false;
+    }
+
+    String lower = value;
     lower.toLowerCase();
 
-    for (size_t i = 0; i < FLOCK_NAME_COUNT; i++) {
-        if (lower.indexOf(FLOCK_NAMES[i]) != -1) return true;
+    String key = keyword;
+    key.toLowerCase();
+
+    return lower.indexOf(key) >= 0;
+}
+
+
+static bool uuidMatches(
+    const std::string& uuid,
+    const char* expected)
+{
+    if (expected == nullptr) {
+        return false;
     }
+
+    std::string normalized = uuid;
+
+    for (char& c : normalized) {
+        c = static_cast<char>(
+            tolower(static_cast<unsigned char>(c))
+        );
+    }
+
+    // Exact full UUID
+    if (normalized == expected) {
+        return true;
+    }
+
+    // NimBLE may return short UUID representations.
+    //
+    // Examples:
+    //   00003100-0000-1000-8000-00805f9b34fb
+    //   3100
+    //
+    String expectedStr = String(expected);
+
+    if (normalized == expectedStr.substring(4).c_str()) {
+        return true;
+    }
+
+    if (normalized.find(expected) == 0) {
+        return true;
+    }
+
     return false;
 }
 
-bool hasFlockManufacturerId(uint16_t manufacturerId) {
+
+// ===========================================================================
+// OUI checks
+// ===========================================================================
+
+bool hasFlockSpecificOUI(const std::string& mac)
+{
+    const std::string oui = getOUI(mac);
+
+    if (oui.empty()) {
+        return false;
+    }
+
+    for (size_t i = 0;
+         i < FLOCK_SPECIFIC_OUI_COUNT;
+         ++i) {
+
+        if (oui == FLOCK_SPECIFIC_OUIS[i]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool hasFlockEspressifOUI(const std::string& mac)
+{
+    const std::string oui = getOUI(mac);
+
+    if (oui.empty()) {
+        return false;
+    }
+
+    for (size_t i = 0;
+         i < FLOCK_ESPRESSIF_OUI_COUNT;
+         ++i) {
+
+        if (oui == FLOCK_ESPRESSIF_OUIS[i]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+// ---------------------------------------------------------------------------
+// Backwards-compatible helper.
+//
+// IMPORTANT:
+// This now intentionally excludes generic Espressif OUIs.
+// ---------------------------------------------------------------------------
+
+bool hasFlockOUI(const std::string& mac)
+{
+    return hasFlockSpecificOUI(mac);
+}
+
+
+// ===========================================================================
+// Name detection
+// ===========================================================================
+
+bool hasFlockName(const String& name)
+{
+    if (name.isEmpty()) {
+        return false;
+    }
+
+    for (size_t i = 0;
+         i < FLOCK_STRONG_NAME_COUNT;
+         ++i) {
+
+        if (containsIgnoreCase(
+                name,
+                FLOCK_STRONG_NAMES[i])) {
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+bool hasRavenName(const String& name)
+{
+    if (name.isEmpty()) {
+        return false;
+    }
+
+    for (size_t i = 0;
+         i < RAVEN_STRONG_NAME_COUNT;
+         ++i) {
+
+        if (containsIgnoreCase(
+                name,
+                RAVEN_STRONG_NAMES[i])) {
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+// ===========================================================================
+// Manufacturer
+// ===========================================================================
+
+bool hasFlockManufacturerId(uint16_t manufacturerId)
+{
     return manufacturerId == FLOCK_MANUFACTURER_ID;
 }
 
-bool hasRavenServiceUUID(const NimBLEAdvertisedDevice* device,
-                         RavenFirmware& outFW) {
-    if (!device) return false;
 
-    int  svcCount  = device->getServiceUUIDCount();
-    int  v11Hits   = 0;
-    int  v12Hits   = 0;
+// ===========================================================================
+// Raven UUID detection
+// ===========================================================================
 
-    for (int i = 0; i < svcCount; i++) {
-        std::string uuid = device->getServiceUUID(i).toString();
+bool hasRavenServiceUUID(
+    const NimBLEAdvertisedDevice* device,
+    RavenFirmware& outFW)
+{
+    outFW = RavenFirmware::Unknown;
 
-        // Check 1.1.x legacy UUIDs
-        for (size_t j = 0; j < RAVEN_V1_1_COUNT; j++) {
-            if (uuidStartsWith(uuid, RAVEN_UUIDS_V1_1[j])) v11Hits++;
+    if (!device) {
+        return false;
+    }
+
+    const int svcCount =
+        device->getServiceUUIDCount();
+
+    int standardHits = 0;
+    int specificHits = 0;
+
+    for (int i = 0; i < svcCount; ++i) {
+
+        std::string uuid =
+            device->getServiceUUID(i).toString();
+
+        // Standard Raven-associated services
+        for (size_t j = 0;
+             j < RAVEN_STANDARD_UUID_COUNT;
+             ++j) {
+
+            if (uuidMatches(
+                    uuid,
+                    RAVEN_STANDARD_UUIDS[j])) {
+
+                standardHits++;
+                break;
+            }
         }
 
-        // Check 1.2.x+ UUIDs
-        for (size_t j = 0; j < RAVEN_V1_2_COUNT; j++) {
-            if (uuidStartsWith(uuid, RAVEN_UUIDS_V1_2[j])) v12Hits++;
+        // Raven-specific services
+        for (size_t j = 0;
+             j < RAVEN_SPECIFIC_UUID_COUNT;
+             ++j) {
+
+            if (uuidMatches(
+                    uuid,
+                    RAVEN_SPECIFIC_UUIDS[j])) {
+
+                specificHits++;
+                break;
+            }
         }
     }
 
-    // Need at least 2 matching UUIDs to avoid false positives
-    if (v12Hits >= 2) {
-        outFW = RavenFirmware::V1_2_x;
+    // -----------------------------------------------------------------------
+    // Raven-specific UUIDs
+    //
+    // One specific UUID = interesting
+    // Two or more = strong evidence
+    // -----------------------------------------------------------------------
+
+    if (specificHits >= 2) {
+
+        outFW = RavenFirmware::V1_2_PLUS;
+
         return true;
     }
-    if (v11Hits >= 2) {
-        outFW = RavenFirmware::V1_1_x;
+
+    // -----------------------------------------------------------------------
+    // Standard services alone are NOT enough.
+    //
+    // They can occur on unrelated BLE devices.
+    // -----------------------------------------------------------------------
+
+    if (specificHits >= 1 &&
+        standardHits >= 1) {
+
+        outFW = RavenFirmware::V1_2_PLUS;
+
         return true;
     }
 
     return false;
 }
 
-// ============================================================
-//  Main detection pipeline
-// ============================================================
-FlockResult detect(const NimBLEAdvertisedDevice* device,
-                   const String&   name,
-                   uint16_t        manufacturerId) {
-    FlockResult result;
 
-    if (!device) return result;
+// ===========================================================================
+// Evidence helpers
+// ===========================================================================
 
-    std::string mac = device->getAddress().toString();
-
-    // ── Level 3: Raven service UUID (definitive) ─────────────
-    RavenFirmware ravenFW = RavenFirmware::Unknown;
-    if (hasRavenServiceUUID(device, ravenFW)) {
-        result.detected    = true;
-        result.type        = FlockDeviceType::RavenGunshot;
-        result.ravenFW     = ravenFW;
-        result.confidence  = 3;
-        result.summary     = "SoundThinking/ShotSpotter Raven (gunshot detector)";
-
-        switch (ravenFW) {
-            case RavenFirmware::V1_1_x:
-                result.summary += " — FW ~1.1.x (legacy services)";
-                break;
-            case RavenFirmware::V1_2_x:
-                result.summary += " — FW ~1.2.x/1.3.x";
-                break;
-            default: break;
-        }
-        return result;
-    }
-
-    // ── Level 2: Manufacturer ID (high confidence) ────────────
-    if (hasFlockManufacturerId(manufacturerId)) {
-        result.detected   = true;
-        result.type       = FlockDeviceType::FlockCamera;
-        result.confidence = 2;
-        result.summary    = "Flock Safety device (manufacturer ID 0x09C8 / XUNTONG)";
-        return result;
-    }
-
-    // ── Level 1a: Known OUI prefix ────────────────────────────
-    if (hasFlockOUI(mac)) {
-        result.detected    = true;
-        result.type        = FlockDeviceType::FlockCamera;
-        result.confidence  = 1;
-        result.matchedOUI  = mac.substr(0, 8).c_str();
-        result.summary     = "Flock Safety device (OUI match: " + result.matchedOUI + ")";
-        return result;
-    }
-
-    // ── Level 1b: Device name keyword ─────────────────────────
-    if (hasFlockName(name)) {
-        result.detected     = true;
-        result.confidence   = 1;
-        result.matchedName  = name;
-
-        if (name.indexOf("Raven") != -1 ||
-            name.indexOf("ShotSpotter") != -1 ||
-            name.indexOf("SoundThinking") != -1) {
-            result.type    = FlockDeviceType::RavenGunshot;
-            result.summary = "SoundThinking/ShotSpotter Raven (name match)";
-        } else if (name.indexOf("Ext Battery") != -1 ||
-                   name.indexOf("FS Ext") != -1) {
-            result.type    = FlockDeviceType::FlockExtBattery;
-            result.summary = "Flock Safety external battery unit";
-        } else {
-            result.type    = FlockDeviceType::FlockCamera;
-            result.summary = "Flock Safety camera (name match: " + name + ")";
-        }
-        return result;
-    }
-
-    return result;  // not detected
+bool hasEvidence(
+    const FlockResult& result,
+    EvidenceFlags flag)
+{
+    return (result.evidence & flag) != 0;
 }
 
-// ============================================================
-//  Logging
-// ============================================================
-void logDetection(const String& devTag, const FlockResult& result,
-                  const String& address, int rssi) {
-    if (!result.detected) return;
 
-    const char* confidenceStr;
-    switch (result.confidence) {
-        case 3:  confidenceStr = "DEFINITIVE (Service UUID)"; break;
-        case 2:  confidenceStr = "HIGH (Manufacturer ID)";    break;
-        default: confidenceStr = "MODERATE (OUI / Name)";     break;
+String getConfidenceString(const FlockResult& result)
+{
+    if (result.state == DetectionState::Confirmed) {
+
+        if (result.confidence >= 85) {
+            return "VERY HIGH";
+        }
+
+        return "HIGH";
     }
 
-    const char* typeStr;
-    switch (result.type) {
-        case FlockDeviceType::RavenGunshot:
-            typeStr = "SoundThinking/ShotSpotter Raven (gunshot detector)"; break;
-        case FlockDeviceType::FlockExtBattery:
-            typeStr = "Flock Safety external battery unit"; break;
+    if (result.state == DetectionState::Suspected) {
+
+        if (result.confidence >= 60) {
+            return "MODERATE";
+        }
+
+        return "LOW";
+    }
+
+    return "NONE";
+}
+
+
+String getDetectionStateString(DetectionState state)
+{
+    switch (state) {
+
+        case DetectionState::Confirmed:
+            return "CONFIRMED";
+
+        case DetectionState::Suspected:
+            return "SUSPECTED";
+
         default:
-            typeStr = "Flock Safety ALPR camera"; break;
+            return "NONE";
+    }
+}
+
+
+String getDeviceTypeString(FlockDeviceType type)
+{
+    switch (type) {
+
+        case FlockDeviceType::FlockCamera:
+            return "Flock Safety ALPR camera";
+
+        case FlockDeviceType::FlockExtBattery:
+            return "Flock Safety external battery";
+
+        case FlockDeviceType::RavenGunshot:
+            return "SoundThinking/ShotSpotter Raven";
+
+        default:
+            return "Unknown";
+    }
+}
+
+
+String getEvidenceString(const FlockResult& result)
+{
+    String evidence;
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_FLOCK_OUI)) {
+
+        evidence +=
+            "Flock-specific OUI";
     }
 
-    LOG(LOG_TARGET,
-        devTag + "Surveillance device detected!\n"
-        "   Type:       " + String(typeStr)        + "\n"
-        "   Address:    " + address                + "\n"
-        "   RSSI:       " + String(rssi)  + " dBm" + "\n"
-        "   Confidence: " + String(confidenceStr)  + "\n"
-        "   Detail:     " + result.summary);
+    if (hasEvidence(
+            result,
+            EVIDENCE_ESPRESSIF_OUI)) {
 
-    // Update stats
-    stats.lastDetectionTime = millis();
-    stats.lastDeviceName    = result.matchedName.isEmpty()
-                              ? String(typeStr) : result.matchedName;
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
 
-    if (result.type == FlockDeviceType::RavenGunshot) {
+        evidence +=
+            "Espressif OUI associated with Flock hardware";
+    }
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_FLOCK_NAME)) {
+
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
+
+        evidence +=
+            "Flock device name";
+    }
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_RAVEN_NAME)) {
+
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
+
+        evidence +=
+            "Raven device name";
+    }
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_FLOCK_MANUFACTURER)) {
+
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
+
+        evidence +=
+            "Manufacturer ID 0x09C8";
+    }
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_RAVEN_STANDARD_UUID)) {
+
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
+
+        evidence +=
+            "Raven-associated standard UUID";
+    }
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_RAVEN_SPECIFIC_UUID)) {
+
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
+
+        evidence +=
+            "Raven-specific service UUID";
+    }
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_FLOCK_PAYLOAD)) {
+
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
+
+        evidence +=
+            "Flock advertisement payload";
+    }
+
+    if (hasEvidence(
+            result,
+            EVIDENCE_MULTI_SIGNAL)) {
+
+        if (!evidence.isEmpty()) {
+            evidence += ", ";
+        }
+
+        evidence +=
+            "multiple independent signals";
+    }
+
+    if (evidence.isEmpty()) {
+        evidence = "No strong evidence";
+    }
+
+    return evidence;
+}
+
+
+// ===========================================================================
+// Main detection pipeline
+// ===========================================================================
+
+FlockResult detect(
+    const NimBLEAdvertisedDevice* device,
+    const String& name,
+    uint16_t manufacturerId)
+{
+    FlockResult result;
+
+    if (!device) {
+        return result;
+    }
+
+    const std::string mac =
+        device->getAddress().toString();
+
+    const bool flockOUI =
+        hasFlockSpecificOUI(mac);
+
+    const bool espressifOUI =
+        hasFlockEspressifOUI(mac);
+
+    const bool flockName =
+        hasFlockName(name);
+
+    const bool ravenName =
+        hasRavenName(name);
+
+    const bool manufacturer =
+        hasFlockManufacturerId(
+            manufacturerId);
+
+    RavenFirmware ravenFW =
+        RavenFirmware::Unknown;
+
+    const bool ravenUUID =
+        hasRavenServiceUUID(
+            device,
+            ravenFW);
+
+
+    // ========================================================================
+    // Evidence collection
+    // ========================================================================
+
+    uint16_t score = 0;
+
+    uint16_t evidence =
+        EVIDENCE_NONE;
+
+
+    // ------------------------------------------------------------------------
+    // Flock-specific OUI
+    // ------------------------------------------------------------------------
+
+    if (flockOUI) {
+
+        score += 40;
+
+        evidence |=
+            EVIDENCE_FLOCK_OUI;
+
+        result.matchedOUI =
+            mac.substr(0, 8).c_str();
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Espressif OUI
+    //
+    // Supporting evidence only.
+    // ------------------------------------------------------------------------
+
+    if (espressifOUI) {
+
+        score += 10;
+
+        evidence |=
+            EVIDENCE_ESPRESSIF_OUI;
+
+        result.matchedOUI =
+            mac.substr(0, 8).c_str();
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Flock name
+    // ------------------------------------------------------------------------
+
+    if (flockName) {
+
+        score += 40;
+
+        evidence |=
+            EVIDENCE_FLOCK_NAME;
+
+        result.matchedName = name;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Raven name
+    // ------------------------------------------------------------------------
+
+    if (ravenName) {
+
+        score += 50;
+
+        evidence |=
+            EVIDENCE_RAVEN_NAME;
+
+        result.matchedName = name;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Manufacturer ID
+    // ------------------------------------------------------------------------
+
+    if (manufacturer) {
+
+        score += 50;
+
+        evidence |=
+            EVIDENCE_FLOCK_MANUFACTURER;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // Raven UUID
+    // ------------------------------------------------------------------------
+
+    if (ravenUUID) {
+
+        score += 65;
+
+        evidence |=
+            EVIDENCE_RAVEN_SPECIFIC_UUID;
+    }
+
+
+    // ========================================================================
+    // Multiple independent signals
+    // ========================================================================
+
+    uint8_t signalCount = 0;
+
+    if (flockOUI)       signalCount++;
+    if (flockName)      signalCount++;
+    if (ravenName)      signalCount++;
+    if (manufacturer)   signalCount++;
+    if (ravenUUID)      signalCount++;
+
+
+    if (signalCount >= 2) {
+
+        score += 15;
+
+        evidence |=
+            EVIDENCE_MULTI_SIGNAL;
+    }
+
+
+    // ========================================================================
+    // No evidence
+    // ========================================================================
+
+    if (score == 0) {
+
+        return result;
+    }
+
+
+    // ========================================================================
+    // Determine device type
+    // ========================================================================
+
+    if (ravenUUID || ravenName) {
+
+        result.type =
+            FlockDeviceType::RavenGunshot;
+
+        result.ravenFW =
+            ravenFW;
+    }
+    else if (containsIgnoreCase(
+                 name,
+                 "fs ext battery") ||
+             containsIgnoreCase(
+                 name,
+                 "fs-ext")) {
+
+        result.type =
+            FlockDeviceType::FlockExtBattery;
+    }
+    else {
+
+        result.type =
+            FlockDeviceType::FlockCamera;
+    }
+
+
+    // ========================================================================
+    // Confidence / state
+    // ========================================================================
+
+    if (score > 100) {
+        score = 100;
+    }
+
+    result.score =
+        score;
+
+    result.confidence =
+        static_cast<uint8_t>(score);
+
+    result.evidence =
+        evidence;
+
+
+    // ------------------------------------------------------------------------
+    // Confirmed
+    // ------------------------------------------------------------------------
+
+    if (score >= 70) {
+
+        result.state =
+            DetectionState::Confirmed;
+
+        result.detected = true;
+    }
+
+    // ------------------------------------------------------------------------
+    // Suspected
+    // ------------------------------------------------------------------------
+
+    else if (score >= 30) {
+
+        result.state =
+            DetectionState::Suspected;
+
+        result.detected = true;
+    }
+
+    // ------------------------------------------------------------------------
+    // Below threshold
+    // ------------------------------------------------------------------------
+
+    else {
+
+        // We deliberately don't report very weak matches.
+
+        return result;
+    }
+
+
+    // ========================================================================
+    // Summary
+    // ========================================================================
+
+    result.summary =
+        getDeviceTypeString(result.type);
+
+    if (result.ravenFW ==
+        RavenFirmware::V1_2_PLUS) {
+
+        result.summary +=
+            " — Raven FW 1.2+ family";
+    }
+
+    result.summary +=
+        " | Evidence: " +
+        getEvidenceString(result);
+
+
+    return result;
+}
+
+
+// ===========================================================================
+// Logging
+// ===========================================================================
+
+void logDetection(
+    const String& devTag,
+    const FlockResult& result,
+    const String& address,
+    int rssi)
+{
+    if (!result.detected) {
+        return;
+    }
+
+
+    const String state =
+        getDetectionStateString(
+            result.state);
+
+    const String confidence =
+        getConfidenceString(result);
+
+    const String type =
+        getDeviceTypeString(
+            result.type);
+
+    LOG(
+        LOG_TARGET,
+
+        devTag +
+        "Surveillance device detected!\n"
+
+        "   Type:       " +
+        type +
+        "\n"
+
+        "   State:      " +
+        state +
+        "\n"
+
+        "   Address:    " +
+        address +
+        "\n"
+
+        "   RSSI:       " +
+        String(rssi) +
+        " dBm\n"
+
+        "   Confidence: " +
+        confidence +
+        " (" +
+        String(result.confidence) +
+        "/100)\n"
+
+        "   Evidence:   " +
+        getEvidenceString(result) +
+        "\n"
+
+        "   Detail:     " +
+        result.summary
+    );
+
+
+    // ========================================================================
+    // Statistics
+    // ========================================================================
+
+    stats.lastDetectionTime =
+        millis();
+
+    stats.lastDeviceName =
+        result.matchedName.isEmpty()
+        ? type
+        : result.matchedName;
+
+
+    if (result.state ==
+        DetectionState::Suspected) {
+
+        stats.suspectedDevicesFound++;
+    }
+
+
+    if (result.type ==
+        FlockDeviceType::RavenGunshot) {
+
         stats.ravenDevicesFound++;
-    } else {
+    }
+    else {
+
         stats.flockCamerasFound++;
     }
 }
 
-// ============================================================
-//  Stats
-// ============================================================
-String getStatsString() {
-    String s = "Flock / Raven Detection Stats:\n";
-    s += "   Flock cameras: " + String(stats.flockCamerasFound) + "\n";
-    s += "   Raven units:   " + String(stats.ravenDevicesFound) + "\n";
-    if (!stats.lastDeviceName.isEmpty())
-        s += "   Last device:   " + stats.lastDeviceName + "\n";
-    if (stats.lastDetectionTime > 0)
-        s += "   Last seen:     "
-           + String((millis() - stats.lastDetectionTime) / 1000) + "s ago";
+
+// ===========================================================================
+// Statistics
+// ===========================================================================
+
+String getStatsString()
+{
+    String s =
+        "Flock / Raven Detection Stats:\n";
+
+    s +=
+        "   Flock cameras: " +
+        String(stats.flockCamerasFound) +
+        "\n";
+
+    s +=
+        "   Raven units:   " +
+        String(stats.ravenDevicesFound) +
+        "\n";
+
+    s +=
+        "   Suspected:     " +
+        String(stats.suspectedDevicesFound) +
+        "\n";
+
+
+    if (!stats.lastDeviceName.isEmpty()) {
+
+        s +=
+            "   Last device:   " +
+            stats.lastDeviceName +
+            "\n";
+    }
+
+
+    if (stats.lastDetectionTime > 0) {
+
+        s +=
+            "   Last seen:     " +
+            String(
+                (millis() -
+                 stats.lastDetectionTime) /
+                1000
+            ) +
+            "s ago";
+    }
+
+
     return s;
 }
 
-void resetStats() {
-    stats = FlockStats{};
+
+// ===========================================================================
+// Reset
+// ===========================================================================
+
+void resetStats()
+{
+    stats =
+        FlockStats{};
 }
+
 
 } // namespace FlockDetection

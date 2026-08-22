@@ -1,4 +1,4 @@
-#include "pwn_beacon_service.h"
+/*#include "pwn_beacon_service.h"
 
 #include <NimBLEDevice.h>
 #include <NimBLERemoteService.h>
@@ -17,7 +17,7 @@ static NimBLECharacteristic* identChr = nullptr;
 static NimBLECharacteristic* nameChr = nullptr;
 static NimBLECharacteristic* signalChr = nullptr;
 static NimBLECharacteristic* messageChr = nullptr;
-static NimBLEAdvertising* pwnAdvertising = nullptr;
+static NimBLEExtAdvertising* pwnAdvertising = nullptr;
 
 static String advDeviceName;
 static uint16_t advPwndRun = 0;
@@ -311,3 +311,4 @@ void PwnBeaconServiceHandler::stopAdvertising() {
     pAdvertising->stop();
     LOG(LOG_BEACON, "👾 PwnBeacon advertising stopped");
 }
+*/

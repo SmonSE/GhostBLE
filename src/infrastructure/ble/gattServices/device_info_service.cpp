@@ -12,10 +12,12 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
         const char* deviceChars[] = {"2A29", "2A24", "2A25", "2A27", "2A26", "2A28"};
         const char* charNames[]   = {"Manufacturer Name", "Model Number", "Serial Number", "Hardware Revision", "Firmware Revision", "Software Revision"};
 
+        int unavailableCharacteristics = 0;
+
         for (int i = 0; i < 6; i++) {
           NimBLERemoteCharacteristic* pChar = deviceInfoService->getCharacteristic(deviceChars[i]);
             if (pChar == nullptr) {
-                LOG(LOG_GATT, "     Characteristic " + String(deviceChars[i]) + " not found.");
+                unavailableCharacteristics++;                   
                 continue;
             }
       
@@ -28,6 +30,15 @@ String DeviceInfoServiceHandler::readDeviceInfo(NimBLEClient* pClient) {
                 //deviceInfoString += line + "\n";
                 LOG(LOG_GATT, "     " + line);
             }
+        }
+        // Print one summary instead of every missing characteristic
+        if (unavailableCharacteristics > 0) {
+            LOG(
+                LOG_GATT,
+                "     Characteristics: " +
+                String(unavailableCharacteristics) +
+                " unavailable"
+            );
         }
       } 
 

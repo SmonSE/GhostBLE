@@ -4,7 +4,8 @@
 void hardwareBegin() {
 #if defined(CARDPUTER)
     M5.Power.begin();
-    M5Cardputer.begin();
+    auto cfg = M5.config();
+    M5Cardputer.begin(cfg, true);
 #elif defined(M5STICKCPLUS2) || defined(M5STICKS3)
     auto cfg = M5.config();
     M5.begin(cfg);
