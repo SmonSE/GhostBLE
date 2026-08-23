@@ -23,6 +23,7 @@
 #include "core/parsing/fmdn_parser.h"
 #include "core/detection/target_device.h"
 #include "core/parsing/sdo_service_parser.h"
+#include "core/parsing/service_parser.h"
 #include "core/security/gatt_fingerprint.h"
 
 #include "gattServices/notify_handler.h"
@@ -85,6 +86,12 @@ static constexpr int FLIPPER_MSG_COUNT = sizeof(flipperMsgs) / sizeof(flipperMsg
 //  atomic: heartTask runs on Core 1, read from Core 0.
 // ---------------------------------------------------------------------------
 static std::atomic<bool> heartTaskRunning{false};
+
+// ---------------------------------------------------------------------------
+//  Service summary string — used for logging and speech bubble messages.
+//  Populated during scan processing, cleared after each device.
+// ---------------------------------------------------------------------------
+String serviceSummary;
 
 // ===========================================================================
 //  Structs
@@ -637,6 +644,15 @@ static bool parseDeviceInfo(
             if (shortUUID.startsWith("0x")) shortUUID = shortUUID.substring(2);
 
             svcLog += "\n     - " + shortUUID + " (" + getServiceName(shortUUID) + ")";
+
+            String serviceName = getServiceName(shortUUID);
+
+            if (!serviceName.isEmpty()) {
+            if (!serviceSummary.isEmpty())
+                serviceSummary += "\n";
+
+            serviceSummary += serviceName + " (" + shortUUID + ")";
+        }
 
             // PwnBeacon detection via service UUID
             if (svcUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
@@ -1408,6 +1424,7 @@ void scanForDevices() {
                     "      Manuf.: " + manufacturerName;
 
                 if (!modelName.isEmpty()) infoLogParsed += "\n      Model:  " + modelName;
+                if (!serviceSummary.isEmpty()) infoLogParsed += "\n      Service: " + serviceSummary;
 
                 LOG(LOG_SNIFFED, infoLogParsed);
 

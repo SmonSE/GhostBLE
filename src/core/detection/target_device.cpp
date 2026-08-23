@@ -69,7 +69,7 @@ bool isTargetDevice(String name, String address, String serviceUuid, String devi
 
   if (serviceUuid == PWNBEACON_SERVICE_UUID) {
     outLabel = "PWNBEACON (PwnGrid/Pwnagotchi)";
-    LOG(LOG_TARGET, devTag + " PWNBEACON detected (PwnGrid/Pwnagotchi)");
+    LOG(LOG_TARGET, devTag + "PWNBEACON detected (PwnGrid/Pwnagotchi)");
     return false;
   }
 
