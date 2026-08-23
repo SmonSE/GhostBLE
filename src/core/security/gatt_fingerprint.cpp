@@ -1,5 +1,6 @@
 #include "gatt_fingerprint.h"
 
+#include "app/context/globals.h"
 
 void GATTFingerprint::reset()
 {
@@ -20,16 +21,16 @@ String GATTFingerprint::toString() const
 {
     String result;
 
-    result += "GATT Fingerprint:\n";
-    result += "  Services: " + String(services) + "\n";
-    result += "  Proprietary: " + String(proprietaryServices) + "\n";
-    result += "  Standard: " + String(standardServices) + "\n";
-    result += "  Characteristics: " + String(characteristics) + "\n";
-    result += "  Read: " + String(read) + "\n";
-    result += "  Write: " + String(write) + "\n";
-    result += "  ReadWrite: " + String(readWrite) + "\n";
-    result += "  Notify: " + String(notify) + "\n";
-    result += "  Indicate: " + String(indicate);
+    result += devTag + "GATT Fingerprint:\n";
+    result += "     Services: " + String(services) + "\n";
+    result += "     Proprietary: " + String(proprietaryServices) + "\n";
+    result += "     Standard: " + String(standardServices) + "\n";
+    result += "     Characteristics: " + String(characteristics) + "\n";
+    result += "     Read: " + String(read) + "\n";
+    result += "     Write: " + String(write) + "\n";
+    result += "     ReadWrite: " + String(readWrite) + "\n";
+    result += "     Notify: " + String(notify) + "\n";
+    result += "     Indicate: " + String(indicate);
 
     return result;
 }

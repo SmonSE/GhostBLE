@@ -98,6 +98,12 @@ String getManufacturerName(uint16_t id) {
     case 0x0165: return "Xiaomi Inc.";
     case 0x0ECB: return "Zhong Shan City Richsound Electronic Industrial Ltd. (JBL)";
 
+    // ── 0x06E7 ───────────────────────────────────────────────
+    case 0x06E7: return "VELUX A/S";
+
+    // ── 0x8843 ───────────────────────────────────────────────
+    case 0x8843: return "Shenzhen Intellismart Technology Co., Ltd.";
+
     default: return "";  // empty = Unknown, caller decides label
     }
 }
