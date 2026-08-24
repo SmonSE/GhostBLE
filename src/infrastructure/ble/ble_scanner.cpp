@@ -26,6 +26,8 @@
 #include "core/parsing/service_parser.h"
 #include "core/security/gatt_fingerprint.h"
 
+#include "utils/string_utils.h"
+
 #include "gattServices/notify_handler.h"
 
 #include "infrastructure/ble/handler/sdo_handlers.h"
@@ -493,10 +495,11 @@ static bool parseDeviceInfo(
             if (isOfflineFinding) {
                 float estDist = powf(10.0f, (float)(DISTANCE_CONSTANT - ScanContext::rssi.load()) / (float)RSSI_CONSTANT);
 
+                String indent = StringUtils::indentFromTag(devTag);
                 LOG(LOG_TARGET, devTag + "Find My Tracker detected (offline finding mode)\n"
-                    "      Address:  " + String(ScanContext::addrStr.c_str()) + "\n"
-                    "      RSSI:     " + String(ScanContext::rssi.load()) + " dBm\n"
-                    "      Distance: ~" + String(estDist, 2) + " m");
+                    + indent + " Address:  " + String(ScanContext::addrStr.c_str()) + "\n"
+                    + indent + " RSSI:     " + String(ScanContext::rssi.load()) + " dBm\n"
+                    + indent + " Distance: ~" + String(estDist, 2) + " m");
 
                 // Debug: Manufacturer-Bytes if offline tracker found
                 String hexDump = "";
@@ -505,7 +508,7 @@ static bool parseDeviceInfo(
                     snprintf(buf, sizeof(buf), "%02X ", (uint8_t)mfg[i]);
                     hexDump += buf;
                 }
-                LOG(LOG_TARGET, "      Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
+                LOG(LOG_TARGET, indent + " Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
                 
                 isSecurityOrTrackingDevice = true;
                 ScanContext::susDevice++;
@@ -637,19 +640,21 @@ static bool parseDeviceInfo(
         String svcLog = devTag + "Advertised services (" + String(svcCount) + "):";
 
         for (int s = 0; s < svcCount; s++) {
+            serviceSummary.clear();
             NimBLEUUID svcUUID  = device->getServiceUUID(s);
             String     shortUUID = svcUUID.toString().c_str();
 
             // NimBLE prefixes 16-bit UUIDs with "0x" — strip it
             if (shortUUID.startsWith("0x")) shortUUID = shortUUID.substring(2);
-
-            svcLog += "\n     - " + shortUUID + " (" + getServiceName(shortUUID) + ")";
+            String indent = StringUtils::indentFromTag(devTag);
+            svcLog += "\n" + indent + " - " + shortUUID + " (" + getServiceName(shortUUID) + ")";
 
             String serviceName = getServiceName(shortUUID);
+            const String SERVICE_INDENT = indent + "          ";
 
             if (!serviceName.isEmpty()) {
             if (!serviceSummary.isEmpty())
-                serviceSummary += "\n";
+                serviceSummary += "\n" + SERVICE_INDENT;
 
             serviceSummary += serviceName + " (" + shortUUID + ")";
         }
@@ -1180,6 +1185,7 @@ void scanForDevices() {
     //  Per-device processing loop
     // ===================================================================
     for (int i = 0; i < results.getCount(); i++) {
+        serviceSummary.clear();
         // ── Cooporative abort — someone with exclusive access requested ──
         if (ScanContext::scanCancelRequested.load()) {
             LOG(LOG_SCAN, "Scan cancelled mid-loop (" + String(i) + "/" + String(results.getCount()) + " devices processed)");
@@ -1428,15 +1434,17 @@ void scanForDevices() {
 
                 LOG(LOG_SNIFFED, infoLogParsed);
 
+                String indent = StringUtils::indentFromTag(devTag);
                 String infoLogRaw = devTag + "Raw GATT:";
                 for (const auto& n : ScanContext::nameList) {
-                    if (!n.empty()) infoLogRaw += "\n     - " + String(n.c_str());
+                    if (!n.empty()) {
+                        infoLogRaw += "\n" + indent + "- " + String(n.c_str());
+                    }
                 }
 
-                float distance = powf(10.0f,
-                    (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
-                infoLogRaw += "\n     Distance: ~" + String(distance, 2) + " m"
-                         + "\n     RSSI:     " + String(currentRSSI) + " dBm";
+                float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
+                infoLogRaw += "\n" + indent + "Distance: ~" + String(distance, 2) + " m"
+                        + "\n" + indent + "RSSI:     " + String(currentRSSI) + " dBm";
                 LOG(LOG_GATT, infoLogRaw);                
 
                 LOG(
@@ -1645,15 +1653,16 @@ void scanForDevices() {
               + " (" + String(currentRSSI) + " dBm)");
 
           // --- Log full device info even without GATT connection ---
+          String indent = StringUtils::indentFromTag(devTag);
           String infoLog = devTag + "Device info (no GATT)\n"
-              "     Address:" + address + "\n"
-              "     Name:   " + localName + "\n"
-              "     Manuf.: " + manufacturerName;
+              + indent + "Address:" + address + "\n"
+              + indent + "Name:   " + localName + "\n"
+              + indent + "Manuf.: " + manufacturerName;
 
           float distance = powf(10.0f,
               (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
-          infoLog += "\n     Distance: ~" + String(distance, 2) + " m"
-                  + "\n     RSSI:     " + String(currentRSSI) + " dBm";
+          infoLog += "\n" + indent + "Distance: ~" + String(distance, 2) + " m"
+                  + "\n" + indent + "RSSI:     " + String(currentRSSI) + " dBm";
           LOG(LOG_GATT, infoLog);
 
           LOG(

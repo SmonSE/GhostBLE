@@ -257,7 +257,7 @@ void PwnBeaconServiceHandler::startAdvertising(const String& deviceName, const S
     pwnAdvertising->setScanResponseData(scanResp);
     pwnAdvertising->start();
 
-    LOG(LOG_BEACON, "👾 PwnBeacon advertising started: " + deviceName);
+    LOG(LOG_BEACON, "  PwnBeacon advertising started: " + deviceName);
 }
 
 void PwnBeaconServiceHandler::updateCounters(uint16_t pwndRun, uint16_t pwndTot) {
@@ -309,6 +309,6 @@ void PwnBeaconServiceHandler::updateFace(const String& face) {
 void PwnBeaconServiceHandler::stopAdvertising() {
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->stop();
-    LOG(LOG_BEACON, "👾 PwnBeacon advertising stopped");
+    LOG(LOG_BEACON, " PwnBeacon advertising stopped");
 }
 */

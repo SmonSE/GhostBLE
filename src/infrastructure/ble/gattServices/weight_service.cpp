@@ -78,7 +78,7 @@ void WeightServiceHandler::handleNotification(uint8_t* data, size_t length) {
     if (flags & 0x04) {
         if (length >= index + 1) {
             uint8_t userId = data[index++];
-            LOG(LOG_GATT, "👤 User ID: " + String(userId));
+            LOG(LOG_GATT, "  User ID: " + String(userId));
         } else {
             return;
         }
@@ -93,8 +93,8 @@ void WeightServiceHandler::handleNotification(uint8_t* data, size_t length) {
             float bmi = bmiRaw * 0.1f;
             float height = heightRaw * 0.01f;
 
-            LOG(LOG_GATT, "📊 BMI: " + String(bmi));
-            LOG(LOG_GATT, "📏 Height: " + String(height) + " m");
+            LOG(LOG_GATT, "  BMI: " + String(bmi));
+            LOG(LOG_GATT, "  Height: " + String(height) + " m");
         }
     }
 }
