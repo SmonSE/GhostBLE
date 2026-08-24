@@ -180,8 +180,9 @@ void extractUUIDs(const std::vector<uint8_t>& payload) {
             for (int j = 0; j < len - 1; j += 2) {
                 if (i + j + 1 >= payload.size()) break;
 
+                String indent = StringUtils::indentFromTag(devTag);
                 uint16_t uuid = payload[i + j] | (payload[i + j + 1] << 8);
-                LOG(LOG_GATT, "     16-bit UUID: " + String(uuid, HEX));
+                LOG(LOG_GATT, indent + "16-bit UUID: " + String(uuid, HEX));
             }
         }
 
@@ -201,8 +202,8 @@ void extractUUIDs(const std::vector<uint8_t>& payload) {
                     payload[i+j+3],  payload[i+j+2],
                     payload[i+j+1],  payload[i+j]
                 );
-
-                LOG(LOG_GATT, "     128-bit UUID: " + String(buf));
+                String indent = StringUtils::indentFromTag(devTag);
+                LOG(LOG_GATT, indent + "128-bit UUID: " + String(buf));
             }
         }
 
@@ -700,12 +701,13 @@ static bool parseDeviceInfo(
             NimBLEUUID  svcDataUUID = device->getServiceDataUUID(sd);
             std::string svcData     = device->getServiceData(sd);
             String      shortUUID   = svcDataUUID.toString().c_str();
+            String      indent      = StringUtils::indentFromTag(devTag);
 
             if (shortUUID.startsWith("0x")) shortUUID = shortUUID.substring(2);
 
-            sdLog += "\n     - UUID: " + shortUUID
+            sdLog += "\n" + indent + "- UUID: " + shortUUID
                    + " (" + getServiceName(shortUUID) + ")"
-                   + "\n       Data: " + bytesToHexString(svcData);
+                   + "\n" + indent + "Data: " + bytesToHexString(svcData);
 
             // UUID extrahieren
             uint16_t uuid16 = 0;
@@ -743,11 +745,12 @@ static bool parseDeviceInfo(
                     const char* fmdnLabel = fmdn.unwantedTracking
                         ? "FMDN Unwanted Track"     // 0x41 – separated tracker
                         : "Google Find My";         // 0x40 – owner nearby
-
+                    
+                    String indent = StringUtils::indentFromTag(devTag);
                     LOG(LOG_TARGET, devTag + "Google Find My tracker detected"
                         + (fmdn.unwantedTracking ? " (UNWANTED TRACKING MODE)" : "")
-                        + "\n     Address:  " + String(ScanContext::addrStr.c_str())
-                        + "\n     RSSI:     " + String(ScanContext::rssi.load()) + " dBm");
+                        + "\n" + indent + "Address:  " + String(ScanContext::addrStr.c_str())
+                        + "\n" + indent + "RSSI:     " + String(ScanContext::rssi.load()) + " dBm");
 
                     isSecurityOrTrackingDevice = true;
                     ScanContext::susDevice++;
@@ -1424,17 +1427,23 @@ void scanForDevices() {
                 dev.manufacturer  = manufacturerName.c_str();
 
                 // --- Build and log device info summary ---
-                String infoLogParsed = devTag + "Device info\n"
-                    "      Address:" + address + "\n"
-                    "      Name:   " + localName + "\n"
-                    "      Manuf.: " + manufacturerName;
+                String indent = StringUtils::indentFromTag(devTag);
+                String infoLogParsed =
+                    devTag + "Device info\n" +
+                    indent + "Address:" + address + "\n" +
+                    indent + "Name:   " + localName + "\n" +
+                    indent + "Manuf.: " + manufacturerName;
 
-                if (!modelName.isEmpty()) infoLogParsed += "\n      Model:  " + modelName;
-                if (!serviceSummary.isEmpty()) infoLogParsed += "\n      Service: " + serviceSummary;
+                if (!modelName.isEmpty()) {
+                    infoLogParsed += "\n" + indent + "Model:  " + modelName;
+                }
+
+                if (!serviceSummary.isEmpty()) {
+                    infoLogParsed += "\n" + indent + "Service: " + serviceSummary;
+                }
 
                 LOG(LOG_SNIFFED, infoLogParsed);
 
-                String indent = StringUtils::indentFromTag(devTag);
                 String infoLogRaw = devTag + "Raw GATT:";
                 for (const auto& n : ScanContext::nameList) {
                     if (!n.empty()) {
