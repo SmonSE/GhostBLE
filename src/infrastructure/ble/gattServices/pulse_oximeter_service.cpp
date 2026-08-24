@@ -58,8 +58,8 @@ void PulseOximeterServiceHandler::handleNotification(uint8_t* data, size_t lengt
     float spo2 = spo2Raw * 0.1f;
     float pulse = pulseRaw * 0.1f;
 
-    LOG(LOG_GATT, "🫁 SpO2: " + String(spo2) + " %");
-    LOG(LOG_GATT, "❤️ Pulse: " + String(pulse) + " bpm");
+    LOG(LOG_GATT, "  SpO2: " + String(spo2) + " %");
+    LOG(LOG_GATT, "  Pulse: " + String(pulse) + " bpm");
 
     // Optional fields (flags-based, often not present)
     int index = 5;

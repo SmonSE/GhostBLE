@@ -13,7 +13,7 @@ String getAppearanceName(uint16_t appearance) {
 
     switch (appearance) {
 
-    case 0x0000: return "Unknown";
+    case 0x0000: return "Unknown (0x0000)";
 
     // Phone
     case 0x0040: return "Phone";

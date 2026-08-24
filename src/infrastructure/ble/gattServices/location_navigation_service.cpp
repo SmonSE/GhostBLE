@@ -50,7 +50,7 @@ void LocationNavigationServiceHandler::handleNotification(uint8_t* data, size_t 
     uint16_t flags = data[0] | (data[1] << 8);
     int index = 2;
 
-    LOG(LOG_GATT, "🧭 Location packet received");
+    LOG(LOG_GATT, "  Location packet received");
 
     // Latitude (4 bytes, sint32, degrees * 1e7)
     if (flags & 0x0001) {
@@ -58,7 +58,7 @@ void LocationNavigationServiceHandler::handleNotification(uint8_t* data, size_t 
             int32_t rawLat = data[index] | (data[index+1] << 8) |
                              (data[index+2] << 16) | (data[index+3] << 24);
             float lat = rawLat / 1e7f;
-            LOG(LOG_GATT, "📍 Latitude: " + String(lat, 6));
+            LOG(LOG_GATT, "  Latitude: " + String(lat, 6));
             index += 4;
         } else return;
     }
@@ -69,7 +69,7 @@ void LocationNavigationServiceHandler::handleNotification(uint8_t* data, size_t 
             int32_t rawLon = data[index] | (data[index+1] << 8) |
                              (data[index+2] << 16) | (data[index+3] << 24);
             float lon = rawLon / 1e7f;
-            LOG(LOG_GATT, "📍 Longitude: " + String(lon, 6));
+            LOG(LOG_GATT, "  Longitude: " + String(lon, 6));
             index += 4;
         } else return;
     }
@@ -80,7 +80,7 @@ void LocationNavigationServiceHandler::handleNotification(uint8_t* data, size_t 
             int32_t rawElev = data[index] | (data[index+1] << 8) |
                               (data[index+2] << 16);
             float elevation = rawElev * 0.01f;
-            LOG(LOG_GATT, "⛰ Elevation: " + String(elevation) + " m");
+            LOG(LOG_GATT, "  Elevation: " + String(elevation) + " m");
             index += 3;
         } else return;
     }
@@ -90,7 +90,7 @@ void LocationNavigationServiceHandler::handleNotification(uint8_t* data, size_t 
         if (length >= index + 2) {
             uint16_t rawSpeed = data[index] | (data[index+1] << 8);
             float speed = rawSpeed * 0.01f;
-            LOG(LOG_GATT, "🚀 Speed: " + String(speed) + " m/s");
+            LOG(LOG_GATT, "  Speed: " + String(speed) + " m/s");
             index += 2;
         } else return;
     }
@@ -100,7 +100,7 @@ void LocationNavigationServiceHandler::handleNotification(uint8_t* data, size_t 
         if (length >= index + 2) {
             uint16_t rawHeading = data[index] | (data[index+1] << 8);
             float heading = rawHeading * 0.01f;
-            LOG(LOG_GATT, "🧭 Heading: " + String(heading) + "°");
+            LOG(LOG_GATT, "  Heading: " + String(heading) + "°");
             index += 2;
         } else return;
     }
