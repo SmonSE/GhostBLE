@@ -1,6 +1,7 @@
 #include "service_parser.h"
 #include "config/detection_config.h"
 #include "core/parsing/manufacturer_parser.h"
+#include "core/parsing/apple_continuity_uuids.h"
 
 // Sorted lookup table for standard 16-bit BLE service UUIDs.
 // Binary search is O(log n) with no heap allocation vs cascading String comparisons.
@@ -116,6 +117,16 @@ String getServiceName(const String& uuid) {
 
     if (normalized.equalsIgnoreCase(TESLA_BLE_SERVICE_UUID)) {
         return "Tesla Vehicle (BLE Key)";
+    }
+
+    // Apple Continuity / AMS / ANCS services. These are well-documented
+    // 128-bit vendor UUIDs that show up on nearly every modern Apple
+    // device (Nearby Info, Handoff, Media Service, Notification Center),
+    // so they shouldn't fall through to "Unknown Service" or inflate the
+    // Proprietary count in the GATT fingerprint summary.
+    const char* appleName = appleContinuityName(normalized);
+    if (appleName != nullptr) {
+        return appleName;
     }
 
     return "Unknown Service";
