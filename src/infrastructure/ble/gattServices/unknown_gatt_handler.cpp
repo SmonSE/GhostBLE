@@ -8,6 +8,7 @@
 #include "core/parsing/binary_format_detector.h"
 #include "core/parsing/service_parser.h"
 #include "app/context/globals.h"
+#include "utils/string_utils.h"
 
 
 bool UnknownGATTHandler::isLikelyUtf8Text(const std::string& data) {
@@ -191,7 +192,8 @@ String UnknownGATTHandler::dumpService(NimBLEClient* pClient, const std::string&
 
         // Existing GATT output remains unchanged
         result += line;
-        LOG(LOG_GATT, "     " + line);
+        String indent = StringUtils::indentFromTag(devTag);
+        LOG(LOG_GATT, indent + " " + line);
     }
 
     if (result.isEmpty()) {
