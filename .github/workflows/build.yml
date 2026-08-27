@@ -57,7 +57,7 @@ jobs:
       # =====================================================
       - name: Merge Cardputer binaries
         run: |
-          BUILD_DIR=.pio/build/ghostble
+          BUILD_DIR=.pio/build/ghostble_cardputer
 
           if [ -f "$BUILD_DIR/boot_app0.bin" ]; then
             python -m esptool --chip esp32s3 merge-bin \
