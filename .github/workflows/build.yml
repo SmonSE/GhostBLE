@@ -38,7 +38,7 @@ jobs:
       # Build Cardputer
       # =====================================================
       - name: Build Cardputer
-        run: pio run -e ghostble
+        run: pio run -e ghostble_cardputer
 
       # =====================================================
       # Build StickS3
