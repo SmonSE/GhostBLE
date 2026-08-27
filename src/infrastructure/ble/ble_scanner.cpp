@@ -25,6 +25,7 @@
 #include "core/parsing/sdo_service_parser.h"
 #include "core/parsing/service_parser.h"
 #include "core/security/gatt_fingerprint.h"
+#include "core/parsing/findmy_payload_parser.h"
 
 #include "utils/string_utils.h"
 
@@ -510,7 +511,17 @@ static bool parseDeviceInfo(
                     hexDump += buf;
                 }
                 LOG(LOG_TARGET, indent + " Raw data (" + String(mfg.size()) + " bytes): " + hexDump);
-                
+
+                // Decode the offline-finding payload (skip the 4-byte
+                // "4C 00 12 19" company ID / type / length header).
+                if (mfg.size() >= 4 + 25) {
+                    const uint8_t* payloadStart =
+                        reinterpret_cast<const uint8_t*>(mfg.data()) + 4;
+
+                    FindMyPayload payload = parseFindMyPayload(payloadStart, mfg.size() - 4);
+                    LOG(LOG_TARGET, findMyDecodedSummary(payload));
+                }
+
                 isSecurityOrTrackingDevice = true;
                 ScanContext::susDevice++;
                 DeviceContext::xpManager.awardXP(5.0f);
