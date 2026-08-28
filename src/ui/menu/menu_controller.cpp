@@ -319,7 +319,7 @@ static void buildItems() {
     
     // ── AUDIO ALERTS ─────────────────────────────────────────
     section("ALERTS VOLUME");
-    slider("Volume",          alarmVolume_, 30, 255, 25, applyAlarmVolume);
+    slider("Volume",          alarmVolume_, 0, 255, 25, applyAlarmVolume);
 
     // ── DISPLAY ──────────────────────────────────────────────
     section("DISPLAY");
