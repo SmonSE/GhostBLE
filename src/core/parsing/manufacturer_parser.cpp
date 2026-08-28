@@ -21,7 +21,7 @@ String getManufacturerName(uint16_t id) {
     case 0x0005: return "3Com";
     case 0x0006: return "Microsoft Corporation";
     case 0x000F: return "Broadcom Corporation";
-    case 0x0012: return "Matsushita Electric Industrial Co.";
+    case 0x0012: return "Mitsubishi Electric Corporation";
     case 0x001D: return "Motorola";
     case 0x0025: return "Nokia Mobile Phones";
     case 0x002D: return "Hewlett-Packard Company";
@@ -310,6 +310,25 @@ String getMemberServiceOwner(uint16_t uuid) {
 
     // Husqvarna
     case 0x0426: return "Husqvarna AB";
+
+    // New
+    case 0x0C2E: return "Easee AS";
+    case 0x06D0: return "Etekcity Corporation";
+    case 0x038D: return "Resmed Ltd";
+    case 0x0C01: return "Neowork Sistemas Inteligentes S.A.";
+    case 0x01FE: return "Radio Systems Corporation";
+    case 0x044D: return "VEGA Grieshaber KG";
+    case 0x04A4: return "Herbert Waldmann GmbH & Co. KG";
+    case 0x0082: return "Sennheiser";
+    case 0x068E: return "Razer";
+    case 0x044A: return "Shimano Inc.";
+    case 0x03DD: return "Andreas Stihl AG & Co. KG";
+    case 0x0C73: return "Truma Gerätetechnik GmbH & Co. KG";
+    case 0x02E1: return "Victron Energy BV";
+    case 0x0845: return "Dometic Corporation";
+    case 0x0E88: return "Skewered Fencing, LLC";
+    case 0x00DC: return "Procter & Gamble";
+    case 0x065A: return "Marshall";
 
     default: return "";
     }
