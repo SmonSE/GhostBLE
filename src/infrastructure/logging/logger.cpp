@@ -23,6 +23,8 @@ static uint16_t enabledCategories =
     ~(LOG_SYSTEM |
       LOG_CONTROL |
       LOG_SCAN |
+      LOG_PRIVACY |
+      LOG_SECURITY |
       LOG_BEACON |
       LOG_NOTIFY |
       LOG_GPS);

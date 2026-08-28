@@ -1013,78 +1013,36 @@ void toggleWiFi() {
     NetworkContext::wifiStarted = false;
     NetworkContext::isWebLogActive = false;
     logDisableTarget(TARGET_WEB);
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
-      if (random(2) == 0) {
-        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-      } else {
-        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-      }
-    }
-    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice); // optional: Icon ON
   } else {
     LOG(LOG_CONTROL,"WIFI / WEB SERVER ON");
     startWebLogServer();
     NetworkContext::wifiStarted = true;
     NetworkContext::isWebLogActive = true;
     logEnableTarget(TARGET_WEB);
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
-      if (random(2) == 0) {
-        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-      } else {
-        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-      }
-    }
-    showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice); // optional: Icon ON
   }
-
 }
 
 void toggleWardriving() {
   Serial.printf("call toggleWardriving\n");
     if (NetworkContext::wardrivingEnabled.load()) {
-        Serial.printf("Toggle Wardrive enabled\n");
-        UIContext::isResearchModeActive = false; // disable research mode when wardriving off
-        NetworkContext::wardrivingEnabled.store(false);
-        delay(100); // ensure any ongoing logging finishes before stopping GPS and file
-        NetworkContext::wigleLogger.end();
-        LOG(LOG_CONTROL, "Wardriving OFF (" +
-        String(NetworkContext::wigleLogger.getLoggedCount()) + " logged)");
-        logDisableCategory(LOG_GPS);
-        
-        if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !FileManagerView::isOpen() ) {
-          if (random(2) == 0) {
-            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                          nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-          } else {
-            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                          nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-          }
-        }
-        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
+      Serial.printf("Toggle Wardrive disabled\n");
+      //UIContext::isResearchModeActive = false; // disable research mode when wardriving off
+      NetworkContext::wardrivingEnabled.store(false);
+      delay(100); // ensure any ongoing logging finishes before stopping GPS and file
+      NetworkContext::wigleLogger.end();
+      LOG(LOG_CONTROL, "Wardriving OFF (" +
+      String(NetworkContext::wigleLogger.getLoggedCount()) + " logged)");
+      logDisableCategory(LOG_GPS);
+      showResearchMode();
     } else {
-        Serial.printf("Toggle Wardrive enabled\n");
-        UIContext::isResearchModeActive = true; // enable research mode for wardriving to get aggressive setup
-        NetworkContext::gpsManager.begin(GPSSource::GROVE);
-        NetworkContext::wigleLogger.begin();
-        delay(100); // ensure wigle logger is ready before enabling wardriving
-        LOG(LOG_CONTROL, "Wardriving ON  (" + String(NetworkContext::gpsManager.getSourceName()) + ")");
-        LOG(LOG_CONTROL, "  File: " + NetworkContext::wigleLogger.getFilename());
-
-        if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !ApproachView::isOpen() || !FinderListView::isOpen() || !FileManagerView::isOpen() ) {
-          if (random(2) == 0) {
-            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                          nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, 83, 60);
-          } else {
-            drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
-                          nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);
-          }
-        }
-        showResearchMode();
-        showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
+      Serial.printf("Toggle Wardrive enabled\n");
+      UIContext::isResearchModeActive = true; // enable research mode for wardriving to get aggressive setup
+      NetworkContext::gpsManager.begin(GPSSource::GROVE);
+      NetworkContext::wigleLogger.begin();
+      delay(100); // ensure wigle logger is ready before enabling wardriving
+      LOG(LOG_CONTROL, "Wardriving ON  (" + String(NetworkContext::gpsManager.getSourceName()) + ")");
+      LOG(LOG_CONTROL, "  File: " + NetworkContext::wigleLogger.getFilename());
+      showResearchMode();
     }
 }
 
