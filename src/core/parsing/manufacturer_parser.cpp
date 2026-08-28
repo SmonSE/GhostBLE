@@ -308,6 +308,9 @@ String getMemberServiceOwner(uint16_t uuid) {
     case 0xFEFE: return "GN Hearing A/S";
     case 0xFEFF: return "GN Netcom";
 
+    // Husqvarna
+    case 0x0426: return "Husqvarna AB";
+
     default: return "";
     }
 }

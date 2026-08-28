@@ -20,7 +20,11 @@ enum class MACType {
     Unknown
 };
 
-MACType getMACType(const std::string& mac);
+// isPublicAddrType comes from the BLE stack's own address-type report
+// (e.g. advertisedDevice->getAddress().getType() == BLE_ADDR_PUBLIC),
+// NOT inferred from the MAC bytes — Public vs Random can't be derived
+// from the address itself.
+MACType getMACType(const std::string& mac, bool isPublicAddrType);
 String macTypeToString(MACType type);
 bool isRotatingMAC(MACType type);
 
@@ -32,7 +36,9 @@ bool isUniversallyAdministeredMAC(const std::string& mac);
 bool containsCleartext(const std::vector<uint8_t>& payload);
 
 // Privacy analysis
-void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable, DeviceInfo& dev, const String& devTag = "");
+// isPublicAddrType: pass the advertisement's actual reported address
+// type (Public vs Random) from the BLE stack — see getMACType() above.
+void handleDevicePrivacy(const std::string& name, const std::string& mac, const std::string& adv_data, const std::vector<uint8_t>& payloadVec, bool is_connectable, bool isPublicAddrType, DeviceInfo& dev, const String& devTag = "");
 
 // Fingerprinting
 std::string getIdentityFingerprint(const std::string& name, const std::string& adv_data);

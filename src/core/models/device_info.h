@@ -46,6 +46,7 @@ struct DeviceInfo {
 
     // Security analysis flags
     bool hasWritableChars = false;
+    bool hasWritableWithoutAuth = false;
     bool hasDFUService = false;
     bool hasUARTService = false;
     bool connectionEncrypted = false;

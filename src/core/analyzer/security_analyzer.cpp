@@ -38,7 +38,14 @@ static bool isUARTService(const std::string& uuid) {
 SecurityResult analyzeDeviceSecurity(NimBLEClient* pClient, const DeviceInfo& dev) {
     SecurityResult result;
 
-    if (!pClient || !pClient->isConnected()) return result;
+    if (!pClient || !pClient->isConnected()) {
+        // Distinguish "couldn't verify" from "verified, no issues" —
+        // previously this returned an indistinguishable empty result,
+        // which the caller's `findings.empty()` check then silently
+        // swallowed instead of logging anything.
+        result.connectionFailed = true;
+        return result;
+    }
 
     // -------- 1. Connection encryption check --------
     NimBLEConnInfo connInfo = pClient->getConnInfo();
