@@ -2,6 +2,7 @@
 #include "app/context/globals.h"
 #include "infrastructure/logging/logger.h"
 #include "app/context/scan_context.h"
+#include "core/parsing/manufacturer_parser.h"
 
 #include <map>
 #include <vector>
@@ -28,8 +29,25 @@ enum class DeviceCategory {
     POTENTIAL_VULNERABILITY
 };
 
-MACType getMACType(const std::string& mac)
+// Corrected against Bluetooth Core Spec Vol 6, Part B, §1.3.2.
+//
+// Public vs Random is a BLE-stack-reported flag, not something
+// derivable from the MAC bytes — IEEE-assigned public OUIs can carry
+// any bit pattern in the first octet, so it's trusted here via
+// isPublicAddrType rather than inferred from typeBits.
+//
+// For RANDOM addresses, the top two bits of the first octet indicate
+// the subtype:
+//   11 (0xC0) = Static Random
+//   01 (0x40) = Resolvable Private
+//   00 (0x00) = Non-Resolvable Private
+//   10 (0x80) = Reserved (not a defined subtype)
+MACType getMACType(const std::string& mac, bool isPublicAddrType)
 {
+    if (isPublicAddrType) {
+        return MACType::Public;
+    }
+
     if (mac.length() < 2) return MACType::Unknown;
 
     uint8_t firstByte = std::stoi(mac.substr(0,2), nullptr, 16);
@@ -38,18 +56,16 @@ MACType getMACType(const std::string& mac)
 
     switch(typeBits)
     {
-        case 0x00:
-            return MACType::Public;
-
-        case 0x40:
+        case 0xC0:
             return MACType::StaticRandom;
 
-        case 0x80:
+        case 0x40:
             return MACType::ResolvablePrivate;
 
-        case 0xC0:
+        case 0x00:
             return MACType::NonResolvablePrivate;
 
+        case 0x80:
         default:
             return MACType::Unknown;
     }
@@ -173,6 +189,7 @@ void handleDevicePrivacy(
     const std::string& adv_data,
     const std::vector<uint8_t>& payloadVec,
     bool is_connectable,
+    bool isPublicAddrType,
     DeviceInfo& dev,
     const String& devTag)
 {
@@ -206,13 +223,43 @@ void handleDevicePrivacy(
         isLikelyCleartextBytes(payloadVec);
 
     // SINGLE SOURCE OF TRUTH
-    MACType macType = getMACType(mac);
+    MACType macType = getMACType(mac, isPublicAddrType);
     bool rotating_mac = isRotatingMAC(macType);
     String macPrivacyLabel = macTypeToString(macType);
 
     bool staticPublic_mac = (macType == MACType::Public);
 
+    // --- Consumer audio/wearable detection ---
+    // Company ID is the authoritative signal (assigned by the Bluetooth
+    // SIG, not spoofable via the advertised name like brand-name
+    // substrings are) — but it's only available when the device
+    // actually broadcasts manufacturer-specific data. Some real
+    // captured devices don't (e.g. a JBL Tune 135BT-LE was observed
+    // broadcasting only a name, with an empty manufacturer field), so
+    // the name-substring check is kept as a fallback rather than
+    // replaced outright.
+    uint16_t manufacturerId = 0;
+    bool hasManufacturerId = payloadVec.size() >= 2;
+    if (hasManufacturerId) {
+        manufacturerId = (uint16_t)payloadVec[0] | ((uint16_t)payloadVec[1] << 8);
+    }
+    String manufacturerName = hasManufacturerId ? getManufacturerName(manufacturerId) : "";
+
+    // NOTE: verify "Harman" is actually what your manufacturer_parser
+    // table returns for JBL's Company ID — JBL is a Harman brand and
+    // may be SIG-registered under the parent company name rather than
+    // "JBL" itself.
+    bool isKnownConsumerAudioManufacturer =
+        manufacturerName.indexOf("Sony") != -1 ||
+        manufacturerName.indexOf("Bose") != -1 ||
+        manufacturerName.indexOf("Harman") != -1;
+
+    // AirPods intentionally stays name-based even though Apple resolves
+    // via Company ID too: Apple's Company ID covers iPhone/iPad/Watch/
+    // Mac as well, so matching on manufacturer name alone would widen
+    // this well beyond "consumer audio wearable" to every Apple device.
     bool isLikelyConsumerDevice =
+        isKnownConsumerAudioManufacturer ||
         name.find("JBL") != std::string::npos ||
         name.find("Sony") != std::string::npos ||
         name.find("Bose") != std::string::npos ||
@@ -235,13 +282,13 @@ void handleDevicePrivacy(
 
     String logLineWebSocket =
         devTag + "Name: " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
-        "   Category:          " + categoryStr + "\n" +
-        "   MAC Type:          " + macPrivacyLabel + "\n" +
-        "   Has rotating MAC: " + (rotating_mac ? " YES" : " NO") + "\n" +
-        "   Empty name:       " + (emptyName ? " YES" : " NO") + "\n" +
-        "   Weak name:        " + (weakName ? " YES" : " NO") + "\n" +
-        "   Cleartext data:   " + (adv_contains_cleartext ? " YES" : " NO") + "\n" +
-        "   Connectable:      " + (is_connectable ? " YES" : " NO");
+        "   Category:           " + categoryStr + "\n" +
+        "   MAC Type:           " + macPrivacyLabel + "\n" +
+        "   Has rotating MAC:  " + (rotating_mac ? " YES" : " NO") + "\n" +
+        "   Empty name:        " + (emptyName ? " YES" : " NO") + "\n" +
+        "   Weak name:         " + (weakName ? " YES" : " NO") + "\n" +
+        "   Cleartext data:    " + (adv_contains_cleartext ? " YES" : " NO") + "\n" +
+        "   Connectable:       " + (is_connectable ? " YES" : " NO");
 
     LOG(LOG_PRIVACY,logLineWebSocket);
 

@@ -14,6 +14,7 @@ struct SecurityFinding {
 
 struct SecurityResult {
     bool connectionEncrypted = false;
+    bool connectionFailed = false;
     bool hasDFUService = false;
     bool hasUARTService = false;
     bool hasWritableWithoutAuth = false;

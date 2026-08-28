@@ -1257,16 +1257,18 @@ void scanForDevices() {
         }
 
         // --- Privacy analysis (MAC type, cleartext, rotating address) ---
+        bool isPublicAddrType =(device->getAddress().getType() == BLE_ADDR_PUBLIC);
+
         handleDevicePrivacy(
             std::string(localName.c_str()),
             ScanContext::addrStr,
             advData,
             payloadVec,
             ScanContext::is_connectable,
+            isPublicAddrType,
             dev,
             devTag);
 
-        // Hier muss nach Apple Name device gecheckt werden
         // --- Apple model resolution ---
         // Scan nameList for Apple model identifiers (e.g. "iPhone17,3")
         String modelIdentifier;
@@ -1507,6 +1509,7 @@ void scanForDevices() {
                 dev.connectionEncrypted      = secResult.connectionEncrypted;
                 dev.hasWritableChars         = (secResult.writableCharCount > 0);
                 dev.writableCharCount        = secResult.writableCharCount;
+                dev.hasWritableWithoutAuth   = secResult.hasWritableWithoutAuth; // was previously dropped
                 dev.hasDFUService            = secResult.hasDFUService;
                 dev.hasUARTService           = secResult.hasUARTService;
                 dev.hasSensitiveUnencrypted  = secResult.hasSensitiveServiceUnencrypted;
@@ -1527,10 +1530,16 @@ void scanForDevices() {
                         secLog += "\n   Fingerprint: " + String(secResult.deviceFingerprint.c_str());
                     }
                     LOG(LOG_SECURITY, secLog);
+                } else if (ScanContext::is_connectable) {
+                    LOG(LOG_SECURITY, devTag + "Security: connection failed, unable to verify");
+                } else {
+                    LOG(LOG_SECURITY, devTag + "Security: no issues found (" +
+                        String(secResult.totalCharCount) + " characteristics checked)");
                 }
 
                 // --- Full exposure analysis ---
-                MACType macType = getMACType(device->getAddress().toString().c_str());
+                bool isPublicAddrType = (device->getAddress().getType() == BLE_ADDR_PUBLIC);
+                MACType macType = getMACType(device->getAddress().toString().c_str(), isPublicAddrType);
 
                 dev.mac              = device->getAddress().toString().c_str();
                 dev.isConnectable    = ScanContext::is_connectable;
