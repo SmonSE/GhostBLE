@@ -83,8 +83,19 @@ int calculateExposureScore(const DeviceInfo& dev, ExposureResult& result)
     if (dev.gattHasNameIdentityData)
         score += 10;
 
-    if (dev.gattHasPersonalName)
+    if (dev.gattHasPersonalName) {
         score += 30;
+        // Full name attached to a device is categorically worse than a
+        // generic identifiable name — surface it explicitly, including
+        // the extracted name itself when we have one (see
+        // extractPossibleOwnerName()), instead of only affecting the
+        // score silently.
+        if (!dev.possibleOwnerName.empty()) {
+            result.reasons.push_back("personal name exposed in device data: " + dev.possibleOwnerName);
+        } else {
+            result.reasons.push_back("personal name pattern detected in device data");
+        }
+    }
 
     // -------- Device behavior --------
     if (dev.isConnectable)
