@@ -183,7 +183,7 @@ if (!DeviceContext::deviceConfig.getFirstBootDone()) {
   showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::leakedCounter);
 
   // Start Scan Task (FreeRTOS)
-  xTaskCreatePinnedToCore(scanTask, "ScanTask", 12000, NULL, 1, &scanTaskHandle, 1);
+  xTaskCreatePinnedToCore(scanTask, "ScanTask", 16000, nullptr, 1, &scanTaskHandle, 1);
 }
 
 

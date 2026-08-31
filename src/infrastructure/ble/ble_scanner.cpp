@@ -1006,7 +1006,15 @@ static bool connectAndReadGATT(
                     DeviceContext::xpManager.awardXP(1.5f);
                 }
 
-                if (looksLikePersonalName(rawValue))    dev.gattHasPersonalName = true;
+                if (looksLikePersonalName(rawValue)) {
+                    dev.gattHasPersonalName = true;
+                    if (dev.possibleOwnerName.empty()) {
+                        std::string ownerName = extractPossibleOwnerName(rawValue);
+                        if (!ownerName.empty()) {
+                            dev.possibleOwnerName = ownerName;
+                        }
+                    }
+                }
                 if (looksLikeIdentityData(rawValue))    dev.gattHasIdentityInfo = true;
                 if (looksLikeEnvironmentName(rawValue)) dev.gattHasEnvironmentName = true;
             }
@@ -1055,6 +1063,11 @@ static bool connectAndReadGATT(
     if (isTesla) {
         //LOG(LOG_TARGET, devTag + "Tesla vehicle detected via GATT service");
         nibblesSpeechShowCustom(teslaMsgs[random(TESLA_MSG_COUNT)]);
+    }
+
+    // Fallback / cross-check: NotifyHandler::lastNotifyCount() only counts
+    if (dev.hasNotifyData && dev.notifyCharCount == 0 && gattFingerprint.notify > 0) {
+        dev.notifyCharCount = gattFingerprint.notify;
     }
 
     // --- Erst NACH vollständiger Iteration über ALLE Services reagieren ---
@@ -1367,6 +1380,10 @@ void scanForDevices() {
                 if (!targetDetected) {
                     //LOG(LOG_GATT, devTag + "No target detected via GATT: " + address);
                 }
+
+                // Debug Lines for FreeRTOS
+                Serial.printf("ScanTask stack high-water mark: %u bytes free (min ever seen)\n",
+                    uxTaskGetStackHighWaterMark(NULL));
 
                 // ============================================================
                 // META RAY-BAN GATT SERVICE CHECK

@@ -3,6 +3,7 @@
 #include "infrastructure/logging/logger.h"
 #include "app/context/scan_context.h"
 #include "core/parsing/manufacturer_parser.h"
+#include "core/privacy/exposure_classifier.h"
 
 #include <map>
 #include <vector>
@@ -207,8 +208,12 @@ void handleDevicePrivacy(
         info.seen_macs.push_back(mac);
     }
 
-    if (name.find("von ") != std::string::npos){
-      dev.gattHasPersonalName = true;
+    if (looksLikePersonalName(name)) {
+        dev.gattHasPersonalName = true;
+        std::string ownerName = extractPossibleOwnerName(name);
+        if (!ownerName.empty()) {
+            dev.possibleOwnerName = ownerName;
+        }
     }
 
     if (adv_data.find("Device Information") != std::string::npos &&
@@ -282,13 +287,13 @@ void handleDevicePrivacy(
 
     String logLineWebSocket =
         devTag + "Name: " + String(name.c_str()) + " MAC: " + String(mac.c_str()) + "\n" +
-        "   Category:           " + categoryStr + "\n" +
-        "   MAC Type:           " + macPrivacyLabel + "\n" +
-        "   Has rotating MAC:  " + (rotating_mac ? " YES" : " NO") + "\n" +
-        "   Empty name:        " + (emptyName ? " YES" : " NO") + "\n" +
-        "   Weak name:         " + (weakName ? " YES" : " NO") + "\n" +
-        "   Cleartext data:    " + (adv_contains_cleartext ? " YES" : " NO") + "\n" +
-        "   Connectable:       " + (is_connectable ? " YES" : " NO");
+        "   Category:          " + categoryStr + "\n" +
+        "   MAC Type:          " + macPrivacyLabel + "\n" +
+        "   Has rotating MAC: " + (rotating_mac ? " YES" : " NO") + "\n" +
+        "   Empty name:       " + (emptyName ? " YES" : " NO") + "\n" +
+        "   Weak name:        " + (weakName ? " YES" : " NO") + "\n" +
+        "   Cleartext data:   " + (adv_contains_cleartext ? " YES" : " NO") + "\n" +
+        "   Connectable:      " + (is_connectable ? " YES" : " NO");
 
     LOG(LOG_PRIVACY,logLineWebSocket);
 

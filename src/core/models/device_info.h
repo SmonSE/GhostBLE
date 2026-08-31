@@ -32,6 +32,7 @@ struct DeviceInfo {
     bool advHasName = false;                // name visible without connection
     bool gattHasName = false;               // name discovered via GATT
     bool gattHasPersonalName = false;       // e.g. "A14 von Jochen"
+    std::string possibleOwnerName;          // extracted via extractPossibleOwnerName(), e.g. "Jens Bauer"
     bool gattHasNameIdentityData = false;   // e.g. Device Information Service with unique serial number
 
     bool isConnectable = false;
