@@ -25,7 +25,8 @@
 #include "core/parsing/sdo_service_parser.h"
 #include "core/parsing/service_parser.h"
 #include "core/security/gatt_fingerprint.h"
-#include "core/parsing/findmy_payload_parser.h"
+
+#include "core/findmy/findmy_payload_parser.h"
 
 #include "utils/string_utils.h"
 
@@ -519,7 +520,7 @@ static bool parseDeviceInfo(
                         reinterpret_cast<const uint8_t*>(mfg.data()) + 4;
 
                     FindMyPayload payload = parseFindMyPayload(payloadStart, mfg.size() - 4);
-                    LOG(LOG_TARGET, findMyDecodedSummary(payload));
+                    LOG(LOG_TARGET, findMyDecodedSummary(payload, devTag));
                 }
 
                 isSecurityOrTrackingDevice = true;

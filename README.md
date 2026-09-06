@@ -111,9 +111,29 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
 - Builds **device fingerprints** from advertised UUIDs and GATT profiles
 - **Pairing / bonding state detection** — distinguishes open from bonded devices via ATT error codes
 
+### Find My Tracker Detection & Safety Response
+
+GhostBLE can detect **Apple Find My / Find My Network trackers** and add them to the **Suspicious Devices** list.
+
+For supported trackers, GhostBLE provides a user-controlled **Safety Response**:
+
+- **SEARCH** — locate the tracker using the live RSSI-based Finder Mode
+- **SOUND** — attempt to trigger the tracker's built-in sound to help locate it
+- **CANCEL** — return without interacting with the device
+
+This feature is intended for **privacy research, anti-stalking research, and locating potentially unwanted tracking devices**. The implementation is unofficial and based on publicly available research and reverse-engineering of the relevant BLE protocols. GhostBLE is not affiliated with or endorsed by Apple.
+
+### Manufacturer & Device Identification
+
+The **Manufacturer Parser** has received a major update with a significantly expanded database of Bluetooth company identifiers and manufacturer information.
+
+GhostBLE can now identify **many more BLE devices and manufacturers**, providing more meaningful device names instead of generic `Unknown` entries.
+
+This improves device fingerprinting and makes the scan results, logs, and security analysis much more useful when investigating unknown BLE devices.
+
 ### Parsers
 
-- **Manufacturer parser** — 60+ company IDs from Bluetooth Assigned Numbers Section 7
+- **Manufacturer parser** — expanded database of Bluetooth company identifiers and manufacturer information.
 - **Member Service parser** — 100+ member service UUIDs (Section 3.11): Apple, Google, Samsung, Tesla, Xiaomi, Huawei, Garmin, Polar, Bose, Sennheiser, Medtronic, Abbott, Dexcom and more
 - **Appearance parser** — full subcategory decoding (190+ entries from Section 2.6): watches, medical devices, domestic appliances, vehicles, industrial tools, cookware and more
 - **SDO Service parser** — Section 3.10 special services: Matter (0xFFF6), Zigbee Direct (0xFFF7), ASTM Drone Remote ID (0xFFFA), Thread (0xFFFB), AirFuel (0xFFFC), FIDO U2F (0xFFFD)
