@@ -3,12 +3,15 @@
 #include <NimBLEDevice.h>
 #include <NimBLERemoteService.h>
 #include <NimBLERemoteCharacteristic.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 
 #include "infrastructure/logging/logger.h"
 #include "core/parsing/binary_format_detector.h"
 #include "core/parsing/service_parser.h"
 #include "app/context/globals.h"
 #include "utils/string_utils.h"
+#include "core/parsing/gatt_descriptor_utils.h"
 
 
 bool UnknownGATTHandler::isLikelyUtf8Text(const std::string& data) {
@@ -113,6 +116,40 @@ String UnknownGATTHandler::getUtf8Text(const std::string& data) {
     return String(text.c_str());
 }
 
+// ---------------------------------------------------------------------
+// One-shot notify/indicate capture.
+// Characteristics that are Notify/Indicate-only (no Read bit) were
+// previously skipped entirely - properties were logged but the value
+// was never seen. This subscribes briefly, waits for a single value
+// with a timeout, then unsubscribes.
+// ---------------------------------------------------------------------
+static bool captureOneNotification(NimBLERemoteCharacteristic* pChar,
+                                    std::string& outData,
+                                    uint32_t timeoutMs = 2000) {
+    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
+    if (!sem) return false;
+
+    std::string* capturedPtr = &outData;
+    SemaphoreHandle_t semLocal = sem;
+
+    bool subscribed = pChar->subscribe(
+        true,
+        [capturedPtr, semLocal](NimBLERemoteCharacteristic* c, uint8_t* pData,
+                                 size_t length, bool isNotify) {
+            capturedPtr->assign(reinterpret_cast<char*>(pData), length);
+            xSemaphoreGive(semLocal);
+        });
+
+    bool gotData = false;
+    if (subscribed) {
+        gotData = (xSemaphoreTake(sem, pdMS_TO_TICKS(timeoutMs)) == pdTRUE);
+        pChar->unsubscribe();
+    }
+
+    vSemaphoreDelete(sem);
+    return gotData;
+}
+
 String UnknownGATTHandler::dumpService(NimBLEClient* pClient, const std::string& uuid) {
     String result = "";
 
@@ -138,55 +175,72 @@ String UnknownGATTHandler::dumpService(NimBLEClient* pClient, const std::string&
         String line = "  Char " + String(charUuid.c_str()) +
                       " [" + props + "]";
 
+        // Free label from 0x2901, if the device bothered to set one
+        String userDesc = getCharacteristicUserDescription(pChar);
+        if (!userDesc.isEmpty()) {
+            line += " \"" + userDesc + "\"";
+        }
+
+        std::string raw;
+        bool haveData = false;
+        bool viaNotify = false;
+
         if (pChar->canRead()) {
-            std::string raw = pChar->readValue();
+            raw = pChar->readValue();
+            haveData = !raw.empty();
+        } else if (pChar->canNotify() || pChar->canIndicate()) {
+            // Previously: skipped entirely. Now: one-shot subscribe-and-capture.
+            haveData = captureOneNotification(pChar, raw);
+            viaNotify = haveData;
+            if (!haveData) {
+                line += " (passive: no unsolicited data)";
+            }
+        }
 
-            if (!raw.empty()) {
-                String binaryFormat = detectBinaryFormat(raw);
+        if (haveData) {
+            String binaryFormat = detectBinaryFormat(raw);
 
-                line += " (len=" + String(raw.size()) + ")";
+            line += " (len=" + String(raw.size()) +
+                    (viaNotify ? ", via notify)" : ")");
 
-                if (!binaryFormat.isEmpty()) {
-                    // Known binary format
-                    line += " = [" + binaryFormat + "]";
-                } else {
-                    // HEX dump
-                    String hex = "";
+            if (!binaryFormat.isEmpty()) {
+                // Known binary format
+                line += " = [" + binaryFormat + "]";
+            } else {
+                // HEX dump
+                String hex = "";
 
-                    size_t maxLen = 200;
-                    size_t len = (raw.size() > maxLen)
-                                     ? maxLen
-                                     : raw.size();
+                size_t maxLen = 200;
+                size_t len = (raw.size() > maxLen)
+                                 ? maxLen
+                                 : raw.size();
 
-                    for (size_t i = 0; i < len; i++) {
-                        char buf[4];
-                        snprintf(
-                            buf,
-                            sizeof(buf),
-                            "%02X ",
-                            static_cast<uint8_t>(raw[i])
-                        );
-                        hex += buf;
-                    }
-
-                    if (raw.size() > maxLen) {
-                        hex += "...";
-                    }
-
-                    line += " = " + hex;
-                }
-
-                // ---------------------------------------------------------
-                // UTF-8 / Text detection
-                // ---------------------------------------------------------
-                String text = getUtf8Text(raw);
-
-                if (!text.isEmpty()) {
-                    // Keep LOG_GATT unchanged.
-                    LOG(
-                        LOG_SNIFFED, devTag + "UTF-8: \"" + text + "\""
+                for (size_t i = 0; i < len; i++) {
+                    char buf[4];
+                    snprintf(
+                        buf,
+                        sizeof(buf),
+                        "%02X ",
+                        static_cast<uint8_t>(raw[i])
                     );
+                    hex += buf;
                 }
+
+                if (raw.size() > maxLen) {
+                    hex += "...";
+                }
+
+                line += " = " + hex;
+            }
+
+            // ---------------------------------------------------------
+            // UTF-8 / Text detection
+            // ---------------------------------------------------------
+            String text = getUtf8Text(raw);
+
+            if (!text.isEmpty()) {
+                // Keep LOG_GATT unchanged.
+                LOG(LOG_SNIFFED, devTag + "UTF-8: \"" + text + "\"");
             }
         }
 

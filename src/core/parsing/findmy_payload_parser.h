@@ -1,3 +1,4 @@
+/*
 // findmy_payload_parser.h
 //
 // Decodes the Apple "Offline Finding" (Find My) BLE manufacturer-specific
@@ -86,3 +87,4 @@ inline String findMyDecodedSummary(const FindMyPayload& payload) {
            " (raw hint byte 0x" + String(payload.hintByte, HEX) + ", unofficial decode)";
     return out;
 }
+*/

@@ -21,8 +21,8 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
         }
     }
 
-    // Fallback: Manche Geräte (z.B. Xiaomi Wearables) exponieren 2A2B
-    // unter einem proprietären Service statt 0x1805 — alle Services durchsuchen
+    // Fallback: Some devices (e.g., Xiaomi wearables) expose 2A2B
+    // under a proprietary service instead of 0x1805 — search all services
     if (!pChar) {
         for (auto& svc : pClient->getServices()) {
             NimBLERemoteCharacteristic* candidate = svc->getCharacteristic("2A2B");
@@ -34,12 +34,30 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
         }
     }
 
-    if (!pChar || !pChar->canRead()) {
+    if (!pChar) {
+        LOG(LOG_SCAN, "     No 2A2B (Current Time) characteristic found on this device");
+        return timeStr;
+    }
+
+    if (!pChar->canRead()) {
+        String propStr = "";
+        if (pChar->canWrite())          propStr += "write ";
+        if (pChar->canWriteNoResponse()) propStr += "writeNoResp ";
+        if (pChar->canNotify())         propStr += "notify ";
+        if (pChar->canIndicate())       propStr += "indicate ";
+        if (pChar->canBroadcast())      propStr += "broadcast ";
+        if (propStr.isEmpty())          propStr = "none";
+        LOG(LOG_SCAN, "     2A2B found but not readable (props: " + propStr + ")");
         return timeStr;
     }
 
     std::string raw = pChar->readValue();
+    if (raw.empty()) {
+        LOG(LOG_SCAN, "     2A2B read returned empty (encryption/bonding required?)");
+        return timeStr;
+    }
     if (raw.size() < 7) {
+        LOG(LOG_SCAN, "     2A2B read too short: " + String((int)raw.size()) + " bytes");
         return timeStr;
     }
 
@@ -57,31 +75,14 @@ String CurrentTimeServiceHandler::readCurrentTime(NimBLEClient* pClient) {
     timeStr = "Device Time: " + String(timeBuf) + "\n";
     LOG(LOG_SCAN, "     Device Time: " + String(timeBuf));
 
-    NimBLERemoteCharacteristic* pDow = nullptr;
-    if (timeService) {
-        pDow = timeService->getCharacteristic("2A09");
-    }
-    if (!pDow) {
-        // Auch Day-of-Week ggf. im selben proprietären Service suchen
-        for (auto& svc : pClient->getServices()) {
-            NimBLERemoteCharacteristic* candidate = svc->getCharacteristic("2A09");
-            if (candidate) {
-                pDow = candidate;
-                break;
-            }
-        }
-    }
-
-    if (pDow && pDow->canRead()) {
-        std::string dowRaw = pDow->readValue();
-        if (!dowRaw.empty()) {
-            const char* days[] = {"", "Monday", "Tuesday", "Wednesday",
-                                  "Thursday", "Friday", "Saturday", "Sunday"};
-            uint8_t dow = dowRaw[0];
-            if (dow >= 1 && dow <= 7) {
-                timeStr += "Day of Week: " + String(days[dow]) + "\n";
-                LOG(LOG_SCAN, "     Day of Week: " + String(days[dow]));
-            }
+    // Siehe Bluetooth Core Spec: Current Time Service / Day Date Time.
+    if (raw.size() >= 8) {
+        uint8_t dow = (uint8_t)raw[7];
+        const char* days[] = {"", "Monday", "Tuesday", "Wednesday",
+                              "Thursday", "Friday", "Saturday", "Sunday"};
+        if (dow >= 1 && dow <= 7) {
+            timeStr += "Day of Week: " + String(days[dow]) + "\n";
+            LOG(LOG_SCAN, "     Day of Week: " + String(days[dow]));
         }
     }
 
