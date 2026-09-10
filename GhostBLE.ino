@@ -44,6 +44,7 @@
 
 #include "ui/menu/menu_controller.h"
 #include "ui/filemanager/file_manager_view.h"
+#include "ui/conview/connected_device_view.h"
 
 
 static MenuState menuState;  // globale Instanz
@@ -191,6 +192,14 @@ void loop() {
 #if defined(CARDPUTER)  
   Screenshot::handle();
 #endif  
+
+  static uint32_t lastTick = 0;
+  if (millis() - lastTick >= 1000) {
+    lastTick = millis();
+    if (ConnectedDeviceView::isOpen()) {
+      ConnectedDeviceView::tick();
+    }
+  }
   
   static unsigned long lastCleanup = 0;
   if (NetworkContext::isWebLogActive && millis() - lastCleanup > 1000) {
@@ -235,6 +244,9 @@ void loop() {
           if (FinderListView::isOpen()) {
               LOG(LOG_CONTROL, "ENTER — finder select");
               FinderListView::selectCurrent();
+          } else if (ConnectedDeviceView::isOpen()) {
+              LOG(LOG_CONTROL, "ENTER — connected device select");
+              ConnectedDeviceView::selectCurrent();
           } else if (SusDeviceView::isOpen()) {
               LOG(LOG_CONTROL, "ENTER — sus device select");
               SusDeviceView::selectCurrent();
@@ -258,6 +270,8 @@ void loop() {
                   ApproachView::close();
               } else if (FinderListView::isOpen()) {
                   FinderListView::close();
+              } else if (ConnectedDeviceView::isOpen()) {
+                  ConnectedDeviceView::close();
               } else if (SusDeviceView::isOpen()) {
                   SusDeviceView::close();
               } else if (FileManagerView::isInConfirmMode()) {
@@ -282,6 +296,16 @@ void loop() {
           if (key == ';') FinderListView::navigatePrev();
           if (key == '.') FinderListView::navigateNext();
           if (key == 'f' || key == 'F') FinderListView::refresh();
+        }
+        return;
+      }
+
+      // ── Connected Device View: uniforme Navigation ──
+      if (ConnectedDeviceView::isOpen()) {
+        for (auto key : status.word) {
+          if (key == ';') ConnectedDeviceView::navigatePrev();
+          if (key == '.') ConnectedDeviceView::navigateNext();
+          if (key == '`') ConnectedDeviceView::close();
         }
         return;
       }
@@ -985,7 +1009,7 @@ void onLongPress() {
 
   if (ScanContext::bleScanEnabled) {
     LOG(LOG_CONTROL,"BLE Scan ENABLED");
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !ConnectedDeviceView::isOpen()) {
           drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     }
@@ -997,7 +1021,7 @@ void onLongPress() {
   }
   else {
     LOG(LOG_CONTROL,"BLE Scan DISABLED");
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !ConnectedDeviceView::isOpen()) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     }
