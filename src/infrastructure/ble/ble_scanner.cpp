@@ -13,6 +13,7 @@
 #include "app/context/ui_context.h"
 #include "app/context/network_context.h"
 #include "app/context/sus_log_context.h"
+#include "app/context/connected_device_context.h"
 
 #include "config/detection_config.h"
 
@@ -1374,6 +1375,7 @@ void scanForDevices() {
             // viele Geräte unterstützen deutlich mehr für lange Characteristics
             uint16_t negotiatedMTU = pClient->getMTU();
             LOG(LOG_GATT, devTag + "Default MTU: " + String(negotiatedMTU));
+ 
 
             if (pClient->discoverAttributes()) {
                 // --- Full GATT read + target detection ---
@@ -1474,6 +1476,15 @@ void scanForDevices() {
                 }
 
                 LOG(LOG_SNIFFED, infoLogParsed);
+
+                // Log connection info to ConnectedLog
+                ConnectedLog::add(
+                    modelName.isEmpty() ? localName.c_str() : modelName.c_str(),
+                    ScanContext::addrStr.c_str(),
+                    (int8_t)currentRSSI,
+                    pClient->getConnHandle(),
+                    device->getAddress().getType()   // NEU — das war der fehlende Teil
+                );
 
                 String infoLogRaw = devTag + "Raw GATT:";
                 for (const auto& n : ScanContext::nameList) {

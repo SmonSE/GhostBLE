@@ -22,6 +22,7 @@
 #include "ui/susview/sus_device_view.h"
 #include "ui/finder/finder_list_view.h"
 #include "ui/filemanager/file_manager_view.h"
+#include "ui/conview/connected_device_view.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesHappy.h"
@@ -256,6 +257,13 @@ static void buildItems() {
     action("Manage Log Files", []() {
         MenuController::closeSilent();
         FileManagerView::open();
+    });
+
+    // im buildItems():
+    section("CONNECTABLE DEVICES");
+    action("View Connectable Devices", []() {
+        MenuController::closeSilent();
+        ConnectedDeviceView::open();
     });
 
     // im buildItems():
