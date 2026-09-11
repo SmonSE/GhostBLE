@@ -240,6 +240,24 @@ static void drawSessionScreenDynamic(const GattLogger::SessionInfo& info) {
     M5.Lcd.printf("Notify/Indicate: %lu", (unsigned long)info.notifyCount);
     M5.Lcd.setCursor(4, 78);
     M5.Lcd.printf("Changed (poll):  %lu", (unsigned long)info.changedCount);
+
+    M5.Lcd.fillRect(0, 92, 240, 20, BG);
+
+    if (!info.lastValueDecoded.empty()) {
+        // UUID kürzen, damit sie auf den 240px-Screen passt (Cardputer)
+        String uuidShort = info.lastValueUuid.c_str();
+        if (uuidShort.length() > 8) uuidShort = uuidShort.substring(0, 8) + "...";
+
+        uint32_t ageSec = (millis() - info.lastValueMs) / 1000;
+
+        M5.Lcd.setTextColor(GREEN, BG);
+        M5.Lcd.setCursor(4, 94);
+        M5.Lcd.printf("Last: %s (%lus ago)", uuidShort.c_str(), (unsigned long)ageSec);
+
+        M5.Lcd.setTextColor(GREY, BG);
+        M5.Lcd.setCursor(4, 104);
+        M5.Lcd.print(info.lastValueDecoded.c_str());
+    }
 }
 
 void draw() {
