@@ -30,6 +30,7 @@
 //#include "src/infrastructure/ble/gattServices/pwn_beacon_service.h"
 #include "src/infrastructure/gps/gps_manager.h"
 #include "src/infrastructure/logging/logger.h"
+#include "src/infrastructure/logging/gatt_logger.h"
 #include "src/infrastructure/platform/hardware.h"
 #include "src/infrastructure/platform/hardware_config.h"
 #include "src/infrastructure/storage/screenshot.h"
@@ -1014,8 +1015,10 @@ void onLongPress() {
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     }
     
-    delay(1000);
+    delay(500);
     logNewBoot();
+    delay(50);
+    GattLogger::logBootMarker();
     delay(500);
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
   }

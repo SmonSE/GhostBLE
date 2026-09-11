@@ -244,18 +244,6 @@ Decodes manufacturer data for Apple, Google, Samsung, Epson, and more. Also pars
    - LoRa GPS
 4. Press `BtnG0` to start wardriving
 
-### Web Dashboard
-
-Real-time BLE device discovery via WiFi Access Point and WebSocket:
-
-- **Live device cards** — RSSI signal strength with color coding (green/amber/red), device type tags (CONN, iBeacon, PWN, NOTIFY, SUS)
-- **Trace log** — color-coded by category (scan, gatt, security, beacon, notify, privacy)
-- **Stats bar** — live counters for Spotted / Suspicious / Beacons / PwnBeacons
-- **Device filter** — filter cards by name or MAC address
-- **Settings panel** — configure device name, face, WiFi SSID and password
-- **Auto-reconnect** — WebSocket reconnects automatically after BLE scan interruptions
-- **Display sleep** — display turns off automatically when a web client connects to save resources
-
 ### Logging
 
 All findings are logged to multiple channels simultaneously:
@@ -267,6 +255,38 @@ All findings are logged to multiple channels simultaneously:
 | **Web dashboard** | Real-time via WiFi AP and WebSocket |
 
 Log categories: Scan, GATT, Privacy, Security, Beacon, Control, GPS, System, Target, Notify. Each device gets a **session ID** for cross-log correlation.
+
+## Device Deep-GATT-Logging
+
+Beyond the normal scan cycle (Connect → Read → Disconnect), GhostBLE offers
+a dedicated **Device-GATT-logging mode** for individual devices: the connection is
+kept open and every interaction — services, characteristics,
+notifications/indications, changing values — is continuously logged to the
+SD card.
+
+### Usage
+
+1. Open **"View Connected Devices"** in the main menu.
+2. Select a device → **"START LOG"**.
+3. The main scan stops automatically, GhostBLE reconnects to the chosen
+   device, and logging begins.
+4. An info screen shows runtime, connection status, and event counts.
+5. **Select** on the info screen stops the session manually (it also ends
+   automatically if the device disconnects). The main scan resumes
+   afterward.
+
+### Log format
+
+Written to `/GhostBLE/detailed.log`:
+
+- **Baseline dump** on connect: all services/characteristics with access
+  flags (`R`/`W`/`N`/`I`) and initial values.
+- **`[NOTIFY]` / `[INDICATE]`**: incoming pushed data, logged on change.
+- **`[CHANGED]`**: polled readable characteristics, logged on change.
+- **`Disconnected, reason = ...`**: HCI disconnect reason.
+
+Chatty characteristics (e.g. motion sensors) are throttled to one log entry
+per 200 ms.
 
 ### XP System
 
@@ -355,6 +375,16 @@ module is wired directly to the available GPIOs.
 2. Connect to WiFi AP **`GhostBLE`** (password: **`ghostble123!`**)
 3. Open **`192.168.4.1`** in a browser
 4. Change Settings for wifissid, wifipwd and device name 
+
+Real-time BLE device discovery via WiFi Access Point and WebSocket:
+
+- **Live device cards** — RSSI signal strength with color coding (green/amber/red), device type tags (CONN, iBeacon, PWN, NOTIFY, SUS)
+- **Trace log** — color-coded by category (scan, gatt, security, beacon, notify, privacy)
+- **Stats bar** — live counters for Spotted / Suspicious / Beacons / PwnBeacons
+- **Device filter** — filter cards by name or MAC address
+- **Settings panel** — configure device name, face, WiFi SSID and password
+- **Auto-reconnect** — WebSocket reconnects automatically after BLE scan interruptions
+- **Display sleep** — display turns off automatically when a web client connects to save resources
 
 ---
 
