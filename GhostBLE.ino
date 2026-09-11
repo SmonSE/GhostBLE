@@ -751,6 +751,65 @@ void loop() {
     return;
   }
 
+  // ────────────────────────────────────────────────────────────────
+  // Connected Device View
+  // ────────────────────────────────────────────────────────────────
+  if (ConnectedDeviceView::isOpen()) {
+
+    // ── BtnA short = next ───────────────────────────────────
+    if (M5.BtnA.wasPressed()) {
+
+      ConnectedDeviceView::navigateNext();
+    }
+
+    // ── BtnB short = locate, BtnB 3s = back ────────────────
+    if (M5.BtnB.isPressed()) {
+
+      if (!buttonBHeld) {
+
+        if (buttonBPressStart == 0) {
+          buttonBPressStart = currentTime;
+        }
+        else if (currentTime - buttonBPressStart >= HELP_LONG_PRESS_MS) {
+
+          buttonBHeld = true;
+
+          LOG(LOG_CONTROL, "BtnB 3s — closing device connected view");
+
+          ConnectedDeviceView::close();
+
+          // Open parent view.
+          MenuController::open();
+
+          buttonBPressStart = 0;
+
+          // IMPORTANT:
+          // The BtnB that closed ConnectedDeviceView must not
+          // immediately select something in Main Menu.
+          waitForBtnRelease = true;
+        }
+      }
+
+    } else {
+
+      if (buttonBPressStart > 0 && !buttonBHeld) {
+
+        unsigned long held = currentTime - buttonBPressStart;
+
+        if (held < LONG_PRESS_MS) {
+
+          LOG(LOG_CONTROL, "BtnB short — device connected select (locate)");
+
+          ConnectedDeviceView::selectCurrent();
+        }
+      }
+
+      buttonBPressStart = 0;
+      buttonBHeld = false;
+    }
+
+    return;
+  }
 
   // ────────────────────────────────────────────────────────────────
   // Sus Device View
@@ -812,7 +871,6 @@ void loop() {
 
     return;
   }
-
 
   // ────────────────────────────────────────────────────────────────
   // Main Menu
