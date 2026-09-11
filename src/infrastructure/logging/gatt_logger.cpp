@@ -55,6 +55,21 @@ class LogClientCallbacks : public NimBLEClientCallbacks {
     }
 };
 
+static SemaphoreHandle_t lastValueMutex_ = nullptr;
+static std::string lastValueUuid_;
+static std::string lastValueDecoded_;
+static std::atomic<uint32_t> lastValueMs_{0};
+
+static void updateLastDisplayValue(const std::string& uuid, const std::string& decoded) {
+    if (lastValueMutex_ == nullptr) return;
+    if (xSemaphoreTake(lastValueMutex_, pdMS_TO_TICKS(50)) == pdTRUE) {
+        lastValueUuid_    = uuid;
+        lastValueDecoded_ = decoded;
+        lastValueMs_.store(millis());
+        xSemaphoreGive(lastValueMutex_);
+    }
+}
+
 static LogClientCallbacks logCallbacks_;
 
 static void writeGattLog(const String& line) {
@@ -167,6 +182,7 @@ static String decodeValue(const std::string& uuid, const std::string& v) {
 
 static void ensureLogInfra() {
     if (logMutex_ == nullptr) logMutex_ = xSemaphoreCreateMutex();
+    if (lastValueMutex_ == nullptr) lastValueMutex_ = xSemaphoreCreateMutex();
     if (!SD.exists("/GhostBLE")) SD.mkdir("/GhostBLE");
 }
 
@@ -219,9 +235,13 @@ static void logConsumerTaskFn(void* param) {
 
         notifyCount_.fetch_add(1);
 
+        String decoded = decodeValue(uuid, val);
+
         writeGattLog(String(item.isNotify ? "[NOTIFY] " : "[INDICATE] ") + uuid.c_str() +
                     " (len=" + String(item.len) + ") = " + hexDump(val) +
-                    " {" + decodeValue(uuid, val) + "}");
+                    " {" + decoded + "}");
+
+        updateLastDisplayValue(uuid, std::string(decoded.c_str()));
     }
 }
 
@@ -347,9 +367,13 @@ static void sessionTask(void* param) {
                 lastValues_[uuid] = val;
                 changedCount_.fetch_add(1);
 
+                String decoded = decodeValue(uuid, val);
+
                 writeGattLog("[CHANGED] " + String(uuid.c_str()) +
                             " (len=" + String(val.size()) + ") = " + hexDump(val) +
-                            " {" + decodeValue(uuid, val) + "}");
+                            " {" + decoded + "}");
+
+                updateLastDisplayValue(uuid, std::string(decoded.c_str()));
             }
         }
     }
@@ -385,6 +409,10 @@ static void sessionTask(void* param) {
 void startSession(const std::string& mac, const std::string& label, uint8_t addrType) {
     if (sessionActive_.load()) return;
 
+    lastValueUuid_.clear();
+    lastValueDecoded_.clear();
+    lastValueMs_.store(0);
+
     ensureLogInfra();
 
     notifyCount_.store(0);
@@ -414,6 +442,15 @@ SessionInfo getSessionInfo() {
     info.serviceCount = serviceCount_.load();
     info.charCount    = charCount_.load();
     info.connected    = connected_.load();
+
+    if (lastValueMutex_ != nullptr &&
+        xSemaphoreTake(lastValueMutex_, pdMS_TO_TICKS(50)) == pdTRUE) {
+        info.lastValueUuid    = lastValueUuid_;
+        info.lastValueDecoded = lastValueDecoded_;
+        info.lastValueMs      = lastValueMs_.load();
+        xSemaphoreGive(lastValueMutex_);
+    }
+
     return info;
 }
 
