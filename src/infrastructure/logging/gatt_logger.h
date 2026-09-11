@@ -20,5 +20,5 @@ void startSession(const std::string& mac, const std::string& label, uint8_t addr
 void stopSession();
 bool isSessionActive();
 SessionInfo getSessionInfo();
-
+void logBootMarker();
 }
