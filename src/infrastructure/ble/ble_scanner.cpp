@@ -5,8 +5,6 @@
 #include <vector>
 
 #include "app/features/meta_glasses.h"
-#include "app/features/flock_detection.h"
-
 #include "app/context/device_context.h"
 #include "app/context/network_context.h"
 #include "app/context/scan_context.h"
@@ -593,48 +591,6 @@ static bool parseDeviceInfo(
                 if (result.uuid == 0xFFFA) SdoHandlers::handleDrone(&ctx);
                 if (result.uuid == 0xFFFD) SdoHandlers::handleFido(&ctx);
                 if (result.uuid == 0xFFF6) SdoHandlers::handleMatter(&ctx);
-            }
-        }
-    }
-
-    // ============================================================
-    // FLOCK CAMERA DETECTION
-    // ============================================================
-    FlockDetection::FlockResult flock = FlockDetection::detect(
-        device, localName, manufacturerId);
-
-    if (flock.detected) {
-        FlockDetection::logDetection(devTag, flock,
-            ScanContext::addrStr.c_str(),
-            ScanContext::rssi.load());
-
-        // To Exposure Scoring
-        ScanContext::susDevice++;
-        DeviceContext::xpManager.awardXP(5.0f);  // +5 XP: surveillance device
-        delay(1000);
-
-        // ← Audio alert
-        auto* ms = MenuController::getState();
-        if (ms->audioEnabled && ms->audioFlock) {
-            M5.Speaker.setVolume(MenuController::getAlarmVolume());
-            M5.Speaker.tone(440, 300);   // tiefer Ton = Warnung
-            while (M5.Speaker.isPlaying()) { delay(5); }
-            M5.Speaker.tone(440, 300);
-            while (M5.Speaker.isPlaying()) { delay(5); }
-            M5.Speaker.tone(440, 300);
-        }
-
-        // NibBLEs warning the user by tone if it is activated in the UI
-        nibblesSpeechShowCustom("Flock cam!");
-
-        if (!UIContext::isAngryTaskRunning.load()) { 
-            UIContext::isAngryTaskRunning.store(true);
-
-            if (xTaskCreatePinnedToCore( showAngryExpressionTask, "FlockWarn", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
-            {
-                UIContext::isAngryTaskRunning.store(false);
-                UIContext::angryTaskHandle = nullptr;
-                LOG(LOG_SYSTEM, "Failed to create FlockWarn task");
             }
         }
     }
