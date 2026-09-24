@@ -260,11 +260,13 @@ static void buildItems() {
     });
 
     // im buildItems():
-    section("CONNECTABLE DEVICES");
-    action("View Connectable Devices", []() {
+#if HAS_KEYBOARD
+    section("CONNECTED DEVICES");
+    action("View Connected Devices", []() {
         MenuController::closeSilent();
         ConnectedDeviceView::open();
     });
+#endif
 
     // im buildItems():
     section("SUSPICIOUS DEVICES");

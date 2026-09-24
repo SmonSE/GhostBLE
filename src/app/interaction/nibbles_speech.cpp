@@ -13,6 +13,7 @@
 #include "ui/finder/approach_view.h"
 #include "ui/filemanager/file_manager_view.h"
 #include "ui/conview/connected_device_view.h"
+#include "ui/conview/gatt_console_view.h"
 
 #include "assets/nibblesAngry.h"
 #include "assets/nibblesFront.h"
@@ -167,7 +168,7 @@ void drawThoughtBubble(const char* message, int x0, int y0) {
 
 static void clearThoughtBubble() {
     // Clear thought bubble area
-    if (MenuController::isOpen() || SusDeviceView::isOpen() || ConnectedDeviceView::isOpen() ||
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || ConnectedDeviceView::isOpen() || GattConsoleView::isOpen() ||
         FinderListView::isOpen() || ApproachView::isOpen() || FileManagerView::isOpen()) return;
     UIContext::isSpeechBubbleActive = false;
 
@@ -214,7 +215,7 @@ static void clearThoughtBubble() {
 }
 
 static void showMumble(const char* message, bool force = false) {
-    if (MenuController::isOpen() || SusDeviceView::isOpen() || ConnectedDeviceView::isOpen() ||
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || ConnectedDeviceView::isOpen() || GattConsoleView::isOpen() ||
         FinderListView::isOpen() || ApproachView::isOpen() || FileManagerView::isOpen()) return; 
     if(force || !ScanContext::scanIsRunning){
         M5.Lcd.fillRect(BUBBLE_X, THOUGHT_BUBBLE_Y, BUBBLE_MAX_W, 22, 0x00C4);
