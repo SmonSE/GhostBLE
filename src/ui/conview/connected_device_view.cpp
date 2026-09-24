@@ -9,6 +9,7 @@
 #include "infrastructure/logging/gatt_logger.h"
 #include "app/context/scan_context.h"
 #include "infrastructure/ble/ble_scanner.h"
+#include "ui/conview/gatt_console_view.h"
 
 
 namespace ConnectedDeviceView {
@@ -44,7 +45,7 @@ bool isOpen() { return menuOpen_; }
 
 void navigateNext() {
     if (!menuOpen_ || sessionScreenOpen_) return;
-    if (actionPopupOpen_) { actionCursor_ = (actionCursor_ + 1) % 2; draw(); return; }
+    if (actionPopupOpen_) { actionCursor_ = (actionCursor_ + 1) % 3; draw(); return; }
 
     int total = ConnectedLog::count();
     if (total == 0) return;
@@ -54,7 +55,7 @@ void navigateNext() {
 
 void navigatePrev() {
     if (!menuOpen_ || sessionScreenOpen_) return;
-    if (actionPopupOpen_) { actionCursor_ = (actionCursor_ - 1 + 2) % 2; draw(); return; }
+    if (actionPopupOpen_) { actionCursor_ = (actionCursor_ - 1 + 3) % 3; draw(); return; }
 
     int total = ConnectedLog::count();
     if (total == 0) return;
@@ -113,7 +114,14 @@ void selectCurrent() {
                 draw();
                 break;
             }
-            case 1: { // CANCEL
+            case 1: { // GATT CONSOLE
+                actionPopupOpen_ = false;
+                actionDeviceIdx_ = -1;
+                menuOpen_ = false;   // NUR das — kein MenuController::open()
+                GattConsoleView::open(e.mac, e.addrType);
+                break;
+            }
+            case 2: { // CANCEL
                 actionPopupOpen_ = false;
                 actionDeviceIdx_ = -1;
                 draw();
@@ -158,11 +166,15 @@ static void drawActionPopup() {
         M5.Lcd.print(e.mac);
     }
 
-    const char* options[] = { isLoggingNow ? "STOP LOG" : "START LOG", "CANCEL" };
     constexpr int START_Y = 40;
     constexpr int ACTION_H = 22;
 
-    for (int i = 0; i < 2; ++i) {
+    const char* options[] = {
+        isLoggingNow ? "STOP LOG" : "START LOG",
+        "GATT CONSOLE",
+        "CANCEL"
+    };
+    for (int i = 0; i < 3; ++i) {
         const bool selected = (i == actionCursor_);
         const uint16_t bg = selected ? CURSOR : BG;
         const uint16_t fg = selected ? GREEN : GREY;

@@ -27,7 +27,6 @@
 
 #include "src/infrastructure/ble/ble_scanner.h"
 #include "src/infrastructure/ble/gattServices/init_gatt_service.h"
-//#include "src/infrastructure/ble/gattServices/pwn_beacon_service.h"
 #include "src/infrastructure/gps/gps_manager.h"
 #include "src/infrastructure/logging/logger.h"
 #include "src/infrastructure/logging/gatt_logger.h"
@@ -46,6 +45,7 @@
 #include "ui/menu/menu_controller.h"
 #include "ui/filemanager/file_manager_view.h"
 #include "ui/conview/connected_device_view.h"
+#include "ui/conview/gatt_console_view.h"
 
 
 static MenuState menuState;  // globale Instanz
@@ -195,11 +195,14 @@ void loop() {
 #endif  
 
   static uint32_t lastTick = 0;
-  if (millis() - lastTick >= 1000) {
-    lastTick = millis();
-    if (ConnectedDeviceView::isOpen()) {
-      ConnectedDeviceView::tick();
-    }
+  if (millis() - lastTick >= 500) {
+      lastTick = millis();
+      if (ConnectedDeviceView::isOpen()) {
+          ConnectedDeviceView::tick();
+      }
+      if (GattConsoleView::isOpen()) {   // NEU
+          GattConsoleView::tick();
+      }
   }
   
   static unsigned long lastCleanup = 0;
@@ -236,41 +239,70 @@ void loop() {
   }
 
 #if HAS_KEYBOARD
-  if (M5Cardputer.Keyboard.isChange()) {
+if (M5Cardputer.Keyboard.isChange()) {
     if (M5Cardputer.Keyboard.isPressed()) {
       auto status = M5Cardputer.Keyboard.keysState();
 
-      // ── ENTER: confirm/select — routed to whichever view is active ──
+      // ══════════════════════════════════════════════════════════
+      // NEU — GATT CONSOLE Freitext-Eingabe hat höchste Priorität.
+      // Hier gelten Buchstaben NICHT als Shortcuts (f/F, s/S, etc.)
+      // ══════════════════════════════════════════════════════════
+      if (GattConsoleView::isInputOpen()) {
+          if (status.enter) {
+              LOG(LOG_CONTROL, "GATT Console — send");
+              GattConsoleView::selectCurrent();   // sendet im INPUT-Zustand
+              return;
+          }
+
+          bool escPressed = false;
+          for (auto key : status.word) {
+              if (key == '`') { escPressed = true; break; }
+          }
+          if (escPressed) {
+              GattConsoleView::close();   // INPUT -> zurück zur Liste
+              return;
+          }
+
+          if (status.del) {
+              GattConsoleView::backspace();
+              return;
+          }
+
+          for (auto key : status.word) {
+              GattConsoleView::appendChar(key);
+          }
+          return;
+      }
+
+      // ── ENTER: confirm/select ──────────────────────────────────
       if (status.enter) {
           if (FinderListView::isOpen()) {
-              LOG(LOG_CONTROL, "ENTER — finder select");
               FinderListView::selectCurrent();
+          } else if (GattConsoleView::isOpen()) {                    // NEU
+              GattConsoleView::selectCurrent();
           } else if (ConnectedDeviceView::isOpen()) {
-              LOG(LOG_CONTROL, "ENTER — connected device select");
               ConnectedDeviceView::selectCurrent();
           } else if (SusDeviceView::isOpen()) {
-              LOG(LOG_CONTROL, "ENTER — sus device select");
               SusDeviceView::selectCurrent();
           } else if (FileManagerView::isInConfirmMode()) {
-              LOG(LOG_CONTROL, "ENTER — confirming file delete");
               FileManagerView::confirmDelete();
           } else if (FileManagerView::isOpen()) {
-              LOG(LOG_CONTROL, "ENTER — file manager select");
               FileManagerView::selectCurrent();
           } else if (MenuController::isOpen()) {
-              LOG(LOG_CONTROL, "ENTER — menu select");
               MenuController::selectCurrent();
           }
           return;
       }
 
-      // ── ESC: one step back — closes innermost open view first ──
+      // ── ESC: ein Schritt zurück ────────────────────────────────
       for (auto key : status.word) {
           if (key == '`') {
               if (ApproachView::isOpen()) {
                   ApproachView::close();
               } else if (FinderListView::isOpen()) {
                   FinderListView::close();
+              } else if (GattConsoleView::isOpen()) {                // NEU
+                  GattConsoleView::close();
               } else if (ConnectedDeviceView::isOpen()) {
                   ConnectedDeviceView::close();
               } else if (SusDeviceView::isOpen()) {
@@ -284,6 +316,15 @@ void loop() {
               }
               return;
           }
+      }
+
+      // GATT Console Char-Liste: Navigation
+      if (GattConsoleView::isOpen()) {
+          for (auto key : status.word) {
+              if (key == ';') GattConsoleView::navigatePrev();
+              if (key == '.') GattConsoleView::navigateNext();
+          }
+          return;
       }
 
       // ── Approach View: nur ESC wirkt, sonst nichts weiter verarbeiten ──
@@ -1068,7 +1109,7 @@ void onLongPress() {
 
   if (ScanContext::bleScanEnabled) {
     LOG(LOG_CONTROL,"BLE Scan ENABLED");
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !ConnectedDeviceView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !ConnectedDeviceView::isOpen() || !GattConsoleView::isOpen() ) {
           drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                   nibblesThugLife, NIBBLESTHUGLIFE_WIDTH, NIBBLESTHUGLIFE_HEIGHT, 80, 52);
     }
@@ -1082,7 +1123,7 @@ void onLongPress() {
   }
   else {
     LOG(LOG_CONTROL,"BLE Scan DISABLED");
-    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !ConnectedDeviceView::isOpen()) {
+    if(!MenuController::isOpen() || !SusDeviceView::isOpen() || !FileManagerView::isOpen() || !FinderListView::isOpen() || !ApproachView::isOpen() || !ConnectedDeviceView::isOpen() || !GattConsoleView::isOpen() ) {
       drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, 5, 0,
                     nibblesSad, NIBBLESSAD_WIDTH, NIBBLESSAD_HEIGHT, 83, 56);
     }
