@@ -24,7 +24,7 @@
 #include "core/parsing/sdo_service_parser.h"
 #include "core/parsing/service_parser.h"
 #include "core/security/gatt_fingerprint.h"
-
+#include "core/rssi/rssi_tracker.h"
 #include "core/findmy/findmy_payload_parser.h"
 
 #include "utils/string_utils.h"
@@ -41,12 +41,8 @@
 //  Cleared reactively when heap runs low or registry grows too large.
 // ---------------------------------------------------------------------------
 DeviceRegistry registry;
-
-// ---------------------------------------------------------------------------
-//  Active NimBLE client — single instance, created/deleted per device.
-//  Always set to nullptr after deleteClient() to avoid dangling pointer.
-// ---------------------------------------------------------------------------
-NimBLEClient* pClient = nullptr;
+RssiTracker    rssiTracker;
+NimBLEClient*  pClient = nullptr;
 
 // ---------------------------------------------------------------------------
 //  Tesla speech bubble messages — chosen at random on detection.
@@ -426,6 +422,8 @@ static bool parseDeviceInfo(
     // --- Assign incremental session ID for cross-log correlation ---
     outDeviceSessionId = ScanContext::getOrAssignDeviceId(ScanContext::addrStr);
     devTag = "[#" + String(outDeviceSessionId) + "] ";
+    rssiTracker.update(ScanContext::addrStr, ScanContext::rssi.load());
+
 
     // --- Risk factor: weak / default device name ---
     if (localName == "< -- >"       || localName == "BLE Device" ||
@@ -486,7 +484,7 @@ static bool parseDeviceInfo(
                 nibblesSpeechShowCustom("Meta Glasses!");
             }
         }
-
+        
         // ============================================================
         // APPLE FIND MY TRACKER DETECTION
         // ============================================================
@@ -495,13 +493,19 @@ static bool parseDeviceInfo(
             DeviceContext::xpManager.awardXP(3.0f);
 
             if (isOfflineFinding) {
-                float estDist = powf(10.0f, (float)(DISTANCE_CONSTANT - ScanContext::rssi.load()) / (float)RSSI_CONSTANT);
+                // Partial pubkey — stable identity across MAC rotation,
+                // used as the RssiTracker key for approach/trend detection.
+                String pubkeyKeyArduino = bytesToHexString(mfg.substr(4, 22));
+                std::string pubkeyKey(pubkeyKeyArduino.c_str());
+
+                rssiTracker.update(pubkeyKey, ScanContext::rssi.load());
+                float distance = rssiTracker.estimateDistance(pubkeyKey);
 
                 String indent = StringUtils::indentFromTag(devTag);
                 LOG(LOG_TARGET, devTag + "Find My Tracker detected (offline finding mode)\n"
                     + indent + " Address:  " + String(ScanContext::addrStr.c_str()) + "\n"
                     + indent + " RSSI:     " + String(ScanContext::rssi.load()) + " dBm\n"
-                    + indent + " Distance: ~" + String(estDist, 2) + " m");
+                    + indent + " Distance: ~" + String(distance, 2) + " m");
 
                 // Debug: Manufacturer-Bytes if offline tracker found
                 String hexDump = "";
@@ -526,7 +530,14 @@ static bool parseDeviceInfo(
                 ScanContext::susDevice++;
                 DeviceContext::xpManager.awardXP(5.0f);
 
-                SusLog::add("Find My Tracker", ScanContext::addrStr.c_str(), (int8_t)ScanContext::rssi.load());
+                bool approaching = rssiTracker.isApproaching(pubkeyKey);
+
+                SusLog::add(approaching ? "Find My Tracker (APPROACHING)" : "Find My Tracker",
+                            ScanContext::addrStr.c_str(), (int8_t)ScanContext::rssi.load());
+
+                if (approaching) {
+                    LOG(LOG_TARGET, devTag + "  Tracker is APPROACHING — possible stalking pattern");
+                }
 
                 auto* ms = MenuController::getState();
                 if (ms->audioEnabled && ms->audioSuspicious) {
@@ -1449,7 +1460,7 @@ void scanForDevices() {
                     }
                 }
 
-                float distance = powf(10.0f, (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
+                float distance = rssiTracker.estimateDistance(ScanContext::addrStr);
                 infoLogRaw += "\n" + indent + "Distance: ~" + String(distance, 2) + " m"
                         + "\n" + indent + "RSSI:     " + String(currentRSSI) + " dBm";
                 LOG(LOG_GATT, infoLogRaw);                
@@ -1673,8 +1684,7 @@ void scanForDevices() {
               + indent + "Name:   " + localName + "\n"
               + indent + "Manuf.: " + manufacturerName;
 
-          float distance = powf(10.0f,
-              (float)(DISTANCE_CONSTANT - currentRSSI) / (float)RSSI_CONSTANT);
+          float distance = rssiTracker.estimateDistance(ScanContext::addrStr);
           infoLog += "\n" + indent + "Distance: ~" + String(distance, 2) + " m"
                   + "\n" + indent + "RSSI:     " + String(currentRSSI) + " dBm";
           LOG(LOG_GATT, infoLog);
@@ -1781,6 +1791,7 @@ void scanForDevices() {
 
     // Clear any stale speech bubble that may have been skipped due to queuing
     clearSpeechBubble();
+    rssiTracker.prune();
 
     ScanContext::scanCancelRequested.store(false);
     ScanContext::scanIsRunning.store(false);
