@@ -14,7 +14,6 @@ void MenuSettings::begin() {
     MenuController::setAudioFlock     (prefs.getBool("audioFlock",true));
     MenuController::setAudioDrone     (prefs.getBool("audioDrone",true));
     MenuController::setAudioFlipper   (prefs.getBool("audioFlip", true));
-    MenuController::setAudioPwnBeacon (prefs.getBool("audioPwn",  true));
 
     uint8_t alarmVol = prefs.getUChar("alarmVol", 150);
     MenuController::setAlarmVolumeSilent(alarmVol);
@@ -46,7 +45,6 @@ void MenuSettings::save() {
     prefs.putBool("audioFlock",MenuController::getAudioFlock());
     prefs.putBool("audioDrone",MenuController::getAudioDrone());
     prefs.putBool("audioFlip", MenuController::getAudioFlipper());
-    prefs.putBool("audioPwn",  MenuController::getAudioPwnBeacon());
     prefs.putUChar("brightness", MenuController::getBrightness());
     prefs.putUChar("alarmVol", MenuController::getAlarmVolume());
 

@@ -65,7 +65,7 @@ most overlooked privacy leak in daily life.
 | **M5Stack Cardputer** | ESP32-S3 | 240×135 LCD | Yes | Yes |
 | **M5StickS3** | ESP32-S3 | 240×135 LCD | No (2 buttons) | No |
 
-All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboard, and PwnBeacon. The Cardputer adds keyboard controls, SD card logging, XP persistence, and screenshot capture.
+All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboard. The Cardputer adds keyboard controls, SD card logging, XP persistence, and screenshot capture.
 
 ### 3D printed Cardputer & M5Stick S3 cases
 - [M5 Stack Cardputer ADV Hardcase LoRa Cap](https://makerworld.com/de/models/1810263)
@@ -94,7 +94,6 @@ All devices support BLE scanning, GATT connections, GPS wardriving, WiFi dashboa
   - **URL** — leaks raw URLs (internal hostnames, asset tracker URLs)
   - **TLM** — telemetry data (battery voltage, temperature, uptime)
   - **EID** — ephemeral rotating ID (privacy-aware device)
-- **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters)
 
 ### Privacy Heuristics
 
@@ -145,7 +144,6 @@ This improves device fingerprinting and makes the scan results, logs, and securi
 - **Tesla** — detected via iBeacon UUID, GATT service, and name pattern matching
 - **LightBlue** — app-based BLE testing tool detected by known service UUIDs
 - **Drones** — ASTM Remote ID detection via SDO service UUID 0xFFFA
-- **PwnBeacon / Pwnagotchi** — detects and reads PwnGrid beacons (identity, face, pwnd counters, messages)
 - **XiaoBiscuit** — detected by known service UUIDs
 - **Card Skimmer** - detected by known device names
 
@@ -214,16 +212,6 @@ When a drone broadcasting Remote ID is detected via BLE service `0xFFFA`:
 > Remote ID is mandatory for drones >250g in the EU (2019/947) and US (FAA Part 89)
 > since 2023. GhostBLE decodes all six ASTM F3411-22a message types: Basic ID,
 > Location, Authentication, Self-ID, System (operator GPS), and Operator ID.
-
-### PwnBeacon (not working in stealth mode)
-
-GhostBLE acts as both a PwnBeacon **client** (scanner) and **server** (advertiser), compatible with [PwnBook](https://github.com/pfefferle/PwnBook) and [Palnagotchi](https://github.com/pfefferle/palnagotchi):
-
-- Advertises as a PwnBeacon with SHA-256 fingerprint, identity JSON, face, and device name
-- Detects nearby PwnBeacon peers via advertisement service data
-- Reads full peer info via GATT (identity, face, name, message)
-- Signal/ping characteristic for peer interaction
-- Pwnd counters update dynamically during scanning
 
 ### Manufacturer Identification
 
@@ -297,7 +285,6 @@ GhostBLE gamifies the scanning process with experience points:
 | Device discovered | +0.1 |
 | GATT connection success | +0.5 |
 | Characteristic subscription | +1.0 |
-| PwnBeacon detected | +1.0 |
 | Notify data (unknown char) | +1.5 |
 | Manufacturer data decoded | +2.0 |
 | Suspicious device found | +2.0 |
@@ -380,7 +367,7 @@ Real-time BLE device discovery via WiFi Access Point and WebSocket:
 
 - **Live device cards** — RSSI signal strength with color coding (green/amber/red), device type tags (CONN, iBeacon, PWN, NOTIFY, SUS)
 - **Trace log** — color-coded by category (scan, gatt, security, beacon, notify, privacy)
-- **Stats bar** — live counters for Spotted / Suspicious / Beacons / PwnBeacons
+- **Stats bar** — live counters for Spotted / Suspicious / Beacons
 - **Device filter** — filter cards by name or MAC address
 - **Settings panel** — configure device name, face, WiFi SSID and password
 - **Auto-reconnect** — WebSocket reconnects automatically after BLE scan interruptions

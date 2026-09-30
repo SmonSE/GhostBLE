@@ -37,7 +37,6 @@ struct MenuState {
     bool audioFlock        = true;
     bool audioDrone        = false;
     bool audioFlipper      = true;
-    bool audioPwnBeacon    = true;
     bool audioEvilMode     = false;
 };
 
@@ -62,9 +61,6 @@ void setAudioDrone(bool v);
 
 bool getAudioFlipper();
 void setAudioFlipper(bool v);
-
-bool getAudioPwnBeacon();
-void setAudioPwnBeacon(bool v);
 
 bool getResearchMode();
 void setResearchMode(bool v);
