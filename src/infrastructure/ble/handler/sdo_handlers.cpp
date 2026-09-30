@@ -8,6 +8,8 @@
 #include "app/context/sus_log_context.h"
 
 #include "ui/menu/menu_controller.h"
+#include "infrastructure/audio/audio_alerts.h"
+
 
 static unsigned long lastDroneAlert = 0;
 static const unsigned long DRONE_ALERT_COOLDOWN = 5000;
@@ -25,16 +27,8 @@ void SdoHandlers::handleDrone(const SdoContext* ctx) {
             LOG(LOG_BEACON, "[SDO] " + drone.summary());
             DeviceContext::xpManager.awardXP(5.0f);  // +5.0 XP: Drone ID decoded
 
-            // ← Audio alert
-            auto* ms = MenuController::getState();
-            if (ms->audioEnabled && ms->audioDrone) {
-                M5.Speaker.setVolume(MenuController::getAlarmVolume());
-                M5.Speaker.tone(2093, 150);  // hoher Ton = Drohne
-                delay(200);
-                M5.Speaker.tone(1568, 150);
-                delay(200);
-                M5.Speaker.tone(2093, 150);
-            }
+            // Play alert sound and show speech bubble
+            AudioAlerts::playDroneAlert();
 
             ScanContext::susDevice++;
             if (drone.isEmergency()) {
@@ -62,11 +56,8 @@ void SdoHandlers::handleDrone(const SdoContext* ctx) {
         SusLog::add("Drone (unparsed)", ctx->mac.c_str(), (int8_t)ctx->rssi);
     }
 
-    auto* ms = MenuController::getState();
-    if (ms->audioEnabled && ms->audioDrone) {
-        M5.Speaker.setVolume(MenuController::getAlarmVolume());
-        M5.Speaker.tone(2093, 150);
-    }
+    // Play alert sound and show speech bubble
+    AudioAlerts::playDroneAlertShort();
 }
 
 // ===== FIDO Handler =====

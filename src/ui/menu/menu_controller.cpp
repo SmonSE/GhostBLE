@@ -137,14 +137,12 @@ bool getAudioSuspicious()  { return state_ ? state_->audioSuspicious  : true; }
 bool getAudioFlock()       { return state_ ? state_->audioFlock       : true; }
 bool getAudioDrone()       { return state_ ? state_->audioDrone       : true; }
 bool getAudioFlipper()     { return state_ ? state_->audioFlipper     : true; }
-bool getAudioPwnBeacon()   { return state_ ? state_->audioPwnBeacon   : true; }
 
 void setAudioEnabled(bool v)    { if (state_) state_->audioEnabled    = v; }
 void setAudioSuspicious(bool v) { if (state_) state_->audioSuspicious = v; }
 void setAudioFlock(bool v)      { if (state_) state_->audioFlock      = v; }
 void setAudioDrone(bool v)      { if (state_) state_->audioDrone      = v; }
 void setAudioFlipper(bool v)    { if (state_) state_->audioFlipper    = v; }
-void setAudioPwnBeacon(bool v)  { if (state_) state_->audioPwnBeacon  = v; }
 
 void toggleDisplaySleep() {
     bool enabled = !NetworkContext::displaySleepEnabled.load();
@@ -325,7 +323,6 @@ static void buildItems() {
     toggle(" Flock camera",    s.audioFlock,      true, &s.audioEnabled);
     toggle(" Drone",           s.audioDrone,      true, &s.audioEnabled);
     toggle(" Flipper Zero",    s.audioFlipper,    true, &s.audioEnabled);
-    toggle(" PwnBeacon",       s.audioPwnBeacon,  true, &s.audioEnabled);
     
     // ── AUDIO ALERTS ─────────────────────────────────────────
     section("ALERTS VOLUME");

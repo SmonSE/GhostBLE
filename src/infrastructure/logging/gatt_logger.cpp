@@ -337,6 +337,7 @@ static void sessionTask(void* param) {
 
     notifyQueue_ = xQueueCreate(32, sizeof(NotifyLogItem));
     lastLogTime_.clear();
+    
     xTaskCreatePinnedToCore(logConsumerTaskFn, "GattLogConsumer", 6144, nullptr, 3, &logConsumerTask_, 1);
 
     for (auto* chr : toSubscribe) {

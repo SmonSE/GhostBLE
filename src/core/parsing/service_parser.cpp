@@ -110,11 +110,6 @@ String getServiceName(const String& uuid) {
         }
     }
 
-    // 128-bit vendor-specific UUIDs
-    if (normalized.equalsIgnoreCase(PWNBEACON_SERVICE_UUID)) {
-        return "PwnBeacon (PwnGrid/BLE)";
-    }
-
     if (normalized.equalsIgnoreCase(TESLA_BLE_SERVICE_UUID)) {
         return "Tesla Vehicle (BLE Key)";
     }

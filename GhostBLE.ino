@@ -116,13 +116,6 @@ void setup() {
 
   registerGATTServiceHandlers();
   LOG(LOG_SYSTEM, "BLE initialized successfully.");
-
-  // Start PwnBeacon advertising so other devices can discover us
-  if (!DeviceContext::deviceConfig.getStealthMode()) {
-      //PwnBeaconServiceHandler::startAdvertising(
-      //    DeviceContext::deviceConfig.getName(),
-      //    DeviceContext::deviceConfig.getFace());
-  }
   
   drawOverlay(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLESFRONT_HEIGHT, 5, 0);
   drawOverlay(nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, 83, 60);

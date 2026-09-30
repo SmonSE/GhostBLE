@@ -26,7 +26,6 @@ void sendDevice(const DeviceInfo& dev,
                 int               ghostId,
                 int               rssi,
                 bool              isBeacon    = false,
-                bool              isPwnBeacon = false,
                 bool              hasNotify   = false);
 
 // Send a log line. Category matches CSS class in the frontend:

@@ -18,14 +18,6 @@ extern const char* CATHACK_SERVICE_UUID_3;
 extern const char* TESLA_BLE_SERVICE_UUID;
 extern const char* TESLA_IBEACON_UUID;
 
-// ===== PwnBeacon UUIDs =====
-extern const char* PWNBEACON_SERVICE_UUID;
-extern const char* PWNBEACON_IDENTITY_CHAR_UUID;
-extern const char* PWNBEACON_FACE_CHAR_UUID;
-extern const char* PWNBEACON_NAME_CHAR_UUID;
-extern const char* PWNBEACON_SIGNAL_CHAR_UUID;
-extern const char* PWNBEACON_MESSAGE_CHAR_UUID;
-
 // ===== XIAO BISCUIT UUIDs =====
 extern const char* XIAO_BISCUIT_SERVICE_UUID;
 extern const char* XIAO_BISCUIT_SERVICE_UUID_2;

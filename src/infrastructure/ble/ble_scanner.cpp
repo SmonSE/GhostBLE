@@ -16,6 +16,7 @@
 #include "config/detection_config.h"
 
 #include "ui/menu/menu_controller.h"
+#include "ui/tasks/ui_expression_tasks.h"
 
 #include "core/parsing/appearance_parser.h"
 #include "core/parsing/binary_format_detector.h"
@@ -26,12 +27,14 @@
 #include "core/security/gatt_fingerprint.h"
 #include "core/rssi/rssi_tracker.h"
 #include "core/findmy/findmy_payload_parser.h"
+#include "core/detection/known_device_msg.h"
 
 #include "utils/string_utils.h"
 
 #include "gattServices/notify_handler.h"
 
 #include "infrastructure/ble/handler/sdo_handlers.h"
+#include "infrastructure/audio/audio_alerts.h"
 
 #include "web/web_sender.h"
 
@@ -44,41 +47,6 @@ DeviceRegistry registry;
 RssiTracker    rssiTracker;
 NimBLEClient*  pClient = nullptr;
 
-// ---------------------------------------------------------------------------
-//  Tesla speech bubble messages — chosen at random on detection.
-// ---------------------------------------------------------------------------
-static const char* teslaMsgs[] = {
-    "Oh! Tesla!",
-    "Ooo Tesla!",
-    "Hey Tesla!",
-    "Sniff Tesla!",
-    "Tesla ping!"
-};
-static constexpr int TESLA_MSG_COUNT = sizeof(teslaMsgs) / sizeof(teslaMsgs[0]);
-
-// ---------------------------------------------------------------------------
-//  Xiao Biscuit speech bubble messages — chosen at random on detection.
-// ---------------------------------------------------------------------------
-static const char* biscuitMsgs[] = {
-    "Ooo Biscuit!",
-    "Hey Biscuit!",
-    "Biscuit spotted!",
-    "Sniff Biscuit!",
-    "Biscuit ping!"
-};
-static constexpr int BISCUIT_MSG_COUNT = sizeof(biscuitMsgs) / sizeof(biscuitMsgs[0]);
-
-// ---------------------------------------------------------------------------
-//  Flipper Zero speech bubble messages — chosen at random on detection.
-// ---------------------------------------------------------------------------
-static const char* flipperMsgs[] = {
-    "Oh! Flipper!",
-    "Ooo Flipper!",
-    "Hey Flipper!",
-    "Sniff Flipper!",
-    "Flipper ping!"
-};
-static constexpr int FLIPPER_MSG_COUNT = sizeof(flipperMsgs) / sizeof(flipperMsgs[0]);
 
 // ---------------------------------------------------------------------------
 //  Heart animation task flag.
@@ -104,25 +72,6 @@ struct IBeaconInfo {
     uint16_t    minor    = 0;
     int8_t      txPower  = 0;
 };
-
-static bool isLikelyJson(const std::string& value) {
-    if (value.empty()) return false;
-
-    // Führende Whitespaces überspringen
-    size_t start = 0;
-    while (start < value.size() && isspace((unsigned char)value[start])) start++;
-    if (start >= value.size()) return false;
-
-    char first = value[start];
-    if (first != '{' && first != '[') return false;
-
-    // Trailing Whitespaces überspringen, letztes Zeichen prüfen
-    size_t end = value.size() - 1;
-    while (end > start && isspace((unsigned char)value[end])) end--;
-
-    char last = value[end];
-    return (first == '{' && last == '}') || (first == '[' && last == ']');
-}
 
 static void logGpsTimestampToActiveCategories(const String& devTag)
 {
@@ -298,24 +247,6 @@ static float estimateDistance(int txPower, int rssi) {
 }
 
 // ===========================================================================
-//  Helper: check if a raw string is printable ASCII (32–126).
-//  Used to filter binary garbage from GATT characteristic values.
-// ===========================================================================
-static bool isPrintableText(const std::string& s)
-{
-    if (s.empty())
-        return false;
-
-    for (unsigned char c : s)
-    {
-        if (c < 32 || c > 126)
-            return false;
-    }
-
-    return true;
-}
-
-// ===========================================================================
 //  Helper: convert raw bytes to an uppercase hex string ("AA BB CC ...").
 // ===========================================================================
 static String bytesToHexString(const std::string& data) {
@@ -350,7 +281,6 @@ void stopBleScan() {
 //  parseDeviceInfo
 //
 //  Extracts address, name, RSSI, manufacturer data, service UUIDs, iBeacon,
-//  PwnBeacon, and advertisement service data from the advertised device.
 //
 //  Applies early-exit filters:
 //    - null device
@@ -368,8 +298,6 @@ static bool parseDeviceInfo(
     String&       manufacturerName,
     bool&         isIBeacon,
     IBeaconInfo&  beacon,
-    //bool&         isPwnBeacon,
-    //PwnBeaconInfo& pwnBeacon,
     bool&         hasCustomService,
     bool&         hasWeakName,
     bool&         isUnknownManufacturer,
@@ -539,13 +467,8 @@ static bool parseDeviceInfo(
                     LOG(LOG_TARGET, devTag + "  Tracker is APPROACHING — possible stalking pattern");
                 }
 
-                auto* ms = MenuController::getState();
-                if (ms->audioEnabled && ms->audioSuspicious) {
-                    M5.Speaker.setVolume(MenuController::getAlarmVolume());
-                    M5.Speaker.tone(1200, 150);
-                    while (M5.Speaker.isPlaying()) { delay(5); }
-                    M5.Speaker.tone(1200, 150);
-                }
+                // Play alert sound and show speech bubble
+                AudioAlerts::playFindMyTrackerAlert();
 
                 nibblesSpeechShowCustom("Tracker?!");
             } else {
@@ -638,23 +561,6 @@ static bool parseDeviceInfo(
                 serviceSummary += "\n" + SERVICE_INDENT;
 
             serviceSummary += serviceName + " (" + shortUUID + ")";
-        }
-
-            // PwnBeacon detection via service UUID
-            if (svcUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
-                //isPwnBeacon = true;
-                DeviceContext::beaconsFound++;
-                //DeviceContext::pwnbeaconsFound++;
-
-                if (!heartTaskRunning.load()) {
-                    heartTaskRunning.store(true);
-
-                    if (xTaskCreatePinnedToCore( heartTask, "Heart", 2048, nullptr, 1, nullptr, 1) != pdPASS)
-                    {
-                        heartTaskRunning.store(false);
-                    }
-                }
-                LOG(LOG_BEACON, devTag + "PwnBeacon detected (service UUID)!");
             }
         }
         LOG(LOG_GATT, svcLog);
@@ -742,25 +648,6 @@ static bool parseDeviceInfo(
                     nibblesSpeechShowCustom(fmdn.unwantedTracking ? "Stalker?!" : "FindMy tag");
                 }
             }
-
-            /*
-            // PwnBeacon service data payload
-            if (svcDataUUID.equals(NimBLEUUID(PWNBEACON_SERVICE_UUID))) {
-                pwnBeacon = PwnBeaconServiceHandler::parseAdvertisement(
-                    (const uint8_t*)svcData.data(), svcData.length());
-
-                if (pwnBeacon.valid) {
-                    isPwnBeacon = true;
-                    DeviceContext::xpManager.awardXP(1.0f);  // +1.0 XP: PwnBeacon detected
-
-                    LOG(LOG_BEACON, devTag + "PwnBeacon detected!\n"
-                        "   Name:     " + pwnBeacon.name + "\n"
-                        "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
-                        "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
-                        "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint));
-                }
-            }
-            */
         }
         LOG(LOG_GATT, sdLog);
     }
@@ -799,7 +686,7 @@ static bool connectAndReadGATT(
             NimBLERemoteCharacteristic* nameChr = gasSvc->getCharacteristic("2A00");
             if (nameChr && nameChr->canRead()) {
                 std::string val = nameChr->readValue();
-                if (!val.empty() && isPrintableText(val)) {
+                if (!val.empty() && StringUtils::isPrintableText(val)) {
                     localName       = val.c_str();
                     dev.name        = val;
                     dev.gattHasName = true;
@@ -935,7 +822,7 @@ static bool connectAndReadGATT(
                 while (!descValue.empty() && descValue.back() == '\0') {
                     descValue.pop_back();
                 }
-                if (!descValue.empty() && isPrintableText(descValue)) {
+                if (!descValue.empty() && StringUtils::isPrintableText(descValue)) {
                     LOG(LOG_GATT, devTag + "Descriptor [" + String(charUuid.c_str()) + "]: " + String(descValue.c_str()));
                     ScanContext::nameList.push_back(descValue);
                     DeviceContext::xpManager.awardXP(1.0f);  // +1.0 XP: known characteristic decoded
@@ -956,21 +843,17 @@ static bool connectAndReadGATT(
                     String(rawValue.size()) + "): [" + binaryFormat + "]");
             }
 
-            if (!rawValue.empty() && isPrintableText(rawValue)) {
+            if (!rawValue.empty() && StringUtils::isPrintableText(rawValue)) {
                 dev.gattHasName = true;
                 ScanContext::nameList.push_back(rawValue);
 
                 bool alreadyDumped = !GATTServiceRegistry::getLastResult(serviceUuid).isEmpty();
 
                 if (!alreadyDumped) {
-                    //LOG(LOG_GATT, devTag + "  Char [" + String(charUuid.c_str()) + "] ASCII: " + String(rawValue.c_str()));
-                    //delay(10);  // allow log to flush before next read
                     LOG(LOG_SNIFFED, devTag + "ASCII: " + String(rawValue.c_str()));
                 }
 
-                if (isLikelyJson(rawValue)) {
-                    //LOG(LOG_GATT, devTag + "  [JSON]: " + String(rawValue.c_str()));
-                    //delay(10);
+                if (StringUtils::isLikelyJson(rawValue)) {
                     LOG(LOG_SNIFFED, devTag + "JSON:  " + String(rawValue.c_str()));
                     DeviceContext::xpManager.awardXP(1.5f);
                 }
@@ -1047,29 +930,15 @@ static bool connectAndReadGATT(
 
         SusLog::add(targetWasLabel.c_str(), address.c_str(), (int8_t)ScanContext::rssi.load());
 
-        // ← Audio alert
-        auto* ms = MenuController::getState();
-        if (ms->audioEnabled && ms->audioSuspicious) {
-            M5.Speaker.setVolume(MenuController::getAlarmVolume());
-            M5.Speaker.tone(1800, 160);
-            while (M5.Speaker.isPlaying()) { delay(5); }
-            M5.Speaker.tone(1400, 180);
-            while (M5.Speaker.isPlaying()) { delay(5); }
-            M5.Speaker.tone(1000, 200);
-        }
+        // Audio alert and speech bubble for target detection
+        AudioAlerts::playGattTargetAlert();
 
         vTaskDelay(pdMS_TO_TICKS(2000));
 
-        if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled)
-        {
-            UIContext::isAngryTaskRunning.store(true);
-
-            if (xTaskCreatePinnedToCore(showAngryExpressionTask, "AngryFace", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
-            {
-                LOG(LOG_SYSTEM, "Failed to create AngryFace task");
-                UIContext::isAngryTaskRunning.store(false);
-                UIContext::angryTaskHandle = nullptr;
-            }
+        // Ui expression task for angry face if display is enabled
+        if (NetworkContext::displayEnabled) {
+            UIExpressionTasks::showIfNotRunning(showAngryExpressionTask, "AngryFace",
+                UIContext::isAngryTaskRunning, UIContext::angryTaskHandle, 4096, 5, 1);
         }
 
         return true;  // target found for this device
@@ -1119,17 +988,16 @@ static void handleExposureResult(
 //  Main scan loop — called from scanTask() on Core 1.
 //
 //  Flow:
-//    1. Start passive NimBLE scan (4 seconds)
-//    2. Restart PwnBeacon advertising (scanning pauses it)
-//    3. For each discovered device:
+//    1. Start passive NimBLE scan (3 seconds)
+//    2. For each discovered device:
 //       a. parseDeviceInfo()   — advertisement layer
 //       b. Privacy / exposure analysis
 //       c. Connect + readGATT  — if signal strong enough
 //       d. Security analysis
 //       e. Full exposure analysis + logging
 //       f. Wardriving GPS log  — if enabled and GPS fix available
-//    4. Print scan summary
-//    5. Save XP to SD card
+//    3. Print scan summary
+//    4. Save XP to SD card
 // ===========================================================================
 void scanForDevices() {
     DeviceInfo dev;
@@ -1153,17 +1021,12 @@ void scanForDevices() {
 
     pScan->clearResults();
     pScan->setActiveScan(UIContext::isResearchModeActive.load()); // set by research mode that user device to active scan for more aggressive fingerprinting
-    pScan->setPhy(NimBLEScan::Phy::SCAN_1M);
+    pScan->setPhy(NimBLEScan::Phy::SCAN_ALL);
     pScan->setInterval(BLE_SCAN_INTERVAL);
     pScan->setWindow(BLE_SCAN_WINDOW);
     delay(100);  // brief stability delay before scan
 
-    NimBLEScanResults results = pScan->getResults(4000);  // 4-second scan window
-
-    // Restart PwnBeacon advertising (NimBLE stops advertising during scan)
-    //PwnBeaconServiceHandler::updateCounters(
-    //    ScanContext::targetConnects.load(),
-    //    ScanContext::allSpottedDevice.load());
+    NimBLEScanResults results = pScan->getResults(3000);  // 3-second scan window
 
     // Brief advertising window before processing — lets peers discover us
     vTaskDelay(pdMS_TO_TICKS(ADV_WINDOW_MS));
@@ -1203,11 +1066,9 @@ void scanForDevices() {
         bool hasWritableChar            = false;
         bool proprietary                = false;
         bool isIBeacon                  = false;
-        //bool isPwnBeaconDevice          = false;
         int  devSessionId               = 0;
 
         IBeaconInfo   beacon;
-        //PwnBeaconInfo pwnBeacon;
 
         // --- Advertisement layer parsing + early filters ---
         if (!parseDeviceInfo(device, manufacturerId, manufacturerName,
@@ -1298,17 +1159,10 @@ void scanForDevices() {
 
             WebSender::sendDevice(dev, devSessionId, currentRSSI, isIBeacon, dev.hasNotifyData);
 
-            // Sad expression: device visible but unreachable
-            if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load())
-            {
-                UIContext::isSadTaskRunning.store(true);
-
-                if (xTaskCreatePinnedToCore( showSadExpressionTask, "SadFace", 4096, nullptr, 3, &UIContext::sadTaskHandle, 1) != pdPASS)
-                {
-                    LOG(LOG_SYSTEM, "Failed to create SadFace task");
-                    UIContext::isSadTaskRunning.store(false);
-                    UIContext::sadTaskHandle = nullptr;
-                }
+            //  Ui expression task for sad face if display is enabled
+            if (!UIContext::isAngryTaskRunning.load()) {
+                UIExpressionTasks::showIfNotRunning(showSadExpressionTask, "SadFace",
+                    UIContext::isSadTaskRunning, UIContext::sadTaskHandle, 4096, 3, 1);
             }
             continue;
         }
@@ -1373,30 +1227,18 @@ void scanForDevices() {
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
                     DeviceContext::xpManager.awardXP(10.0f);
-                    delay(1000);
+                    delay(500);
 
-                    auto* ms = MenuController::getState();
-                    if (ms->audioEnabled && ms->audioEvilMode) {
-                        M5.Speaker.setVolume(MenuController::getAlarmVolume());
-                        M5.Speaker.tone(523, 100);
-                        while (M5.Speaker.isPlaying()) { delay(5); }
-                        M5.Speaker.tone(659, 100);
-                        while (M5.Speaker.isPlaying()) { delay(5); }
-                        M5.Speaker.tone(784, 100);
-                        while (M5.Speaker.isPlaying()) { delay(5); }
-                        M5.Speaker.tone(1047, 200);
-                    }
-                    
+                    // Play alert and show speech bubble
+                    AudioAlerts::playMetaGlassesAlert();
                     nibblesSpeechShowCustom("Recording?");
                     
+                    // Ui expression task for angry face if display is enabled
                     if (!UIContext::isAngryTaskRunning.load()) {
-                        if (xTaskCreatePinnedToCore(showAngryExpressionTask, "MetaWarning",
-                            4096, NULL, 5, &UIContext::angryTaskHandle, 1) != pdPASS) {
-                            LOG(LOG_SYSTEM, "Failed to create MetaWarning task");
-                            UIContext::isAngryTaskRunning.store(false);
-                        }
+                        UIExpressionTasks::showIfNotRunning(showAngryExpressionTask, "MetaWarning",
+                        UIContext::isAngryTaskRunning, UIContext::angryTaskHandle, 4096, 5, 1);
                     }
-                    
+                                        
                     vTaskDelay(pdMS_TO_TICKS(3000));
                 }
 
@@ -1488,17 +1330,6 @@ void scanForDevices() {
                         "   Manuf.:   " + manufacturerName);
                 }
 
-                // --- PwnBeacon: full GATT read ---
-                //if (isPwnBeaconDevice) {
-                //    PwnBeaconServiceHandler::readGATT(pClient, pwnBeacon);
-                //    LOG(LOG_BEACON, devTag + "Beacon type: PwnBeacon\n"
-                //        "   Name:     " + pwnBeacon.name + "\n"
-                //        "   Pwnd run: " + String(pwnBeacon.pwnd_run) + "\n"
-                //        "   Pwnd tot: " + String(pwnBeacon.pwnd_tot) + "\n"
-                //        "   FP:       " + PwnBeaconServiceHandler::fingerprintToString(pwnBeacon.fingerprint) + "\n"
-                //        "   RSSI:     " + String(currentRSSI) + " dBm");
-                //}
-
                 // --- Security analysis (writable chars, DFU, UART, encryption) ---
                 SecurityResult secResult = analyzeDeviceSecurity(pClient, dev);
 
@@ -1551,20 +1382,13 @@ void scanForDevices() {
 
                 WebSender::sendDevice(dev, devSessionId, currentRSSI, isIBeacon, dev.hasNotifyData);
 
-                // Glasses expression: detective mode after successful GATT read
-                if (!UIContext::isGlassesTaskRunning.load() && !UIContext::isAngryTaskRunning.load())
-                {
-                    UIContext::isGlassesTaskRunning.store(true);
-
-                    if (xTaskCreatePinnedToCore( showGlassesExpressionTask, "BLEGlasses", 4096, nullptr, 4, &UIContext::glassesTaskHandle, 1) != pdPASS)
-                    {
-                        LOG(LOG_SYSTEM, "Failed to create BLEGlasses task");
-                        UIContext::isGlassesTaskRunning.store(false);
-                        UIContext::glassesTaskHandle = nullptr;
-                    }
+                // Ui expression task for glasses detected if display is enabled
+                if (!UIContext::isAngryTaskRunning.load()) {
+                    UIExpressionTasks::showIfNotRunning(showGlassesExpressionTask, "BLEGlasses",
+                        UIContext::isGlassesTaskRunning, UIContext::glassesTaskHandle, 4096, 4, 1);
                 }
 
-                delay(1000);
+                delay(500);
             } else {
                 // Connected but attribute discovery failed (device likely rejected)
                 LOG(LOG_GATT, devTag + "Connected but attribute discovery failed: " + address);
@@ -1613,32 +1437,20 @@ void scanForDevices() {
                     ScanContext::targetFound = true;
                     ScanContext::susDevice++;
                     DeviceContext::xpManager.awardXP(2.0f);  // +2.0 XP: suspicious device found
-                    delay(1000);
+                    delay(500);
 
                     SusLog::add(targetLabel.c_str(), address.c_str(), (int8_t)ScanContext::rssi.load());
 
-                    // ← Audio alert
-                    auto* ms = MenuController::getState();
-                    if (ms->audioEnabled && ms->audioSuspicious) {
-                        M5.Speaker.setVolume(MenuController::getAlarmVolume());
-                        M5.Speaker.tone(1760, 200);
-                        while (M5.Speaker.isPlaying()) { delay(5); }
-                        M5.Speaker.tone(1760, 200);
-                    }
+                    // Play alert and show speech bubble for advertisement-based target detection
+                    AudioAlerts::playAdvertisementTargetAlert();
 
                     //nibblesSpeechShow(SpeechContext::SUSPICIOUS);
                     vTaskDelay(pdMS_TO_TICKS(2000));
 
-                    if (!UIContext::isAngryTaskRunning.load() && NetworkContext::displayEnabled)
-                    {
-                        UIContext::isAngryTaskRunning.store(true);
-
-                        if (xTaskCreatePinnedToCore( showAngryExpressionTask, "AngryFace", 4096, nullptr, 5, &UIContext::angryTaskHandle, 1) != pdPASS)
-                        {
-                            LOG(LOG_SYSTEM, "Failed to create AngryFace task");
-                            UIContext::isAngryTaskRunning.store(false);
-                            UIContext::angryTaskHandle = nullptr;
-                        }
+                    // Ui expression task for angry face
+                    if (NetworkContext::displayEnabled) {
+                        UIExpressionTasks::showIfNotRunning(showAngryExpressionTask, "AngryFace",
+                            UIContext::isAngryTaskRunning, UIContext::angryTaskHandle, 4096, 5, 1);
                     }
                 }
               }
@@ -1705,18 +1517,12 @@ void scanForDevices() {
 
           WebSender::sendDevice(dev, devSessionId, currentRSSI, isIBeacon, dev.hasNotifyData);
 
-          // Sad expression: device visible but connection rejected
-          if (!UIContext::isAngryTaskRunning.load() && !UIContext::isSadTaskRunning.load())
-          {
-              UIContext::isSadTaskRunning.store(true);
-
-              if (xTaskCreatePinnedToCore( showSadExpressionTask, "SadFace", 4096, NULL, 3, &UIContext::sadTaskHandle, 1) != pdPASS)
-              {
-                  LOG(LOG_SYSTEM, "Failed to create SadFace task");
-                  UIContext::isSadTaskRunning.store(false);
-              }
-          }
-          delay(1000);
+        // Ui expression task for sad face if display is enabled
+        if (!UIContext::isAngryTaskRunning.load()) {
+            UIExpressionTasks::showIfNotRunning(showSadExpressionTask, "SadFace",
+                UIContext::isSadTaskRunning, UIContext::sadTaskHandle, 4096, 3, 1);
+        }
+          delay(500);
         }
 
         // --- Wardriving: log device with GPS coordinates if fix is valid ---
@@ -1742,7 +1548,7 @@ void scanForDevices() {
         }
         NimBLEDevice::deleteClient(pClient);
         pClient = nullptr;
-        delay(1000);  // brief delay to ensure clean disconnection before next iteration
+        delay(500);  // brief delay to ensure clean disconnection before next iteration
     }   // end per-device loop
 
     // =======================================================================
@@ -1754,7 +1560,6 @@ void scanForDevices() {
     LOG(LOG_SCAN, "  Sniffed:    " + String(ScanContext::targetConnects.load()));
     LOG(LOG_SCAN, "  Suspicious: " + String(ScanContext::susDevice.load()));
     LOG(LOG_SCAN, "  Beacons:    " + String(DeviceContext::beaconsFound.load()));
-    //LOG(LOG_SCAN, "  PwnBeacons: " + String(DeviceContext::pwnbeaconsFound.load()));
 
     // ============================================================
     // META RAY-BAN STATISTICS
@@ -1787,7 +1592,7 @@ void scanForDevices() {
     // Persist XP to SD card after every scan cycle
     DeviceContext::xpManager.save();
 
-    delay(2000);  // brief cooldown before next cycle
+    delay(500);  // brief cooldown before next cycle
 
     // Clear any stale speech bubble that may have been skipped due to queuing
     clearSpeechBubble();

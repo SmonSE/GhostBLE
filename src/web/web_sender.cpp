@@ -45,7 +45,6 @@ void sendDevice(const DeviceInfo& dev,
                 int               ghostId,
                 int               rssi,
                 bool              isBeacon,
-                bool              isPwnBeacon,
                 bool              hasNotify)
 {
     if (!wsReady()) return;
@@ -66,7 +65,6 @@ void sendDevice(const DeviceInfo& dev,
         "\"rssi\":"           + String(rssi)                         + ","
         "\"connectable\":"    + (dev.isConnectable   ? "true" : "false") + ","
         "\"is_beacon\":"      + (isBeacon            ? "true" : "false") + ","
-        "\"is_pwnbeacon\":"   + (isPwnBeacon          ? "true" : "false") + ","
         "\"has_notify\":"     + (hasNotify            ? "true" : "false") + ","
         "\"suspicious\":"     + (ScanContext::targetFound ? "true" : "false")
         + "}}";
