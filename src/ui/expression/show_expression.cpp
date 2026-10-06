@@ -302,15 +302,26 @@ void showHelpOverlay() {
 
     M5.Lcd.setTextColor(WHITE, 0x00C4);
 
+    const auto source = ScanContext::scannerSource.load(std::memory_order_relaxed);
+
 #if HAS_KEYBOARD
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn D        Display sleep"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn F        BLE Device Finder"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M/Q      Main/Quick Menu"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn P        Pointer in log"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn R        Research Mode"); y += lineH;
-    M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn S        Scan Mode"); y += lineH;
+    if (source == ScannerSource::LORA){
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   LORA Scan"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn D        Display sleep"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn L        Switch LoRa/BLE "); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M/Q      Main/Quick Menu"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn P        LoRa Profile"); y += lineH;
+    } else {
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn D        Display sleep"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn F        BLE Device Finder"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M/Q      Main/Quick Menu"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn P        Pointer in log"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn R        Research Mode"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn S        Scan Mode"); y += lineH;
+    }
+
 #endif
 
 #if HAS_TWO_BUTTONS

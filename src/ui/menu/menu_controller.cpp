@@ -76,6 +76,7 @@ LOG_TOGGLE_PAIR(System,   LOG_SYSTEM)
 LOG_TOGGLE_PAIR(Target,   LOG_TARGET)
 LOG_TOGGLE_PAIR(Notify,   LOG_NOTIFY)
 LOG_TOGGLE_PAIR(Sniffed,  LOG_SNIFFED)
+LOG_TOGGLE_PAIR(Lora,     LOG_LORA)
 
 // ── Menu item definition ──────────────────────────────────────
 struct MenuItem {
@@ -209,6 +210,8 @@ void setWardriving(bool v) {
 
 // Build item table — called in init()
 static void buildItems() {
+
+    const auto source = ScanContext::scannerSource.load(std::memory_order_relaxed);
     itemCount_ = 0;
     auto& s = *state_;
 
@@ -259,44 +262,65 @@ static void buildItems() {
 
     // im buildItems():
 #if HAS_KEYBOARD
-    section("CONNECTED DEVICES");
-    action("View Connected Devices", []() {
-        MenuController::closeSilent();
-        ConnectedDeviceView::open();
-    });
+    if (source == ScannerSource::BLE){
+        section("CONNECTED DEVICES");
+        action("View Connected Devices", []() {
+            MenuController::closeSilent();
+            ConnectedDeviceView::open();
+        });
+    } else {
+        // Lora scanner does not have these categories, so we can disable them
+    }
 #endif
 
     // im buildItems():
-    section("SUSPICIOUS DEVICES");
-    action("View Sus Device List", []() {
-        MenuController::closeSilent();
-        SusDeviceView::open();
-    });
+    if (source == ScannerSource::BLE){
+        section("SUSPICIOUS DEVICES");
+        action("View Sus Device List", []() {
+            MenuController::closeSilent();
+            SusDeviceView::open();
+        });
+    } else {
+        // Lora scanner does not have these categories, so we can disable them
+    }
 
     // ── DEVICE FINDER ────────────────────────────────────────
-    section("DEVICE FINDER");
-    action("Find Device", []() {
-        MenuController::closeSilent();
-        FinderListView::drawScanning();
-        DeviceFinder::startFinderFlow();
-    });
+    if (source == ScannerSource::BLE){
+        section("DEVICE FINDER");
+        action("Find Device", []() {
+            MenuController::closeSilent();
+            FinderListView::drawScanning();
+            DeviceFinder::startFinderFlow();
+        });
+    } else {
+        // Lora scanner does not have these categories, so we can disable them
+    }
 
     // ── SCAN ─────────────────────────────────────────────────
-    section("SCAN");
-    toggleAction("Research Mode",
-        []() { return getResearchMode(); },
-        []() { setResearchMode(!getResearchMode()); });
+    if (source == ScannerSource::BLE){
+        section("SCAN");
+        toggleAction("Research Mode",
+            []() { return getResearchMode(); },
+            []() { setResearchMode(!getResearchMode()); 
+            });
+    } else {
+        // Lora scanner does not have these categories, so we can disable them
+    }
 
     // ── PRIVACY ──────────────────────────────────────────────
-    section("PRIVACY");
-    toggleAction("Stealth Mode (reboot required)",
-        []() { return DeviceContext::deviceConfig.getStealthMode(); },
-        []() {
-            bool newVal = !DeviceContext::deviceConfig.getStealthMode();
-            DeviceContext::deviceConfig.setStealthMode(newVal);
-            // Hinweis: wird erst nach Neustart vollständig wirksam,
-            // da NimBLEDevice::init() nur einmalig beim Boot läuft
-        });    
+    if (source == ScannerSource::BLE){
+        section("PRIVACY");
+        toggleAction("Stealth Mode (reboot required)",
+            []() { return DeviceContext::deviceConfig.getStealthMode(); },
+            []() {
+                bool newVal = !DeviceContext::deviceConfig.getStealthMode();
+                DeviceContext::deviceConfig.setStealthMode(newVal);
+                // Hinweis: wird erst nach Neustart vollständig wirksam,
+                // da NimBLEDevice::init() nur einmalig beim Boot läuft
+            });  
+    }  else {
+        // Lora scanner does not have these categories, so we can disable them
+    }
 
     // ── WIRELESS ─────────────────────────────────────────────
     section("WIRELESS");
@@ -308,7 +332,8 @@ static void buildItems() {
     section("WARDRIVE");
     toggleAction("Wardriving",
         []() { return getWardriving(); },
-        []() { setWardriving(!getWardriving()); });
+        []() { setWardriving(!getWardriving()); 
+    });
 
     info("GPS Source", "");
     toggleAction("Grove", []() { return NetworkContext::isGPSSourceGrove(); }, NetworkContext::setGPSSourceGrove, true);
@@ -319,11 +344,15 @@ static void buildItems() {
     // ── AUDIO ALERTS ─────────────────────────────────────────
     section("AUDIO ALERTS");
     toggle("Audio",           s.audioEnabled);
-    toggle(" Suspicious",      s.audioSuspicious, true, &s.audioEnabled);
-    toggle(" Flock camera",    s.audioFlock,      true, &s.audioEnabled);
-    toggle(" Drone",           s.audioDrone,      true, &s.audioEnabled);
-    toggle(" Flipper Zero",    s.audioFlipper,    true, &s.audioEnabled);
-    
+    if (source == ScannerSource::BLE){
+        toggle(" Suspicious",      s.audioSuspicious, true, &s.audioEnabled);
+        toggle(" Flock camera",    s.audioFlock,      true, &s.audioEnabled);
+        toggle(" Drone",           s.audioDrone,      true, &s.audioEnabled);
+        toggle(" Flipper Zero",    s.audioFlipper,    true, &s.audioEnabled);
+    } else {
+        // Lora scanner does not have these categories, so we can disable them
+    }
+
     // ── AUDIO ALERTS ─────────────────────────────────────────
     section("ALERTS VOLUME");
     slider("Volume",          alarmVolume_, 0, 255, 25, applyAlarmVolume);
@@ -338,17 +367,22 @@ static void buildItems() {
 
     // ── LOGGING ──────────────────────────────────────────────
     section("LOGGING");
-    //toggleAction("Scan",       getLogScan,     toggleLogScan);
-    toggleAction("Raw GATT Data", getLogGatt,     toggleLogGatt);
-    toggleAction("Privacy",       getLogPrivacy,  toggleLogPrivacy);
-    toggleAction("Security",      getLogSecurity, toggleLogSecurity);
-    toggleAction("Beacon",        getLogBeacon,   toggleLogBeacon);
-    //toggleAction("Control",     getLogControl,  toggleLogControl);
-    //toggleAction("GPS Data",    getLogGps,      toggleLogGps);
-    //toggleAction("System",      getLogSystem,   toggleLogSystem);
-    toggleAction("Sniffed Data",  getLogSniffed,  toggleLogSniffed);
-    toggleAction("Suspicious",    getLogTarget,   toggleLogTarget);
-    //toggleAction("Notify",      getLogNotify,   toggleLogNotify);
+    if (source == ScannerSource::BLE){
+        //toggleAction("Scan",       getLogScan,     toggleLogScan);
+        toggleAction("Raw GATT Data", getLogGatt,     toggleLogGatt);
+        toggleAction("Privacy",       getLogPrivacy,  toggleLogPrivacy);
+        toggleAction("Security",      getLogSecurity, toggleLogSecurity);
+        toggleAction("Beacon",        getLogBeacon,   toggleLogBeacon);
+        //toggleAction("Control",     getLogControl,  toggleLogControl);
+        //toggleAction("GPS Data",    getLogGps,      toggleLogGps);
+        //toggleAction("System",      getLogSystem,   toggleLogSystem);
+        toggleAction("Sniffed Data",  getLogSniffed,  toggleLogSniffed);
+        toggleAction("Suspicious",    getLogTarget,   toggleLogTarget);
+        //toggleAction("Notify",      getLogNotify,   toggleLogNotify);
+    } else {
+        //toggleAction("LoRa", getLogLora, toggleLogLora);
+    }
+
 }
 
 // ── Drawing helpers ───────────────────────────────────────────
@@ -444,14 +478,18 @@ void init(MenuState* s) {
 }
 
 void open() {
+    buildItems();
+
     menuOpen_ = true;
     cursorIdx_ = 0;
     scrollOff_ = 0;
+
     // Skip past first section header to land on first real item
     while (cursorIdx_ < itemCount_ &&
            items_[cursorIdx_].type == MenuItemType::Section) {
         cursorIdx_++;
     }
+
     draw();
 }
 
