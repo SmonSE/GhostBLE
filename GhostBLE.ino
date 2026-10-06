@@ -52,42 +52,88 @@
 static MenuState menuState;  // globale Instanz
 TaskHandle_t scanTaskHandle = NULL;
 
-void switchScannerMode();
+void switchScannerMode() {
+#if defined(LORA_CS_PIN)
+
+    const auto current = ScanContext::scannerSource.load(std::memory_order_relaxed);
+
+    if (current == ScannerSource::BLE) {
+        // LoRa-Modul prüfen
+        if (!LoraScanner::begin()) {
+            LOG(LOG_CONTROL, "LoRa module not found");
+            nibblesSpeechShowCustom("NO LORA MODULE");
+            return;
+        }
+        LoraScanner::end();
+
+        ScanContext::scannerSource.store(ScannerSource::LORA, std::memory_order_relaxed);
+        LOG(LOG_CONTROL, "Scanner source: LoRa");
+        nibblesSpeechShowCustom("LORA MODE");
+    } else {
+        ScanContext::scannerSource.store(ScannerSource::BLE, std::memory_order_relaxed);
+        LOG(LOG_CONTROL, "Scanner source: BLE");
+        nibblesSpeechShowCustom("BLE MODE");
+    }
+#else
+    nibblesSpeechShowCustom("NO LORA HERE");
+#endif
+}
 
 void scanTask(void* parameter) {
   bool loraRunning = false;
- 
-  while (true) {
-    const bool enabled  = ScanContext::bleScanEnabled;
-    const bool loraMode = (ScanContext::scannerSource.load() == ScannerSource::LORA);
 
-    // Radio starten, sobald LoRa-Modus + Scan aktiv
+  while (true) {
+    const bool enabled =
+        ScanContext::bleScanEnabled;
+
+    const bool loraMode =
+        (ScanContext::scannerSource.load(std::memory_order_relaxed)
+         == ScannerSource::LORA);
+
+    // ----------------------------------------------------------
+    // LoRa starten, sobald LoRa-Modus + Scan aktiv
+    // ----------------------------------------------------------
     if (enabled && loraMode && !loraRunning) {
+
       loraRunning = LoraScanner::begin();
+
       if (!loraRunning) {
         LOG(LOG_SYSTEM, "LoRa start failed - back to BLE");
-        ScanContext::scannerSource.store(ScannerSource::BLE);
+
+        ScanContext::scannerSource.store(
+            ScannerSource::BLE,
+            std::memory_order_relaxed
+        );
+
         nibblesSpeechShowCustom("NO LORA!");
       }
     }
- 
-    // Radio schlafen legen, sobald Scan gestoppt oder Modus gewechselt
+
+    // ----------------------------------------------------------
+    // LoRa schlafen legen, sobald Scan gestoppt
+    // oder Modus gewechselt
+    // ----------------------------------------------------------
     if ((!enabled || !loraMode) && loraRunning) {
       LoraScanner::end();
       loraRunning = false;
     }
- 
+
+    // ----------------------------------------------------------
+    // Scanner ausführen
+    // ----------------------------------------------------------
     if (enabled && !ScanContext::scanIsRunning) {
+
       if (loraRunning) {
         LoraScanner::scan();
-        continue;                          // kein 200-ms-Loch zwischen den Zyklen
+        continue;
       }
+
       if (!loraMode) {
         nibblesSpeechNotifyEvent();
         scanForDevices();
       }
     }
- 
+
     vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
@@ -430,11 +476,7 @@ if (M5Cardputer.Keyboard.isChange()) {
         }
         if (key == 'l' || key == 'L') {
           LOG(LOG_CONTROL, "L pressed - switching scanner source");
-          if (ScanContext::bleScanEnabled || ScanContext::scanIsRunning) {
-            nibblesSpeechShowCustom("STOP SCAN FIRST");
-          } else {
-            switchScannerMode();
-          }
+          switchScannerMode();
           return;
         }
         if (key == 'd' || key == 'D') {
@@ -1161,29 +1203,6 @@ void onLongPress() {
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     stopBleScan();   // THIS is the important part
   }
-}
-
-void switchScannerMode() {
-#if defined(LORA_CS_PIN)
-  if (ScanContext::scannerSource.load() == ScannerSource::BLE) {
-    // Modul prüfen: Scan ist aus, der scanTask fasst das Radio gerade nicht an
-    if (!LoraScanner::begin()) {
-      LOG(LOG_CONTROL, "LoRa module not found");
-      nibblesSpeechShowCustom("NO LORA MODULE");
-      return;
-    }
-    LoraScanner::end();                    // zurück in Sleep, Start erst mit Button A
-    ScanContext::scannerSource.store(ScannerSource::LORA);
-    LOG(LOG_CONTROL, "Scanner source: LoRa");
-    nibblesSpeechShowCustom("LORA MODE");
-  } else {
-    ScanContext::scannerSource.store(ScannerSource::BLE);
-    LOG(LOG_CONTROL, "Scanner source: BLE");
-    nibblesSpeechShowCustom("BLE MODE");
-  }
-#else
-  nibblesSpeechShowCustom("NO LORA HERE");
-#endif
 }
 
 void toggleWiFi() {

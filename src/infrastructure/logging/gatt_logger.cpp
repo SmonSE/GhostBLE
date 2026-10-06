@@ -75,13 +75,18 @@ static LogClientCallbacks logCallbacks_;
 static void writeGattLog(const String& line) {
     if (logMutex_ == nullptr) return;
 
-    if (xSemaphoreTake(logMutex_, pdMS_TO_TICKS(1000)) == pdTRUE) {
-        File f = SD.open("/GhostBLE/detailed.log", FILE_APPEND);
-        if (f) {
-            f.printf("[%lu] %s\n", millis(), line.c_str());
-            f.close();
+    if (ScanContext::scannerSource.load() == ScannerSource::LORA){
+        // do not log GATT data in LoRa mode
+        return;
+    } else {
+        if (xSemaphoreTake(logMutex_, pdMS_TO_TICKS(1000)) == pdTRUE) {
+            File f = SD.open("/GhostBLE/detailed.log", FILE_APPEND);
+            if (f) {
+                f.printf("[%lu] %s\n", millis(), line.c_str());
+                f.close();
+            }
+            xSemaphoreGive(logMutex_);
         }
-        xSemaphoreGive(logMutex_);
     }
 }
 
