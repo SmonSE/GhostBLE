@@ -20,8 +20,8 @@ enum LogCategory : uint16_t {
     LOG_TARGET     = (1 << 8),   // Suspicious/target device detection
     LOG_NOTIFY     = (1 << 9),   // BLE notification data
     LOG_SNIFFED    = (1 << 10),  // Sniffed BLE data (decoded)
-    LOG_MISC       = (1 << 11),  // Miscellaneous logs
-    LOG_UNUSED_12  = (1 << 12),  // Unused
+    LOG_LORA       = (1 << 11),  // Miscellaneous logs
+    LOG_MISC       = (1 << 12),  // LoRa-specific logs
     LOG_UNUSED_13  = (1 << 13),  // Unused
     LOG_UNUSED_14  = (1 << 14),  // Unused
     LOG_UNUSED_15  = (1 << 15),  // Unused

@@ -34,6 +34,7 @@
 #include "src/infrastructure/platform/hardware_config.h"
 #include "src/infrastructure/storage/screenshot.h"
 #include "src/infrastructure/wardriving/wigle_logger.h"
+#include "src/infrastructure/lora/lora_scanner.h" 
 
 #include "src/ui/icons/scan_icon.h"
 #include "src/ui/overlay/draw_overlay.h"
@@ -51,15 +52,43 @@
 static MenuState menuState;  // globale Instanz
 TaskHandle_t scanTaskHandle = NULL;
 
+void switchScannerMode();
 
 void scanTask(void* parameter) {
+  bool loraRunning = false;
+ 
   while (true) {
+    const bool enabled  = ScanContext::bleScanEnabled;
+    const bool loraMode = (ScanContext::scannerSource.load() == ScannerSource::LORA);
 
-    if (ScanContext::bleScanEnabled && !ScanContext::scanIsRunning) {
-      nibblesSpeechNotifyEvent();
-      scanForDevices();
+    // Radio starten, sobald LoRa-Modus + Scan aktiv
+    if (enabled && loraMode && !loraRunning) {
+      loraRunning = LoraScanner::begin();
+      if (!loraRunning) {
+        LOG(LOG_SYSTEM, "LoRa start failed - back to BLE");
+        ScanContext::scannerSource.store(ScannerSource::BLE);
+        nibblesSpeechShowCustom("NO LORA!");
+      }
     }
-    vTaskDelay(pdMS_TO_TICKS(200)); // wichtig für Stabilität
+ 
+    // Radio schlafen legen, sobald Scan gestoppt oder Modus gewechselt
+    if ((!enabled || !loraMode) && loraRunning) {
+      LoraScanner::end();
+      loraRunning = false;
+    }
+ 
+    if (enabled && !ScanContext::scanIsRunning) {
+      if (loraRunning) {
+        LoraScanner::scan();
+        continue;                          // kein 200-ms-Loch zwischen den Zyklen
+      }
+      if (!loraMode) {
+        nibblesSpeechNotifyEvent();
+        scanForDevices();
+      }
+    }
+ 
+    vTaskDelay(pdMS_TO_TICKS(200));
   }
 }
 
@@ -397,6 +426,15 @@ if (M5Cardputer.Keyboard.isChange()) {
             key == 'q' || key == 'Q') {
           LOG(LOG_CONTROL, "M/Q pressed — showing main menu");
           MenuController::open();
+          return;
+        }
+        if (key == 'l' || key == 'L') {
+          LOG(LOG_CONTROL, "L pressed - switching scanner source");
+          if (ScanContext::bleScanEnabled || ScanContext::scanIsRunning) {
+            nibblesSpeechShowCustom("STOP SCAN FIRST");
+          } else {
+            switchScannerMode();
+          }
           return;
         }
         if (key == 'd' || key == 'D') {
@@ -1123,6 +1161,29 @@ void onLongPress() {
     showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
     stopBleScan();   // THIS is the important part
   }
+}
+
+void switchScannerMode() {
+#if defined(LORA_CS_PIN)
+  if (ScanContext::scannerSource.load() == ScannerSource::BLE) {
+    // Modul prüfen: Scan ist aus, der scanTask fasst das Radio gerade nicht an
+    if (!LoraScanner::begin()) {
+      LOG(LOG_CONTROL, "LoRa module not found");
+      nibblesSpeechShowCustom("NO LORA MODULE");
+      return;
+    }
+    LoraScanner::end();                    // zurück in Sleep, Start erst mit Button A
+    ScanContext::scannerSource.store(ScannerSource::LORA);
+    LOG(LOG_CONTROL, "Scanner source: LoRa");
+    nibblesSpeechShowCustom("LORA MODE");
+  } else {
+    ScanContext::scannerSource.store(ScannerSource::BLE);
+    LOG(LOG_CONTROL, "Scanner source: BLE");
+    nibblesSpeechShowCustom("BLE MODE");
+  }
+#else
+  nibblesSpeechShowCustom("NO LORA HERE");
+#endif
 }
 
 void toggleWiFi() {

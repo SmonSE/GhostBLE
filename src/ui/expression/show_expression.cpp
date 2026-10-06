@@ -1,25 +1,23 @@
 #include "show_expression.h"
 
-#include "infrastructure/platform/hardware.h"
 #include "app/context/globals.h"
 #include "app/context/device_context.h"
 #include "app/context/scan_context.h"
 #include "app/context/network_context.h"
 #include "app/context/ui_context.h"
-#include "config/ui_config.h"
-#include "ui/overlay/draw_overlay.h"
-#include "ui/icons/scan_icon.h"
-#include "ui/menu/menu_controller.h"
-#include "ui/susview/sus_device_view.h"
-#include "infrastructure/gps/gps_manager.h"
-#include "web/web_sender.h"
-#include "infrastructure/platform/hardware_config.h"
+
 #include "config/version.h"
+#include "config/ui_config.h"
+
 #include "ui/finder/finder_list_view.h"
 #include "ui/finder/approach_view.h"
 #include "ui/filemanager/file_manager_view.h"
 #include "ui/conview/connected_device_view.h"
 #include "ui/conview/gatt_console_view.h"
+#include "ui/overlay/draw_overlay.h"
+#include "ui/icons/scan_icon.h"
+#include "ui/menu/menu_controller.h"
+#include "ui/susview/sus_device_view.h"
 
 #include "assets/nibblesFront.h"
 #include "assets/nibblesGlasses.h"
@@ -32,6 +30,13 @@
 #include "assets/nibblesFunny.h"
 #include "assets/nibblesBored.h"
 #include "assets/nibblesBoredLeft.h"
+
+#include "infrastructure/gps/gps_manager.h"
+#include "infrastructure/platform/hardware_config.h"
+#include "infrastructure/platform/hardware.h"
+#include "infrastructure/lora/lora_scanner.h"
+
+#include "web/web_sender.h"
 
 
 static float         smoothedVoltage    = 0;
@@ -78,7 +83,9 @@ void drawWifiIcon(int x, int y, bool active) {
 void drawScanIcon(int x, int y, ScanState state, int radius) {
     uint16_t color;
     switch (state) {
-        case SCAN_RUNNING:  color = BLUE;   break;
+        case SCAN_RUNNING:
+            color = (ScanContext::scannerSource.load() == ScannerSource::LORA) ? TFT_ORANGE : BLUE;
+            break;
         case SCAN_STOPPING: color = YELLOW; break;
         case SCAN_OFF:      color = 0x4208; break;
     }
@@ -562,6 +569,16 @@ void drawStatusIcons(int x, int y) {
         drawScanIcon(x + 15, y + 1, SCAN_OFF, 3);
     }
 
+    /*
+    // LoRa marker (erased again in BLE mode)
+    M5.Lcd.fillRect(x + 22, y, 8, 11, 0x00C4);
+    if (ScanContext::scannerSource.load() == ScannerSource::LORA) {
+        M5.Lcd.setTextColor(TFT_ORANGE, 0x00C4);
+        M5.Lcd.setCursor(x + 23, y + 2);
+        M5.Lcd.print("L");
+    }
+    */
+
     if (NetworkContext::wardrivingEnabled.load()) {  // wardrivingEnabled → network_context later
         bool hasFix = NetworkContext::gpsManager.isValid();
         int  gpsX   = x + 30;
@@ -579,6 +596,20 @@ void drawStatusIcons(int x, int y) {
 }
 
 void drawStats(int sniffed, int sus, int spotted, int x, int y) {
+
+    if (ScanContext::scannerSource.load() == ScannerSource::LORA) {
+        M5.Lcd.setTextColor(WHITE, 0x00C4);
+        M5.Lcd.setCursor(x, y);
+        M5.Lcd.printf("Nod %-4u", (unsigned)LoraScanner::nodeCount());
+        M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);
+        M5.Lcd.printf("Pkt %-4u", (unsigned)LoraScanner::packetCount());
+        M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 2);
+        M5.Lcd.print("        ");
+        M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3);
+        M5.Lcd.print("        ");
+        return;
+    }
+
     M5.Lcd.setTextColor(WHITE, 0x00C4);
     M5.Lcd.setCursor(x, y);                         M5.Lcd.printf("Spt %-4d", spotted);
     M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);     M5.Lcd.printf("Snf %-4d", sniffed);
