@@ -2,7 +2,13 @@
 
 #include <Arduino.h>  // ESP.getFreeHeap()
 
+
 namespace ScanContext {
+
+// ------------------------------------------------------------
+//  Scan-Mode (BLE / LoRa / Off)    
+// ------------------------------------------------------------
+std::atomic<ScannerSource> scannerSource{ScannerSource::BLE};
 
 // ------------------------------------------------------------
 //  Scan-Controller

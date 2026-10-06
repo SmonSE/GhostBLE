@@ -32,11 +32,14 @@
 
 // ===== GPS Pins =====
 #if defined(CARDPUTER)
-  #define GPS_GROVE_RX  1
-  #define GPS_GROVE_TX  2
-  #define GPS_LORA_RX   15
-  #define GPS_LORA_TX   13
-  #define LORA_CS_PIN   5
+  #define GPS_GROVE_RX   1
+  #define GPS_GROVE_TX   2
+  #define GPS_LORA_RX    15
+  #define GPS_LORA_TX    13
+  #define LORA_CS_PIN    5
+  #define LORA_DIO1_PIN  4
+  #define LORA_RST_PIN   3
+  #define LORA_BUSY_PIN  6
 #elif defined(M5STICKCPLUS2)
   #define GPS_GROVE_RX  33
   #define GPS_GROVE_TX  32

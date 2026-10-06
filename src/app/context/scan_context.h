@@ -17,7 +17,14 @@
 //                       kein FreeRTOS-Task schreibt darauf
 // ============================================================
 
+enum class ScannerSource : uint8_t { BLE = 0, LORA = 1 };
+ 
 namespace ScanContext {
+
+// ============================================================
+//  Scan-Controller
+// ============================================================
+extern std::atomic<ScannerSource> scannerSource;
 
 // ------------------------------------------------------------
 //  Scan-Steuerung  (Core 0 schreibt, Core 1 liest → atomic)

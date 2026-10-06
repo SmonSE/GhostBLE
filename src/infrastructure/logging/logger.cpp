@@ -27,6 +27,7 @@ static uint16_t enabledCategories =
       LOG_SECURITY |
       LOG_BEACON |
       LOG_NOTIFY |
+      LOG_LORA |
       LOG_GPS);
 #endif
 
@@ -39,7 +40,7 @@ static bool sdInitialized = false;
 // Category index → filename mapping
 static const char* catFileNames[] = {
     "/GhostBLE/scan.log",       // 0  LOG_SCAN
-    "/GhostBLE/gatt.log",    // 1  LOG_GATT -> LOG_SNIFF
+    "/GhostBLE/gatt.log",       // 1  LOG_GATT -> LOG_SNIFF
     "/GhostBLE/privacy.log",    // 2  LOG_PRIVACY
     "/GhostBLE/security.log",   // 3  LOG_SECURITY
     "/GhostBLE/beacon.log",     // 4  LOG_BEACON
@@ -49,7 +50,7 @@ static const char* catFileNames[] = {
     "/GhostBLE/suspicious.log", // 8  LOG_TARGET -> LOG_SUS
     "/GhostBLE/notify.log",     // 9  LOG_NOTIFY
     "/GhostBLE/sniffed.log",    // 10 LOG_SNIFFED
-    "/GhostBLE/misc.log",       // 11
+    "/GhostBLE/lora.log",       // 11
     "/GhostBLE/misc.log",       // 12
     "/GhostBLE/misc.log",       // 13
     "/GhostBLE/misc.log",       // 14
