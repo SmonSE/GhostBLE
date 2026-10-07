@@ -52,31 +52,48 @@
 static MenuState menuState;  // globale Instanz
 TaskHandle_t scanTaskHandle = NULL;
 
+
 void switchScannerMode() {
 #if defined(LORA_CS_PIN)
-
-    const auto current = ScanContext::scannerSource.load(std::memory_order_relaxed);
-
-    if (current == ScannerSource::BLE) {
-        // LoRa-Modul prüfen
-        if (!LoraScanner::begin()) {
-            LOG(LOG_CONTROL, "LoRa module not found");
-            nibblesSpeechShowCustom("NO LORA MODULE");
-            return;
-        }
-        LoraScanner::end();
-
-        ScanContext::scannerSource.store(ScannerSource::LORA, std::memory_order_relaxed);
-        LOG(LOG_CONTROL, "Scanner source: LoRa");
-        nibblesSpeechShowCustom("LORA MODE");
-    } else {
-        ScanContext::scannerSource.store(ScannerSource::BLE, std::memory_order_relaxed);
-        LOG(LOG_CONTROL, "Scanner source: BLE");
-        nibblesSpeechShowCustom("BLE MODE");
+  const bool bleSource = (ScanContext::scannerSource.load() == ScannerSource::BLE);
+ 
+  if (bleSource) {
+    // BLE -> LoRa: Modul prüfen (Scan ist aus, der scanTask fasst das Radio nicht an)
+    if (!LoraScanner::begin()) {
+      LOG(LOG_CONTROL, "LoRa module not found");
+      nibblesSpeechShowCustom("NO LORA MODULE");
+      return;
     }
+    LoraScanner::end();                         // zurück in Sleep, Start erst mit Button A
+    LoraScanner::setProfile(LoraScanner::RadioProfile::AUTO);
+    ScanContext::scannerSource.store(ScannerSource::LORA);
+  } else if (ScanContext::bleScanEnabled.load()) {
+    // LoRa läuft: nur das Profil weiterschalten (AUTO -> MESH -> LORAWAN -> AUTO)
+    LoraScanner::nextProfile();
+  } else if (LoraScanner::getProfile() == LoraScanner::RadioProfile::LORAWAN) {
+    // letztes Profil erreicht: zurück zu BLE
+    ScanContext::scannerSource.store(ScannerSource::BLE);
+  } else {
+    LoraScanner::nextProfile();
+  }
+ 
+  String txt;
+  if (ScanContext::scannerSource.load() == ScannerSource::BLE) {
+    txt = "BLE MODE";
+  } else {
+    switch (LoraScanner::getProfile()) {
+      case LoraScanner::RadioProfile::AUTO:       txt = "LORA AUTO"; break;
+      case LoraScanner::RadioProfile::MESHTASTIC: txt = "LORA MESH"; break;
+      default:                                    txt = "LORAWAN";   break;
+    }
+  }
+  LOG(LOG_CONTROL, "Scanner source: " + txt);
+  nibblesSpeechShowCustom(txt.c_str());
 #else
-    nibblesSpeechShowCustom("NO LORA HERE");
+  nibblesSpeechShowCustom("NO LORA HERE");
 #endif
+ 
+  showFindingCounter(ScanContext::targetConnects, ScanContext::susDevice, ScanContext::allSpottedDevice);
 }
 
 void scanTask(void* parameter) {
@@ -475,9 +492,31 @@ if (M5Cardputer.Keyboard.isChange()) {
           return;
         }
         if (key == 'l' || key == 'L') {
-          LOG(LOG_CONTROL, "L pressed - switching scanner source");
-          switchScannerMode();
-          return;
+            LOG(LOG_CONTROL, "L pressed - switching scanner source/profile");
+
+            const bool loraRunning =
+                ScanContext::scannerSource.load() == ScannerSource::LORA &&
+                ScanContext::bleScanEnabled.load();
+
+            if ((ScanContext::bleScanEnabled || ScanContext::scanIsRunning) && !loraRunning) {
+                nibblesSpeechShowCustom("STOP SCAN FIRST");
+                return;
+            }
+        #if defined(LORA_CS_PIN)
+            // ------------------------------------------------------------
+            // LoRa Mode:
+            // Automatically switch GPS source from Grove -> LoRa Cap.
+            // The LoRa Hat has its own GPS, so the Grove GPS must not be used.
+            // ------------------------------------------------------------
+            NetworkContext::setGPSSourceLora();
+
+        #else
+            LOG(LOG_CONTROL, "LoRa hardware not available on this device.");
+            nibblesSpeechShowCustom("NO LORA HAT");
+            return;
+        #endif
+            switchScannerMode();
+            return;
         }
         if (key == 'd' || key == 'D') {
             NetworkContext::displayEnabled = !NetworkContext::displayEnabled;
