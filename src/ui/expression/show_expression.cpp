@@ -586,7 +586,7 @@ void drawStatusIcons(int x, int y) {
     if (ScanContext::scannerSource.load() == ScannerSource::LORA) {
         M5.Lcd.setTextColor(TFT_ORANGE, 0x00C4);
         M5.Lcd.setCursor(x + 23, y + 2);
-        M5.Lcd.print("L");
+        M5.Lcd.print(LoraScanner::profileLetter());   // L = Auto, M = Meshtastic, W = LoRaWAN
     }
     */
 
@@ -609,15 +609,22 @@ void drawStatusIcons(int x, int y) {
 void drawStats(int sniffed, int sus, int spotted, int x, int y) {
 
     if (ScanContext::scannerSource.load() == ScannerSource::LORA) {
+        size_t mes = 0, lwa = 0;
+        LoraScanner::nodeCounts(mes, lwa);
+ 
         M5.Lcd.setTextColor(WHITE, 0x00C4);
         M5.Lcd.setCursor(x, y);
-        M5.Lcd.printf("Nod %-4u", (unsigned)LoraScanner::nodeCount());
+        M5.Lcd.printf("Nod %-4u", (unsigned)(mes + lwa));
         M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT);
         M5.Lcd.printf("Pkt %-4u", (unsigned)LoraScanner::packetCount());
+ 
+        M5.Lcd.setTextColor(GREEN, 0x00C4);
         M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 2);
-        M5.Lcd.print("        ");
+        M5.Lcd.printf("Mes %-4u", (unsigned)mes);
+ 
+        M5.Lcd.setTextColor(TFT_ORANGE, 0x00C4);
         M5.Lcd.setCursor(x, y + STATS_LINE_HEIGHT * 3);
-        M5.Lcd.print("        ");
+        M5.Lcd.printf("LWA %-4u", (unsigned)lwa);
         return;
     }
 

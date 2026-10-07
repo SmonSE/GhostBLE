@@ -329,17 +329,25 @@ static void buildItems() {
         []() { setWifiEnabled(!getWifiEnabled()); });
 
     // ── WARDRIVE ─────────────────────────────────────────────
+    if (source == ScannerSource::BLE){
     section("WARDRIVE");
-    toggleAction("Wardriving",
-        []() { return getWardriving(); },
-        []() { setWardriving(!getWardriving()); 
-    });
+        toggleAction("Wardriving",
+            []() { return getWardriving(); },
+            []() { setWardriving(!getWardriving()); 
+        });
 
-    info("GPS Source", "");
-    toggleAction("Grove", []() { return NetworkContext::isGPSSourceGrove(); }, NetworkContext::setGPSSourceGrove, true);
-    #if defined(LORA_CS_PIN)
-    toggleAction("LoRa Cap", []() { return NetworkContext::isGPSSourceLora(); }, NetworkContext::setGPSSourceLora, true);
-    #endif
+        info("GPS Source", "");
+        toggleAction("Grove", []() { return NetworkContext::isGPSSourceGrove(); }, NetworkContext::setGPSSourceGrove, true);
+    } else {
+    section("LORA SCANNER");
+        toggleAction("Lora Scanner",
+            []() { return getWardriving(); },
+            []() { setWardriving(!getWardriving()); 
+        });
+
+        info("GPS Source", "");
+        toggleAction("LoRa Cap", []() { return NetworkContext::isGPSSourceLora(); }, NetworkContext::setGPSSourceLora, true);
+    }
 
     // ── AUDIO ALERTS ─────────────────────────────────────────
     section("AUDIO ALERTS");
