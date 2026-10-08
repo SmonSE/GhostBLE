@@ -317,6 +317,7 @@ NibBLEs is the on-screen mascot with context-sensitive expressions and speech bu
 | **D** | Display sleep / wakeup |
 | **F** | BLE device finder |
 | **I** | Image / screenshot |
+| **L** | LoRaWan Scanner |
 | **M** | Main Menu with all settings |
 | **P** | Pointer in log file |
 | **R** | Research mode |
