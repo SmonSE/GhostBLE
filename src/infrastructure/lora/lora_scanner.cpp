@@ -50,9 +50,12 @@ static constexpr uint16_t MESH_PREAMBLE  = 16;
 // LoRaWAN EU868, nur Uplinks (normales IQ, öffentliches Sync Word).
 // Das Radio hört immer nur EINE Kombination aus Kanal und SF. Es hüpft deshalb
 // alle LW_DWELL_MS durch diese Liste. Mehr Kombinationen = weniger Zeit pro Kombination.
-// Zusätzliche TTN-Kanäle: 867.1, 867.3, 867.5, 867.7, 867.9 MHz.
-static constexpr float    LW_FREQS_MHZ[] = { 868.1f, 868.3f, 868.5f };
-static constexpr uint8_t  LW_SFS[]       = { 7 }; // { 7, 8, 9 };
+// AUTO nutzt nur die drei Standardkanäle (Pflichtkanäle jedes EU868-Geräts).
+// LORAWAN ("Survey") hört zusätzlich die fünf weiteren TTN-Kanäle. Welche Kombinationen
+// wirklich Treffer liefern, zeigt die Slot-Statistik im Log (alle 10 min und beim Stoppen).
+static constexpr float    LW_FREQS_DEFAULT_MHZ[] = { 868.1f, 868.3f, 868.5f };
+static constexpr float    LW_FREQS_EXTRA_MHZ[]   = { 867.1f, 867.3f, 867.5f, 867.7f, 867.9f };
+static constexpr uint8_t  LW_SFS[]       = { 7, 8, 9 };
 static constexpr float    LW_BW_KHZ      = 125.0f;
 static constexpr uint8_t  LW_SYNC        = 0x34;
 static constexpr uint16_t LW_PREAMBLE    = 8;
@@ -64,13 +67,14 @@ static constexpr uint32_t AUTO_MESH_DWELL_MS = 20000;
 static constexpr uint8_t  LORA_CR        = 5;       // 4/5
 static constexpr int8_t   LORA_POWER_DBM = 10;      // nur relevant fürs Senden
 
-static constexpr uint32_t CYCLE_MS        = 5000;   // Verarbeitungszyklus
-static constexpr size_t   MAX_NODES       = 128;   // ca. 15-20 KB Heap; bei Überlauf fliegt der älteste Node raus
-static constexpr size_t   MESH_HEADER     = 16;     // Klartext-Header eines Meshtastic-Pakets
-static constexpr size_t   DEDUP_RING      = 64;     // gemerkte (from, packetId)-Paare
-static constexpr uint32_t BROADCAST_ADDR  = 0xFFFFFFFF;
-static constexpr size_t   CSV_FLUSH_BYTES = 6000;
-static constexpr size_t   MAX_SLOTS       = 32;
+static constexpr uint32_t CYCLE_MS              = 5000;   // Verarbeitungszyklus
+static constexpr size_t   MAX_NODES             = 128;    // ca. 15-20 KB Heap; bei Überlauf fliegt der älteste Node raus
+static constexpr size_t   MESH_HEADER           = 16;     // Klartext-Header eines Meshtastic-Pakets
+static constexpr size_t   DEDUP_RING            = 64;     // gemerkte (from, packetId)-Paare
+static constexpr uint32_t BROADCAST_ADDR        = 0xFFFFFFFF;
+static constexpr size_t   CSV_FLUSH_BYTES       = 6000;
+static constexpr size_t   MAX_SLOTS             = 64;
+static constexpr uint32_t STATS_LOG_INTERVAL_MS = 600000;   // Slot-Statistik alle 10 Minuten ins Log
 
 struct RadioSlot {
     Kind     kind;
@@ -122,6 +126,24 @@ static uint32_t irqPolled      = 0;   // Diagnose: RX_DONE per Polling statt DIO
 static uint32_t totalPackets   = 0;
 static uint32_t totalDirect    = 0;
 static uint32_t totalCrcErrors = 0;
+
+// ---------------------------------------------------------------------------
+//  Slot-Statistik: Treffer und Hördauer pro Kombination aus Kanal und SF.
+//  Bleibt über Profilwechsel hinweg erhalten (Schlüssel = Protokoll + Frequenz + SF).
+// ---------------------------------------------------------------------------
+struct SlotStats {
+    uint32_t listenMs = 0;     // Zeit, die das Radio auf diesem Slot gehört hat
+    uint32_t valid    = 0;     // gültige Pakete (Meshtastic-Pakete / LoRaWAN-Frames)
+    uint32_t crc      = 0;     // CRC-Fehler
+    uint32_t other    = 0;     // kein gültiger Frame (zu kurz / kein LoRaWAN)
+    int16_t  bestRssi = -999;  // stärkstes gültiges Paket
+};
+
+static std::map<uint64_t, SlotStats> slotStats;
+static uint64_t currentKey   = 0;
+static uint32_t slotEnterMs  = 0;
+static bool     slotOpen     = false;
+static uint32_t lastStatsLog = 0;
 
 // Duplikaterkennung (Meshtastic): dasselbe Paket kommt über Relays mehrfach an
 struct SeenPkt { uint32_t from; uint32_t id; };
@@ -514,6 +536,77 @@ static void dumpNodeTable() {
 // ---------------------------------------------------------------------------
 //  Profile und Slots
 // ---------------------------------------------------------------------------
+// --- Statistik-Helfer ---
+static uint64_t statKey(Kind k, float freqMhz, uint8_t sf) {
+    const uint32_t khz = (uint32_t)(freqMhz * 1000.0f + 0.5f);
+    return ((uint64_t)(uint8_t)k << 32) | ((uint64_t)khz << 8) | sf;
+}
+
+// Neuen Slot beginnen: ab jetzt zählt die Hördauer für diesen Schlüssel
+static void statsOpenSlot(const RadioSlot& s) {
+    currentKey  = statKey(s.kind, s.freqMhz, s.sf);
+    slotEnterMs = millis();
+    slotOpen    = true;
+    (void)slotStats[currentKey];     // Eintrag anlegen, damit auch Slots ohne Treffer erscheinen
+}
+
+// Aktuellen Slot beenden (Hüpfen, Profilwechsel, Stopp): Hördauer verbuchen
+static void statsCloseSlot() {
+    if (!slotOpen) return;
+    slotStats[currentKey].listenMs += millis() - slotEnterMs;
+    slotOpen = false;
+}
+
+static void statsValid(float rssi) {
+    if (!slotOpen) return;
+    SlotStats& st = slotStats[currentKey];
+    st.valid++;
+    const int16_t r = (int16_t)rssi;
+    if (r > st.bestRssi) st.bestRssi = r;
+}
+
+static void statsCrc()   { if (slotOpen) slotStats[currentKey].crc++; }
+static void statsOther() { if (slotOpen) slotStats[currentKey].other++; }
+
+// Tabelle für das Log. Der gerade laufende Slot wird mit seiner bisherigen Hördauer mitgezählt.
+static String slotStatsText() {
+    String out;
+    const uint32_t now = millis();
+
+    for (const auto& kv : slotStats) {
+        const SlotStats& st = kv.second;
+
+        uint32_t listen = st.listenMs;
+        if (slotOpen && kv.first == currentKey) listen += now - slotEnterMs;
+
+        const bool     mesh    = ((kv.first >> 32) == 0);
+        const uint32_t freqKhz = (uint32_t)((kv.first >> 8) & 0xFFFFF);
+        const uint8_t  sf      = (uint8_t)(kv.first & 0xFF);
+
+        out += String("\n   ") + (mesh ? "MESH " : "LW ") + String(freqKhz / 1000.0f, 3)
+             + " MHz SF" + String(sf)
+             + " | listened " + String(listen / 1000.0f, 1) + " s"
+             + " | ok " + String(st.valid);
+        if (listen >= 60000) {                    // Rate erst ab einer Minute Hördauer sinnvoll
+            out += " (" + String(st.valid * 3600000.0f / listen, 1) + "/h)";
+        }
+        out += " | crc " + String(st.crc) + " | other " + String(st.other);
+        if (st.bestRssi > -999) out += " | best " + String(st.bestRssi) + " dBm";
+    }
+    if (out.isEmpty()) out = "\n   (no data)";
+    return out;
+}
+
+// --- Zeitplan ---
+static void addLwSlots(const float* freqs, size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        for (uint8_t sf : LW_SFS) {
+            if (scheduleLen >= MAX_SLOTS) return;
+            schedule[scheduleLen++] = { Kind::LORAWAN, freqs[i], LW_BW_KHZ, sf, LW_DWELL_MS };
+        }
+    }
+}
+
 static void buildSchedule(RadioProfile p) {
     scheduleLen = 0;
 
@@ -523,12 +616,12 @@ static void buildSchedule(RadioProfile p) {
     }
 
     if (p == RadioProfile::LORAWAN || p == RadioProfile::AUTO) {
-        for (float f : LW_FREQS_MHZ) {
-            for (uint8_t sf : LW_SFS) {
-                if (scheduleLen >= MAX_SLOTS) break;
-                schedule[scheduleLen++] = { Kind::LORAWAN, f, LW_BW_KHZ, sf, LW_DWELL_MS };
-            }
-        }
+        addLwSlots(LW_FREQS_DEFAULT_MHZ,
+                   sizeof(LW_FREQS_DEFAULT_MHZ) / sizeof(LW_FREQS_DEFAULT_MHZ[0]));
+    }
+    if (p == RadioProfile::LORAWAN) {             // Survey: zusätzlich die weiteren TTN-Kanäle
+        addLwSlots(LW_FREQS_EXTRA_MHZ,
+                   sizeof(LW_FREQS_EXTRA_MHZ) / sizeof(LW_FREQS_EXTRA_MHZ[0]));
     }
     slotIdx = 0;
 }
@@ -550,6 +643,7 @@ static bool configureSlot(const RadioSlot& s) {
     }
 
     radio->setDio2AsRfSwitch(true);              // modulabhängig, ggf. entfernen
+    radio->setRxBoostedGainMode(true);           // etwas mehr Empfindlichkeit, ein paar mA Mehrverbrauch
     radio->setPacketReceivedAction(onPacket);
 
     st = radio->startReceive();
@@ -562,10 +656,12 @@ static bool configureSlot(const RadioSlot& s) {
     currentKind = s.kind;
     currentFreq = s.freqMhz;
     currentSf   = s.sf;
+    statsOpenSlot(s);
     return true;
 }
 
 static void hopToNext() {
+    statsCloseSlot();
     slotIdx = (slotIdx + 1) % scheduleLen;
     if (!configureSlot(schedule[slotIdx])) {
         nextHopAt = millis() + 1000;             // später erneut versuchen
@@ -579,6 +675,7 @@ static void applyPendingProfile() {
     const RadioProfile wanted = (RadioProfile)wantedProfile.load();
     if (wanted == usedProfile) return;
 
+    statsCloseSlot();
     usedProfile = wanted;
     buildSchedule(usedProfile);
     if (configureSlot(schedule[0])) {
@@ -602,6 +699,7 @@ static void handleMesh(const uint8_t* buf, size_t len, float rssi, float snr,
     // --- Zu kurz für Meshtastic-Header: anderes Protokoll oder Müll ---
     if (len < MESH_HEADER) {
         cycleShort++;
+        statsOther();
         p.type = "SHORT";
         LOG(LOG_LORA, "[SHORT / NON-MESH] " + String((unsigned)len) + " B | RSSI " + String(rssi, 0)
             + " dBm | SNR " + String(snr, 1) + " dB\n   raw: " + toHex(buf, len));
@@ -628,6 +726,7 @@ static void handleMesh(const uint8_t* buf, size_t len, float rssi, float snr,
     p.hopsUsed = (p.hopStart > 0 && p.hopStart >= p.hopLimit)
                      ? (int)(p.hopStart - p.hopLimit) : -1;
     p.dup      = isDuplicate(p.from, p.id);
+    statsValid(rssi);
 
     const String idStr = nodeIdToString(p.from);
 
@@ -806,6 +905,7 @@ static void handleLorawan(const uint8_t* buf, size_t len, float rssi, float snr,
     // --- Kein gültiger Frame: anderes Protokoll oder Rauschen ---
     if (!valid) {
         cycleOther++;
+        statsOther();
         p.type = "OTHER";
         LOG(LOG_LORA, "[LW? OTHER] " + slotLabel() + " | " + String((unsigned)len) + " B | RSSI "
             + String(rssi, 0) + " dBm | SNR " + String(snr, 1) + " dB\n   raw: " + toHex(buf, len));
@@ -820,6 +920,7 @@ static void handleLorawan(const uint8_t* buf, size_t len, float rssi, float snr,
         cycleDirect++;
         totalDirect++;
         cycleJoin++;
+        statsValid(rssi);
 
         String entry = "[LW JOIN REQUEST] " + slotLabel()
             + "\n   [t=" + String(now / 1000.0f, 1) + "s]"
@@ -903,6 +1004,8 @@ static void handleLorawan(const uint8_t* buf, size_t len, float rssi, float snr,
     cycleDirect++;
     totalDirect++;
 
+    statsValid(rssi);
+
     // --- Log-Eintrag ---
     const String idStr = hex8(p.devAddr);
     const int    sid   = ScanContext::getOrAssignDeviceId(std::string(("LW" + idStr).c_str()));
@@ -974,6 +1077,7 @@ static void handlePacket() {
     if (st == RADIOLIB_ERR_CRC_MISMATCH) {
         cycleCrcErrors++;
         totalCrcErrors++;
+        statsCrc();
         LOG(LOG_LORA, "[CRC ERROR] " + slotLabel() + " | " + String((unsigned)len) + " B | RSSI "
             + String(rssi, 0) + " dBm | SNR " + String(snr, 1) + " dB\n   raw: " + toHex(buf, len));
         csvAddError("CRC", rssi, snr, len, toaUs, buf, gps, now);
@@ -1011,7 +1115,8 @@ bool begin() {
     usedProfile = (RadioProfile)wantedProfile.load();
     buildSchedule(usedProfile);
     if (!configureSlot(schedule[0])) return false;
-    nextHopAt = millis() + schedule[0].dwellMs;
+    nextHopAt    = millis() + schedule[0].dwellMs;
+    lastStatsLog = millis();
 
     active = true;
     LOG(LOG_SYSTEM, String("LoRa scanner started, profile ") + profileName(usedProfile)
@@ -1024,10 +1129,12 @@ void end() {
     radio->clearPacketReceivedAction();
     radio->sleep();
     active = false;
+    statsCloseSlot();
 
     csvFlushAll();
     if (scannedSinceDump) {                      // nicht beim reinen Modul-Test (begin/end)
         dumpNodeTable();
+        LOG(LOG_LORA, "Slot statistics (since boot):" + slotStatsText());
         scannedSinceDump = false;
     }
     LOG(LOG_SYSTEM, "LoRa scanner stopped");
@@ -1109,6 +1216,10 @@ void scan() {
     }
 
     csvFlushAll();
+    if (millis() - lastStatsLog >= STATS_LOG_INTERVAL_MS) {
+        lastStatsLog = millis();
+        LOG(LOG_LORA, "Slot statistics (since boot):" + slotStatsText());
+    }
     DeviceContext::xpManager.save();
 
     ScanContext::scanCancelRequested.store(false);
