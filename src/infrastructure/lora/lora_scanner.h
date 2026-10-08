@@ -7,7 +7,8 @@
 //  (Frequenz + SF + Sync Word). Welche, bestimmt das Profil:
 //    AUTO        wechselt selbstständig zwischen Meshtastic und LoRaWAN
 //    MESHTASTIC  nur Meshtastic EU868 LongFast
-//    LORAWAN     nur LoRaWAN-Uplinks (868.1 / 868.3 / 868.5 MHz, hüpfend)
+//    LORAWAN     nur LoRaWAN-Uplinks, hüpfend über alle 8 TTN-Kanäle
+//                (868.1/.3/.5 und 867.1-867.9 MHz) = Survey-Profil
 // ---------------------------------------------------------------------------
 namespace LoraScanner {
 

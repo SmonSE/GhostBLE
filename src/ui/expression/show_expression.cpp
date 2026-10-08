@@ -315,7 +315,7 @@ void showHelpOverlay() {
         M5.Lcd.setCursor(10, y); M5.Lcd.print("Hold BtnG0   BLE Scan"); y += lineH;
         M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn D        Display sleep"); y += lineH;
         M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn FN       WiFi On/Off"); y += lineH;
-        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn F        BLE Device Finder"); y += lineH;
+        M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn L        LoRaWan Scanner"); y += lineH;
         M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn M/Q      Main/Quick Menu"); y += lineH;
         M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn P        Pointer in log"); y += lineH;
         M5.Lcd.setCursor(10, y); M5.Lcd.print("Btn R        Research Mode"); y += lineH;
