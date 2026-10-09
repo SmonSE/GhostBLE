@@ -30,6 +30,7 @@
 #include "assets/nibblesFunny.h"
 #include "assets/nibblesBored.h"
 #include "assets/nibblesBoredLeft.h"
+#include "assets/nibblesMeshtastic.h"
 
 #include "infrastructure/gps/gps_manager.h"
 #include "infrastructure/platform/hardware_config.h"
@@ -424,6 +425,64 @@ void showGlassesExpressionTask(void* parameter) {
     clearSpeechBubble();
     UIContext::isGlassesTaskRunning.store(false);
     UIContext::glassesTaskHandle = nullptr;
+    vTaskDelete(NULL);
+}
+
+void showGlassesMeshExpressionTask(void* parameter) {
+    if (MenuController::isOpen() || SusDeviceView::isOpen() || FinderListView::isOpen() || ApproachView::isOpen() || FileManagerView::isOpen() || UIContext::helpOverlayVisible || ConnectedDeviceView::isOpen() || GattConsoleView::isOpen()) {
+        UIContext::isGlassesMeshTaskRunning.store(false);
+        UIContext::glassesMeshTaskHandle = nullptr;
+        vTaskDelete(NULL);
+    }
+    UIContext::isGlassesMeshTaskRunning.store(true);
+    drawOverlay(nibblesMesh, NIBBLESMESH_WIDTH, NIBBLESMESH_HEIGHT, 76, 52);
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    int r = esp_random() % 3;
+    if (r == 0) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappyLeft, NIBBLESHAPPYLEFT_WIDTH, NIBBLESHAPPYLEFT_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else if (r == 1) {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    } else {
+        drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
+                      nibblesFunny, NIBBLESFUNNY_WIDTH, NIBBLESFUNNY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
+    }
+
+    showFindingCounter(
+        ScanContext::targetConnects.load(),
+        ScanContext::susDevice.load(),
+        ScanContext::allSpottedDevice.load()
+    );
+
+    // Fallback chain: displayName → localName → deviceName → appearanceName
+    // Note: these scan-time strings still come from globals until
+    //       they are moved into ScanContext in a future refactor step.
+    String bubbleText = displayName;
+    if (bubbleText.length() == 0) bubbleText = localName;
+    if (bubbleText.length() == 0) bubbleText = deviceName;
+    if (bubbleText.length() == 0) bubbleText = appearanceName;
+
+    if (bubbleText.length() > 0 && !UIContext::isSpeechBubbleActive.load()) {
+        clearSpeechBubble();
+        if (bubbleText.length() > 16) bubbleText = bubbleText.substring(0, 13) + "...";
+        drawBubble(bubbleText.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+        vTaskDelay(pdMS_TO_TICKS(3000));
+
+    } else if (appearanceName.length() > 0 &&
+               !UIContext::isSpeechBubbleActive.load() &&
+               localName.length() == 0) {
+        clearSpeechBubble();
+        if (appearanceName.length() > 14) appearanceName = appearanceName.substring(0, 11) + "...";
+        drawBubble(appearanceName.c_str(), BUBBLE_X, BUBBLE_RECT_Y, WHITE, BUBBLE_BORDER_COLOR, BLACK);
+        vTaskDelay(pdMS_TO_TICKS(3000));
+    }
+
+    clearSpeechBubble();
+    UIContext::isGlassesMeshTaskRunning.store(false);
+    UIContext::glassesMeshTaskHandle = nullptr;
     vTaskDelete(NULL);
 }
 

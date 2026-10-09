@@ -13,16 +13,18 @@ SemaphoreHandle_t taskMutex = NULL;
 // ------------------------------------------------------------
 //  Animations-Task-Handles
 // ------------------------------------------------------------
-TaskHandle_t glassesTaskHandle  = NULL;
-TaskHandle_t angryTaskHandle    = NULL;
-TaskHandle_t happyTaskHandle    = NULL;
-TaskHandle_t sadTaskHandle      = NULL;
-TaskHandle_t thugLifeTaskHandle = NULL;
+TaskHandle_t glassesTaskHandle      = NULL;
+TaskHandle_t glassesMeshTaskHandle  = NULL;
+TaskHandle_t angryTaskHandle        = NULL;
+TaskHandle_t happyTaskHandle        = NULL;
+TaskHandle_t sadTaskHandle          = NULL;
+TaskHandle_t thugLifeTaskHandle     = NULL;
 
 // ------------------------------------------------------------
 //  Animations-Flags
 // ------------------------------------------------------------
 std::atomic<bool> isGlassesTaskRunning{false};
+std::atomic<bool> isGlassesMeshTaskRunning{false};
 std::atomic<bool> isAngryTaskRunning{false};
 std::atomic<bool> isSadTaskRunning{false};
 std::atomic<bool> isHappyTaskRunning{false};

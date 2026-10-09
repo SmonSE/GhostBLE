@@ -55,11 +55,12 @@ static constexpr uint16_t MESH_PREAMBLE  = 16;
 // wirklich Treffer liefern, zeigt die Slot-Statistik im Log (alle 10 min und beim Stoppen).
 static constexpr float    LW_FREQS_DEFAULT_MHZ[] = { 868.1f, 868.3f, 868.5f };
 static constexpr float    LW_FREQS_EXTRA_MHZ[]   = { 867.1f, 867.3f, 867.5f, 867.7f, 867.9f };
-static constexpr uint8_t  LW_SFS[]       = { 7, 8, 9 };
+static constexpr uint8_t  LW_SFS[]       = { 7, 12 };
 static constexpr float    LW_BW_KHZ      = 125.0f;
 static constexpr uint8_t  LW_SYNC        = 0x34;
 static constexpr uint16_t LW_PREAMBLE    = 8;
-static constexpr uint32_t LW_DWELL_MS    = 3000;
+static constexpr uint32_t LW_DWELL_MS    = 3000;   // SF7..SF10: kurze Pakete (unter 0,4 s)
+static constexpr uint32_t LW_DWELL_LONG_MS = 8000;   // SF11/SF12: ein Paket dauert 1,5 bis 2,5 s
 
 // Im Profil AUTO bleibt das Radio so lange auf Meshtastic, bevor die LoRaWAN-Runde startet
 static constexpr uint32_t AUTO_MESH_DWELL_MS = 20000;
@@ -67,13 +68,13 @@ static constexpr uint32_t AUTO_MESH_DWELL_MS = 20000;
 static constexpr uint8_t  LORA_CR        = 5;       // 4/5
 static constexpr int8_t   LORA_POWER_DBM = 10;      // nur relevant fürs Senden
 
-static constexpr uint32_t CYCLE_MS              = 5000;   // Verarbeitungszyklus
-static constexpr size_t   MAX_NODES             = 128;    // ca. 15-20 KB Heap; bei Überlauf fliegt der älteste Node raus
-static constexpr size_t   MESH_HEADER           = 16;     // Klartext-Header eines Meshtastic-Pakets
-static constexpr size_t   DEDUP_RING            = 64;     // gemerkte (from, packetId)-Paare
-static constexpr uint32_t BROADCAST_ADDR        = 0xFFFFFFFF;
-static constexpr size_t   CSV_FLUSH_BYTES       = 6000;
-static constexpr size_t   MAX_SLOTS             = 64;
+static constexpr uint32_t CYCLE_MS        = 5000;   // Verarbeitungszyklus
+static constexpr size_t   MAX_NODES       = 128;   // ca. 15-20 KB Heap; bei Überlauf fliegt der älteste Node raus
+static constexpr size_t   MESH_HEADER     = 16;     // Klartext-Header eines Meshtastic-Pakets
+static constexpr size_t   DEDUP_RING      = 64;     // gemerkte (from, packetId)-Paare
+static constexpr uint32_t BROADCAST_ADDR  = 0xFFFFFFFF;
+static constexpr size_t   CSV_FLUSH_BYTES = 6000;
+static constexpr size_t   MAX_SLOTS       = 64;
 static constexpr uint32_t STATS_LOG_INTERVAL_MS = 600000;   // Slot-Statistik alle 10 Minuten ins Log
 
 struct RadioSlot {
@@ -602,7 +603,8 @@ static void addLwSlots(const float* freqs, size_t count) {
     for (size_t i = 0; i < count; i++) {
         for (uint8_t sf : LW_SFS) {
             if (scheduleLen >= MAX_SLOTS) return;
-            schedule[scheduleLen++] = { Kind::LORAWAN, freqs[i], LW_BW_KHZ, sf, LW_DWELL_MS };
+            schedule[scheduleLen++] = { Kind::LORAWAN, freqs[i], LW_BW_KHZ, sf,
+                                        (sf >= 11) ? LW_DWELL_LONG_MS : LW_DWELL_MS };
         }
     }
 }
@@ -828,16 +830,14 @@ static void handleMesh(const uint8_t* buf, size_t len, float rssi, float snr,
     LOG(LOG_LORA, entry);
     csvAdd(p, gps, now);
 
-    // --- Neuer Node: XP, Zähler, Nibbles mit Brille + Node-ID in der Sprechblase ---
+    // --- Neuer Node: XP, Zähler, Nibbles mit Mesh Brille + Node-ID in der Sprechblase ---
     if (isNew) {
         ScanContext::allSpottedDevice++;
         DeviceContext::xpManager.awardXP(0.5f);
 
         displayName = idStr;   // globaler String, die Glasses-Task zeigt ihn an
-        if (!UIContext::isAngryTaskRunning.load()) {
-            UIExpressionTasks::showIfNotRunning(showGlassesExpressionTask, "LoraGlasses",
-                UIContext::isGlassesTaskRunning, UIContext::glassesTaskHandle, 4096, 4, 1);
-        }
+        UIExpressionTasks::showIfNotRunning(showGlassesMeshExpressionTask, "LoraGlasses",
+            UIContext::isGlassesMeshTaskRunning, UIContext::glassesMeshTaskHandle, 4096, 4, 1);
     }
 }
 
@@ -1042,16 +1042,14 @@ static void handleLorawan(const uint8_t* buf, size_t len, float rssi, float snr,
     LOG(LOG_LORA, entry);
     csvAddLw(p, gps, now);
 
-    // --- Neues Gerät: XP, Zähler, Nibbles mit Brille + DevAddr in der Sprechblase ---
+    // --- Neues Gerät: XP, Zähler, Nibbles mit Mesh Brille + DevAddr in der Sprechblase ---
     if (isNew) {
         ScanContext::allSpottedDevice++;
         DeviceContext::xpManager.awardXP(0.5f);
 
         displayName = "LW " + idStr;
-        if (!UIContext::isAngryTaskRunning.load()) {
-            UIExpressionTasks::showIfNotRunning(showGlassesExpressionTask, "LoraGlasses",
-                UIContext::isGlassesTaskRunning, UIContext::glassesTaskHandle, 4096, 4, 1);
-        }
+        UIExpressionTasks::showIfNotRunning(showGlassesMeshExpressionTask, "LoraGlasses",
+            UIContext::isGlassesMeshTaskRunning, UIContext::glassesMeshTaskHandle, 4096, 4, 1);
     }
 }
 
@@ -1078,6 +1076,12 @@ static void handlePacket() {
         cycleCrcErrors++;
         totalCrcErrors++;
         statsCrc();
+
+        if (!UIContext::isGlassesMeshTaskRunning.load()) {
+            UIExpressionTasks::showIfNotRunning(showAngryExpressionTask, "AngryExpression",
+            UIContext::isAngryTaskRunning, UIContext::angryTaskHandle, 4096, 4, 1);
+        }
+
         LOG(LOG_LORA, "[CRC ERROR] " + slotLabel() + " | " + String((unsigned)len) + " B | RSSI "
             + String(rssi, 0) + " dBm | SNR " + String(snr, 1) + " dB\n   raw: " + toHex(buf, len));
         csvAddError("CRC", rssi, snr, len, toaUs, buf, gps, now);
@@ -1118,6 +1122,9 @@ bool begin() {
     nextHopAt    = millis() + schedule[0].dwellMs;
     lastStatsLog = millis();
 
+    UIExpressionTasks::showIfNotRunning(showHappyExpressionTask, "HappyExpression",
+        UIContext::isHappyTaskRunning, UIContext::happyTaskHandle, 4096, 4, 1);
+
     active = true;
     LOG(LOG_SYSTEM, String("LoRa scanner started, profile ") + profileName(usedProfile)
         + " (first slot " + slotLabel() + ")");
@@ -1138,6 +1145,9 @@ void end() {
         scannedSinceDump = false;
     }
     LOG(LOG_SYSTEM, "LoRa scanner stopped");
+
+    UIExpressionTasks::showIfNotRunning(showSadExpressionTask, "SadExpression",
+        UIContext::isSadTaskRunning, UIContext::sadTaskHandle, 4096, 4, 1);
 }
 
 // ---------------------------------------------------------------------------

@@ -506,8 +506,11 @@ if (M5Cardputer.Keyboard.isChange()) {
             // ------------------------------------------------------------
             // LoRa Mode:
             // Automatically switch GPS source from Grove -> LoRa Cap.
-            // The LoRa Hat has its own GPS, so the Grove GPS must not be used.
+            // The LoRa Hat has its own GPS, so the Grove GPS must not be use.
             // ------------------------------------------------------------
+            if (NetworkContext::wardrivingEnabled.load() != true) {
+                MenuController::setWardriving(true);
+            }
             NetworkContext::setGPSSourceLora();
 
         #else
