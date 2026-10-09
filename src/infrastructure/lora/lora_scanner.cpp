@@ -17,6 +17,8 @@
 #include "ui/menu/menu_controller.h"
 #include "ui/tasks/ui_expression_tasks.h"
 
+#include "infrastructure/lora/meshtastic_text_decoder.h"
+
 
 #if defined(LORA_CS_PIN)
 
@@ -164,6 +166,8 @@ struct PacketInfo {
     size_t         len = 0;
     uint32_t       toaUs = 0;
     const uint8_t* raw = nullptr;
+    bool   textDecoded = false;
+    String text;
 };
 
 // Alles, was wir über ein empfangenes LoRaWAN-Paket wissen (nur der Klartext-Teil)
@@ -339,7 +343,7 @@ static CsvSink csvMesh = {
     "/GhostBLE/lora_packets.csv",
     "ms,gps_time,type,from,to,packet_id,rssi_dbm,snr_db,len,toa_us,"
     "hop_limit,hop_start,hops_used,want_ack,via_mqtt,channel,next_hop,relay,dup,"
-    "lat,lon,alt,sats,raw",
+    "lat,lon,alt,sats,text,raw",
     String()
 };
 
@@ -416,6 +420,15 @@ static void csvAdd(const PacketInfo& p, const GpsFix& g, uint32_t now) {
     col(l, g.valid ? String(g.lon, 6) : String(""));
     col(l, g.valid ? String(g.alt, 1) : String(""));
     col(l, g.valid ? String(g.sats)   : String(""));
+    l += '"';
+    if (p.textDecoded) {
+        for (size_t i = 0; i < p.text.length(); ++i) {
+            const char c = p.text[i];
+            if (c == '"') l += "\"\"";
+            else l += c;
+        }
+    }
+    l += "\",";
     l += toHexCompact(p.raw, p.len);
     l += '\n';
 
@@ -728,6 +741,12 @@ static void handleMesh(const uint8_t* buf, size_t len, float rssi, float snr,
     p.hopsUsed = (p.hopStart > 0 && p.hopStart >= p.hopLimit)
                      ? (int)(p.hopStart - p.hopLimit) : -1;
     p.dup      = isDuplicate(p.from, p.id);
+    // The 16-byte radio header is cleartext; the remaining bytes normally
+    // contain encrypted Meshtastic protobuf Data.
+    if (len > MESH_HEADER) {
+        p.textDecoded = MeshtasticTextDecoder::decodeDefaultText(
+            buf + MESH_HEADER, len - MESH_HEADER, p.id, p.from, p.text);
+    }
     statsValid(rssi);
 
     const String idStr = nodeIdToString(p.from);
@@ -820,6 +839,12 @@ static void handleMesh(const uint8_t* buf, size_t len, float rssi, float snr,
         + " | MQTT " + String(p.viaMqtt ? 1 : 0)
         + " | relay 0x" + hex2(p.relay)
         + " | nh 0x" + hex2(p.nextHop);
+
+        if (p.textDecoded) {
+        entry += "\n   TEXT: " + p.text;
+        } else {
+            entry += "\n   payload: not decoded (other app, different PSK, or PKI)";
+        }
 
     if (gps.valid) {
         entry += "\n   GPS " + String(gps.lat, 6) + ", " + String(gps.lon, 6)
