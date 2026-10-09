@@ -10,6 +10,7 @@ enum ScanState {
 
 void drawPointer(int pointer);
 void showGlassesExpressionTask(void* parameter);
+void showGlassesMeshExpressionTask(void* parameter);
 void showAngryExpressionTask(void* parameter);
 void showHappyExpressionTask(void* parameter);
 void showSadExpressionTask(void* parameter);

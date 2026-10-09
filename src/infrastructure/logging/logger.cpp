@@ -27,7 +27,6 @@ static uint16_t enabledCategories =
       LOG_SECURITY |
       LOG_BEACON |
       LOG_NOTIFY |
-      LOG_LORA |
       LOG_GPS);
 #endif
 
@@ -50,7 +49,7 @@ static const char* catFileNames[] = {
     "/GhostBLE/suspicious.log", // 8  LOG_TARGET -> LOG_SUS
     "/GhostBLE/notify.log",     // 9  LOG_NOTIFY
     "/GhostBLE/sniffed.log",    // 10 LOG_SNIFFED
-    "/GhostBLE/lora.log",       // 11
+    "/GhostBLE/lora.log",       // 11 LOG_LORA
     "/GhostBLE/misc.log",       // 12
     "/GhostBLE/misc.log",       // 13
     "/GhostBLE/misc.log",       // 14

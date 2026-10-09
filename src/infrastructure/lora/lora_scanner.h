@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 
+#include "ui/expression/show_expression.h"
+
 // ---------------------------------------------------------------------------
 //  LoRa-Scanner — Alternative zum BLE-Scanner (nur Cardputer mit LoRa-Cap)
 //  Passiver Empfang. Das Radio hört immer genau EINE Konfiguration

@@ -388,7 +388,7 @@ static void buildItems() {
         toggleAction("Suspicious",    getLogTarget,   toggleLogTarget);
         //toggleAction("Notify",      getLogNotify,   toggleLogNotify);
     } else {
-        //toggleAction("LoRa", getLogLora, toggleLogLora);
+        toggleAction("LoRaWan",       getLogLora,     toggleLogLora);
     }
 
 }
