@@ -4,6 +4,9 @@
 #include <map>
 #include <mutex>
 #include <SD.h>
+#include <Wire.h>
+#include <M5Unified.h>
+#include "utility/PI4IOE5V6408_Class.hpp"
 
 #include "app/context/scan_context.h"
 #include "app/context/device_context.h"
@@ -141,6 +144,35 @@ struct SlotStats {
     uint32_t other    = 0;     // kein gültiger Frame (zu kurz / kein LoRaWAN)
     int16_t  bestRssi = -999;  // stärkstes gültiges Paket
 };
+
+static m5::PI4IOE5V6408_Class loraIoExpander(
+    0x43,
+    400000,
+    &m5::In_I2C
+);
+
+static bool initLoraAntennaSwitch() {
+    Serial.println("[LoRa] Initializing antenna switch...");
+
+    if (!m5::In_I2C.begin()) {
+        Serial.println("[LoRa] ERROR: I2C initialization failed");
+        return false;
+    }
+
+    if (!loraIoExpander.begin()) {
+        Serial.println(
+            "[LoRa] ERROR: PI4IOE5V6408 not detected"
+        );
+        return false;
+    }
+
+    loraIoExpander.setDirection(0, true);       // P0 = output
+    loraIoExpander.setHighImpedance(0, false); // Enable output
+    loraIoExpander.digitalWrite(0, true);      // P0 = HIGH
+
+    Serial.println("[LoRa] RF antenna switch P0 set HIGH");
+    return true;
+}
 
 static std::map<uint64_t, SlotStats> slotStats;
 static uint64_t currentKey   = 0;
@@ -653,7 +685,7 @@ static bool configureSlot(const RadioSlot& s) {
                               mesh ? MESH_PREAMBLE : LW_PREAMBLE);
     if (st != RADIOLIB_ERR_NONE) {
         // Typisch: Modul nicht gesteckt (Chip antwortet nicht) oder falsche TCXO-Einstellung
-        LOG(LOG_SYSTEM, "LoRa init failed, code " + String(st));
+        LOG(LOG_LORA, "LoRa init failed, code " + String(st));
         return false;
     }
 
@@ -663,7 +695,7 @@ static bool configureSlot(const RadioSlot& s) {
 
     st = radio->startReceive();
     if (st != RADIOLIB_ERR_NONE) {
-        LOG(LOG_SYSTEM, "LoRa startReceive failed, code " + String(st));
+        LOG(LOG_LORA, "LoRa startReceive failed, code " + String(st));
         return false;
     }
 
@@ -695,7 +727,7 @@ static void applyPendingProfile() {
     buildSchedule(usedProfile);
     if (configureSlot(schedule[0])) {
         nextHopAt = millis() + schedule[0].dwellMs;
-        LOG(LOG_SYSTEM, String("LoRa profile: ") + profileName(usedProfile));
+        LOG(LOG_LORA, String("LoRa profile: ") + profileName(usedProfile));
     }
 }
 
@@ -1135,10 +1167,27 @@ bool isActive()    { return active; }
 bool begin() {
     if (active) return true;
 
+    if (!initLoraAntennaSwitch()) {
+        LOG(LOG_LORA, "LoRa antenna switch initialization failed");
+    }
+
+    if (!initLoraAntennaSwitch()) {
+        Serial.println(
+            "[LoRa] WARNING: Antenna switch initialization failed"
+        );
+        return false;
+    }
+
     if (!radio) {
-        // Muss derselbe SPIClass sein, mit dem die SD-Karte initialisiert wurde
-        radio = new SX1262(new Module(LORA_CS_PIN, LORA_DIO1_PIN, LORA_RST_PIN,
-                                      LORA_BUSY_PIN, SPI));
+        radio = new SX1262(
+            new Module(
+                LORA_CS_PIN,
+                LORA_DIO1_PIN,
+                LORA_RST_PIN,
+                LORA_BUSY_PIN,
+                SPI
+            )
+        );
     }
 
     usedProfile = (RadioProfile)wantedProfile.load();
@@ -1151,7 +1200,7 @@ bool begin() {
         UIContext::isHappyTaskRunning, UIContext::happyTaskHandle, 4096, 4, 1);
 
     active = true;
-    LOG(LOG_SYSTEM, String("LoRa scanner started, profile ") + profileName(usedProfile)
+    LOG(LOG_LORA, String("LoRa scanner started, profile ") + profileName(usedProfile)
         + " (first slot " + slotLabel() + ")");
     return true;
 }
@@ -1169,7 +1218,7 @@ void end() {
         LOG(LOG_LORA, "Slot statistics (since boot):" + slotStatsText());
         scannedSinceDump = false;
     }
-    LOG(LOG_SYSTEM, "LoRa scanner stopped");
+    LOG(LOG_LORA, "LoRa scanner stopped");
 
     UIExpressionTasks::showIfNotRunning(showSadExpressionTask, "SadExpression",
         UIContext::isSadTaskRunning, UIContext::sadTaskHandle, 4096, 4, 1);

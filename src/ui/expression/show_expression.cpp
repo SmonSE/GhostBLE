@@ -651,17 +651,18 @@ void drawStatusIcons(int x, int y) {
 
     if (NetworkContext::wardrivingEnabled.load()) {  // wardrivingEnabled → network_context later
         bool hasFix = NetworkContext::gpsManager.isValid();
-        int  gpsX   = x + 30;
+        int  gpsX   = 35;
+        int  gpsY   = 2;
 
-        drawGPSIcon(gpsX, y, hasFix);
+        drawGPSIcon(gpsX, gpsY, hasFix);
         M5.Lcd.setTextColor(hasFix ? GREEN : RED, 0x00C4);
-        M5.Lcd.setCursor(gpsX + 13, y + 2);
+        M5.Lcd.setCursor(gpsX + 13, gpsY + 1);
         M5.Lcd.printf("%-5s SAT:%-2u %-6s",
                       NetworkContext::gpsManager.getSourceName(),
                       NetworkContext::gpsManager.getSatellites(),
                       hasFix ? "FIX" : "NO FIX");
     } else {
-        M5.Lcd.fillRect(x + 30, y, 180, 11, 0x00C4);
+        M5.Lcd.fillRect(34, 2, 180, 11, 0x00C4);
     }
 }
 
