@@ -639,30 +639,47 @@ void drawStatusIcons(int x, int y) {
         drawScanIcon(x + 15, y + 1, SCAN_OFF, 3);
     }
 
-    /*
+
     // LoRa marker (erased again in BLE mode)
-    M5.Lcd.fillRect(x + 22, y, 8, 11, 0x00C4);
     if (ScanContext::scannerSource.load() == ScannerSource::LORA) {
-        M5.Lcd.setTextColor(TFT_ORANGE, 0x00C4);
-        M5.Lcd.setCursor(x + 23, y + 2);
-        M5.Lcd.print(LoraScanner::profileLetter());   // L = Auto, M = Meshtastic, W = LoRaWAN
-    }
-    */
+        if (NetworkContext::wardrivingEnabled.load()) {  // wardrivingEnabled → network_context later
+            bool hasFix = NetworkContext::gpsManager.isValid();
+            int  gpsX   = 35;
+            int  gpsY   = 2;
 
-    if (NetworkContext::wardrivingEnabled.load()) {  // wardrivingEnabled → network_context later
-        bool hasFix = NetworkContext::gpsManager.isValid();
-        int  gpsX   = 35;
-        int  gpsY   = 2;
-
-        drawGPSIcon(gpsX, gpsY, hasFix);
-        M5.Lcd.setTextColor(hasFix ? GREEN : RED, 0x00C4);
-        M5.Lcd.setCursor(gpsX + 13, gpsY + 1);
-        M5.Lcd.printf("%-5s SAT:%-2u %-6s",
-                      NetworkContext::gpsManager.getSourceName(),
-                      NetworkContext::gpsManager.getSatellites(),
-                      hasFix ? "FIX" : "NO FIX");
+            drawGPSIcon(gpsX, gpsY, hasFix);
+            M5.Lcd.setTextColor(hasFix ? GREEN : RED, 0x00C4);
+            M5.Lcd.fillRect(gpsX + 13, gpsY, 150, 10, 0x00C4);
+            M5.Lcd.setCursor(gpsX + 13, gpsY + 1);
+            if (hasFix) {
+                M5.Lcd.printf("%-5s SAT:%-2u %-4s PFL:%c",
+                            NetworkContext::gpsManager.getSourceName(),
+                            NetworkContext::gpsManager.getSatellites(),
+                            "FIX",
+                            LoraScanner::profileLetter());
+            } else {
+                // breit auffüllen, damit "PFL:x" von vorher überschrieben wird
+                M5.Lcd.printf("%-5s SAT:%-2u %-12s",
+                            NetworkContext::gpsManager.getSourceName(),
+                            NetworkContext::gpsManager.getSatellites(),
+                            "NO FIX");
+            }
+        }
     } else {
-        M5.Lcd.fillRect(34, 2, 180, 11, 0x00C4);
+        if (NetworkContext::wardrivingEnabled.load()) {  // wardrivingEnabled → network_context later
+            bool hasFix = NetworkContext::gpsManager.isValid();
+            int  gpsX   = 35;
+            int  gpsY   = 2;
+
+            drawGPSIcon(gpsX, gpsY, hasFix);
+            M5.Lcd.setTextColor(hasFix ? GREEN : RED, 0x00C4);
+            M5.Lcd.fillRect(gpsX + 13, gpsY, 150, 10, 0x00C4);
+            M5.Lcd.setCursor(gpsX + 13, gpsY + 1);
+            M5.Lcd.printf("%-5s SAT:%-2u %-12s",
+                        NetworkContext::gpsManager.getSourceName(),
+                        NetworkContext::gpsManager.getSatellites(),
+                        hasFix ? "FIX" : "NO FIX");
+        }
     }
 }
 

@@ -14,7 +14,12 @@
 // ---------------------------------------------------------------------------
 namespace LoraScanner {
 
-enum class RadioProfile : uint8_t { AUTO = 0, MESHTASTIC = 1, LORAWAN = 2 };
+enum class RadioProfile : uint8_t {
+    AUTO = 0,
+    MESHTASTIC = 1,
+    LORAWAN = 2,
+    DISCOVERY = 3
+};
 
 struct Node {
     uint32_t id          = 0;      // Meshtastic Node-ID oder LoRaWAN DevAddr

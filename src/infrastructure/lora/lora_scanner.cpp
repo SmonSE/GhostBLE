@@ -60,7 +60,7 @@ static constexpr uint16_t MESH_PREAMBLE  = 16;
 // wirklich Treffer liefern, zeigt die Slot-Statistik im Log (alle 10 min und beim Stoppen).
 static constexpr float    LW_FREQS_DEFAULT_MHZ[] = { 868.1f, 868.3f, 868.5f };
 static constexpr float    LW_FREQS_EXTRA_MHZ[]   = { 867.1f, 867.3f, 867.5f, 867.7f, 867.9f };
-static constexpr uint8_t  LW_SFS[]       = { 7, 12 };
+static constexpr uint8_t  LW_SFS[]       = { 7, 8, 9, 10, 11, 12 };
 static constexpr float    LW_BW_KHZ      = 125.0f;
 static constexpr uint8_t  LW_SYNC        = 0x34;
 static constexpr uint16_t LW_PREAMBLE    = 8;
@@ -152,25 +152,23 @@ static m5::PI4IOE5V6408_Class loraIoExpander(
 );
 
 static bool initLoraAntennaSwitch() {
-    Serial.println("[LoRa] Initializing antenna switch...");
-
-    if (!m5::In_I2C.begin()) {
-        Serial.println("[LoRa] ERROR: I2C initialization failed");
-        return false;
-    }
-
+    static bool done = false;
+    static bool ok   = false;
+    if (done) return ok;                    // nur beim ersten Aufruf
+    done = true;
+ 
+    // m5::In_I2C läuft schon durch M5.begin(); ein erneutes begin() ist unnötig
     if (!loraIoExpander.begin()) {
-        Serial.println(
-            "[LoRa] ERROR: PI4IOE5V6408 not detected"
-        );
-        return false;
+        LOG(LOG_LORA, "PI4IOE5V6408 not found, continuing without antenna switch");
+        return false;                       // z. B. Cap LoRa868: kein Expander, kein Problem
     }
-
-    loraIoExpander.setDirection(0, true);       // P0 = output
-    loraIoExpander.setHighImpedance(0, false); // Enable output
-    loraIoExpander.digitalWrite(0, true);      // P0 = HIGH
-
-    Serial.println("[LoRa] RF antenna switch P0 set HIGH");
+ 
+    loraIoExpander.setDirection(0, true);        // P0 = Ausgang
+    loraIoExpander.setHighImpedance(0, false);   // Pin treibt wirklich
+    loraIoExpander.digitalWrite(0, true);        // P0 = HIGH
+ 
+    LOG(LOG_LORA, "RF antenna switch P0 set HIGH");
+    ok = true;
     return true;
 }
 
@@ -319,6 +317,11 @@ static const char* lwTypeName(uint8_t t) {
         case 6:  return "REJOIN";
         default: return "PROPRIETARY";
     }
+}
+
+// DevAddr-Präfix 0x26/0x27 = NetID 000013 (The Things Network). Andere Netze können es auch nutzen.
+static const char* lwNetHint(uint32_t devAddr) {
+    return ((devAddr >> 25) == 0x13) ? "TTN?" : "other";
 }
 
 // Aktuell eingestellter Slot, z. B. "MESH 869.525 MHz SF11" oder "LW 868.1 MHz SF7"
@@ -661,12 +664,15 @@ static void buildSchedule(RadioProfile p) {
         const uint32_t dwell = (p == RadioProfile::AUTO) ? AUTO_MESH_DWELL_MS : 0u;
         schedule[scheduleLen++] = { Kind::MESH, MESH_FREQ_MHZ, MESH_BW_KHZ, MESH_SF, dwell };
     }
-
     if (p == RadioProfile::LORAWAN || p == RadioProfile::AUTO) {
         addLwSlots(LW_FREQS_DEFAULT_MHZ,
                    sizeof(LW_FREQS_DEFAULT_MHZ) / sizeof(LW_FREQS_DEFAULT_MHZ[0]));
     }
-    if (p == RadioProfile::LORAWAN) {             // Survey: zusätzlich die weiteren TTN-Kanäle
+    if (p == RadioProfile::LORAWAN || p == RadioProfile::AUTO || p == RadioProfile::DISCOVERY) {
+        addLwSlots(LW_FREQS_DEFAULT_MHZ,
+                   sizeof(LW_FREQS_DEFAULT_MHZ) / sizeof(LW_FREQS_DEFAULT_MHZ[0]));
+    }
+    if (p == RadioProfile::DISCOVERY) {            // Survey: zusätzlich die fünf weiteren Kanäle
         addLwSlots(LW_FREQS_EXTRA_MHZ,
                    sizeof(LW_FREQS_EXTRA_MHZ) / sizeof(LW_FREQS_EXTRA_MHZ[0]));
     }
@@ -853,7 +859,9 @@ static void handleMesh(const uint8_t* buf, size_t len, float rssi, float snr,
                + (p.hopsUsed == 0 ? " (direct)" : " (relayed)");
     }
 
-    String entry = "[#" + String(sid) + "] "
+    String entry;
+    entry.reserve(700 + len * 3);
+    entry = "[#" + String(sid) + "] "
         + (tracked ? "[TRACK] " : "")
         + (isNew ? "NEW " : "")
         + idStr + " -> " + dest
@@ -979,7 +987,9 @@ static void handleLorawan(const uint8_t* buf, size_t len, float rssi, float snr,
         cycleJoin++;
         statsValid(rssi);
 
-        String entry = "[LW JOIN REQUEST] " + slotLabel()
+        String entry;
+        entry.reserve(700 + len * 3);
+        entry = "[LW JOIN REQUEST] " + slotLabel()
             + "\n   [t=" + String(now / 1000.0f, 1) + "s]"
             + " RSSI " + String(rssi, 0) + " dBm | SNR " + String(snr, 1) + " dB"
             + " | " + String((unsigned)len) + " B | ToA " + String(toaUs / 1000) + " ms"
@@ -1074,9 +1084,12 @@ static void handleLorawan(const uint8_t* buf, size_t len, float rssi, float snr,
         fcntTxt += ")";
     }
 
-    String entry = "[#" + String(sid) + "] LW "
+    String entry;
+    entry.reserve(700 + len * 3);
+    entry = "[#" + String(sid) + "] LW "
         + (isNew ? "NEW " : "")
         + idStr
+        + " (" + lwNetHint(p.devAddr) + ")" 
         + ((p.hasDelta && p.delta == 0) ? "  [RETX]" : "")
         + "\n   [t=" + String(now / 1000.0f, 1) + "s]"
         + " RSSI " + String(rssi, 0) + " dBm | SNR " + String(snr, 1) + " dB"
@@ -1317,13 +1330,29 @@ RadioProfile getProfile() { return (RadioProfile)wantedProfile.load(); }
 
 void setProfile(RadioProfile p) { wantedProfile.store((uint8_t)p); }
 
-RadioProfile nextProfile() {
+RadioProfile nextProfile()
+{
     RadioProfile n;
+
     switch (getProfile()) {
-        case RadioProfile::AUTO:       n = RadioProfile::MESHTASTIC; break;
-        case RadioProfile::MESHTASTIC: n = RadioProfile::LORAWAN;    break;
-        default:                       n = RadioProfile::AUTO;       break;
+        case RadioProfile::AUTO:
+            n = RadioProfile::MESHTASTIC;
+            break;
+
+        case RadioProfile::MESHTASTIC:
+            n = RadioProfile::LORAWAN;
+            break;
+
+        case RadioProfile::LORAWAN:
+            n = RadioProfile::DISCOVERY;
+            break;
+
+        case RadioProfile::DISCOVERY:
+        default:
+            n = RadioProfile::AUTO;
+            break;
     }
+
     setProfile(n);
     return n;
 }
@@ -1332,7 +1361,9 @@ const char* profileName(RadioProfile p) {
     switch (p) {
         case RadioProfile::AUTO:       return "AUTO";
         case RadioProfile::MESHTASTIC: return "MESH";
-        default:                       return "LORAWAN";
+        case RadioProfile::LORAWAN:    return "LORAWAN";
+        case RadioProfile::DISCOVERY:  return "DISCOVERY";
+        default:                       return "?";
     }
 }
 
@@ -1340,6 +1371,7 @@ char profileLetter() {
     switch (getProfile()) {
         case RadioProfile::MESHTASTIC: return 'M';
         case RadioProfile::LORAWAN:    return 'W';
+        case RadioProfile::DISCOVERY:  return 'D';
         default:                       return 'L';
     }
 }
