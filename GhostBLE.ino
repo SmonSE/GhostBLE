@@ -68,9 +68,9 @@ void switchScannerMode() {
     LoraScanner::setProfile(LoraScanner::RadioProfile::AUTO);
     ScanContext::scannerSource.store(ScannerSource::LORA);
   } else if (ScanContext::bleScanEnabled.load()) {
-    // LoRa läuft: nur das Profil weiterschalten (AUTO -> MESH -> LORAWAN -> AUTO)
+    // LoRa läuft: nur das Profil weiterschalten (AUTO -> MESH -> DISCOVERY -> AUTO)
     LoraScanner::nextProfile();
-  } else if (LoraScanner::getProfile() == LoraScanner::RadioProfile::LORAWAN) {
+  } else if (LoraScanner::getProfile() == LoraScanner::RadioProfile::DISCOVERY) {
     // letztes Profil erreicht: zurück zu BLE
     ScanContext::scannerSource.store(ScannerSource::BLE);
   } else {
@@ -84,6 +84,7 @@ void switchScannerMode() {
     switch (LoraScanner::getProfile()) {
       case LoraScanner::RadioProfile::AUTO:       txt = "LORA AUTO"; break;
       case LoraScanner::RadioProfile::MESHTASTIC: txt = "LORA MESH"; break;
+      case LoraScanner::RadioProfile::DISCOVERY:  txt = "LORA DISCOVERY"; break;
       default:                                    txt = "LORAWAN";   break;
     }
   }
