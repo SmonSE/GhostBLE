@@ -255,7 +255,7 @@ void clearSpeechBubble() {
       } else {
         drawComposite(nibblesFront, NIBBLESFRONT_WIDTH, NIBBLES_FRONT_X, NIBBLES_FRONT_Y,
                       nibblesBored, NIBBLESBORED_WIDTH, NIBBLESBORED_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
-      } 
+      }
     } else {
       int r = random(2);
       if (r == 0) {
@@ -267,9 +267,8 @@ void clearSpeechBubble() {
       } 
 
     }
-
-     showResearchMode();
-     showScanIcon();
+    
+    showScanIcon();
 
     showFindingCounter(
         ScanContext::targetConnects.load(),
@@ -355,7 +354,6 @@ void dismissHelpOverlay() {
                       nibblesHappy, NIBBLESHAPPY_WIDTH, NIBBLESHAPPY_HEIGHT, NIBBLES_HAPPY_X, NIBBLES_HAPPY_Y);
     }
 
-    showResearchMode();
     showScanIcon();
 
     showFindingCounter(
